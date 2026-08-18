@@ -36,6 +36,7 @@ jobs:
           tags = [
               '<script src="copy-fix.js"></script>\n',
               '<script src="prompt-enhancements.js"></script>\n',
+              '<script src="field-history.js"></script>\n',
           ]
           for tag in tags:
               if tag not in s:
