@@ -19,7 +19,7 @@
 
   function vehicleRequested(v){
     var t=((v.idea||'')+' '+(v.location||'')+' '+(v.pose||'')+' '+(v.background||'')).toLowerCase();
-    return /سيارة|سياره|السيارة|السياره|داخل سيارة|داخل السياره|داخل السيارة|رنج|رانج|روفر|موقف|range rover|range-rover|sport suv|luxury suv|suv|car|vehicle|inside a car|parking/.test(t) || String(v.pose||'').toLowerCase()==='inside a car';
+    return !!v.vehicleLock || /سيارة|سياره|السيارة|السياره|داخل سيارة|داخل السياره|داخل السيارة|رنج|رانج|روفر|موقف|range rover|range-rover|sport suv|luxury suv|suv|car|vehicle|inside a car|parking/.test(t) || String(v.pose||'').toLowerCase()==='inside a car';
   }
 
   var SAUDI_LOCATION_RULE = 'SAUDI ARABIA LOCATION RULE — DEFAULT AND MANDATORY UNLESS THE USER EXPLICITLY NAMES ANOTHER COUNTRY OR CITY OUTSIDE SAUDI ARABIA. Treat the scene as taking place in Saudi Arabia. The environment must read as genuinely Saudi rather than generically Gulf: use physically plausible Saudi residential, commercial, office, street, parking, cafe, villa, shop, road, signage style, street furniture, vehicles, architecture, pavement, lighting, landscaping, climate cues, and public-space details appropriate to the specific scene. Do not exaggerate stereotypes or force landmarks. Keep the Saudi context natural, contemporary, and locally believable.';
