@@ -22,7 +22,14 @@
     return !!v.vehicleLock || /سيارة|سياره|السيارة|السياره|داخل سيارة|داخل السياره|داخل السيارة|رنج|رانج|روفر|موقف|range rover|range-rover|sport suv|luxury suv|suv|car|vehicle|inside a car|parking/.test(t) || String(v.pose||'').toLowerCase()==='inside a car';
   }
 
+  function roadOrVehicleScene(v){
+    var t=((v.idea||'')+' '+(v.location||'')+' '+(v.pose||'')+' '+(v.background||'')).toLowerCase();
+    return vehicleRequested(v) || /طريق|شارع|مواقف|موقف|قيادة|ازدحام|مرور|road|street|traffic|driving|parking/.test(t);
+  }
+
   var SAUDI_LOCATION_RULE = 'SAUDI ARABIA LOCATION RULE — DEFAULT AND MANDATORY UNLESS THE USER EXPLICITLY NAMES ANOTHER COUNTRY OR CITY OUTSIDE SAUDI ARABIA. Treat the scene as taking place in Saudi Arabia. The environment must read as genuinely Saudi rather than generically Gulf: use physically plausible Saudi residential, commercial, office, street, parking, cafe, villa, shop, road, signage style, street furniture, vehicles, architecture, pavement, lighting, landscaping, climate cues, and public-space details appropriate to the specific scene. Do not exaggerate stereotypes or force landmarks. Keep the Saudi context natural, contemporary, and locally believable.';
+
+  var SAUDI_TRAFFIC_RULE = 'SAUDI TRAFFIC AND VEHICLE ORIENTATION RULE — MANDATORY IN SAUDI ROAD, STREET, PARKING, DRIVING, OR CAR-INTERIOR SCENES. Vehicles in Saudi Arabia drive on the right-hand side of the road. Depict traffic flow, lane placement, turning geometry, parked-car orientation, road markings, and surrounding vehicle positions consistently with right-hand traffic. Passenger vehicles should be left-hand-drive, with the steering wheel, driver position, instrument cluster orientation, pedals, and primary driving controls on the left side of the cabin. For the Range Rover Sport, keep the steering wheel on the left and the driver seated on the left. Never mirror or flip the cabin into a right-hand-drive configuration, and do not place moving vehicles on the wrong side of a Saudi road.';
 
   var MULTI_PERSON_RULE = 'MULTI-PERSON RULE: Keep the main referenced person fixed to the reference identity only. Every additional person must have a clearly different and realistic facial identity, including a different face shape, naturally varied skin tone when appropriate, different hair and hairstyle, eyebrow pattern, age cues, and individual facial proportions. Never duplicate, clone, or closely echo the referenced face onto another person. Additional people must look like separate real individuals rather than variations of the same person. Their clothing must be realistic, physically plausible, appropriate to the scene and culture, with believable fabric weight, folds, fit, wear, and natural variation between people unless the scene logically requires similar dress.';
 
@@ -37,6 +44,7 @@
     var v = values();
     var add=[];
     if(!explicitNonSaudiLocation(v) && base.indexOf('SAUDI ARABIA LOCATION RULE')===-1) add.push(SAUDI_LOCATION_RULE);
+    if(!explicitNonSaudiLocation(v) && roadOrVehicleScene(v) && base.indexOf('SAUDI TRAFFIC AND VEHICLE ORIENTATION RULE')===-1) add.push(SAUDI_TRAFFIC_RULE);
     if(String(v.people||'1')!=='1' && base.indexOf('MULTI-PERSON RULE:')===-1) add.push(MULTI_PERSON_RULE);
     if(String(v.people||'1')!=='1' && !explicitNonSaudiLocation(v) && base.indexOf('MULTI-PERSON SAUDI DEMOGRAPHIC RULE')===-1) add.push(SAUDI_PEOPLE_RULE);
     if(lowLight(v) && base.indexOf('LOW-LIGHT CAMERA REALISM')===-1) add.push(LOW_LIGHT_RULE);
@@ -49,6 +57,7 @@
     var v = values();
     var extras=[];
     if(!explicitNonSaudiLocation(v)) extras.push('generic Gulf setting','non-Saudi default location','foreign city cues without user request','stereotyped Saudi setting','fake Saudi landmarks');
+    if(!explicitNonSaudiLocation(v) && roadOrVehicleScene(v)) extras.push('left-hand traffic in Saudi Arabia','right-hand-drive Saudi car','steering wheel on the right','driver seated on the right','mirrored car interior','wrong traffic direction','vehicles driving on the left side of a Saudi road','inconsistent lane direction');
     if(String(v.people||'1')!=='1') extras.push('same face on multiple people','cloned people','repeated identity','reference face copied to another person','unrealistic clothing','identical outfits without scene reason');
     if(String(v.people||'1')!=='1' && !explicitNonSaudiLocation(v)) extras.push('foreign-majority crowd','evenly multinational group','non-Saudi-dominated scene','random foreign clothing mix','stereotyped Saudi faces');
     if(lowLight(v)) extras.push('cinematic lighting','perfect studio fill','perfectly clean night exposure','noise-free shadows','fully recovered shadow detail','uniform night illumination','tripod-clean night sharpness','fake uniform grain','excessive lens flare','excessive halation');
