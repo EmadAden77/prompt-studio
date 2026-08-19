@@ -89,18 +89,52 @@
     return /سيلفي|selfie|front camera|front-facing|ذراع|arm-length/.test(t)||!isAuto(v.selfieBodyPose)||!isAuto(v.freeHandPose);
   }
 
-  var ARM_RULE='SELFIE ARM BIOMECHANICS AND PERSPECTIVE — ABSOLUTE MANDATORY FOR SELFIE SCENES. The phone-holding arm must look like a real human arm physically reaching the camera. Preserve anatomically correct shoulder attachment, clavicle position, upper-arm length, elbow location, forearm length, wrist rotation, hand scale, finger anatomy, and grip. The shoulder on the phone-holding side may sit slightly higher and slightly forward because of the arm extension, with a small natural torso and neck compensation. Match arm extension to the selected selfie distance and camera angle. Use physically plausible wide-angle foreshortening: the near hand or forearm may appear somewhat larger than the upper arm, but never stretched, rubbery, shortened, detached, or telescoped. Keep the elbow bend or extension mechanically possible, the wrist rotated only within a natural range, and the phone grip believable. The visible arm must connect continuously from shoulder to hand with correct muscle and bone landmarks, natural skin folds at the elbow and wrist, and realistic occlusion against the torso. Do not hide anatomical errors with blur, cropping, darkness, clothing, or impossible perspective. The entire composition must convincingly read as a real self-taken handheld smartphone selfie.';
-  var BODY_RULE='SELFIE BODY POSTURE — MANDATORY WHEN SPECIFIED. Apply the selected body posture exactly while keeping believable balance, gravity, spine alignment, shoulder asymmetry, pelvis orientation, and weight distribution. The body posture must cooperate with the raised phone-holding arm instead of looking like a separately posed studio portrait.';
-  var FREE_HAND_RULE='FREE-HAND POSE — MANDATORY WHEN SPECIFIED. Apply the selected free-hand action naturally with correct shoulder, elbow, wrist, palm, finger, clothing-contact, and object-contact geometry. The free hand must remain clearly separate from the phone-holding arm. If it touches hair, beard, chest, clothing, pocket, steering wheel, table, door, thigh, or another surface, show believable contact pressure, occlusion, fabric response, and finger placement. Never invent extra fingers or an extra arm.';
-  var CHECK='SELFIE POSE COMPLIANCE CHECK — REQUIRED BEFORE RENDERING. Verify that one arm can physically hold the camera at the chosen distance and angle, the shoulder and torso react naturally to that reach, the selected body posture remains anatomically balanced, and the free hand performs the selected action without distortion. If framing or another instruction conflicts with real human biomechanics, preserve realistic biomechanics and adjust only unspecified composition details.';
+  function distanceRule(distance){
+    var d=String(distance||'').toLowerCase();
+    if(/very close|قريب جدًا|قريب جدا/.test(d)) return 'SELFIE DISTANCE GEOMETRY — VERY CLOSE. Treat the camera as roughly 30–40 cm from the face. The phone-holding elbow must remain clearly bent; do NOT use full-arm extension. Keep the upper arm relatively near the torso, with the forearm projecting forward and slightly upward toward the phone. The shoulder may protract and rise only modestly. The visible forearm may be somewhat larger because of wide-angle perspective, but it must not dominate the frame, become extremely thick, or appear abnormally long. If the requested composition cannot fit at this distance, crop differently or bring the camera slightly closer; never lengthen the limb.';
+    if(/about 40 cm|40 cm|40 سم/.test(d)) return 'SELFIE DISTANCE GEOMETRY — ABOUT 40 CM. Use a clearly bent elbow and moderate shoulder protraction. The forearm reaches toward the phone while the upper arm remains naturally connected to the torso. No full extension and no oversized foreground forearm.';
+    if(/about 50 cm|50 cm|50 سم/.test(d)) return 'SELFIE DISTANCE GEOMETRY — ABOUT 50 CM. Use moderate arm extension with a still-natural soft elbow bend. Allow mild wide-angle forearm enlargement only, never exaggerated lengthening.';
+    if(/about 60 cm|60 cm|60 سم/.test(d)) return 'SELFIE DISTANCE GEOMETRY — ABOUT 60 CM. Use greater arm extension while keeping a small natural elbow bend and realistic shoulder mechanics. The arm may appear longer in perspective, but the anatomical segment lengths remain unchanged.';
+    if(/full arm extension|ذراع كاملة|ذراع كامله/.test(d)) return 'SELFIE DISTANCE GEOMETRY — FULL ARM EXTENSION. Full reach is allowed here only. Keep the elbow near extension but not hyperextended, the shoulder naturally elevated/protracted, and the wrist within a believable range. Even at full extension, never telescope or stretch the arm beyond human proportions.';
+    return 'SELFIE DISTANCE GEOMETRY — FOLLOW THE SELECTED DISTANCE. Couple camera distance, elbow bend, shoulder protraction, forearm angle, and wide-angle foreshortening as one physical system. Never achieve framing by lengthening the arm.';
+  }
+
+  function angleRule(angle){
+    var a=String(angle||'').toLowerCase();
+    if(/slightly above eye level|أعلى من العين قليل/.test(a)) return 'SELFIE ANGLE COUPLING — SLIGHTLY ABOVE EYE LEVEL. The phone must sit only modestly above the eye line. Reach the forearm slightly upward as well as forward, with a small natural shoulder lift. Do not create an extreme overhead arm path or an exaggerated downward-looking camera.';
+    if(/above|high|مرتفعة|أعلى/.test(a)) return 'SELFIE ANGLE COUPLING — ABOVE EYE LEVEL. Raise the phone through believable shoulder and elbow mechanics. Increase shoulder elevation only as much as necessary for the selected angle; do not invent extra arm length.';
+    if(/below|low|أسفل|منخفض/.test(a)) return 'SELFIE ANGLE COUPLING — BELOW EYE LEVEL. Lower the phone with believable shoulder depression and elbow position while preserving the real segment lengths of the arm.';
+    return 'SELFIE ANGLE COUPLING. The selected camera angle must be produced by real shoulder, elbow, wrist, neck, and torso mechanics rather than by warping the arm.';
+  }
+
+  function freeHandSpecific(action){
+    var a=String(action||'').toLowerCase();
+    if(/holding a cup|تمسك كوب/.test(a)) return 'FREE-HAND CUP GEOMETRY. Hold the cup casually around waist-to-lower-chest height unless the prompt specifies otherwise. Keep the free-side shoulder relaxed, the elbow softly bent and fairly close to the torso, the wrist close to neutral, and the fingers naturally wrapped around the cup. The cup must have believable weight, scale, contact, and gravity. Do not let the cup-holding arm hang stiffly straight or pull the shoulder downward unnaturally.';
+    if(/inside a pocket|half inside a pocket|داخل الجيب/.test(a)) return 'FREE-HAND POCKET GEOMETRY. Let the hand enter the real garment pocket naturally with a soft elbow bend, slight fabric tension and bunching, and no hidden extra fingers or impossible pocket placement.';
+    if(/touching the hair|adjusting the hair|على الشعر|تعديل الشعر/.test(a)) return 'FREE-HAND HAIR GEOMETRY. Raise the free arm with a believable elbow bend and shoulder rotation. Fingers should contact the hair lightly with natural separation and no fused hair-hand geometry.';
+    if(/chest|على الصدر/.test(a)) return 'FREE-HAND CHEST GEOMETRY. Rest the palm or fingers lightly on the chest with realistic contact pressure, wrist angle, elbow position, and fabric compression.';
+    return '';
+  }
+
+  var ARM_RULE='SELFIE ARM BIOMECHANICS — ABSOLUTE PRIORITY. The phone-holding arm must be constructed as a normal human limb with fixed anatomical segment lengths. Preserve shoulder socket position, clavicle alignment, upper-arm length, elbow position, forearm length, wrist rotation, palm scale, finger anatomy, and a believable phone grip. The arm must remain continuously attached from shoulder to hand. Never stretch, telescope, inflate, shorten, detach, or reshape the arm to make the composition fit. The phone-holding shoulder should react naturally to the reach: slight forward movement and mild elevation when needed, plus a small corresponding torso and neck compensation. Wide-angle perspective may enlarge the nearer forearm or hand modestly, but perspective must not turn the forearm into the dominant visual mass or make it look abnormally long. Preserve natural skin folds, muscle transitions, bone landmarks, and occlusion at the shoulder, elbow, and wrist. If composition conflicts with anatomy, change crop, camera position, or unspecified framing details — never human anatomy.';
+  var BODY_RULE='SELFIE BODY POSTURE — MANDATORY WHEN SPECIFIED. Apply the selected body posture exactly while keeping believable balance, gravity, spine alignment, shoulder asymmetry, pelvis orientation, and weight distribution. The body posture must visibly respond to the raised phone-holding arm instead of looking like a studio pose with a selfie arm pasted onto it.';
+  var FREE_HAND_RULE='FREE-HAND POSE — MANDATORY WHEN SPECIFIED. Apply the selected free-hand action naturally with correct shoulder, elbow, wrist, palm, finger, clothing-contact, and object-contact geometry. The free hand must remain clearly separate from the phone-holding arm. Show believable contact pressure, occlusion, fabric response, and finger placement. Never invent extra fingers, duplicate a hand, or merge the hand into clothing or objects.';
+  var CHECK='SELFIE PHYSICAL CONSISTENCY CHECK — REQUIRED BEFORE RENDERING. Mentally solve the pose as a real person taking the photo: camera distance determines elbow bend; camera height determines the forearm path and shoulder elevation; shoulder reach produces small natural torso and neck compensation; the body keeps believable balance; and the free hand performs its selected action without stiffness or distortion. The final image must look physically possible at the selected camera distance. If the framing would require an impossible arm length or giant foreground forearm, change crop or camera placement instead of changing anatomy.';
 
   window.buildFinal=function(){
     ensureState();
     var base=oldBuildFinal?oldBuildFinal():'';
     var v=vals(),extra=[];
-    if(selfieScene(v))extra.push(ARM_RULE);
+    if(selfieScene(v)){
+      extra.push(ARM_RULE);
+      extra.push(distanceRule(v.distance));
+      extra.push(angleRule(v.angle));
+    }
     if(!isAuto(v.selfieBodyPose))extra.push(BODY_RULE+' SELECTED BODY POSTURE: '+v.selfieBodyPose+'.');
-    if(!isAuto(v.freeHandPose))extra.push(FREE_HAND_RULE+' SELECTED FREE-HAND ACTION: '+v.freeHandPose+'.');
+    if(!isAuto(v.freeHandPose)){
+      extra.push(FREE_HAND_RULE+' SELECTED FREE-HAND ACTION: '+v.freeHandPose+'.');
+      var fh=freeHandSpecific(v.freeHandPose);if(fh)extra.push(fh);
+    }
     if(extra.length)extra.push(CHECK);
     return extra.length?extra.join('\n\n')+'\n\n'+base:base;
   };
@@ -109,13 +143,15 @@
     ensureState();
     var base=oldBuildNegative?oldBuildNegative():'';
     var v=vals(),x=[];
-    if(selfieScene(v))x=x.concat(['impossible selfie reach','rubber arm','stretched arm','telescoped arm','shortened selfie arm','detached shoulder','broken shoulder geometry','wrong clavicle position','broken elbow geometry','impossible elbow bend','unnatural wrist bend','wrong wrist rotation','incorrect selfie foreshortening','giant hand caused by bad perspective','tiny hand caused by bad perspective','floating phone hand','unrealistic phone grip','extra arm','extra hand','extra fingers','fused fingers','warped fingers','hand disconnected from forearm']);
+    if(selfieScene(v))x=x.concat(['impossible selfie reach','arm stretched to fit framing','rubber arm','telescoped arm','inflated forearm','oversized foreground forearm','forearm dominating the frame','abnormally long forearm','abnormally long upper arm','shortened upper arm','detached shoulder','broken shoulder geometry','wrong clavicle position','broken elbow geometry','impossible elbow bend','hyperextended elbow','unnatural wrist bend','wrong wrist rotation','incorrect selfie foreshortening','excessive wide-angle arm distortion','giant hand caused by bad perspective','tiny hand caused by bad perspective','floating phone hand','unrealistic phone grip','selfie arm pasted onto a studio pose','extra arm','extra hand','extra fingers','fused fingers','warped fingers','hand disconnected from forearm']);
+    if(/very close|قريب جدًا|قريب جدا/.test(String(v.distance||'').toLowerCase()))x=x.concat(['full-arm extension at very-close selfie distance','straight elbow at very-close selfie distance','extreme foreground-arm enlargement at very-close distance']);
     if(!isAuto(v.selfieBodyPose))x=x.concat(['ignored selfie body posture','studio-stiff body pose','impossible balance','wrong gravity','broken spine alignment','unnatural shoulder symmetry']);
-    if(!isAuto(v.freeHandPose))x=x.concat(['ignored free-hand pose','wrong free hand position','extra free hand','free hand fused into body','free hand fused into clothing','fake hand contact','impossible finger contact','pasted-looking free hand']);
+    if(!isAuto(v.freeHandPose))x=x.concat(['ignored free-hand pose','wrong free hand position','extra free hand','free hand fused into body','free hand fused into clothing','fake hand contact','impossible finger contact','pasted-looking free hand','stiff free arm']);
+    if(/holding a cup|تمسك كوب/.test(String(v.freeHandPose||'').toLowerCase()))x=x.concat(['cup floating in hand','stiff straight cup-holding arm','oversized cup','tiny cup','impossible cup grip','cup fused into fingers']);
     return x.length?(base?base+', ':'')+x.join(', '):base;
   };
 
-  function markVersion(){var b=document.querySelector('.badge');if(b)b.textContent='Browser v3.18';var m=document.querySelector('.meta span:last-child');if(m)m.textContent='Prompt Studio Browser v3.18';}
+  function markVersion(){var b=document.querySelector('.badge');if(b)b.textContent='Browser v3.19';var m=document.querySelector('.meta span:last-child');if(m)m.textContent='Prompt Studio Browser v3.19';}
   ensureState();ensureOptions();
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){installUI();if(typeof renderPickers==='function')renderPickers();markVersion();});
   else{installUI();if(typeof renderPickers==='function')renderPickers();markVersion();}
