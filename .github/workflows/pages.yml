@@ -40,6 +40,8 @@ jobs:
               '<script src="face-expression-lock.js"></script>\n',
               '<script src="pose-lighting-options.js"></script>\n',
               '<script src="room-lock.js"></script>\n',
+              '<script src="bedroom-controls.js"></script>\n',
+              '<script src="auto-neutral-options.js"></script>\n',
           ]
           for tag in tags:
               if tag not in s:
