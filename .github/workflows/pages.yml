@@ -43,6 +43,7 @@ jobs:
               '<script src="bedroom-controls.js"></script>\n',
               '<script src="auto-neutral-options.js"></script>\n',
               '<script src="selfie-body-controls.js"></script>\n',
+              '<script src="conflict-guard.js"></script>\n',
           ]
           for tag in tags:
               if tag not in s:
