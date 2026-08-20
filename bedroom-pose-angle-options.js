@@ -3,65 +3,125 @@
   if(PAGE!=='bedroom')return;
 
   var POSES=[
-    ['standing naturally','واقف'],
-    ['standing beside the bed naturally','واقف بجانب السرير'],
-    ['standing in front of the mirror naturally','واقف أمام المرآة'],
-    ['seated naturally','جالس'],
-    ['seated on the edge of the bed naturally','جالس على طرف السرير'],
-    ['seated on the bed with one knee raised naturally','جالس على السرير مع رفع ركبة واحدة'],
-    ['seated on the bed leaning lightly on one hand','جالس على السرير ومتكي على يد'],
-    ['leaning against the headboard while seated on the bed','متكي على ظهر السرير'],
-    ['reclining naturally on the bed','مستلقي نصف استلقاء على السرير'],
-    ['reclining on one elbow on the bed','متكي على كوعه على السرير'],
-    ['lying on a bed with the head resting naturally on a pillow','مستلقي على السرير ورأسه على الوسادة'],
-    ['lying on the back on the bed naturally','مستلقي على الظهر على السرير'],
-    ['lying on the side on the bed naturally','مستلقي على الجنب على السرير'],
-    ['lying on the stomach on the bed with the head turned toward the camera','مستلقي على البطن على السرير ورأسه للكاميرا'],
-    ['resting naturally after waking up on the bed','وضعية بعد الاستيقاظ على السرير'],
-    ['resting naturally before sleep on the bed','وضعية قبل النوم على السرير']
+    ['standing naturally in the bedroom','واقف'],
+    ['seated naturally in the bedroom','جالس'],
+    ['lying naturally on the bed','مستلقي على السرير']
   ];
 
   function q(s){return document.querySelector(s)}
-  function isLying(v){return /lying|reclining|head resting naturally on a pillow|lying on the back|lying on the side|lying on the stomach|after waking up|before sleep/.test(String(v||'').toLowerCase())}
-  function isBedSeat(v){return /seated on the edge of the bed|seated on the bed|headboard/.test(String(v||'').toLowerCase())}
-  function recommendations(v){
-    if(isLying(v))return ['near forehead height angled down','slightly above eye level','eye-level with slight casual offset','10 degrees from the left','10 degrees from the right','spontaneous imperfect handheld angle'];
-    if(isBedSeat(v))return ['slightly above eye level','eye-level with slight casual offset','10 degrees from the left','10 degrees from the right','casual 2-4 degree horizon tilt'];
-    return ['eye-level with slight casual offset','slightly above eye level','30 degrees from the left','30 degrees from the right','spontaneous imperfect handheld angle'];
+  function S(){try{return typeof state==='object'&&state?state:{}}catch(e){return {}}}
+  function saveNow(){try{if(typeof save==='function')save()}catch(e){}}
+  function renderNow(){try{if(typeof renderPickers==='function')renderPickers()}catch(e){}}
+
+  function classifyPose(v){
+    var t=String(v||'').toLowerCase();
+    if(/lying|reclining|مستلقي|استلقاء|bed/.test(t))return 'lying naturally on the bed';
+    if(/seated|sitting|جالس|chair|edge of the bed|headboard/.test(t))return 'seated naturally in the bedroom';
+    return 'standing naturally in the bedroom';
   }
-  function label(v){try{return typeof labelFor==='function'?labelFor('angle',v):v}catch(e){return v}}
-  function extend(){
+
+  function normalize(){
     try{
-      if(typeof OPTIONS!=='object'||!OPTIONS)return;
-      var base=Array.isArray(OPTIONS.pose)?OPTIONS.pose:[];
-      POSES.forEach(function(item){if(!base.some(function(x){return x&&x[0]===item[0]}))base.push(item)});
-      OPTIONS.pose=base;
-      if(typeof renderPickers==='function')renderPickers();
+      if(typeof OPTIONS==='object'&&OPTIONS){
+        OPTIONS.pose=POSES.slice();
+      }
+      var s=S();
+      s.pose=classifyPose(s.pose);
+      s.angle='';
+      saveNow();
+      renderNow();
     }catch(e){}
   }
-  function installHint(){
-    var p=q('.picker[data-key="angle"]');if(!p)return;
-    var f=p.closest('.field');if(!f)return;
-    var h=q('#bedroomAngleSuggestions');if(!h){h=document.createElement('small');h.id='bedroomAngleSuggestions';h.className='historyHint';h.style.display='block';h.style.marginTop='6px';h.style.lineHeight='1.6';f.appendChild(h)}
-    var v=(typeof state==='object'&&state)?state.pose:'';
-    h.textContent='زوايا مقترحة لهذه الوضعية: '+recommendations(v).map(label).join('، ');
+
+  function installUI(){
+    var angle=q('.picker[data-key="angle"]');
+    var angleField=angle&&angle.closest('.field');
+    if(angleField)angleField.style.display='none';
+    var oldHint=q('#bedroomAngleSuggestions');
+    if(oldHint)oldHint.remove();
+
+    var pose=q('.picker[data-key="pose"]');
+    var poseField=pose&&pose.closest('.field');
+    if(!poseField)return;
+    var label=poseField.querySelector('label');
+    if(label)label.textContent='وضعية الشخص';
+    var hint=q('#bedroomAutoAngleHint');
+    if(!hint){
+      hint=document.createElement('small');
+      hint.id='bedroomAutoAngleHint';
+      hint.className='historyHint';
+      hint.style.display='block';
+      hint.style.marginTop='6px';
+      hint.style.lineHeight='1.6';
+      hint.textContent='اختر فقط: واقف، جالس، أو مستلقي على السرير. زاوية السيلفي وطريقة التصوير والمسافة والقص يحددها التطبيق تلقائيًا حسب الوضعية.';
+      poseField.appendChild(hint);
+    }
   }
-  var oldFinal=window.buildFinal,oldNegative=window.buildNegative;
+
+  function autoAngleRule(v){
+    var p=classifyPose(v.pose);
+    var common='BEDROOM SELFIE CAMERA DIRECTOR — ABSOLUTE PRIORITY. The user specifies only the body posture. The exact selfie shooting method, virtual phone position, camera height, yaw, pitch, roll, camera-to-face distance, framing, and crop are NOT user controls and must be chosen automatically for the most believable real smartphone selfie. Choose a casual, physically plausible front-camera viewpoint that suits the selected posture and the locked bedroom geometry. Avoid perfect symmetry, fashion-style posing, dramatic cinematic camera placement, exaggerated high or low angles, and composition that requires distorted anatomy. Preserve the selected posture exactly. The phone-holding arm and phone remain outside the captured image under the bedroom selfie framing lock.';
+    if(p==='standing naturally in the bedroom'){
+      return common+' CURRENT POSTURE — STANDING. Prefer a natural eye-level or slightly-above-eye-level handheld viewpoint with a small believable side offset and mild imperfect horizon variation. Let the framing include a realistic amount of upper torso and bedroom context without forcing the body to center perfectly.';
+    }
+    if(p==='seated naturally in the bedroom'){
+      return common+' CURRENT POSTURE — SEATED. Choose a natural seated selfie viewpoint, usually around eye level or modestly above it, with enough side offset to keep the pelvis and torso support believable. Preserve realistic chair or bed contact and avoid camera placement that would require the torso, neck, or shoulder to twist unnaturally.';
+    }
+    return common+' CURRENT POSTURE — LYING ON THE BED. Choose a physically plausible front-camera viewpoint derived from the supported head and shoulder position, typically modestly above the face or slightly lateral rather than an impossible overhead shot. Preserve gravity, pillow and mattress contact, natural neck support, and believable body compression. If the desired framing conflicts with anatomy, change crop or virtual camera placement, never the body.';
+  }
+
+  function stripManualAngle(text){
+    return String(text||'')
+      .split('\n')
+      .filter(function(line){
+        var t=line.trim();
+        if(/^SELFIE ANGLE\s*(?:—|:)/i.test(t))return false;
+        if(/^زاوية السيلفي\s*(?:—|:)/i.test(t))return false;
+        return true;
+      })
+      .join('\n')
+      .replace(/\n{3,}/g,'\n\n')
+      .trim();
+  }
+
+  var oldFinal=window.buildFinal;
+  var oldNegative=window.buildNegative;
+
   window.buildFinal=function(){
     var base=oldFinal?oldFinal():'';
-    var v=(typeof state==='object'&&state)?state:{};
-    if(!isLying(v.pose))return base;
-    var rule='BED RECLINING PHYSICS — MANDATORY FOR BEDROOM SELFIES. Preserve believable gravity, mattress compression, pillow compression under the head where applicable, natural shoulder and pelvis support, realistic neck angle, physically plausible elbow placement, and fabric bunching caused by body contact with the bed. The torso, hips and legs must rest on the mattress convincingly and must never appear floating, twisted unnaturally, or mannequin-stiff. Solve the selfie arm from the actual supported shoulder position; if framing conflicts with anatomy, change crop or camera placement instead of distorting the body.';
-    return rule+'\n\n'+base;
+    var v=S();
+    base=stripManualAngle(base);
+    return autoAngleRule(v)+'\n\n'+base;
   };
+
   window.buildNegative=function(){
     var base=oldNegative?oldNegative():'';
-    var v=(typeof state==='object'&&state)?state:{};
-    if(!isLying(v.pose))return base;
-    var x='floating body on bed, missing mattress compression, missing pillow compression, twisted reclining anatomy, mannequin-stiff lying pose, impossible lying selfie angle, detached head from pillow support';
-    return base?base+', '+x:x;
+    var x=[
+      'manual selfie-angle instruction overriding bedroom auto camera director',
+      'fixed selfie angle unrelated to body posture',
+      'dramatic cinematic selfie angle',
+      'impossible overhead lying selfie',
+      'unnatural low-angle selfie',
+      'perfectly centered synthetic selfie composition',
+      'camera placement requiring distorted neck or shoulders'
+    ];
+    return (base?base+', ':'')+x.join(', ');
   };
-  document.addEventListener('click',function(e){if(e.target.closest('.picker[data-key="pose"] .pickerOpt'))setTimeout(installHint,80)},true);
-  function boot(){extend();setTimeout(installHint,120)}
+
+  function enforce(){
+    var s=S();
+    var wanted=classifyPose(s.pose);
+    var changed=false;
+    if(s.pose!==wanted){s.pose=wanted;changed=true}
+    if(s.angle!==''){s.angle='';changed=true}
+    if(changed)saveNow();
+    installUI();
+  }
+
+  document.addEventListener('click',function(e){
+    if(e.target.closest('.picker[data-key="pose"] .pickerOpt'))setTimeout(function(){enforce();renderNow()},60);
+  },true);
+
+  function boot(){normalize();installUI();setInterval(enforce,700)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
