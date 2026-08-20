@@ -1,6 +1,9 @@
 (function(){
   var previousFinal=window.buildFinal;
   var previousNegative=window.buildNegative;
+  var ARM_SUBTLE='bedroom_arm_subtle';
+  var ARM_HIDDEN='bedroom_arm_hidden';
+  var ARM_AUTO='bedroom_arm_auto';
 
   function V(){try{return typeof smartValues==='function'?smartValues():(typeof state==='object'&&state?state:{})}catch(e){return {}}}
   function raw(){try{return typeof state==='object'&&state?state:{}}catch(e){return {}}}
@@ -11,6 +14,18 @@
   function bedroom(v){return page()==='bedroom'||!!v.roomLock||/غرفة النوم|غرفه النوم|bedroom/.test(allText(v))}
   function cameraName(v){var c=String(v.camera||'').trim();return c||'the selected smartphone front camera'}
   function visibleHandRequested(v){var f=String((raw().freeHandPose||v.freeHandPose||'')).toLowerCase();return !!f&&!/__auto_prompt__|auto/.test(f)}
+  function armVisibility(){
+    var v=String(raw().selfieArmVisibility||'');
+    if(v===ARM_HIDDEN||v===ARM_AUTO||v===ARM_SUBTLE)return v;
+    return ARM_SUBTLE;
+  }
+  function bedroomArmCompatibility(){
+    var v=armVisibility();
+    var common='BEDROOM SELFIE COMPATIBILITY — MANDATORY. Keep every realism rule compatible with the locked bedroom controls, selected bedroom pose, selected selfie angle, and the camera-arm visibility control. The camera-holding arm must use relaxed human biomechanics with a soft elbow bend, a naturally low shoulder, a believable wrist angle, and a physically reachable unseen phone position. The phone itself must remain outside the captured image in an ordinary front-camera selfie. Any visible free hand must still follow the hand-anatomy rule above.';
+    if(v===ARM_HIDDEN)return common+' CURRENT CAMERA-ARM VISIBILITY: FULLY HIDDEN. Keep the complete camera-holding limb outside the frame while preserving believable off-frame biomechanics.';
+    if(v===ARM_AUTO)return common+' CURRENT CAMERA-ARM VISIBILITY: AUTOMATIC BY ANGLE. The selected angle may justify either full concealment or a small naturally cropped shoulder, upper-arm, forearm, or elbow-edge fragment. Never display the full arm or let it dominate the frame.';
+    return common+' CURRENT CAMERA-ARM VISIBILITY: SUBTLE NATURAL EDGE VISIBILITY. A small naturally cropped shoulder, upper-arm, forearm, or elbow-edge fragment may appear near an edge or corner when physically justified by the selected angle. Never display the full arm, never let it cross the face, and never enlarge it into a giant foreground mass.';
+  }
 
   function realismBlock(v){
     var blocks=[];
@@ -26,9 +41,7 @@
       blocks.push('SMARTPHONE FRONT-CAMERA PIPELINE — ABSOLUTE PRIORITY. Simulate the selected phone front-camera look rather than a DSLR portrait look: realistic wide-angle perspective, modest edge softness, mild lens distortion, slight chromatic aberration only where plausible, phone-style sharpening, HDR that is helpful but imperfect, local highlight clipping, shadow noise, fine luminance noise, occasional mild chroma noise in low light, subtle compression, and imperfect auto white balance. Keep depth of field consistent with a real front-facing smartphone camera; do not force DSLR-like f/1.8 shallow depth of field or artificial portrait-mode blur unless the user explicitly asks for it and the device/scene plausibly supports it.');
       blocks.push('UNEDITED PHONE-CAPTURE CHARACTER — MANDATORY. The result should feel like an authentic unedited smartphone photograph: no beauty filter, no skin retouching, no artificial face sharpening, no overprocessed HDR, no perfect denoise, no fake film grain overlay, no fake RAW aesthetic, and no commercial color grading.');
     }
-    if(bedroom(v)){
-      blocks.push('BEDROOM SELFIE COMPATIBILITY — MANDATORY. Keep every realism rule compatible with the locked bedroom controls and the bedroom selfie framing lock. The phone-holding arm, forearm, wrist, hand, and phone remain outside the captured image when that bedroom rule is active. Do not reintroduce a visible selfie arm merely to demonstrate perspective or foreshortening. Any visible free hand must still follow the hand-anatomy rule above.');
-    }
+    if(bedroom(v))blocks.push(bedroomArmCompatibility());
     if(visibleHandRequested(v)){
       blocks.push('FREE-HAND CONTACT REALISM — MANDATORY. Because a visible free-hand gesture is selected, preserve natural finger spacing, realistic skin compression at contact points, plausible knuckle orientation, correct contact shadows, and believable interaction with the chest, hair, clothing, cup, steering wheel, or other selected object.');
     }
@@ -48,7 +61,7 @@
     var v=V();
     if(!selfie(v))return base;
     var x=[
-      'beauty filter','airbrushed skin','plastic skin','waxy skin','porcelain skin','uniform pores','repeating skin texture','invented facial asymmetry','changed identity for realism','perfect bilateral facial symmetry','identical artificial catchlights','glowing eyes','studio catchlight without source','cinematic rim light','beauty fill light','unmotivated light source','perfectly even exposure','fake HDR glow','DSLR-style fake shallow depth of field on front-camera selfie','artificial portrait-mode blur without request','perfectly clean low-light image','uniform fake grain','overprocessed sharpening','commercial color grading','mannequin pose','impossible joint bend','extra fingers','fused fingers','duplicated fingertips','melted fingernails','floating hand','painted-on clothing','repeating fabric folds','floating fabric','cloned texture','repeating background pattern','synthetic showroom cleanliness'
+      'beauty filter','airbrushed skin','plastic skin','waxy skin','porcelain skin','uniform pores','repeating skin texture','invented facial asymmetry','changed identity for realism','perfect bilateral facial symmetry','identical artificial catchlights','glowing eyes','studio catchlight without source','cinematic rim light','beauty fill light','unmotivated light source','perfectly even exposure','fake HDR glow','DSLR-style fake shallow depth of field on front-camera selfie','artificial portrait-mode blur without request','perfectly clean low-light image','uniform fake grain','overprocessed sharpening','commercial color grading','mannequin pose','impossible joint bend','extra fingers','fused fingers','duplicated fingertips','melted fingernails','floating hand','painted-on clothing','repeating fabric folds','floating fabric','cloned texture','repeating background pattern','synthetic showroom cleanliness','rigid straight selfie arm','camera arm covering face','giant foreground selfie hand','giant foreground selfie forearm'
     ];
     return (base?base+', ':'')+x.join(', ');
   };
