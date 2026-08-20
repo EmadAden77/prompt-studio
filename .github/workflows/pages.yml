@@ -66,6 +66,7 @@ jobs:
               '<script src="bedroom-analytical-realism-method.js"></script>\n',
               '<script src="bedroom-pose-physical-realism.js"></script>\n',
               '<script src="bedroom-selfie-arm-fully-hidden.js"></script>\n',
+              '<script src="bedroom-photographic-realism-refinement.js"></script>\n',
               '<script src="version-fix.js"></script>\n',
           ]
           for tag in tags:
