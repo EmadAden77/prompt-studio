@@ -65,6 +65,7 @@ jobs:
               '<script src="bedroom-expression-anatomy.js"></script>\n',
               '<script src="bedroom-analytical-realism-method.js"></script>\n',
               '<script src="bedroom-pose-physical-realism.js"></script>\n',
+              '<script src="bedroom-expanded-selfie-pose-support.js"></script>\n',
               '<script src="bedroom-selfie-arm-fully-hidden.js"></script>\n',
               '<script src="bedroom-photographic-realism-refinement.js"></script>\n',
               '<script src="bedroom-bed-color-controls.js"></script>\n',
