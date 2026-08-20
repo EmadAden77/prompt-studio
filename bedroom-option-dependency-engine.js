@@ -6,6 +6,7 @@
 
   var ANGLES={
     high:'bedroom_angle_high',
+    veryHigh:'bedroom_angle_very_high',
     low:'bedroom_angle_low',
     eye34:'bedroom_angle_eye_34',
     eyeFront:'bedroom_angle_eye_front',
@@ -20,15 +21,17 @@
   };
 
   var POSE_ANGLES={
+    bedroom_peeking_blanket:[ANGLES.veryHigh,ANGLES.high,ANGLES.eyeFront,ANGLES.eye34,ANGLES.dutch,ANGLES.overhead],
+    bedroom_laptop_book_bed:[ANGLES.eyeFront,ANGLES.eye34,ANGLES.high,ANGLES.veryHigh,ANGLES.seatedDown,ANGLES.eyeOffset,ANGLES.dutch],
     bedroom_lying_pillow:[ANGLES.overhead,ANGLES.sideBed,ANGLES.dutch,ANGLES.groundLow,ANGLES.high,ANGLES.eye34,ANGLES.high34],
     bedroom_lying_side:[ANGLES.sideBed,ANGLES.dutch,ANGLES.groundLow,ANGLES.eye34,ANGLES.high34,ANGLES.overhead,ANGLES.shoulderSide],
-    bedroom_reclining_pillows:[ANGLES.eye34,ANGLES.high,ANGLES.eyeFront,ANGLES.sideBed,ANGLES.overhead,ANGLES.high34,ANGLES.eyeOffset,ANGLES.dutch],
+    bedroom_reclining_pillows:[ANGLES.eye34,ANGLES.high,ANGLES.veryHigh,ANGLES.eyeFront,ANGLES.sideBed,ANGLES.overhead,ANGLES.high34,ANGLES.eyeOffset,ANGLES.dutch],
     bedroom_leaning_headboard:[ANGLES.eye34,ANGLES.eyeFront,ANGLES.high,ANGLES.high34,ANGLES.eyeOffset,ANGLES.seatedDown,ANGLES.dutch],
-    bedroom_holding_pillow:[ANGLES.eye34,ANGLES.eyeFront,ANGLES.high,ANGLES.sideBed,ANGLES.eyeOffset,ANGLES.seatedDown,ANGLES.dutch],
-    bedroom_crosslegged_bed:[ANGLES.eyeFront,ANGLES.eye34,ANGLES.high,ANGLES.seatedDown,ANGLES.eyeOffset,ANGLES.high34,ANGLES.dutch],
-    bedroom_one_knee_bed:[ANGLES.eye34,ANGLES.eyeFront,ANGLES.high,ANGLES.low,ANGLES.eyeOffset,ANGLES.seatedDown,ANGLES.dutch],
+    bedroom_holding_pillow:[ANGLES.eye34,ANGLES.eyeFront,ANGLES.high,ANGLES.veryHigh,ANGLES.sideBed,ANGLES.eyeOffset,ANGLES.seatedDown,ANGLES.dutch],
+    bedroom_crosslegged_bed:[ANGLES.eyeFront,ANGLES.eye34,ANGLES.high,ANGLES.veryHigh,ANGLES.seatedDown,ANGLES.eyeOffset,ANGLES.high34,ANGLES.dutch],
+    bedroom_one_knee_bed:[ANGLES.eye34,ANGLES.eyeFront,ANGLES.high,ANGLES.veryHigh,ANGLES.low,ANGLES.eyeOffset,ANGLES.seatedDown,ANGLES.dutch],
     bedroom_sitting_floor:[ANGLES.high,ANGLES.low,ANGLES.groundLow,ANGLES.eye34,ANGLES.eyeFront,ANGLES.high34,ANGLES.eyeOffset,ANGLES.shoulderSide,ANGLES.dutch],
-    bedroom_sitting_edge:[ANGLES.eyeFront,ANGLES.eye34,ANGLES.high,ANGLES.low,ANGLES.groundLow,ANGLES.eyeOffset,ANGLES.seatedDown,ANGLES.shoulderSide,ANGLES.dutch],
+    bedroom_sitting_edge:[ANGLES.eyeFront,ANGLES.eye34,ANGLES.high,ANGLES.veryHigh,ANGLES.low,ANGLES.groundLow,ANGLES.eyeOffset,ANGLES.seatedDown,ANGLES.shoulderSide,ANGLES.dutch],
     bedroom_standing_curtain:[ANGLES.eyeFront,ANGLES.eye34,ANGLES.high,ANGLES.low,ANGLES.high34,ANGLES.eyeOffset,ANGLES.shoulderSide,ANGLES.dutch],
     bedroom_standing_wardrobe:[ANGLES.eyeFront,ANGLES.eye34,ANGLES.high,ANGLES.low,ANGLES.high34,ANGLES.eyeOffset,ANGLES.shoulderSide,ANGLES.dutch],
     bedroom_standing_beside:[ANGLES.eyeFront,ANGLES.eye34,ANGLES.high,ANGLES.low,ANGLES.high34,ANGLES.eyeOffset,ANGLES.shoulderSide,ANGLES.dutch]
@@ -39,6 +42,7 @@
     bedroom_angle_side_bed:'bedroom_reclining_pillows',
     bedroom_angle_seated_down:'bedroom_sitting_edge',
     bedroom_angle_ground_low:'bedroom_sitting_floor',
+    bedroom_angle_very_high:'bedroom_sitting_edge',
     bedroom_angle_dutch:'bedroom_standing_beside',
     bedroom_angle_low:'bedroom_standing_beside',
     bedroom_angle_high:'bedroom_standing_beside',
@@ -83,11 +87,11 @@
   function handCompatible(p,v){
     var c=handClass(v);
     if(c==='auto'||c==='universal')return true;
-    if(c==='pillow')return /holding_pillow|reclining_pillows|crosslegged_bed|one_knee_bed/.test(p);
+    if(c==='pillow')return /holding_pillow|peeking_blanket|reclining_pillows|crosslegged_bed|one_knee_bed/.test(p);
     if(c==='floor')return p==='bedroom_sitting_floor';
-    if(c==='seated')return /sitting_edge|sitting_floor|holding_pillow|crosslegged_bed|one_knee_bed|leaning_headboard/.test(p);
+    if(c==='seated')return /sitting_edge|sitting_floor|holding_pillow|laptop_book_bed|crosslegged_bed|one_knee_bed|leaning_headboard/.test(p);
     if(c==='standing')return /standing_/.test(p);
-    if(c==='bed')return /sitting_edge|reclining_pillows|lying_pillow|lying_side|holding_pillow|crosslegged_bed|one_knee_bed|leaning_headboard/.test(p);
+    if(c==='bed')return /sitting_edge|reclining_pillows|lying_pillow|lying_side|holding_pillow|peeking_blanket|laptop_book_bed|crosslegged_bed|one_knee_bed|leaning_headboard/.test(p);
     return true;
   }
 
@@ -210,7 +214,7 @@
   window.buildNegative=function(){
     reconcile(null);
     var base=previousNegative?previousNegative():'';
-    var x=['old incompatible bedroom option restored','free-hand pose incompatible with body pose','selected selfie angle incompatible with body pose','multiple conflicting pose alternatives','multiple conflicting angle alternatives','very-low selfie used with unreachable body pose','Dutch-angle selection replaced by a different angle'];
+    var x=['old incompatible bedroom option restored','free-hand pose incompatible with body pose','selected selfie angle incompatible with body pose','multiple conflicting pose alternatives','multiple conflicting angle alternatives','very-low selfie used with unreachable body pose','very-high selfie used with unreachable body pose','Dutch-angle selection replaced by a different angle','peeking pose replaced by ordinary lying pose','laptop/book pose replaced by unrelated seated pose'];
     return (base?base+', ':'')+x.join(', ');
   };
 
