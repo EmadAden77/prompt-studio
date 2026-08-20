@@ -74,6 +74,7 @@ jobs:
               '<script src="bedroom-hidden-strict-contract.js"></script>\n',
               '<script src="gemini-natural-language-bedroom.js"></script>\n',
               '<script src="bedroom-anti-artifact-constraints.js"></script>\n',
+              '<script src="ghalyoon-prompt-optimizer.js"></script>\n',
               '<script src="version-fix.js"></script>\n',
           ]
           for tag in tags:
