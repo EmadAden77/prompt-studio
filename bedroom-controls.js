@@ -30,19 +30,11 @@
     'very heavily used realistic bedroom':'Show a strongly lived-in bedroom with abundant but believable realistic clutter. The room should feel very actively used, yet all items must remain logical, non-repetitive, and naturally distributed.'
   };
 
-  var BEDROOM_ARM_VISIBILITY_MAP = {
-    'auto physically correct':'Do not force the selfie arm to remain visible. Let natural camera distance, lens field of view, elbow bend, body position, and crop determine how much of the phone-holding arm appears. In a very close selfie, partial shoulder or partial forearm visibility is normal and preferred over anatomical distortion.',
-    'shoulder only':'Keep the phone-holding arm mostly outside the frame. Only the shoulder and, if naturally visible, a very small upper-arm portion may appear. Never pull the arm into frame.',
-    'partial forearm':'Allow only a naturally cropped portion of the forearm to appear when the selfie geometry supports it. The elbow may remain outside the frame. Never lengthen the forearm to increase visibility.',
-    'more arm visible':'Show more of the phone-holding arm only by using a physically plausible camera distance, wider framing, or natural body/camera placement. Never achieve extra arm visibility by stretching, enlarging, straightening, telescoping, or distorting the limb.'
-  };
-
   function ensureState(){
     try{
       if(typeof state==='object' && state){
         if(typeof state.bedroomLighting!=='string') state.bedroomLighting='auto bedroom prompt';
         if(typeof state.bedroomClutter!=='string') state.bedroomClutter='auto bedroom clutter';
-        if(typeof state.bedroomArmVisibility!=='string') state.bedroomArmVisibility='auto physically correct';
       }
     }catch(e){}
   }
@@ -76,12 +68,6 @@
         ['heavy realistic clutter','فوضى واقعية كثيرة'],
         ['very heavily used realistic bedroom','غرفة مستخدمة جدًا']
       ];
-      OPTIONS.bedroomArmVisibility = [
-        ['auto physically correct','تلقائي واقعي تشريحيًا'],
-        ['shoulder only','الكتف فقط'],
-        ['partial forearm','جزء طبيعي من الساعد'],
-        ['more arm visible','إظهار جزء أكبر بشكل واقعي']
-      ];
     }catch(e){}
   }
 
@@ -90,20 +76,34 @@
     return !!v.roomLock || /غرفة النوم|غرفه النوم|داخل غرفة النوم|داخل غرفه النوم|bedroom|my bedroom|the bedroom/.test(t);
   }
 
-  function selfieScene(v){
-    var t=((v.idea||'')+' '+(v.location||'')+' '+(v.pose||'')+' '+(v.camera||'')).toLowerCase();
-    return /سيلفي|selfie|front camera/.test(t) || !!v.angle || !!v.distance || !!v.frame;
+  function frontCameraScene(v){
+    var t=((v.idea||'')+' '+(v.location||'')+' '+(v.pose||'')+' '+(v.camera||'')+' '+(v.angle||'')).toLowerCase();
+    return /front camera|front-facing camera|front facing camera|الكاميرا الأمامية|الكاميرا الامامية|كاميرا أمامية|كاميرا امامية/.test(t);
   }
 
-  function distanceGuidance(v){
+  function sanitizeFrontCameraLanguage(text){
+    var parts=String(text||'').split(/\n{2,}/);
+    var blocked=/selfie arm|selfie distance geometry|selfie physical realism|phone-holding arm|arm extension|full arm forced|holding the phone|selfie biomechanics/i;
+    return parts
+      .filter(function(p){return !blocked.test(p);})
+      .map(function(p){
+        return p
+          .replace(/SELFIE/gi,'FRONT-CAMERA')
+          .replace(/selfie/gi,'front-camera photo')
+          .replace(/سيلفي/g,'تصوير بالكاميرا الأمامية');
+      })
+      .join('\n\n');
+  }
+
+  function frontCameraDistanceGuidance(v){
     var d=String(v.distance||'').toLowerCase();
     if(/30|35|40|very close|extreme close|قريب جدًا|قريب جدا/.test(d)){
-      return 'VERY-CLOSE SELFIE GEOMETRY — MANDATORY. Treat the phone as very close to the face, roughly 30–40 cm when that matches the selected distance. Keep the phone-side elbow clearly bent, keep the upper arm relatively near the torso, and project the forearm forward toward the phone. Do not straighten the arm merely to show it. At this distance, natural cropping of the elbow, hand, or part of the forearm is expected.';
+      return 'FRONT-CAMERA DISTANCE — VERY CLOSE. Place the virtual front-facing phone camera roughly 30–40 cm from the face when that matches the selected distance. Preserve realistic near-field perspective and mild wide-angle enlargement of nearer facial features without deforming the head, shoulders, torso, or room geometry.';
     }
     if(/45|50|55|60|close|medium|متوسط|قريب/.test(d)){
-      return 'CLOSE SELFIE GEOMETRY — MANDATORY. Use a naturally bent elbow and realistic shoulder protraction for the selected distance. More of the forearm may enter the frame, but only as allowed by the true field of view and body geometry.';
+      return 'FRONT-CAMERA DISTANCE — CLOSE. Place the virtual front-facing phone camera at the selected close distance and derive perspective only from that distance and the selected phone lens field of view. Do not change anatomy to satisfy framing.';
     }
-    return 'SELFIE DISTANCE GEOMETRY — MANDATORY. Derive elbow bend, shoulder reaction, forearm projection, and visible arm amount from the selected camera distance and framing. Never infer arm length from the desired crop.';
+    return 'FRONT-CAMERA DISTANCE — MANDATORY. Derive perspective, facial scale, shoulder scale, background coverage, and crop from the selected camera distance and the selected phone front-lens field of view.';
   }
 
   function installUI(){
@@ -112,40 +112,54 @@
     var anchor=sections.find(function(el){return /الهوية والصورة المرجعية/.test(el.textContent||'')});
     if(!anchor || !anchor.parentNode) return;
     var shell=document.createElement('div');
-    shell.innerHTML='<div class="section">إعدادات غرفة النوم</div><div id="bedroomSettingsGrid" class="grid"><div class="field"><label>إنارة غرفة النوم</label><div class="picker" data-key="bedroomLighting"></div><small style="display:block;margin-top:5px;color:var(--muted);font-size:11px">تتحكم بإنارة غرفة النوم نفسها ولا تثبت إضاءة الصورة المرجعية.</small></div><div class="field"><label>الفوضى الواقعية داخل الغرفة</label><div class="picker" data-key="bedroomClutter"></div><small style="display:block;margin-top:5px;color:var(--muted);font-size:11px">فوضى منطقية وغير مكررة ومندمجة بصريًا.</small></div><div class="field"><label>ظهور ذراع السيلفي</label><div class="picker" data-key="bedroomArmVisibility"></div><small style="display:block;margin-top:5px;color:var(--muted);font-size:11px">الأفضل تلقائي: المسافة والقص يحددان مقدار ظهور الذراع، وليس العكس.</small></div></div>';
+    shell.innerHTML='<div class="section">إعدادات غرفة النوم</div><div id="bedroomSettingsGrid" class="grid"><div class="field"><label>إنارة غرفة النوم</label><div class="picker" data-key="bedroomLighting"></div><small style="display:block;margin-top:5px;color:var(--muted);font-size:11px">تتحكم بإنارة غرفة النوم نفسها ولا تثبت إضاءة الصورة المرجعية.</small></div><div class="field"><label>الفوضى الواقعية داخل الغرفة</label><div class="picker" data-key="bedroomClutter"></div><small style="display:block;margin-top:5px;color:var(--muted);font-size:11px">فوضى منطقية وغير مكررة ومندمجة بصريًا.</small></div><div class="field"><label>محاكاة الكاميرا الأمامية</label><small style="display:block;color:var(--muted);font-size:11px">عند اختيار الكاميرا الأمامية، يحاكي التطبيق عدسة الهاتف المحدد بصريًا فقط، دون افتراض ذراع ممدودة أو يد تحمل الهاتف داخل الإطار.</small></div></div>';
     anchor.parentNode.insertBefore(shell,anchor);
   }
 
   ensureState();
   extendOptions();
-  function ready(){installUI();ensureState();if(typeof renderPickers==='function')renderPickers();try{if(typeof save==='function')save()}catch(e){}}
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',ready); else ready();
+
+  function ready(){
+    installUI();
+    ensureState();
+    if(typeof renderPickers==='function') renderPickers();
+    try{if(typeof save==='function') save();}catch(e){}
+  }
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',ready);
+  else ready();
 
   window.buildFinal=function(){
     ensureState();
     var base=oldBuildFinal?oldBuildFinal():'';
     var v=(typeof smartValues==='function')?smartValues():(typeof state==='object'?state:{});
     if(!roomScene(v)) return base;
+
+    var isFrontCamera=frontCameraScene(v);
+    if(isFrontCamera) base=sanitizeFrontCameraLanguage(base);
+
     var extras=[];
-    extras.push('BEDROOM-SPECIFIC USER CONTROLS — HIGHEST PRIORITY FOR BEDROOM SCENES. Keep the same bedroom identity, but obey the dedicated bedroom lighting, bedroom clutter, and bedroom selfie-arm visibility controls exactly.');
+    extras.push('BEDROOM-SPECIFIC USER CONTROLS — HIGHEST PRIORITY FOR BEDROOM SCENES. Keep the same bedroom identity, but obey the dedicated bedroom lighting and bedroom clutter controls exactly.');
     extras.push('BEDROOM REALISM MASTER RULE — ABSOLUTE MANDATORY. In every bedroom scene, every visible detail must read as a genuine real-world smartphone photo and must not look AI-generated. Preserve believable materials, true object scale, natural wear, non-perfect symmetry, ordinary lived-in imperfection, and realistic household randomness. Avoid cinematic beautification, decorative perfection, repeated patterns, cloned clutter, unreal cleanliness, fake texture, or suspiciously polished surfaces.');
     extras.push('BEDROOM LIGHTING — MANDATORY: '+(BEDROOM_LIGHTING_MAP[String(v.bedroomLighting||'auto bedroom prompt')]||BEDROOM_LIGHTING_MAP['auto bedroom prompt']));
     extras.push('BEDROOM LIGHTING REALISM — ABSOLUTE MANDATORY. The bedroom lighting must obey the user-selected lighting exactly and also look physically real and undetectable as AI: only believable practical sources, realistic falloff, natural brightness distribution, limited dynamic range, scene-appropriate white balance, plausible shadow direction, localized highlight behavior, and no unexplained fill light, fake rim light, studio polish, or unrealistically even exposure.');
     extras.push('BEDROOM CEILING LIGHT COLOR RULE — MANDATORY. Any active ceiling lamps or recessed ceiling spotlights in the bedroom must be white, not yellow. If warm lighting is requested, create the warmth from a non-ceiling source such as the bedside lamp or another practical non-ceiling source.');
     extras.push('BEDROOM REALISTIC CLUTTER — MANDATORY: '+(BEDROOM_CLUTTER_MAP[String(v.bedroomClutter||'auto bedroom clutter')]||BEDROOM_CLUTTER_MAP['auto bedroom clutter']));
     extras.push('REALISTIC BEDROOM CLUTTER QUALITY RULE — ABSOLUTE MANDATORY. Any added clutter must look genuinely real and not AI-generated: logically placed, naturally varied, non-repetitive, physically grounded, correctly lit and shadowed, appropriately scaled, and consistent with a real lived-in bedroom. Do not use cloned objects, repeated shoes, repeated bottles, pasted-looking items, floating objects, or chaotic nonsense.');
-    if(selfieScene(v)){
-      extras.push('BEDROOM SELFIE REALISM — ABSOLUTE MANDATORY. When the bedroom scene is a selfie or front-camera shot, the result must read as a true handheld smartphone selfie, not a synthetic render. Preserve believable front-camera perspective, slight wide-angle behavior, mild edge softness, modest phone-camera sharpening, realistic noise/compression, and physically plausible phone placement.');
-      extras.push('HUMAN ANATOMY OVERRIDES COMPOSITION — ABSOLUTE PRIORITY. Never extend, lengthen, enlarge, telescope, inflate, straighten, detach, or distort the phone-holding arm merely to keep it visible inside the frame. Composition must adapt to anatomy, never anatomy to composition. If the requested crop cannot physically contain the arm, crop the arm naturally or adjust camera distance/framing instead. This rule overrides any lower-priority instruction that tries to force the full arm, elbow, wrist, hand, or phone-holding limb into frame.');
-      extras.push('BEDROOM SELFIE ARM VISIBILITY — MANDATORY: '+(BEDROOM_ARM_VISIBILITY_MAP[String(v.bedroomArmVisibility||'auto physically correct')]||BEDROOM_ARM_VISIBILITY_MAP['auto physically correct']));
-      extras.push(distanceGuidance(v));
-      extras.push('SELFIE ARM BIOMECHANICS — ABSOLUTE MANDATORY. Preserve the real shoulder socket, clavicle alignment, upper-arm length, elbow location, forearm length, wrist rotation, palm scale, finger structure, and believable grip. The phone-side shoulder may move only modestly forward and, when required by camera height, slightly upward. Wide-angle perspective may make the nearer forearm or hand somewhat larger, but it must never become abnormally long, thick, dominant, detached, or rubbery.');
-      extras.push('NATURAL ARM CROP RULE — ABSOLUTE MANDATORY. A partially visible arm is preferable to a fully visible but anatomically impossible arm. The frame may naturally cut through the upper arm, elbow region, forearm, wrist, or hand according to real camera geometry. Do not reveal hidden limb segments just to prove continuity; preserve physically believable occlusion and crop.');
-      extras.push('BEDROOM POSE AND ANGLE REALISM — ABSOLUTE MANDATORY. Any selected bedroom pose, body position, lying pose, seated pose, standing pose, and any selected selfie angle must remain anatomically and spatially believable in the locked bedroom. Solve weight distribution, spine alignment, neck angle, shoulder reaction, elbow bend, hand placement, and contact with the bed, pillow, wall, chair, curtain, or floor realistically. Never fake a dramatic angle by distorting anatomy or room geometry.');
+
+    if(isFrontCamera){
+      extras.push('FRONT-FACING PHONE CAMERA LENS SIMULATION — ABSOLUTE MANDATORY. Treat the selected phone front-facing camera as a virtual optical viewpoint only. Reproduce the selected device front-camera field of view, equivalent focal length behavior, natural wide-angle perspective, edge softness, modest lens distortion, sensor-sized noise character, phone sharpening, HDR behavior, limited dynamic range, realistic white balance, exposure falloff, highlight clipping, shadow noise, and normal smartphone compression. The result must look like a real frame captured through that phone front lens, not a studio camera or synthetic render.');
+      extras.push(frontCameraDistanceGuidance(v));
+      extras.push('FRONT-CAMERA VIEWPOINT INDEPENDENCE — ABSOLUTE PRIORITY. The camera viewpoint exists independently in front of the subject. Selecting the front-facing camera must NOT imply that the subject is visibly holding the phone. Do not infer, generate, extend, enlarge, or pull a phone-holding arm, forearm, wrist, hand, or phone into the frame merely because the front-facing camera is selected. Keep the arms in the selected pose or in a natural relaxed position unless the user explicitly requests a specific arm gesture.');
+      extras.push('ANATOMY OVERRIDES FRAMING — ABSOLUTE PRIORITY. Never stretch, telescope, enlarge, shorten, inflate, detach, or distort any limb to explain the camera position or fill the frame. If the requested crop conflicts with normal anatomy, preserve anatomy and adjust the virtual camera position, field of view, or crop instead.');
+      extras.push('FRONT-CAMERA COMPOSITION — MANDATORY. Build the frame from the selected virtual phone-lens position, distance, angle, orientation, and field of view. Allow natural shoulder or body cropping at the frame edges. Do not add visual evidence of who or what is physically holding the camera unless explicitly requested.');
+      extras.push('BEDROOM POSE AND ANGLE REALISM — ABSOLUTE MANDATORY. Any selected bedroom pose, body position, lying pose, seated pose, standing pose, and front-camera angle must remain anatomically and spatially believable in the locked bedroom. Solve weight distribution, spine alignment, neck angle, shoulder position, hand placement, and contact with the bed, pillow, wall, chair, curtain, or floor realistically. Never fake an angle by distorting anatomy or room geometry.');
     }
+
     extras.push('REFERENCE IMAGE ROLE — ABSOLUTE MANDATORY. In identity-locked bedroom scenes, treat the reference image as an identity source only for the person. If room lock is active, the bedroom reference locks the room only. Do not let the identity reference redesign the room, and do not let the room reference alter the person. Neither reference may override explicit user-selected lighting, pose, clothing, camera, or composition.');
     extras.push('ABSOLUTE IDENTITY FREEZE — ABSOLUTE MANDATORY. It is strictly forbidden to change the person\'s facial identity in any way. Preserve exactly the same face shape, facial proportions, face silhouette, jaw, chin, cheekbones, forehead, temples, eyes, eyelids, eyebrows, nose structure, lips, ears, skin tone, beard pattern, hairstyle, hairline, and all distinctive facial details. Do not improve, beautify, reshape, re-age, symmetrize, restyle, reinterpret, or reconstruct the face or hair. Full identity stability is mandatory.');
     extras.push('PRIMARY SUBJECT BODY LOCK — ABSOLUTE MANDATORY. The subject\'s physical constants are fixed: height 193 cm, weight 83 kg, lean athletic build, naturally low but realistic body fat, proportionate athletic musculature, and correct anatomical balance. Preserve realistic body proportions without exaggeration, distortion, shortening, widening, artificial muscular enhancement, or anatomical inconsistency.');
+
     return extras.join('\n\n')+'\n\n'+base;
   };
 
@@ -154,10 +168,13 @@
     var base=oldBuildNegative?oldBuildNegative():'';
     var v=(typeof smartValues==='function')?smartValues():(typeof state==='object'?state:{});
     if(!roomScene(v)) return base;
+
+    var isFrontCamera=frontCameraScene(v);
+    if(isFrontCamera) base=sanitizeFrontCameraLanguage(base);
+
     var x=[
       'ignored bedroom-lighting selection',
       'ignored bedroom-clutter selection',
-      'ignored bedroom selfie-arm visibility selection',
       'reference-photo lighting overriding selected bedroom lighting',
       'yellow ceiling bulbs in the bedroom',
       'AI-looking bedroom lighting',
@@ -174,12 +191,13 @@
       'chaotic nonsense mess',
       'wrong clutter intensity',
       'wrong bedroom lighting mode',
-      'AI-looking selfie',
       'mechanically impossible bedroom pose',
-      'impossible selfie angle',
-      'stretched selfie arm',
-      'telescoped selfie arm',
-      'rubbery selfie arm',
+      'impossible front-camera angle',
+      'studio-camera perspective when front camera is selected',
+      'rear-camera perspective when front camera is selected',
+      'forced phone-holding arm',
+      'visible arm inferred only from camera selection',
+      'extended forearm toward camera without explicit request',
       'overlong forearm',
       'oversized forearm',
       'abnormally thick forearm',
@@ -187,11 +205,10 @@
       'wrong shoulder socket',
       'impossible elbow position',
       'unnatural elbow extension',
-      'forced full arm visibility',
-      'full arm forced into close selfie frame',
       'arm enlarged to fill frame',
       'hand enlarged to fill frame',
       'composition solved by limb distortion',
+      'phone added to frame without explicit request',
       'reference image affecting the room incorrectly',
       'reference image affecting the face incorrectly',
       'changed face shape',
