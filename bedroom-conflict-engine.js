@@ -4,6 +4,9 @@
 
   var AUTO='__auto_prompt__';
   var CAMERA='Xiaomi 15 Ultra front camera';
+  var ARM_SUBTLE='bedroom_arm_subtle';
+  var ARM_HIDDEN='bedroom_arm_hidden';
+  var ARM_AUTO='bedroom_arm_auto';
 
   var FRAME_OPTIONS=[
     ['','تلقائي حسب الوضعية والزاوية'],
@@ -17,6 +20,12 @@
     ['looking directly into the front camera lens','ينظر إلى عدسة الكاميرا'],
     ['looking naturally at the phone screen','ينظر طبيعيًا إلى شاشة الهاتف'],
     ['looking slightly away from the lens naturally','ينظر بعيدًا قليلًا بشكل عفوي']
+  ];
+
+  var ARM_VISIBILITY_OPTIONS=[
+    [ARM_SUBTLE,'ظهور طبيعي خفيف — موصى به'],
+    [ARM_AUTO,'تلقائي حسب الزاوية'],
+    [ARM_HIDDEN,'مخفي بالكامل']
   ];
 
   var FREE_COMMON=[
@@ -41,6 +50,15 @@
     return 'standing';
   }
   function allowedValues(list){return list.map(function(x){return x[0]})}
+  function armVisibility(){
+    var v=String(S().selfieArmVisibility||'');
+    return allowedValues(ARM_VISIBILITY_OPTIONS).indexOf(v)!==-1?v:ARM_SUBTLE;
+  }
+  function armVisibilityLabel(v){
+    if(v===ARM_HIDDEN)return 'fully hidden';
+    if(v===ARM_AUTO)return 'automatic by selected angle';
+    return 'subtle natural edge visibility';
+  }
 
   function freeOptions(){
     var p=poseClass(),x=FREE_COMMON.slice();
@@ -79,6 +97,8 @@
     if(gv.indexOf(String(s.gaze||''))===-1)s.gaze='';
     var fh=allowedValues(freeOptions());
     if(fh.indexOf(String(s.freeHandPose||AUTO))===-1)s.freeHandPose=AUTO;
+    var av=allowedValues(ARM_VISIBILITY_OPTIONS);
+    if(av.indexOf(String(s.selfieArmVisibility||''))===-1)s.selfieArmVisibility=ARM_SUBTLE;
   }
 
   function syncOptions(){
@@ -87,12 +107,26 @@
     OPTIONS.gaze=GAZE_OPTIONS.slice();
     OPTIONS.freeHandPose=freeOptions();
     OPTIONS.selfieBodyPose=[[AUTO,'تلقائي حسب وضعية الشخص']];
+    OPTIONS.selfieArmVisibility=ARM_VISIBILITY_OPTIONS.slice();
     syncState();
   }
 
   function hideField(key){var p=q('.picker[data-key="'+key+'"]');var f=p&&p.closest('.field');if(f)f.style.display='none'}
 
+  function ensureArmVisibilityField(){
+    if(q('#bedroomArmVisibilityField'))return;
+    var angle=q('.picker[data-key="angle"]');
+    var af=angle&&angle.closest('.field');
+    if(!af||!af.parentNode)return;
+    var f=document.createElement('div');
+    f.className='field';
+    f.id='bedroomArmVisibilityField';
+    f.innerHTML='<label>ظهور ذراع السيلفي</label><div class="picker" data-key="selfieArmVisibility"></div><small class="historyHint" style="display:block;margin-top:6px;line-height:1.6">الهاتف يبقى خارج الصورة دائمًا. الخيار يتحكم فقط بمقدار ظهور جزء طبيعي من ذراع التصوير عند حافة الكادر.</small>';
+    af.insertAdjacentElement('afterend',f);
+  }
+
   function installUI(){
+    ensureArmVisibilityField();
     syncState();
     var camera=q('#camera');
     if(camera){
@@ -126,7 +160,7 @@
     if(pf){
       var n=q('#bedroomConflictStatus');
       if(!n){n=document.createElement('small');n.id='bedroomConflictStatus';n.className='historyHint';n.style.display='block';n.style.marginTop='6px';n.style.lineHeight='1.6';pf.appendChild(n)}
-      n.textContent='منع التعارض فعال: الوضعية والزاوية اختيارات صريحة، بينما المسافة والقص وهندسة الهاتف تُحل تلقائيًا.';
+      n.textContent='منع التعارض فعال: الوضعية والزاوية وظهور الذراع اختيارات صريحة، بينما المسافة والقص وهندسة الهاتف تُحل تلقائيًا.';
     }
 
     var fh=q('.picker[data-key="freeHandPose"]');
@@ -137,7 +171,12 @@
 
   var previousRender=window.renderPickers;
   if(typeof previousRender==='function'){
-    window.renderPickers=function(){syncOptions();previousRender();installUI()};
+    window.renderPickers=function(){
+      ensureArmVisibilityField();
+      syncOptions();
+      previousRender();
+      installUI();
+    };
   }
 
   function stripHiddenControlLines(text){
@@ -157,7 +196,8 @@
     var fh=String(s.freeHandPose||AUTO);
     var free=fh===AUTO?'automatic and posture-compatible':fh;
     var angle=String(s.angle||'').trim()||'selected by the bedroom angle control';
-    return 'BEDROOM CONTROL CONFLICT POLICY — MANDATORY. Resolve the bedroom controls as one coherent system. Priority order: explicit user selections; identity and 193 cm / 83 kg body lock; selected bedroom pose; selected compatible selfie angle; true self-taken selfie mechanics; selected clothing; dedicated bedroom lighting; dedicated bedroom clutter; Xiaomi 15 Ultra front-camera behavior; then realism details. Hidden or disabled generic controls must contribute no instruction. MAIN POSTURE CLASS: '+p+'. SELECTED SELFIE ANGLE: '+angle+'. CAMERA: '+CAMERA+'. FREE HAND: '+free+'. Camera-to-face distance, exact virtual phone position and crop remain automatic. The camera-holding arm is physically extended to take the selfie but remains outside the captured frame. The dedicated bedroom-lighting selection is the only lighting-control authority; time of day may alter exposure, ambient spill, white balance and noise but must not invent a conflicting light source. If any lower-priority instruction conflicts with a higher-priority control, discard the lower-priority instruction rather than averaging the two.';
+    var vis=armVisibility();
+    return 'BEDROOM CONTROL CONFLICT POLICY — MANDATORY. Resolve the bedroom controls as one coherent system. Priority order: explicit user selections; identity and 193 cm / 83 kg body lock; selected bedroom pose; selected compatible selfie angle; selected camera-arm visibility; true self-taken selfie mechanics; selected clothing; dedicated bedroom lighting; dedicated bedroom clutter; Xiaomi 15 Ultra front-camera behavior; then realism details. Hidden or disabled generic controls must contribute no instruction. MAIN POSTURE CLASS: '+p+'. SELECTED SELFIE ANGLE: '+angle+'. CAMERA-ARM VISIBILITY: '+armVisibilityLabel(vis)+'. CAMERA: '+CAMERA+'. FREE HAND: '+free+'. Camera-to-face distance, exact virtual phone position and crop remain automatic. The camera-holding arm must be physically extended with relaxed biomechanics and a soft elbow bend rather than a rigid straight line. The phone itself remains outside the captured image in every ordinary front-camera bedroom selfie. The dedicated bedroom-lighting selection is the only lighting-control authority; time of day may alter exposure, ambient spill, white balance and noise but must not invent a conflicting light source. If any lower-priority instruction conflicts with a higher-priority control, discard the lower-priority instruction rather than averaging the two.';
   }
 
   var oldFinal=window.buildFinal;
@@ -174,11 +214,17 @@
     syncOptions();
     var base=oldNegative?oldNegative():'';
     var x=[
-      'conflicting bedroom controls','hidden generic lighting overriding bedroom lighting','hidden background control overriding locked bedroom','hidden image-condition control overriding bedroom scene','manual selfie distance overriding automatic bedroom camera','secondary body-pose control overriding main posture','two conflicting bedroom selfie angles','selected selfie angle incompatible with selected pose','automatic camera angle overriding selected bedroom angle','free-hand gesture incompatible with selected posture','non-Xiaomi camera substitution in bedroom','camera field changing away from Xiaomi 15 Ultra front camera','time of day inventing a conflicting light source','lower-priority realism rule overriding explicit user selection'
+      'conflicting bedroom controls','hidden generic lighting overriding bedroom lighting','hidden background control overriding locked bedroom','hidden image-condition control overriding bedroom scene','manual selfie distance overriding automatic bedroom camera','secondary body-pose control overriding main posture','two conflicting bedroom selfie angles','selected selfie angle incompatible with selected pose','automatic camera angle overriding selected bedroom angle','camera-arm visibility control ignored','free-hand gesture incompatible with selected posture','non-Xiaomi camera substitution in bedroom','camera field changing away from Xiaomi 15 Ultra front camera','time of day inventing a conflicting light source','lower-priority realism rule overriding explicit user selection'
     ];
     return (base?base+', ':'')+x.join(', ');
   };
 
-  function boot(){syncOptions();if(typeof window.renderPickers==='function')window.renderPickers();else installUI();setTimeout(installUI,120);setTimeout(installUI,500)}
+  function boot(){
+    ensureArmVisibilityField();
+    syncOptions();
+    if(typeof window.renderPickers==='function')window.renderPickers();else installUI();
+    setTimeout(installUI,120);
+    setTimeout(installUI,500);
+  }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
