@@ -47,7 +47,6 @@ jobs:
               '<script src="scene-pages.js"></script>\n',
               '<script src="smart-workflow.js"></script>\n',
               '<script src="selfie-arm-auto.js"></script>\n',
-              '<script src="realism-consistency.js"></script>\n',
           ]
           for tag in tags:
               if tag not in s:
