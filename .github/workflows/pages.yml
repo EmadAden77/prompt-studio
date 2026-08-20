@@ -48,6 +48,7 @@ jobs:
               '<script src="smart-workflow.js"></script>\n',
               '<script src="selfie-arm-auto.js"></script>\n',
               '<script src="bedroom-clothing-options.js"></script>\n',
+              '<script src="bedroom-pose-angle-options.js"></script>\n',
               '<script src="version-fix.js"></script>\n',
           ]
           for tag in tags:
