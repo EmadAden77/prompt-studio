@@ -45,6 +45,7 @@ jobs:
               '<script src="selfie-body-controls.js"></script>\n',
               '<script src="conflict-guard.js"></script>\n',
               '<script src="scene-pages.js"></script>\n',
+              '<script src="smart-workflow.js"></script>\n',
           ]
           for tag in tags:
               if tag not in s:
