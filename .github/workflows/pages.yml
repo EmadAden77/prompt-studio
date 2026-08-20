@@ -76,6 +76,7 @@ jobs:
               '<script src="bedroom-anti-artifact-constraints.js"></script>\n',
               '<script src="ghalyoon-prompt-optimizer.js"></script>\n',
               '<script src="prompt-output-compactor.js"></script>\n',
+              '<script src="bedroom-absolute-reference-room-lock.js"></script>\n',
               '<script src="version-fix.js"></script>\n',
           ]
           for tag in tags:
