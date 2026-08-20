@@ -52,6 +52,7 @@ jobs:
               '<script src="bedroom-clothing-lock.js"></script>\n',
               '<script src="bedroom-selfie-framing-lock.js"></script>\n',
               '<script src="authentic-selfie-realism.js"></script>\n',
+              '<script src="gemini-compliance-lock.js"></script>\n',
               '<script src="version-fix.js"></script>\n',
           ]
           for tag in tags:
