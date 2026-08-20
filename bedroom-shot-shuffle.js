@@ -6,30 +6,40 @@
   var oldNegative=window.buildNegative;
   var lastKey='';
 
+  /*
+    SAFE SHUFFLE ONLY.
+    Deliberately excludes very-high, overhead, ground-low, side-bed,
+    seated-down and Dutch-angle combinations from random selection.
+    Those angles remain available manually elsewhere in the app.
+  */
   var SHOTS=[
     {pose:'bedroom_standing_beside',angle:'bedroom_angle_eye_34',location:'beside the bed in the clear walking area'},
     {pose:'bedroom_standing_center',angle:'bedroom_angle_high',location:'in the middle of the bedroom with the bed naturally behind the subject'},
     {pose:'bedroom_standing_wall_back',angle:'bedroom_angle_eye_front',location:'against an existing clear bedroom wall'},
     {pose:'bedroom_standing_doorframe',angle:'bedroom_angle_eye_offset',location:'at the existing near-left bedroom doorway'},
     {pose:'bedroom_standing_dresser',angle:'bedroom_angle_high_34',location:'in front of the existing right-side dresser with believable clearance'},
-    {pose:'bedroom_standing_corner',angle:'bedroom_angle_dutch',location:'in a real clear corner or edge zone of the canonical bedroom'},
-    {pose:'bedroom_standing_foot_bed',angle:'bedroom_angle_very_high',location:'at the accessible foot/end of the bed'},
+    {pose:'bedroom_standing_corner',angle:'bedroom_angle_eye_offset',location:'in a real clear corner or edge zone of the canonical bedroom'},
+    {pose:'bedroom_standing_foot_bed',angle:'bedroom_angle_high_34',location:'at the accessible foot/end of the bed'},
     {pose:'bedroom_standing_head_wall',angle:'bedroom_angle_eye_34',location:'close to an existing bedroom wall with gentle head contact'},
     {pose:'bedroom_standing_wardrobe_door',angle:'bedroom_angle_shoulder_side',location:'partly behind one real opened wardrobe door with believable clearance'},
     {pose:'bedroom_standing_curtain',angle:'bedroom_angle_high',location:'near the canonical far-wall curtain and window area'},
-    {pose:'bedroom_standing_wardrobe',angle:'bedroom_angle_low',location:'near the existing wardrobe and dressing area'},
-    {pose:'bedroom_sitting_edge',angle:'bedroom_angle_seated_down',location:'seated at the edge of the canonical bed'},
-    {pose:'bedroom_sitting_floor',angle:'bedroom_angle_ground_low',location:'on the floor beside the bed in a clear physically reachable spot'},
-    {pose:'bedroom_reclining_pillows',angle:'bedroom_angle_high_34',location:'on the bed supported by the existing pillows'},
-    {pose:'bedroom_leaning_headboard',angle:'bedroom_angle_eye_offset',location:'on the bed leaning against the existing headboard or supporting pillows'},
-    {pose:'bedroom_crosslegged_bed',angle:'bedroom_angle_high',location:'on the canonical bed with enough mattress area for the seated pose'},
-    {pose:'bedroom_one_knee_bed',angle:'bedroom_angle_low',location:'on the canonical bed in a stable one-knee-raised seated position'},
-    {pose:'bedroom_lying_pillow',angle:'bedroom_angle_overhead',location:'lying on the canonical bed with the head supported by the existing pillow'},
-    {pose:'bedroom_lying_side',angle:'bedroom_angle_side_bed',location:'lying on one side on the canonical bed'},
-    {pose:'bedroom_peeking_blanket',angle:'bedroom_angle_very_high',location:'in the canonical bed under the existing blanket and pillows'},
+    {pose:'bedroom_standing_wardrobe',angle:'bedroom_angle_eye_34',location:'near the existing wardrobe and dressing area'},
+    {pose:'bedroom_sitting_edge',angle:'bedroom_angle_eye_front',location:'seated at the edge of the canonical bed'},
+    {pose:'bedroom_leaning_headboard',angle:'bedroom_angle_eye_34',location:'on the bed leaning against the existing headboard or supporting pillows'},
     {pose:'bedroom_holding_pillow',angle:'bedroom_angle_eye_front',location:'on the canonical bed while naturally holding the existing pillow or blanket'},
-    {pose:'bedroom_laptop_book_bed',angle:'bedroom_angle_eye_34',location:'seated on the canonical bed with the selected single laptop or book context'}
+    {pose:'bedroom_laptop_book_bed',angle:'bedroom_angle_eye_34',location:'seated on the canonical bed with the selected single laptop or book context'},
+    {pose:'bedroom_standing_beside',angle:'bedroom_angle_low',location:'beside the bed in the clear walking area',low:true},
+    {pose:'bedroom_standing_wardrobe',angle:'bedroom_angle_low',location:'near the existing wardrobe and dressing area',low:true}
   ];
+
+  var FORBIDDEN_RANDOM_ANGLES={
+    bedroom_angle_very_high:1,
+    bedroom_angle_overhead:1,
+    bedroom_angle_ground_low:1,
+    bedroom_angle_side_bed:1,
+    bedroom_angle_seated_down:1,
+    bedroom_angle_dutch:1
+  };
 
   function S(){try{return typeof state==='object'&&state?state:{}}catch(e){return {}}}
   function saveNow(){try{if(typeof save==='function')save()}catch(e){}}
@@ -41,20 +51,29 @@
   function handCompatible(pose){
     var t=currentHand();
     if(!t||t==='__auto_prompt__'||/^auto\b/.test(t)||/تلقائي/.test(t))return true;
-    if(/pillow|blanket|وسادة|وساده|بطاني/.test(t))return /holding_pillow|peeking_blanket|reclining_pillows|crosslegged_bed|one_knee_bed|lying_pillow|lying_side|leaning_headboard|sitting_edge/.test(pose);
-    if(/thigh|knee|فخذ|ركبة|ركبه/.test(t))return /sitting_edge|sitting_floor|holding_pillow|laptop_book_bed|crosslegged_bed|one_knee_bed|leaning_headboard/.test(pose);
+    if(/pillow|blanket|وسادة|وساده|بطاني/.test(t))return /holding_pillow|leaning_headboard|sitting_edge/.test(pose);
+    if(/thigh|knee|فخذ|ركبة|ركبه/.test(t))return /sitting_edge|laptop_book_bed|leaning_headboard/.test(pose);
     if(/by the side|relaxed.*side|متدلية|متدلي|pants pocket|front pants pocket|resting naturally on the hip|house or car keys/.test(t))return /^bedroom_standing_/.test(pose);
-    if(/bed beside|resting.*bed|على السرير/.test(t))return /sitting_edge|reclining_pillows|lying_pillow|lying_side|holding_pillow|peeking_blanket|laptop_book_bed|crosslegged_bed|one_knee_bed|leaning_headboard/.test(pose);
-    if(/bedside table|nightstand/.test(t))return /standing_beside|sitting_edge|reclining_pillows/.test(pose);
-    if(/bed headboard|bed frame/.test(t))return /leaning_headboard|reclining_pillows|sitting_edge|crosslegged_bed|one_knee_bed/.test(pose);
-    if(/partially open book|folded magazine/.test(t))return /sitting_edge|reclining_pillows|leaning_headboard|crosslegged_bed|one_knee_bed|laptop_book_bed/.test(pose);
-    if(/half-empty plastic water bottle|clear glass of water with ice|metal soda can/.test(t))return /^bedroom_standing_/.test(pose)||/sitting_edge|reclining_pillows|leaning_headboard|crosslegged_bed|one_knee_bed|laptop_book_bed/.test(pose);
+    if(/bed beside|resting.*bed|على السرير/.test(t))return /sitting_edge|holding_pillow|laptop_book_bed|leaning_headboard/.test(pose);
+    if(/bedside table|nightstand/.test(t))return /standing_beside|sitting_edge/.test(pose);
+    if(/bed headboard|bed frame/.test(t))return /leaning_headboard|sitting_edge/.test(pose);
+    if(/partially open book|folded magazine/.test(t))return /sitting_edge|leaning_headboard|laptop_book_bed/.test(pose);
+    if(/half-empty plastic water bottle|clear glass of water with ice|metal soda can/.test(t))return /^bedroom_standing_/.test(pose)||/sitting_edge|leaning_headboard|laptop_book_bed/.test(pose);
     return true;
   }
 
-  function cropCompatible(angle){
+  function cropCompatible(x){
     var c=currentCrop();
-    if(c==='bedroom_crop_low_tight')return angle==='bedroom_angle_low'||angle==='bedroom_angle_ground_low';
+    if(FORBIDDEN_RANDOM_ANGLES[x.angle])return false;
+    if(c==='bedroom_crop_low_tight')return x.angle==='bedroom_angle_low';
+    if(x.angle==='bedroom_angle_low')return c==='bedroom_crop_auto_hidden_arm'||c==='bedroom_crop_tight_candid'||c==='bedroom_crop_shoulders_up';
+    return true;
+  }
+
+  function armSafe(x){
+    if(FORBIDDEN_RANDOM_ANGLES[x.angle])return false;
+    if(/lying_|reclining_|peeking_|crosslegged_|one_knee_/.test(x.pose))return false;
+    if(x.angle==='bedroom_angle_low'&&!x.low)return false;
     return true;
   }
 
@@ -67,8 +86,7 @@
   }
 
   function candidates(){
-    var a=SHOTS.filter(function(x){return handCompatible(x.pose)&&cropCompatible(x.angle)});
-    if(!a.length)a=SHOTS.filter(function(x){return cropCompatible(x.angle)});
+    var a=SHOTS.filter(function(x){return armSafe(x)&&handCompatible(x.pose)&&cropCompatible(x)});
     return a;
   }
 
@@ -88,26 +106,44 @@
     return o;
   }
   function restoreSnapshot(o){var s=S();Object.keys(o).forEach(function(k){s[k]=o[k]})}
+  function setShot(x){var s=S();s.pose=x.pose;s.angle=x.angle;s.bedroomShotLocation=x.location}
 
   function applyShot(){
-    var x=choose();if(!x)return;
-    var s=S(),fixed=preserveSnapshot();
-    s.pose=x.pose;s.angle=x.angle;s.bedroomShotLocation=x.location;
+    var x=choose();
+    if(!x){
+      updateStatus(null,true);
+      return;
+    }
+    var fixed=preserveSnapshot();
+    setShot(x);
     lastKey=x.pose+'|'+x.angle+'|'+x.location;
     saveNow();
+
     try{if(typeof window.renderPickers==='function')window.renderPickers()}catch(e){}
+
+    /* Restore every non-shuffle control after dependency/UI reconciliation. */
     restoreSnapshot(fixed);
-    s.pose=x.pose;s.angle=x.angle;s.bedroomShotLocation=x.location;
+    setShot(x);
     saveNow();
+
     try{if(typeof window.renderPickers==='function')window.renderPickers()}catch(e){}
+
+    /* Final state guard: only these three values are allowed to differ. */
+    restoreSnapshot(fixed);
+    setShot(x);
+    saveNow();
     refreshNow();
-    updateStatus(x);
+    updateStatus(x,false);
   }
 
-  function updateStatus(x){
+  function updateStatus(x,blocked){
     var n=document.getElementById('bedroomShotShuffleStatus');if(!n)return;
+    if(blocked){
+      n.textContent='لا توجد لقطة عشوائية آمنة متوافقة مع الكادر ووضعية اليد الحاليين. لم يتم تغيير أي اختيار.';
+      return;
+    }
     var s=S();
-    n.textContent='تم تغيير اللقطة فقط: الوضعية + زاوية السيلفي + المكان داخل الغرفة. باقي الاختيارات بقيت ثابتة. المكان الحالي: '+val((x&&x.location)||s.bedroomShotLocation||'حسب الوضعية الحالية')+'.';
+    n.textContent='Safe Shuffle: تغيّرت فقط الوضعية + زاوية السيلفي + المكان. ذراع التصوير يجب أن تبقى خارج الإطار بالكامل، وكل باقي الاختيارات ثابتة. المكان الحالي: '+val((x&&x.location)||s.bedroomShotLocation||'حسب الوضعية الحالية')+'.';
   }
 
   function installButton(){
@@ -115,7 +151,7 @@
     var wrap=document.getElementById('bedroomShotShuffleField');
     if(!wrap){
       wrap=document.createElement('div');wrap.id='bedroomShotShuffleField';wrap.className='field full';
-      wrap.innerHTML='<button id="bedroomShotShuffleBtn" class="btn secondary" type="button" style="width:100%">🎲 غيّر اللقطة</button><small id="bedroomShotShuffleStatus" class="historyHint" style="display:block;margin-top:7px;line-height:1.6">يغيّر فقط وضعية الشخص وزاوية السيلفي والمكان داخل الغرفة، ويُبقي كل الاختيارات الأخرى ثابتة.</small>';
+      wrap.innerHTML='<button id="bedroomShotShuffleBtn" class="btn secondary" type="button" style="width:100%">🎲 غيّر اللقطة</button><small id="bedroomShotShuffleStatus" class="historyHint" style="display:block;margin-top:7px;line-height:1.6">Safe Shuffle: يغيّر فقط الوضعية والزاوية والمكان، ويستبعد أي تركيبة قد تُظهر ذراع التصوير. جميع الاختيارات الأخرى ثابتة.</small>';
       var pose=document.querySelector('.picker[data-key="pose"]');var pf=pose&&pose.closest('.field');
       if(pf&&pf.parentNode===grid)pf.insertAdjacentElement('afterend',wrap);else grid.appendChild(wrap);
       var b=document.getElementById('bedroomShotShuffleBtn');if(b)b.addEventListener('click',applyShot);
@@ -126,7 +162,7 @@
   function locationRule(){
     var s=S(),loc=val(s.bedroomShotLocation);
     if(!loc)return '';
-    return 'BEDROOM SHOT LOCATION — CURRENT SHUFFLED LOCATION LOCK. Place the subject '+loc+'. This location belongs to the current shot selection and must stay consistent with the selected person pose and selfie angle. Do not move the subject to another part of the room unless the shot-shuffle button or the person pose is changed. This location rule may not alter clothing, facial expression, free-hand pose, lighting, clutter, bed condition, image condition, color response, selfie crop, person identity, or room identity.';
+    return 'BEDROOM SHOT LOCATION — SAFE SHUFFLE LOCATION LOCK. Place the subject '+loc+'. Preserve the selected shuffled pose and selfie angle. ABSOLUTE CAMERA-ARM SAFETY: the entire camera-holding upper arm, elbow, forearm, wrist, hand, fingers, and phone must remain outside every image border. If the composition would expose any camera-side limb fragment, do NOT widen the frame and do NOT reveal the arm; instead make only a tiny physically plausible phone-position, lateral framing, or camera-distance adjustment within the current selected selfie-crop category. The selected selfie crop itself remains unchanged. If full camera-arm exclusion cannot be achieved without violating the selected crop, pose, or anatomy, reject that composition rather than rendering a visible arm. This location rule may not alter clothing, facial expression, free-hand pose, lighting, clutter, bed condition, image condition, color response, selfie crop, person identity, or room identity.';
   }
 
   window.buildFinal=function(){
@@ -138,7 +174,8 @@
   window.buildNegative=function(){
     var base=oldNegative?oldNegative():'';
     if(!val(S().bedroomShotLocation))return base;
-    return (base?base+', ':'')+['shuffled shot location ignored','subject moved to a different bedroom zone','shot shuffle changing clothing','shot shuffle changing facial expression','shot shuffle changing free-hand pose','shot shuffle changing lighting','shot shuffle changing clutter','shot shuffle changing bed condition','shot shuffle changing image condition','shot shuffle changing color response','shot shuffle changing selfie crop'].join(', ');
+    var x=['unsafe shuffled selfie composition','visible camera-holding upper arm','visible camera-holding elbow','visible camera-holding forearm','visible camera-holding wrist','visible camera-holding hand','visible camera-holding fingers','visible phone','extended selfie arm entering frame','wide framing introduced to show camera arm','very-high angle selected by shuffle','ground-low angle selected by shuffle','overhead angle selected by shuffle','side-bed angle selected by shuffle','seated-down angle selected by shuffle','Dutch angle selected by shuffle','shuffled shot location ignored','subject moved to a different bedroom zone','shot shuffle changing clothing','shot shuffle changing facial expression','shot shuffle changing free-hand pose','shot shuffle changing lighting','shot shuffle changing clutter','shot shuffle changing bed condition','shot shuffle changing image condition','shot shuffle changing color response','shot shuffle changing selfie crop'];
+    return (base?base+', ':'')+x.join(', ');
   };
 
   function boot(){installButton();setTimeout(installButton,180);setTimeout(installButton,650)}
