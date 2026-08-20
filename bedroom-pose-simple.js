@@ -27,7 +27,9 @@
     high34:['bedroom_angle_high_34','مرتفعة 3/4 مائلة'],
     eyeOffset:['bedroom_angle_eye_offset','مستوى العين خارج المركز قليلًا'],
     seatedDown:['bedroom_angle_seated_down','قطرية من أعلى أثناء الجلوس'],
-    shoulderSide:['bedroom_angle_shoulder_side','جانبية عند مستوى الكتف']
+    shoulderSide:['bedroom_angle_shoulder_side','جانبية عند مستوى الكتف'],
+    dutch:['bedroom_angle_dutch','زاوية مائلة عفوية'],
+    groundLow:['bedroom_angle_ground_low','منخفضة جدًا قرب مستوى المرتبة/الأرض']
   };
 
   function q(s){return document.querySelector(s)}
@@ -52,17 +54,17 @@
   }
 
   function angleSet(p){
-    if(p==='bedroom_lying_pillow')return [ANGLES.overhead,ANGLES.sideBed,ANGLES.high,ANGLES.eye34,ANGLES.high34];
-    if(p==='bedroom_lying_side')return [ANGLES.sideBed,ANGLES.eye34,ANGLES.high34,ANGLES.overhead,ANGLES.shoulderSide];
-    if(p==='bedroom_reclining_pillows')return [ANGLES.eye34,ANGLES.high,ANGLES.eyeFront,ANGLES.sideBed,ANGLES.overhead,ANGLES.high34,ANGLES.eyeOffset];
-    if(p==='bedroom_leaning_headboard')return [ANGLES.eye34,ANGLES.eyeFront,ANGLES.high,ANGLES.high34,ANGLES.eyeOffset,ANGLES.seatedDown];
-    if(p==='bedroom_holding_pillow')return [ANGLES.eye34,ANGLES.eyeFront,ANGLES.high,ANGLES.sideBed,ANGLES.eyeOffset,ANGLES.seatedDown];
-    if(p==='bedroom_crosslegged_bed')return [ANGLES.eyeFront,ANGLES.eye34,ANGLES.high,ANGLES.seatedDown,ANGLES.eyeOffset,ANGLES.high34];
-    if(p==='bedroom_one_knee_bed')return [ANGLES.eye34,ANGLES.eyeFront,ANGLES.high,ANGLES.low,ANGLES.eyeOffset,ANGLES.seatedDown];
-    if(p==='bedroom_sitting_floor')return [ANGLES.high,ANGLES.low,ANGLES.eye34,ANGLES.eyeFront,ANGLES.high34,ANGLES.eyeOffset,ANGLES.shoulderSide];
-    if(p==='bedroom_sitting_edge')return [ANGLES.eyeFront,ANGLES.eye34,ANGLES.high,ANGLES.low,ANGLES.eyeOffset,ANGLES.seatedDown,ANGLES.shoulderSide];
-    if(p==='bedroom_standing_curtain'||p==='bedroom_standing_wardrobe')return [ANGLES.eyeFront,ANGLES.eye34,ANGLES.high,ANGLES.low,ANGLES.high34,ANGLES.eyeOffset,ANGLES.shoulderSide];
-    return [ANGLES.eyeFront,ANGLES.eye34,ANGLES.high,ANGLES.low,ANGLES.high34,ANGLES.eyeOffset,ANGLES.shoulderSide];
+    if(p==='bedroom_lying_pillow')return [ANGLES.overhead,ANGLES.sideBed,ANGLES.dutch,ANGLES.groundLow,ANGLES.high,ANGLES.eye34,ANGLES.high34];
+    if(p==='bedroom_lying_side')return [ANGLES.sideBed,ANGLES.dutch,ANGLES.groundLow,ANGLES.eye34,ANGLES.high34,ANGLES.overhead,ANGLES.shoulderSide];
+    if(p==='bedroom_reclining_pillows')return [ANGLES.eye34,ANGLES.high,ANGLES.eyeFront,ANGLES.sideBed,ANGLES.overhead,ANGLES.high34,ANGLES.eyeOffset,ANGLES.dutch];
+    if(p==='bedroom_leaning_headboard')return [ANGLES.eye34,ANGLES.eyeFront,ANGLES.high,ANGLES.high34,ANGLES.eyeOffset,ANGLES.seatedDown,ANGLES.dutch];
+    if(p==='bedroom_holding_pillow')return [ANGLES.eye34,ANGLES.eyeFront,ANGLES.high,ANGLES.sideBed,ANGLES.eyeOffset,ANGLES.seatedDown,ANGLES.dutch];
+    if(p==='bedroom_crosslegged_bed')return [ANGLES.eyeFront,ANGLES.eye34,ANGLES.high,ANGLES.seatedDown,ANGLES.eyeOffset,ANGLES.high34,ANGLES.dutch];
+    if(p==='bedroom_one_knee_bed')return [ANGLES.eye34,ANGLES.eyeFront,ANGLES.high,ANGLES.low,ANGLES.eyeOffset,ANGLES.seatedDown,ANGLES.dutch];
+    if(p==='bedroom_sitting_floor')return [ANGLES.high,ANGLES.low,ANGLES.groundLow,ANGLES.eye34,ANGLES.eyeFront,ANGLES.high34,ANGLES.eyeOffset,ANGLES.shoulderSide,ANGLES.dutch];
+    if(p==='bedroom_sitting_edge')return [ANGLES.eyeFront,ANGLES.eye34,ANGLES.high,ANGLES.low,ANGLES.groundLow,ANGLES.eyeOffset,ANGLES.seatedDown,ANGLES.shoulderSide,ANGLES.dutch];
+    if(p==='bedroom_standing_curtain'||p==='bedroom_standing_wardrobe')return [ANGLES.eyeFront,ANGLES.eye34,ANGLES.high,ANGLES.low,ANGLES.high34,ANGLES.eyeOffset,ANGLES.shoulderSide,ANGLES.dutch];
+    return [ANGLES.eyeFront,ANGLES.eye34,ANGLES.high,ANGLES.low,ANGLES.high34,ANGLES.eyeOffset,ANGLES.shoulderSide,ANGLES.dutch];
   }
 
   function allowed(list){return list.map(function(x){return x[0]})}
@@ -104,6 +106,8 @@
     if(a==='bedroom_angle_eye_offset')return 'CAMERA ANGLE — EYE-LEVEL OFF-CENTER SELFIE. Keep the lens around eye level but shift the phone slightly to one side so the face sits naturally off-center. Preserve a direct handheld feel without turning the image into a side portrait.';
     if(a==='bedroom_angle_seated_down')return 'CAMERA ANGLE — SEATED DIAGONAL DOWNWARD SELFIE. While seated, place the phone modestly above and diagonally forward, creating a natural downward view that still reads as arm-length and self-taken. Avoid steep top-down distortion.';
     if(a==='bedroom_angle_shoulder_side')return 'CAMERA ANGLE — SHOULDER-LEVEL SIDE-OFFSET SELFIE. Hold the phone at roughly shoulder-to-eye height with a modest lateral offset. Keep facial proportions natural and preserve the unmistakable geometry of a one-handed front-camera selfie.';
+    if(a==='bedroom_angle_dutch')return 'CAMERA ANGLE — SLIGHT DUTCH-ANGLE SELFIE. Keep the phone physically handheld at a normal reachable selfie distance and apply only a mild natural roll of roughly 3–7 degrees. The tilt must feel like an accidental casual snapshot, not a dramatic cinematic Dutch angle. Preserve realistic horizon behavior, facial proportions, and selected pose geometry.';
+    if(a==='bedroom_angle_ground_low')return 'CAMERA ANGLE — VERY LOW SELFIE NEAR MATTRESS/FLOOR LEVEL. Place the phone only as low as the selected pose can physically reach, close to mattress or floor level, and angle it gently upward toward the face. It must remain a genuine handheld front-camera selfie, never a phone resting on the floor or an external photographer viewpoint. Keep chin, neck, torso perspective, pitch, and foreshortening believable; adapt crop and distance rather than anatomy.';
     return 'CAMERA ANGLE — EYE-LEVEL FRONT-FACING SELFIE. Keep the virtual phone near eye level at a natural arm-length distance, slightly off-center rather than perfectly symmetrical, with ordinary casual roll and framing imperfection.';
   }
 
@@ -129,7 +133,7 @@
       var al=af.querySelector('label');if(al)al.textContent='زاوية التصوير';
       var ah=q('#bedroomAngleCompatibilityHint');
       if(!ah){ah=document.createElement('small');ah.id='bedroomAngleCompatibilityHint';ah.className='historyHint';ah.style.display='block';ah.style.marginTop='6px';ah.style.lineHeight='1.6';af.appendChild(ah)}
-      ah.textContent='الزوايا مصممة كسيلفي كاميرا أمامية حقيقي، وليست زوايا مصور خارجي.';
+      ah.textContent='الزوايا مصممة كسيلفي كاميرا أمامية حقيقي، ومنها الميل العفوي والمنخفض جدًا فقط عندما تسمح به الوضعية.';
     }
   }
 
@@ -158,7 +162,7 @@
   window.buildNegative=function(){
     syncOptions();
     var base=oldNegative?oldNegative():'';
-    var x=['two conflicting selfie angles in one bedroom image','camera angle incompatible with selected bedroom pose','automatic camera angle replacing selected bedroom angle','selected bedroom pose replaced by another posture','third-person photographer viewpoint','ceiling-mounted viewpoint mistaken for overhead selfie','dramatic camera angle replacing selected subtle selfie angle'];
+    var x=['two conflicting selfie angles in one bedroom image','camera angle incompatible with selected bedroom pose','automatic camera angle replacing selected bedroom angle','selected bedroom pose replaced by another posture','third-person photographer viewpoint','ceiling-mounted viewpoint mistaken for overhead selfie','dramatic camera angle replacing selected subtle selfie angle','extreme Dutch tilt','floor-mounted camera mistaken for very-low selfie','camera placed on mattress instead of handheld'];
     return (base?base+', ':'')+x.join(', ');
   };
 
