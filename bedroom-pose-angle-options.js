@@ -15,8 +15,8 @@
 
   function classifyPose(v){
     var t=String(v||'').toLowerCase();
-    if(/lying|reclining|مستلقي|استلقاء|bed/.test(t))return 'lying naturally on the bed';
     if(/seated|sitting|جالس|chair|edge of the bed|headboard/.test(t))return 'seated naturally in the bedroom';
+    if(/lying|reclining|laying|مستلقي|استلقاء|on the bed/.test(t))return 'lying naturally on the bed';
     return 'standing naturally in the bedroom';
   }
 
