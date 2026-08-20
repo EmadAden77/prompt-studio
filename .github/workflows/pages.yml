@@ -59,6 +59,7 @@ jobs:
               '<script src="bedroom-daylight-window.js"></script>\n',
               '<script src="bedroom-arm-hidden-priority.js"></script>\n',
               '<script src="bedroom-option-dependency-engine.js"></script>\n',
+              '<script src="gemini-selfie-capture-profile.js"></script>\n',
               '<script src="version-fix.js"></script>\n',
           ]
           for tag in tags:
