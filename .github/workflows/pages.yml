@@ -56,6 +56,7 @@ jobs:
               '<script src="gemini-compliance-lock.js"></script>\n',
               '<script src="bedroom-prompt-master.js"></script>\n',
               '<script src="bedroom-lighting-physics.js"></script>\n',
+              '<script src="bedroom-daylight-window.js"></script>\n',
               '<script src="bedroom-arm-hidden-priority.js"></script>\n',
               '<script src="version-fix.js"></script>\n',
           ]
