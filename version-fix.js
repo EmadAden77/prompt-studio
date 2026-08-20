@@ -1,9 +1,9 @@
 (function(){
   function mark(){
     var b=document.querySelector('.badge');
-    if(b)b.textContent=(location.hash&&/^(#car|#bedroom|#places)$/.test(location.hash))?'v3.39':'Browser v3.39';
+    if(b)b.textContent=(location.hash&&/^(#car|#bedroom|#places)$/.test(location.hash))?'v3.40':'Browser v3.40';
     var m=document.querySelector('.meta span:last-child');
-    if(m)m.textContent='Prompt Studio Browser v3.39';
+    if(m)m.textContent='Prompt Studio Browser v3.40';
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(mark,450)});else setTimeout(mark,450);
 })();
