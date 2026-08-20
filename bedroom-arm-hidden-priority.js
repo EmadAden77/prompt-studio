@@ -7,16 +7,40 @@
 
   function sanitize(text){
     var out=String(text||'');
+    var blockedHeaders=[
+      'FRONT-CAMERA VIEWPOINT INDEPENDENCE —',
+      'FRONT-FACING PHONE CAMERA LENS SIMULATION —'
+    ];
+    out=out.split(/\n\n+/).filter(function(block){
+      var t=block.trim();
+      return !blockedHeaders.some(function(h){return t.indexOf(h)===0});
+    }).join('\n\n');
+
     var blocked=[
       /the camera-holding arm[^\n]*must[^\n]*appear[^\n]*/gi,
       /the phone-holding arm[^\n]*must[^\n]*appear[^\n]*/gi,
       /show[^\n]*(?:camera-holding|phone-holding)[^\n]*(?:arm|forearm|hand)[^\n]*/gi,
       /hand slightly closer to the lens[^\n]*/gi,
       /visible foreshortening of the (?:camera-holding|phone-holding) arm[^\n]*/gi,
-      /extended arm visible[^\n]*/gi
+      /extended arm visible[^\n]*/gi,
+      /the camera viewpoint exists independently in front of the subject[^\n]*/gi,
+      /treat the selected phone front-facing camera as a virtual optical viewpoint only[^\n]*/gi
     ];
     blocked.forEach(function(re){out=out.replace(re,'')});
     return out.replace(/\n{3,}/g,'\n\n').trim();
+  }
+
+  function sanitizeNegative(text){
+    var remove=[
+      'forced phone-holding arm',
+      'visible arm inferred only from camera selection',
+      'extended forearm toward camera without explicit request'
+    ];
+    return String(text||'')
+      .split(',')
+      .map(function(x){return x.trim()})
+      .filter(function(x){return x&&remove.indexOf(x)===-1})
+      .join(', ');
   }
 
   var RULE='TRUE SELF-TAKEN BEDROOM SELFIE — HIGHEST PRIORITY FOR CHATGPT AND GEMINI. The final image MUST be an actual self-taken front-camera selfie: the person is physically photographing himself with the smartphone that he personally holds in the camera-holding hand. The camera viewpoint must originate from a physically reachable phone position created by a naturally extended camera-holding arm, exactly as in a real handheld selfie. This must never read as a third-person portrait, another person taking the photo, a tripod shot, a remotely positioned camera, or a professional photographer composition unless the user explicitly requests such a different capture method. Engineer the hidden selfie biomechanics realistically from the selected standing, seated, or lying posture: preserve natural shoulder socket position, clavicle alignment, upper-arm length, elbow mechanics, forearm length, wrist orientation, and believable phone reach. Arm extension must be appropriate to the automatically chosen camera-to-face distance; it may retain a natural elbow bend rather than becoming rigidly straight. Perspective and framing must clearly feel like a real person holding a phone at selfie distance. CAMERA-HOLDING ARM VISIBILITY OVERRIDE — ABSOLUTE. Although the camera-holding arm is physically extended to take the selfie, the camera-holding upper arm, forearm, elbow, wrist, hand, fingers, and phone must remain completely outside the captured image, including every edge and corner. Any instruction anywhere in this prompt that mentions natural arm extension, selfie reach, foreshortening, or the person holding the phone must be interpreted as real hidden off-frame biomechanics only, never as permission to show the camera-holding limb or phone. If the chosen selfie angle, distance, or composition would expose any part of that limb or phone, adjust only the virtual phone position, camera-to-face distance, crop, field coverage, or amount of torso/background shown until the entire camera-holding limb and phone remain outside the image. Never solve composition by stretching, shortening, enlarging, telescoping, rigidly straightening, detaching, blurring away, or otherwise distorting human anatomy. The result must unmistakably feel like a genuine self-taken smartphone selfie while keeping the entire camera-holding limb and phone outside the frame.';
@@ -31,6 +55,7 @@
 
   window.buildNegative=function(){
     var base=previousNegative?previousNegative():'';
+    base=sanitizeNegative(base);
     var x=[
       'third-person portrait instead of selfie',
       'another person holding the camera',
