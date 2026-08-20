@@ -62,6 +62,7 @@ jobs:
               '<script src="bedroom-image-condition.js"></script>\n',
               '<script src="gemini-selfie-capture-profile.js"></script>\n',
               '<script src="bedroom-essential-controls.js"></script>\n',
+              '<script src="bedroom-analytical-realism-method.js"></script>\n',
               '<script src="version-fix.js"></script>\n',
           ]
           for tag in tags:
