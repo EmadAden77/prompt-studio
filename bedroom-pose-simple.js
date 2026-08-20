@@ -16,7 +16,15 @@
     ['bedroom_one_knee_bed','جالس على السرير وركبة واحدة مرفوعة'],
     ['bedroom_lying_side','مستلقي على الجانب'],
     ['bedroom_standing_curtain','واقف قرب الستارة والنافذة'],
-    ['bedroom_standing_wardrobe','واقف قرب خزانة الملابس']
+    ['bedroom_standing_wardrobe','واقف قرب خزانة الملابس'],
+    ['bedroom_standing_wall_back','واقف ساند ظهره على الجدار'],
+    ['bedroom_standing_doorframe','واقف ساند كتفه على إطار الباب'],
+    ['bedroom_standing_center','واقف بمنتصف الغرفة والسرير خلفه'],
+    ['bedroom_standing_dresser','واقف أمام التسريحة'],
+    ['bedroom_standing_corner','واقف في زاوية الغرفة'],
+    ['bedroom_standing_foot_bed','واقف عند نهاية السرير والسرير أمامه'],
+    ['bedroom_standing_head_wall','واقف مسند رأسه على الجدار'],
+    ['bedroom_standing_wardrobe_door','واقف جزئيًا خلف باب الخزانة المفتوح']
   ];
 
   var ANGLES={
@@ -41,7 +49,7 @@
 
   function normalizePose(v){
     var t=String(v||'').toLowerCase();
-    if(/^bedroom_(reclining_pillows|sitting_edge|standing_beside|sitting_floor|lying_pillow|holding_pillow|peeking_blanket|laptop_book_bed|crosslegged_bed|leaning_headboard|one_knee_bed|lying_side|standing_curtain|standing_wardrobe)$/.test(t))return t;
+    if(/^bedroom_(reclining_pillows|sitting_edge|standing_beside|sitting_floor|lying_pillow|holding_pillow|peeking_blanket|laptop_book_bed|crosslegged_bed|leaning_headboard|one_knee_bed|lying_side|standing_curtain|standing_wardrobe|standing_wall_back|standing_doorframe|standing_center|standing_dresser|standing_corner|standing_foot_bed|standing_head_wall|standing_wardrobe_door)$/.test(t))return t;
     if(/peek|above.*blanket|فوق البطاني|فوق البطانيه/.test(t))return 'bedroom_peeking_blanket';
     if(/laptop|book|لابتوب|كتاب/.test(t))return 'bedroom_laptop_book_bed';
     if(/cross.?leg|متربع/.test(t))return 'bedroom_crosslegged_bed';
@@ -49,7 +57,15 @@
     if(/one.?knee|ركبة واحدة|ركبه واحده/.test(t))return 'bedroom_one_knee_bed';
     if(/lying.*side|على الجانب/.test(t))return 'bedroom_lying_side';
     if(/curtain|window|ستارة|ستاره|نافذة|نافذه/.test(t))return 'bedroom_standing_curtain';
+    if(/wardrobe.*door|closet.*door|باب.*خزان|خلف.*خزان/.test(t))return 'bedroom_standing_wardrobe_door';
     if(/wardrobe|closet|خزانة|خزانه/.test(t))return 'bedroom_standing_wardrobe';
+    if(/door.?frame|إطار الباب|اطار الباب/.test(t))return 'bedroom_standing_doorframe';
+    if(/dresser|vanity|تسريحة|تسريحه/.test(t))return 'bedroom_standing_dresser';
+    if(/room.*corner|corner.*room|زاوية الغرفة|زاويه الغرفه/.test(t))return 'bedroom_standing_corner';
+    if(/foot.*bed|end.*bed|نهاية السرير|نهايه السرير|ورا السرير/.test(t))return 'bedroom_standing_foot_bed';
+    if(/head.*wall|رأسه.*الجدار|راسه.*الجدار/.test(t))return 'bedroom_standing_head_wall';
+    if(/back.*wall|lean.*wall|ساند.*ظهر.*جدار/.test(t))return 'bedroom_standing_wall_back';
+    if(/middle.*room|center.*room|منتصف الغرفة|منتصف الغرفه|نص الغرفة|نص الغرفه/.test(t))return 'bedroom_standing_center';
     if(/floor|الأرض|الارض/.test(t))return 'bedroom_sitting_floor';
     if(/holding|hug|blanket|pillow.*hold|بطاني|وسادة.*مم|وساده.*مم|احتضان|يحتضن/.test(t))return 'bedroom_holding_pillow';
     if(/lying|laying|مستلقي|استلقاء/.test(t))return 'bedroom_lying_pillow';
@@ -70,7 +86,8 @@
     if(p==='bedroom_one_knee_bed')return [ANGLES.eye34,ANGLES.eyeFront,ANGLES.high,ANGLES.veryHigh,ANGLES.low,ANGLES.eyeOffset,ANGLES.seatedDown,ANGLES.dutch];
     if(p==='bedroom_sitting_floor')return [ANGLES.high,ANGLES.low,ANGLES.groundLow,ANGLES.eye34,ANGLES.eyeFront,ANGLES.high34,ANGLES.eyeOffset,ANGLES.shoulderSide,ANGLES.dutch];
     if(p==='bedroom_sitting_edge')return [ANGLES.eyeFront,ANGLES.eye34,ANGLES.high,ANGLES.veryHigh,ANGLES.low,ANGLES.groundLow,ANGLES.eyeOffset,ANGLES.seatedDown,ANGLES.shoulderSide,ANGLES.dutch];
-    if(p==='bedroom_standing_curtain'||p==='bedroom_standing_wardrobe')return [ANGLES.eyeFront,ANGLES.eye34,ANGLES.high,ANGLES.low,ANGLES.high34,ANGLES.eyeOffset,ANGLES.shoulderSide,ANGLES.dutch];
+    if(p==='bedroom_standing_foot_bed')return [ANGLES.eyeFront,ANGLES.eye34,ANGLES.high,ANGLES.veryHigh,ANGLES.low,ANGLES.high34,ANGLES.eyeOffset,ANGLES.shoulderSide,ANGLES.dutch];
+    if(/^bedroom_standing_/.test(p))return [ANGLES.eyeFront,ANGLES.eye34,ANGLES.high,ANGLES.low,ANGLES.high34,ANGLES.eyeOffset,ANGLES.shoulderSide,ANGLES.dutch];
     return [ANGLES.eyeFront,ANGLES.eye34,ANGLES.high,ANGLES.low,ANGLES.high34,ANGLES.eyeOffset,ANGLES.shoulderSide,ANGLES.dutch];
   }
 
@@ -100,8 +117,16 @@
     if(p==='bedroom_leaning_headboard')return 'POSE — LEANING BACK AGAINST THE HEADBOARD. Let the back and shoulders rest naturally against the real headboard or pillows with realistic contact, mild torso slouch, relaxed neck position, fabric bunching at the waist, and physically plausible bed compression.';
     if(p==='bedroom_one_knee_bed')return 'POSE — SITTING ON THE BED WITH ONE KNEE RAISED. Keep one leg naturally bent with the knee raised while the other leg rests comfortably. Preserve realistic hip rotation, pelvis support, clothing folds, mattress compression, and relaxed shoulder asymmetry.';
     if(p==='bedroom_lying_side')return 'POSE — LYING ON THE SIDE. Lie naturally on one side with the head supported by a pillow, mild shoulder compression, believable torso and hip contact with the mattress, realistic hair displacement, and bedding folds responding to body weight.';
-    if(p==='bedroom_standing_curtain')return 'POSE — STANDING NEAR THE CURTAIN AND WINDOW. Stand naturally near the canonical far-wall curtain/window area without moving furniture or changing room geometry. Keep relaxed weight distribution, a small body turn, and believable distance from the curtain.';
+    if(p==='bedroom_standing_curtain')return 'POSE — STANDING NEAR THE CURTAIN AND WINDOW. Stand naturally near the canonical far-wall curtain/window area without moving furniture or changing room geometry. Keep relaxed weight distribution, a small body turn, and believable distance from the curtain. Do not force curtain contact or a lighting effect; the free-hand and Bedroom Lighting controls remain authoritative.';
     if(p==='bedroom_standing_wardrobe')return 'POSE — STANDING NEAR THE WARDROBE. Stand casually near the existing wardrobe/dressing area while preserving the room layout, with relaxed weight distribution, ordinary asymmetry, and no fashion-model posing.';
+    if(p==='bedroom_standing_wall_back')return 'POSE — STANDING WITH BACK AGAINST THE WALL. Stand casually with the upper back or shoulder-blade area making believable light contact with an existing bedroom wall. Keep both feet grounded, knees unlocked, pelvis and spine naturally settled, and shoulders relaxed. Show real contact and tiny clothing compression without flattening the body into the wall.';
+    if(p==='bedroom_standing_doorframe')return 'POSE — SHOULDER LEAN AGAINST THE DOOR FRAME. Stand at the existing near-left doorway with one shoulder making light believable contact with the real door frame. Transfer only a modest amount of weight into the frame while keeping both feet naturally grounded and the torso relaxed. Do not invent a new doorway or force a free-hand gesture.';
+    if(p==='bedroom_standing_center')return 'POSE — STANDING IN THE MIDDLE OF THE BEDROOM WITH THE BED BEHIND. Stand in a physically clear central floor area so the canonical bed remains naturally visible behind the subject according to the selected selfie angle and crop. Keep relaxed weight distribution, realistic room depth, and enough clearance from the rug, shoes, furniture, and wardrobe.';
+    if(p==='bedroom_standing_dresser')return 'POSE — STANDING AT THE EXISTING DRESSER. Stand naturally in front of the canonical right-side dresser with believable clearance and relaxed weight distribution. If the free-hand control is Auto, the free hand may rest lightly on the dresser; if the user explicitly selected another free-hand action, that selection wins. Do not invent a new vanity or move the dresser.';
+    if(p==='bedroom_standing_corner')return 'POSE — STANDING IN A BEDROOM CORNER. Stand naturally in a real clear corner or edge zone of the canonical room with believable wall and furniture clearance. The selected angle and selfie crop alone determine how much room depth or clutter is visible; do not force a wide-angle composition or add extra mess.';
+    if(p==='bedroom_standing_foot_bed')return 'POSE — STANDING AT THE FOOT/END OF THE BED WITH THE BED IN FRONT. Stand in the accessible floor area near the end of the canonical bed so the bed can appear below or behind the subject according to the selected high, very-high, or other compatible selfie angle. Preserve real room geometry and never place the body behind the wall-mounted headboard or stretch the camera arm.';
+    if(p==='bedroom_standing_head_wall')return 'POSE — STANDING WITH HEAD RESTING LIGHTLY AGAINST THE WALL. Stand close to an existing bedroom wall and let the back or side of the head make only gentle believable contact while the neck stays within a comfortable range. Keep the selected facial expression authoritative; do not automatically make the person look tired, sad, or sleepy.';
+    if(p==='bedroom_standing_wardrobe_door')return 'POSE — STANDING PARTLY BEHIND AN EXISTING WARDROBE DOOR. Use only a real door belonging to the canonical wardrobe, opened by a modest physically plausible amount, with part of the standing body naturally occluded by it. Preserve clearance, reflections, hinges, room geometry, and the selected free-hand action. Do not invent an extra door or hide facial-identity errors behind the occlusion.';
     return 'POSE — STANDING BESIDE THE BED. Stand naturally beside the bed with believable weight distribution, relaxed asymmetry, ordinary shoulder and pelvis alignment, and a slight casual body turn without fashion posing.';
   }
 
@@ -172,7 +197,7 @@
   window.buildNegative=function(){
     syncOptions();
     var base=oldNegative?oldNegative():'';
-    var x=['two conflicting selfie angles in one bedroom image','camera angle incompatible with selected bedroom pose','automatic camera angle replacing selected bedroom angle','selected bedroom pose replaced by another posture','third-person photographer viewpoint','ceiling-mounted viewpoint mistaken for overhead selfie','dramatic camera angle replacing selected subtle selfie angle','extreme Dutch tilt','floor-mounted camera mistaken for very-low selfie','camera placed on mattress instead of handheld','very-high selfie converted into ceiling camera','duplicate laptop or book','floating laptop or book','blanket covering the eyes in peeking pose'];
+    var x=['two conflicting selfie angles in one bedroom image','camera angle incompatible with selected bedroom pose','automatic camera angle replacing selected bedroom angle','selected bedroom pose replaced by another posture','third-person photographer viewpoint','ceiling-mounted viewpoint mistaken for overhead selfie','dramatic camera angle replacing selected subtle selfie angle','extreme Dutch tilt','floor-mounted camera mistaken for very-low selfie','camera placed on mattress instead of handheld','very-high selfie converted into ceiling camera','duplicate laptop or book','floating laptop or book','blanket covering the eyes in peeking pose','standing pose forcing an unselected hand gesture','standing pose forcing an unselected lighting effect','standing pose inventing a new room object'];
     return (base?base+', ':'')+x.join(', ');
   };
 
