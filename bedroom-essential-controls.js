@@ -23,7 +23,31 @@
     ['free hand resting behind the neck','خلف الرقبة'],
     ['free hand lightly holding the shirt fabric','تمسك القماش بخفة'],
     ['free hand resting naturally on the bed beside the body','على السرير بجانب الجسم'],
-    ['free hand gently holding a pillow or blanket','تمسك وسادة أو بطانية بخفة']
+    ['free hand gently holding a pillow or blanket','تمسك وسادة أو بطانية بخفة'],
+    ['free hand holding a half-empty plastic water bottle casually by the neck','ماسك قارورة موية نصف فاضية من الرقبة'],
+    ['free hand holding a clear glass of water with ice cubes and natural condensation','ماسك كاسة موية زجاج فيها ثلج'],
+    ['free hand holding a metal soda can with a casual natural grip','ماسك علبة مشروب غازي'],
+    ['free hand gently rubbing one eye in a candid waking gesture','تفرك العين بعفوية كأنه توه صاحي'],
+    ['free hand holding a TV remote control loosely','ماسك ريموت كنترول بارتخاء'],
+    ['free hand holding a pair of eyeglasses or sunglasses by the frame','ماسك نظارة من الإطار'],
+    ['free hand casually tucked into the front pants pocket','اليد داخل جيب البنطلون'],
+    ['free hand resting loosely on the nearby bedside table or nightstand','مستندة على الكومدينة القريبة'],
+    ['free hand casually adjusting the shirt collar or neckline','تعدل ياقة أو فتحة القميص بعفوية'],
+    ['free hand lightly pulling or adjusting the shirt or sweater sleeve','تسحب أو تعدل كم القميص'],
+    ['free thumb casually hooked into the front pants pocket with fingers outside','الإبهام داخل الجيب والأصابع خارجه'],
+    ['free hand loosely gripping the edge of the bed blanket','تمسك طرف البطانية بخفة'],
+    ['free fingers casually fiddling with a ring or wrist watch','تلعب بخاتم أو ساعة اليد'],
+    ['free fingers lightly touching the lips without changing the selected expression','تلامس الشفاه بخفة'],
+    ['free fingers naturally adjusting the frame of eyeglasses on the face','تعدل النظارة على الوجه'],
+    ['free hand holding a loosely tangled phone charging cable','ماسك سلك شاحن جوال'],
+    ['free hand holding one partially open book or folded magazine','ماسك كتاب أو مجلة بشكل عفوي'],
+    ['free fingers holding a single wireless earbud','ماسك سماعة أذن واحدة'],
+    ['free hand holding a small folded towel','ماسك منشفة صغيرة'],
+    ['free hand loosely holding a small set of house or car keys','ماسك مفاتيح بشكل عفوي'],
+    ['free hand resting naturally on the hip','اليد على الخصر'],
+    ['free hand leaning with real weight on the bed headboard or frame','مستندة بوزن طبيعي على ظهر السرير'],
+    ['free hand resting flat and fully relaxed on the thigh','مفرودة ومسترخية على الفخذ'],
+    ['free hand resting on the knee with the free arm extended while leaning slightly forward','على الركبة والذراع مفرودة مع ميل خفيف للأمام']
   ];
 
   var CLOTHING_OPTIONS=[
