@@ -20,6 +20,9 @@
     groundLow:'bedroom_angle_ground_low'
   };
 
+  var STANDING=[ANGLES.eyeFront,ANGLES.eye34,ANGLES.high,ANGLES.low,ANGLES.high34,ANGLES.eyeOffset,ANGLES.shoulderSide,ANGLES.dutch];
+  var STANDING_HIGH=[ANGLES.eyeFront,ANGLES.eye34,ANGLES.high,ANGLES.veryHigh,ANGLES.low,ANGLES.high34,ANGLES.eyeOffset,ANGLES.shoulderSide,ANGLES.dutch];
+
   var POSE_ANGLES={
     bedroom_peeking_blanket:[ANGLES.veryHigh,ANGLES.high,ANGLES.eyeFront,ANGLES.eye34,ANGLES.dutch,ANGLES.overhead],
     bedroom_laptop_book_bed:[ANGLES.eyeFront,ANGLES.eye34,ANGLES.high,ANGLES.veryHigh,ANGLES.seatedDown,ANGLES.eyeOffset,ANGLES.dutch],
@@ -32,9 +35,17 @@
     bedroom_one_knee_bed:[ANGLES.eye34,ANGLES.eyeFront,ANGLES.high,ANGLES.veryHigh,ANGLES.low,ANGLES.eyeOffset,ANGLES.seatedDown,ANGLES.dutch],
     bedroom_sitting_floor:[ANGLES.high,ANGLES.low,ANGLES.groundLow,ANGLES.eye34,ANGLES.eyeFront,ANGLES.high34,ANGLES.eyeOffset,ANGLES.shoulderSide,ANGLES.dutch],
     bedroom_sitting_edge:[ANGLES.eyeFront,ANGLES.eye34,ANGLES.high,ANGLES.veryHigh,ANGLES.low,ANGLES.groundLow,ANGLES.eyeOffset,ANGLES.seatedDown,ANGLES.shoulderSide,ANGLES.dutch],
-    bedroom_standing_curtain:[ANGLES.eyeFront,ANGLES.eye34,ANGLES.high,ANGLES.low,ANGLES.high34,ANGLES.eyeOffset,ANGLES.shoulderSide,ANGLES.dutch],
-    bedroom_standing_wardrobe:[ANGLES.eyeFront,ANGLES.eye34,ANGLES.high,ANGLES.low,ANGLES.high34,ANGLES.eyeOffset,ANGLES.shoulderSide,ANGLES.dutch],
-    bedroom_standing_beside:[ANGLES.eyeFront,ANGLES.eye34,ANGLES.high,ANGLES.low,ANGLES.high34,ANGLES.eyeOffset,ANGLES.shoulderSide,ANGLES.dutch]
+    bedroom_standing_curtain:STANDING.slice(),
+    bedroom_standing_wardrobe:STANDING.slice(),
+    bedroom_standing_beside:STANDING.slice(),
+    bedroom_standing_wall_back:STANDING.slice(),
+    bedroom_standing_doorframe:STANDING.slice(),
+    bedroom_standing_center:STANDING.slice(),
+    bedroom_standing_dresser:STANDING.slice(),
+    bedroom_standing_corner:STANDING.slice(),
+    bedroom_standing_head_wall:STANDING.slice(),
+    bedroom_standing_wardrobe_door:STANDING.slice(),
+    bedroom_standing_foot_bed:STANDING_HIGH.slice()
   };
 
   var ANGLE_POSE_FALLBACK={
@@ -42,7 +53,7 @@
     bedroom_angle_side_bed:'bedroom_reclining_pillows',
     bedroom_angle_seated_down:'bedroom_sitting_edge',
     bedroom_angle_ground_low:'bedroom_sitting_floor',
-    bedroom_angle_very_high:'bedroom_sitting_edge',
+    bedroom_angle_very_high:'bedroom_standing_foot_bed',
     bedroom_angle_dutch:'bedroom_standing_beside',
     bedroom_angle_low:'bedroom_standing_beside',
     bedroom_angle_high:'bedroom_standing_beside',
@@ -209,8 +220,8 @@
   }
 
   function bindUserChanges(){
-    if(document.documentElement.dataset.bedroomDependencyBound==='3')return;
-    document.documentElement.dataset.bedroomDependencyBound='3';
+    if(document.documentElement.dataset.bedroomDependencyBound==='4')return;
+    document.documentElement.dataset.bedroomDependencyBound='4';
     document.addEventListener('click',function(e){
       var p=e.target&&e.target.closest?e.target.closest('.picker[data-key]'):null;
       if(!p)return;
@@ -239,7 +250,7 @@
   window.buildNegative=function(){
     forcePreflight();
     var base=previousNegative?previousNegative():'';
-    var x=['unresolved bedroom option conflict','old incompatible bedroom option restored','free-hand pose incompatible with body pose','selected selfie angle incompatible with body pose','multiple conflicting pose alternatives','multiple conflicting angle alternatives','very-low selfie used with unreachable body pose','very-high selfie used with unreachable body pose','Dutch-angle selection replaced by a different angle','peeking pose replaced by ordinary lying pose','laptop/book pose replaced by unrelated seated pose'];
+    var x=['unresolved bedroom option conflict','old incompatible bedroom option restored','free-hand pose incompatible with body pose','selected selfie angle incompatible with body pose','multiple conflicting pose alternatives','multiple conflicting angle alternatives','very-low selfie used with unreachable body pose','very-high selfie used with unreachable body pose','Dutch-angle selection replaced by a different angle','peeking pose replaced by ordinary lying pose','laptop/book pose replaced by unrelated seated pose','new standing pose collapsed back to generic standing beside bed'];
     return (base?base+', ':'')+x.join(', ');
   };
 
