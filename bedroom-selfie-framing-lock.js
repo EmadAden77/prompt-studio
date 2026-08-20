@@ -2,6 +2,9 @@
   var previousFinal=window.buildFinal;
   var previousNegative=window.buildNegative;
   var AUTO='__auto_prompt__';
+  var ARM_SUBTLE='bedroom_arm_subtle';
+  var ARM_HIDDEN='bedroom_arm_hidden';
+  var ARM_AUTO='bedroom_arm_auto';
 
   function S(){try{return typeof state==='object'&&state?state:{}}catch(e){return {}}}
   function V(){try{return typeof smartValues==='function'?smartValues():S()}catch(e){return S()}}
@@ -13,6 +16,16 @@
   function selfie(v){
     var t=((v.idea||'')+' '+(v.camera||'')+' '+(v.angle||'')+' '+(v.pose||'')).toLowerCase();
     return /سيلفي|selfie|front camera|front-facing/.test(t)||!!v.angle;
+  }
+  function armVisibility(){
+    var v=String(S().selfieArmVisibility||'');
+    if(v===ARM_HIDDEN||v===ARM_AUTO||v===ARM_SUBTLE)return v;
+    return ARM_SUBTLE;
+  }
+  function visibilityArabic(v){
+    if(v===ARM_HIDDEN)return 'مخفي بالكامل';
+    if(v===ARM_AUTO)return 'تلقائي حسب الزاوية';
+    return 'ظهور طبيعي خفيف';
   }
 
   function hideManualDistance(){
@@ -28,9 +41,9 @@
     var arm=document.getElementById('autoArmStatus');
     if(arm){
       arm.style.display='';
-      var strong=arm.querySelector('strong');if(strong)strong.textContent='تلقائي بالكامل';
-      var txt=document.getElementById('autoArmStatusText');if(txt)txt.textContent='يُهندس تلقائيًا من زاوية السيلفي والوضعية، مع إبقاء ذراع التصوير خارج الإطار.';
-      var hint=arm.querySelector('.historyHint');if(hint)hint.textContent='لا تختار مسافة أو مد الذراع يدويًا في غرفة النوم. التطبيق يحل موضع الهاتف والكتف والكوع تلقائيًا حسب الزاوية والوضعية.';
+      var strong=arm.querySelector('strong');if(strong)strong.textContent='هندسة الذراع تلقائية';
+      var txt=document.getElementById('autoArmStatusText');if(txt)txt.textContent='الذراع تُهندس تلقائيًا من الزاوية والوضعية، وظهورها يتبع خانة ظهور ذراع السيلفي: '+visibilityArabic(armVisibility())+'.';
+      var hint=arm.querySelector('.historyHint');if(hint)hint.textContent='لا تختار مسافة أو مد الذراع يدويًا في غرفة النوم. التطبيق يحل موضع الهاتف والكتف والكوع والمعصم تلقائيًا حسب الزاوية والوضعية.';
     }
   }
 
@@ -58,15 +71,23 @@
 
   function angleText(v){
     var a=String(v.angle||'').toLowerCase();
-    if(/slightly above|أعلى من العين قليل/.test(a))return 'For the selected slightly-above-eye-level angle, place the phone only modestly above the eye line and solve the unseen arm with a natural shoulder lift and elbow bend.';
-    if(/above|high|forehead|مرتفعة|أعلى|الجبهة/.test(a))return 'For the selected elevated selfie angle, raise the phone through realistic shoulder and elbow mechanics while keeping the entire phone-holding arm outside the captured frame.';
-    if(/below|low|أسفل|منخفض/.test(a))return 'For the selected lower selfie angle, lower the phone naturally and solve the unseen arm without shoulder distortion.';
-    if(/left|right|يسار|يمين/.test(a))return 'For the selected side-offset selfie angle, solve the phone position with a small natural torso/shoulder response while keeping the camera-holding arm fully outside the image.';
-    return 'Derive the phone position and unseen arm geometry directly from the selected selfie angle and body posture.';
+    if(/bedroom_angle_high|slightly above|أعلى من العين قليل/.test(a))return 'For the selected high-angle selfie, raise the phone only modestly above forehead level through a relaxed shoulder and soft elbow bend. If arm visibility permits, a small shoulder or forearm segment may enter naturally from a lower corner, but the elbow must never sit in the middle of the image.';
+    if(/bedroom_angle_low|below|low|أسفل|منخفض/.test(a))return 'For the selected slightly low-angle selfie, extend the arm forward and slightly upward with a relaxed low shoulder and natural neck position. Avoid a foreshortened short-arm look, giant hand perspective, or exaggerated facial distortion.';
+    if(/bedroom_angle_eye_34/.test(a))return 'For the selected eye-level three-quarter selfie, automatically use the camera-holding side that best balances the head turn, normally the hand opposite the direction of the face turn, while preserving relaxed shoulder and wrist mechanics.';
+    if(/bedroom_angle_overhead/.test(a))return 'For the selected overhead lying selfie, place the phone above or slightly beside the face at a physically reachable arm-length position. Keep the elbow softly bent and prevent any near-lens hand or forearm from becoming oversized.';
+    if(/bedroom_angle_side_bed/.test(a))return 'For the selected side selfie from bed level, use a natural lateral arm reach. A small shoulder or upper-arm segment may be more visible at the side edge when the visibility setting permits it.';
+    return 'For the selected eye-level selfie, extend the arm diagonally forward at a comfortable reach with a relaxed shoulder, soft elbow bend, and neutral or slightly tilted wrist.';
+  }
+
+  function visibilityRule(){
+    var v=armVisibility();
+    if(v===ARM_HIDDEN)return 'CAMERA-ARM VISIBILITY — FULLY HIDDEN. Keep the entire camera-holding shoulder continuation, upper arm, elbow, forearm, wrist, hand, fingers, and phone outside the captured image. Preserve believable hidden biomechanics and adapt only crop, phone position, or framing if necessary.';
+    if(v===ARM_AUTO)return 'CAMERA-ARM VISIBILITY — AUTOMATIC BY ANGLE. Decide from the selected selfie angle whether the camera-holding limb should be fully hidden or whether only a small naturally cropped shoulder, upper-arm, forearm, or elbow-edge fragment improves handheld authenticity. Never show the full arm. Never let the arm cross the face. The phone must always remain outside the image.';
+    return 'CAMERA-ARM VISIBILITY — SUBTLE NATURAL EDGE VISIBILITY. Allow only a small naturally cropped portion of the camera-side shoulder, upper arm, forearm, or edge of the elbow when the selected angle would realistically bring it into the frame. Keep it near an edge or corner rather than across the center. Do not show the full arm. Do not let the wrist, palm, or fingers cover the cheek, mouth, nose, or eyes. The phone itself must remain outside the captured image.';
   }
 
   function rule(v){
-    return 'BEDROOM SELFIE FRAMING LOCK — ABSOLUTE PRIORITY. In bedroom selfies, the user chooses the selfie angle and body pose only; exact camera-to-face distance, phone reach, shoulder lift, elbow bend, forearm path, wrist rotation, and crop are automatic engineering variables. '+angleText(v)+' The phone-holding arm, forearm, wrist, hand, and phone must remain completely outside the captured image. Do not show a partial forearm, hand, wrist, elbow, or phone at any edge or corner. Preserve the visual logic of a real front-camera selfie by placing the virtual phone just outside the image boundary and solving the unseen arm from anatomically correct shoulder geometry. Never lengthen, widen, telescope, straighten, inflate, detach, or distort the arm to satisfy composition. If the requested angle or pose would normally bring the arm into frame, move the virtual camera slightly, tighten the crop, show less torso/background, or adjust only unspecified framing details until the arm remains outside the image. Human anatomy always wins over composition.';
+    return 'BEDROOM SELFIE FRAMING LOCK — ABSOLUTE PRIORITY. In bedroom selfies, the user chooses the selfie angle, body pose, and camera-arm visibility. Exact camera-to-face distance, phone reach, shoulder movement, elbow bend, forearm path, wrist rotation, and crop remain automatic engineering variables. '+angleText(v)+' '+visibilityRule()+' The camera-holding arm must be extended comfortably rather than locked into a rigid straight line. Keep the shoulder relaxed and generally low, allowing only the modest forward or upward movement physically required by the selected angle. Keep the wrist neutral or only slightly tilted as if it is really gripping the unseen phone. Wide-angle perspective may enlarge a near limb segment mildly, but never turn the hand or forearm into a giant foreground mass. A natural crop may cut the arm or elbow at the frame boundary. Do not force the whole arm into view merely to prove that the photo is a selfie. Never lengthen, widen, telescope, inflate, detach, or distort anatomy to satisfy composition.';
   }
 
   window.buildFinal=function(){
@@ -82,20 +103,22 @@
     var v=V();
     if(!bedroom(v)||!selfie(v))return base;
     var x=[
-      'visible phone-holding arm in bedroom selfie',
-      'visible selfie forearm',
-      'visible selfie wrist',
-      'visible selfie hand',
-      'visible phone at frame edge',
-      'partial camera-holding arm entering from a corner',
+      'visible phone in ordinary front-camera bedroom selfie',
+      'camera arm covering the face',
+      'wrist covering cheek mouth nose or eye',
+      'rigid perfectly straight selfie arm',
+      'shoulder hiked unnaturally toward the ear',
+      'broken wrist angle',
+      'giant foreground hand',
       'giant foreground forearm',
-      'long diagonal selfie arm',
+      'elbow centered in the composition',
+      'full camera-holding arm unnecessarily displayed',
       'rubbery arm',
       'telescoped arm',
       'stretched arm',
-      'distorted shoulder to hide the arm',
       'impossible selfie camera placement'
     ];
+    if(armVisibility()===ARM_HIDDEN)x=x.concat(['visible camera-side shoulder continuation','visible selfie upper arm','visible selfie elbow','visible selfie forearm','visible selfie wrist','visible selfie hand','partial camera-holding limb entering from frame edge']);
     return (base?base+', ':'')+x.join(', ');
   };
 
