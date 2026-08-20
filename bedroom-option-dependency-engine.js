@@ -157,8 +157,32 @@
     return fixes;
   }
 
+  function validationIssues(){
+    var s=S(),p=currentPose(),issues=[];
+    var a=val(s.angle),hv=handValue();
+    if(!includes(allowedAngles(p),a))issues.push('زاوية التصوير غير متوافقة مع وضعية الشخص');
+    if(!handCompatible(p,hv))issues.push('وضعية اليد الأخرى غير متوافقة مع وضعية الشخص');
+    if(!POSE_ANGLES[val(s.pose)])issues.push('وضعية الشخص غير معروفة لمحرك غرفة النوم');
+    return issues;
+  }
+
+  function forcePreflight(){
+    reconcile(null);
+    var s=S(),p=currentPose(),issues=validationIssues();
+    if(!issues.length)return [];
+    var allowed=allowedAngles(p);
+    if(!includes(allowed,val(s.angle)))s.angle=allowed[0];
+    if(!handCompatible(p,handValue())){s.bedroomHandPose=AUTO;s.freeHandPose=AUTO;}
+    saveNow();
+    reconcile(null);
+    return validationIssues();
+  }
+
   function statusText(){
-    return lastCorrection?'آخر تصحيح تلقائي: '+lastCorrection:'منع التعارض فعال: آخر اختيار يبقى، والخيار المتعارض فقط يتغير إلى قيمة ممكنة.';
+    var issues=validationIssues();
+    if(issues.length)return 'تنبيه توافق: '+issues.join(' • ')+' — سيصححها التطبيق تلقائيًا قبل بناء الـPrompt.';
+    if(lastCorrection)return 'تم حل التعارض تلقائيًا: '+lastCorrection+' • التحقق المسبق الآن ناجح.';
+    return 'التحقق المسبق ناجح: الوضعية والزاوية واليد الأخرى متوافقة، ولن تمر تركيبة متناقضة إلى الـPrompt.';
   }
 
   function updateStatus(){
@@ -185,8 +209,8 @@
   }
 
   function bindUserChanges(){
-    if(document.documentElement.dataset.bedroomDependencyBound==='2')return;
-    document.documentElement.dataset.bedroomDependencyBound='2';
+    if(document.documentElement.dataset.bedroomDependencyBound==='3')return;
+    document.documentElement.dataset.bedroomDependencyBound='3';
     document.addEventListener('click',function(e){
       var p=e.target&&e.target.closest?e.target.closest('.picker[data-key]'):null;
       if(!p)return;
@@ -205,19 +229,20 @@
   }
 
   window.buildFinal=function(){
-    reconcile(null);
+    var unresolved=forcePreflight();
     var base=previousFinal?previousFinal():'';
     var s=S();
-    return 'BEDROOM OPTION DEPENDENCY LOCK — REQUIRED. The selected pose, selected selfie angle, and selected free-hand pose have already been reconciled into one physically compatible combination before prompt generation. Preserve these final corrected values exactly: POSE: '+val(s.pose)+'. ANGLE: '+val(s.angle)+'. FREE HAND: '+handValue()+'. Do not resurrect an older incompatible selection or combine alternatives.\n\n'+base;
+    var gate=unresolved.length?'BEDROOM PREFLIGHT VALIDATION — FALLBACK CORRECTION REQUIRED. Resolve only these remaining compatibility failures before execution: '+unresolved.join('; ')+'.':'BEDROOM PREFLIGHT VALIDATION — PASSED. The final pose, selfie angle, and free-hand pose are one physically compatible combination. No conflicting alternative is allowed to re-enter later in the prompt.';
+    return gate+'\n\nBEDROOM OPTION DEPENDENCY LOCK — REQUIRED. Preserve these final corrected values exactly: POSE: '+val(s.pose)+'. ANGLE: '+val(s.angle)+'. FREE HAND: '+handValue()+'. The latest explicit user choice has priority; only the conflicting dependent option may be corrected. Do not resurrect an older incompatible selection or combine alternatives.\n\n'+base;
   };
 
   window.buildNegative=function(){
-    reconcile(null);
+    forcePreflight();
     var base=previousNegative?previousNegative():'';
-    var x=['old incompatible bedroom option restored','free-hand pose incompatible with body pose','selected selfie angle incompatible with body pose','multiple conflicting pose alternatives','multiple conflicting angle alternatives','very-low selfie used with unreachable body pose','very-high selfie used with unreachable body pose','Dutch-angle selection replaced by a different angle','peeking pose replaced by ordinary lying pose','laptop/book pose replaced by unrelated seated pose'];
+    var x=['unresolved bedroom option conflict','old incompatible bedroom option restored','free-hand pose incompatible with body pose','selected selfie angle incompatible with body pose','multiple conflicting pose alternatives','multiple conflicting angle alternatives','very-low selfie used with unreachable body pose','very-high selfie used with unreachable body pose','Dutch-angle selection replaced by a different angle','peeking pose replaced by ordinary lying pose','laptop/book pose replaced by unrelated seated pose'];
     return (base?base+', ':'')+x.join(', ');
   };
 
-  function boot(){reconcile(null);bindUserChanges();updateStatus();setTimeout(updateStatus,250);setTimeout(updateStatus,700)}
+  function boot(){forcePreflight();bindUserChanges();updateStatus();setTimeout(updateStatus,250);setTimeout(updateStatus,700)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
