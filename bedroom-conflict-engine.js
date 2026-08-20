@@ -6,7 +6,7 @@
   var CAMERA='Xiaomi 15 Ultra front camera';
 
   var FRAME_OPTIONS=[
-    ['','تلقائي حسب الوضعية'],
+    ['','تلقائي حسب الوضعية والزاوية'],
     ['casual head-and-shoulders selfie crop','رأس وكتفان بشكل عفوي'],
     ['casual face-and-upper-torso selfie crop','الوجه وأعلى الجذع'],
     ['natural slightly off-center upper-body selfie crop','أعلى الجسم خارج المركز قليلًا']
@@ -15,7 +15,8 @@
   var GAZE_OPTIONS=[
     ['','تلقائي حسب المشهد'],
     ['looking directly into the front camera lens','ينظر إلى عدسة الكاميرا'],
-    ['looking naturally at the phone screen','ينظر طبيعيًا إلى شاشة الهاتف']
+    ['looking naturally at the phone screen','ينظر طبيعيًا إلى شاشة الهاتف'],
+    ['looking slightly away from the lens naturally','ينظر بعيدًا قليلًا بشكل عفوي']
   ];
 
   var FREE_COMMON=[
@@ -31,17 +32,27 @@
   function S(){try{return typeof state==='object'&&state?state:{}}catch(e){return {}}}
   function q(s){return document.querySelector(s)}
   function saveNow(){try{if(typeof save==='function')save()}catch(e){}}
-  function pose(){var p=String(S().pose||'').toLowerCase();if(/lying|مستلقي/.test(p))return 'lying';if(/seated|sitting|جالس/.test(p))return 'seated';return 'standing'}
+  function poseClass(){
+    var p=String(S().pose||'').toLowerCase();
+    if(/lying_pillow|lying|مستلقي/.test(p))return 'lying';
+    if(/reclining_pillows|reclin|مسترخي|متكئ/.test(p))return 'reclining';
+    if(/sitting_floor|floor|الأرض|الارض/.test(p))return 'floor';
+    if(/sitting_edge|holding_pillow|seated|sitting|جالس/.test(p))return 'seated';
+    return 'standing';
+  }
   function allowedValues(list){return list.map(function(x){return x[0]})}
 
   function freeOptions(){
-    var p=pose(),x=FREE_COMMON.slice();
+    var p=poseClass(),x=FREE_COMMON.slice();
     if(p==='standing'){
       x.push(['free hand relaxed naturally by the side','اليد الحرة متدلية طبيعيًا']);
     }else if(p==='seated'){
       x.push(['free hand resting naturally on the thigh','اليد الحرة على الفخذ']);
       x.push(['free hand resting naturally on the knee while seated','اليد الحرة على الركبة']);
       x.push(['free hand resting naturally on the bed beside the body','اليد الحرة على السرير بجانب الجسم']);
+    }else if(p==='floor'){
+      x.push(['free hand resting naturally on the knee while seated','اليد الحرة على الركبة']);
+      x.push(['free hand resting naturally on the floor beside the body','اليد الحرة على الأرض بجانب الجسم']);
     }else{
       x.push(['free hand resting naturally on the bed beside the body','اليد الحرة على السرير بجانب الجسم']);
       x.push(['free hand resting loosely over the torso','اليد الحرة مسترخية فوق الجذع']);
@@ -52,7 +63,6 @@
   function syncState(){
     var s=S();
     s.camera=CAMERA;
-    s.angle='';
     s.distance='';
     s.selfieBodyPose=AUTO;
     s.lighting='';
@@ -100,7 +110,6 @@
       }
     }
 
-    hideField('angle');
     hideField('distance');
     hideField('selfieBodyPose');
     hideField('lighting');
@@ -108,12 +117,16 @@
     hideField('background');
     hideField('condition');
 
+    var anglePicker=q('.picker[data-key="angle"]');
+    var af=anglePicker&&anglePicker.closest('.field');
+    if(af)af.style.display='';
+
     var posePicker=q('.picker[data-key="pose"]');
     var pf=posePicker&&posePicker.closest('.field');
-    if(pf&&!q('#bedroomConflictStatus')){
-      var n=document.createElement('small');n.id='bedroomConflictStatus';n.className='historyHint';n.style.display='block';n.style.marginTop='6px';n.style.lineHeight='1.6';
-      n.textContent='منع التعارض فعال: الزاوية والمسافة والكادر وهندسة السيلفي تُحل تلقائيًا حسب الوضعية.';
-      pf.appendChild(n);
+    if(pf){
+      var n=q('#bedroomConflictStatus');
+      if(!n){n=document.createElement('small');n.id='bedroomConflictStatus';n.className='historyHint';n.style.display='block';n.style.marginTop='6px';n.style.lineHeight='1.6';pf.appendChild(n)}
+      n.textContent='منع التعارض فعال: الوضعية والزاوية اختيارات صريحة، بينما المسافة والقص وهندسة الهاتف تُحل تلقائيًا.';
     }
 
     var fh=q('.picker[data-key="freeHandPose"]');
@@ -124,17 +137,12 @@
 
   var previousRender=window.renderPickers;
   if(typeof previousRender==='function'){
-    window.renderPickers=function(){
-      syncOptions();
-      previousRender();
-      installUI();
-    };
+    window.renderPickers=function(){syncOptions();previousRender();installUI()};
   }
 
   function stripHiddenControlLines(text){
     return String(text||'').split('\n').filter(function(line){
       var t=line.trim();
-      if(/^SELFIE ANGLE\s*(?:—|:)/i.test(t))return false;
       if(/^SELFIE DISTANCE\s*(?:—|:)/i.test(t))return false;
       if(/^LIGHTING\s*(?:—|:)/i.test(t))return false;
       if(/^BACKGROUND\s*(?:—|:)/i.test(t))return false;
@@ -145,10 +153,11 @@
   }
 
   function conflictPolicy(){
-    var s=S(),p=pose();
+    var s=S(),p=poseClass();
     var fh=String(s.freeHandPose||AUTO);
     var free=fh===AUTO?'automatic and posture-compatible':fh;
-    return 'BEDROOM CONTROL CONFLICT POLICY — MANDATORY. Resolve the bedroom controls as one coherent system. Priority order: explicit user selections; identity and 193 cm / 83 kg body lock; selected main posture; true self-taken selfie mechanics; selected clothing; dedicated bedroom lighting; dedicated bedroom clutter; Xiaomi 15 Ultra front-camera behavior; then realism details. Hidden or disabled generic controls must contribute no instruction. MAIN POSTURE: '+p+'. CAMERA: '+CAMERA+'. FREE HAND: '+free+'. The camera angle and distance are automatic. The camera-holding arm is physically extended to take the selfie but remains outside the captured frame. The dedicated bedroom-lighting selection is the only lighting-control authority; time of day may alter exposure, ambient spill, white balance and noise but must not invent a conflicting light source. If any lower-priority instruction conflicts with a higher-priority control, discard the lower-priority instruction rather than averaging the two.';
+    var angle=String(s.angle||'').trim()||'selected by the bedroom angle control';
+    return 'BEDROOM CONTROL CONFLICT POLICY — MANDATORY. Resolve the bedroom controls as one coherent system. Priority order: explicit user selections; identity and 193 cm / 83 kg body lock; selected bedroom pose; selected compatible selfie angle; true self-taken selfie mechanics; selected clothing; dedicated bedroom lighting; dedicated bedroom clutter; Xiaomi 15 Ultra front-camera behavior; then realism details. Hidden or disabled generic controls must contribute no instruction. MAIN POSTURE CLASS: '+p+'. SELECTED SELFIE ANGLE: '+angle+'. CAMERA: '+CAMERA+'. FREE HAND: '+free+'. Camera-to-face distance, exact virtual phone position and crop remain automatic. The camera-holding arm is physically extended to take the selfie but remains outside the captured frame. The dedicated bedroom-lighting selection is the only lighting-control authority; time of day may alter exposure, ambient spill, white balance and noise but must not invent a conflicting light source. If any lower-priority instruction conflicts with a higher-priority control, discard the lower-priority instruction rather than averaging the two.';
   }
 
   var oldFinal=window.buildFinal;
@@ -165,7 +174,7 @@
     syncOptions();
     var base=oldNegative?oldNegative():'';
     var x=[
-      'conflicting bedroom controls','hidden generic lighting overriding bedroom lighting','hidden background control overriding locked bedroom','hidden image-condition control overriding bedroom scene','manual selfie angle overriding automatic bedroom camera','manual selfie distance overriding automatic bedroom camera','secondary body-pose control overriding main posture','free-hand gesture incompatible with selected posture','non-Xiaomi camera substitution in bedroom','camera field changing away from Xiaomi 15 Ultra front camera','time of day inventing a conflicting light source','lower-priority realism rule overriding explicit user selection'
+      'conflicting bedroom controls','hidden generic lighting overriding bedroom lighting','hidden background control overriding locked bedroom','hidden image-condition control overriding bedroom scene','manual selfie distance overriding automatic bedroom camera','secondary body-pose control overriding main posture','two conflicting bedroom selfie angles','selected selfie angle incompatible with selected pose','automatic camera angle overriding selected bedroom angle','free-hand gesture incompatible with selected posture','non-Xiaomi camera substitution in bedroom','camera field changing away from Xiaomi 15 Ultra front camera','time of day inventing a conflicting light source','lower-priority realism rule overriding explicit user selection'
     ];
     return (base?base+', ':'')+x.join(', ');
   };
