@@ -49,6 +49,7 @@ jobs:
               '<script src="selfie-arm-auto.js"></script>\n',
               '<script src="bedroom-clothing-options.js"></script>\n',
               '<script src="bedroom-pose-simple.js"></script>\n',
+              '<script src="bedroom-conflict-engine.js"></script>\n',
               '<script src="bedroom-clothing-lock.js"></script>\n',
               '<script src="bedroom-selfie-framing-lock.js"></script>\n',
               '<script src="authentic-selfie-realism.js"></script>\n',
