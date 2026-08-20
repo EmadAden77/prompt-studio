@@ -26,6 +26,15 @@
     bedroom_angle_ground_low:'the phone is held as low as the selected pose can physically reach, close to mattress or floor level, and angled gently upward'
   };
 
+  var CROP={
+    bedroom_crop_auto_hidden_arm:'use the least aggressive natural handheld crop needed to keep the entire camera-holding limb and phone outside the captured frame',
+    bedroom_crop_extreme_closeup:'use an extreme close-up selfie crop focused mainly on the face, naturally ending around the neck or very upper shoulder line without digital-zoom softness',
+    bedroom_crop_shoulders_up:'frame the selfie tightly from roughly the shoulders upward, cutting the entire camera-holding limb off at the image borders',
+    bedroom_crop_tight_candid:'use a naturally tight candid selfie composition with the face occupying much of the frame while preserving believable bedroom context',
+    bedroom_crop_low_tight:'with the selected low or very-low angle, use a tight composition whose lower border fully excludes the camera-holding limb and phone',
+    bedroom_crop_half_face_side:'use an intentionally very tight lateral half-face crop while keeping central facial anatomy physically plausible and the camera-holding limb completely outside the image'
+  };
+
   var POSE={
     bedroom_reclining_pillows:'The person is reclining naturally on the bed with the back and shoulders supported by the real pillows, keeping the pelvis supported by the mattress.',
     bedroom_sitting_edge:'The person is sitting naturally on the edge of the bed with the pelvis supported by the mattress edge and the legs arranged within ordinary human joint ranges.',
@@ -44,6 +53,7 @@
   };
 
   function angleSentence(s){return 'For the selfie geometry, '+(ANGLE[s.angle]||('use the selected selfie angle: '+humanize(s.angle)))+'. The result must still read unmistakably as a genuine Xiaomi 15 Ultra front-camera selfie, not as a third-person photograph.'}
+  function cropSentence(s){return 'For framing, '+(CROP[s.bedroomSelfieCrop]||('use the selected selfie crop exactly: '+humanize(s.bedroomSelfieCrop)))+'. The crop is authoritative and may not be replaced by wider automatic framing.'}
   function poseSentence(s){return POSE[s.pose]||('Use the selected person pose exactly: '+humanize(s.pose)+'.')}
 
   function narrative(){
@@ -59,7 +69,7 @@
 
     return [
       'GEMINI NATURAL-LANGUAGE SCENE DESCRIPTION — READ THIS AS ONE COHERENT PHOTOGRAPHIC SCENE. Create an ordinary, highly realistic, minimally processed-looking smartphone selfie inside the locked reference bedroom. The photograph should feel like a real handheld Xiaomi 15 Ultra front-camera capture rather than a polished illustration, render, studio portrait, editorial photograph, or collection of disconnected prompt keywords.',
-      angleSentence(s)+' '+poseSentence(s)+' The camera-holding arm and the phone physically exist outside the captured frame and no part of that arm, forearm, wrist, hand, fingers, or phone may appear in the image.',
+      angleSentence(s)+' '+cropSentence(s)+' '+poseSentence(s)+' The camera-holding arm and the phone physically exist outside the captured frame and no part of that arm, forearm, wrist, hand, fingers, or phone may appear in the image.',
       'Keep the referenced person exactly the same individual while applying '+expression+'. The free hand should follow this resolved position: '+hand+'. The selected clothing is '+clothing+'. Treat expression as temporary facial-muscle activity only, clothing as fabric draped over the fixed body, and camera perspective as optical geometry; none of these may reshape facial identity or body proportions.',
       'Preserve the same bedroom identity and geometry. The selected room-clutter state is '+clutter+', while the selected bed condition is '+bed+'. These are separate controls: bedding arrangement must not secretly change the clutter level elsewhere in the room. All contact with the mattress, pillow, blanket, floor, headboard, wardrobe, or other existing surfaces must show believable weight, pressure, folds, contact shadows, gravity, and spacing.',
       'Light the scene using '+lighting+'. Treat this as a real physical light source or real combination of selected sources with plausible direction, falloff, shadow placement, reflection, exposure limits, and interaction with skin, fabric, walls, mirrors, and furniture. Record the image with '+condition+' and '+color+'. Camera noise, softness, white-balance error, compression, chromatic aberration, flare, or motion softness may appear only when physically justified by the selected image condition and lighting.',
@@ -76,7 +86,7 @@
   window.buildNegative=function(){
     var base=oldNegative?oldNegative():'';
     if(!isGemini())return base;
-    var x=['Gemini keyword-stuffing style','disconnected comma-only scene description','natural-language scene description ignored','spatial relationship ignored','third-person composition replacing selfie','decorative invention filling unspecified details'];
+    var x=['Gemini keyword-stuffing style','disconnected comma-only scene description','natural-language scene description ignored','spatial relationship ignored','selected selfie crop ignored','automatic wider framing replacing selected crop','third-person composition replacing selfie','decorative invention filling unspecified details'];
     return (base?base+', ':'')+x.join(', ');
   };
 })();
