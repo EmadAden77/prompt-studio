@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a0b" />
+  <title>Selfie Prompt Studio</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">SELFIE PROMPT STUDIO</p>
+        <h1>مولّد Prompt سيلفي واقعي</h1>
+        <p class="subtitle">ارفع صورتك المرجعية، اختر المكان والزاوية والوضعية، وخذ Prompt إنجليزي جاهز لـ ChatGPT.</p>
+      </div>
+      <div class="status-pill">REALISM LOCK · MAXIMUM</div>
+    </header>
+
+    <section class="grid">
+      <div class="panel controls-panel">
+        <section class="section-block">
+          <div class="section-heading">
+            <span class="step">01</span>
+            <div><h2>الصورة المرجعية</h2><p>للمعاينة فقط. أرفق نفس الصورة مع الـPrompt داخل ChatGPT.</p></div>
+          </div>
+          <label class="upload-box" for="referenceImage">
+            <input id="referenceImage" type="file" accept="image/*" />
+            <img id="previewImage" alt="معاينة الصورة المرجعية" hidden />
+            <div id="uploadPlaceholder" class="upload-placeholder">
+              <span class="upload-icon">＋</span>
+              <strong>اختر صورتك المرجعية</strong>
+              <small>JPG / PNG / WEBP</small>
+            </div>
+          </label>
+          <div class="lock-row">
+            <span>🔒 ثبات الوجه والشعر واللحية</span>
+            <span>🔒 بدون تجميل أو إعادة تشكيل</span>
+          </div>
+        </section>
+
+        <section class="section-block">
+          <div class="section-heading"><span class="step">02</span><div><h2>المكان</h2><p>اختر جاهزًا أو اكتب المكان كما تريده.</p></div></div>
+          <div class="chip-grid" id="locationChips"></div>
+          <label class="field-label" for="customLocation">مكان مخصص</label>
+          <textarea id="customLocation" rows="3" placeholder="مثال: داخل غرفة نوم حديثة في السعودية ليلًا، مع إضاءة سقف بيضاء واحدة فقط"></textarea>
+        </section>
+
+        <section class="section-block two-columns">
+          <div>
+            <div class="section-heading compact"><span class="step">03</span><div><h2>زاوية السيلفي</h2></div></div>
+            <select id="angleSelect"></select>
+          </div>
+          <div>
+            <div class="section-heading compact"><span class="step">04</span><div><h2>الوضعية</h2></div></div>
+            <select id="poseSelect"></select>
+          </div>
+        </section>
+
+        <section class="section-block two-columns">
+          <div>
+            <label class="field-label" for="expressionSelect">التعبير</label>
+            <select id="expressionSelect"></select>
+          </div>
+          <div>
+            <label class="field-label" for="lightingSelect">الإضاءة</label>
+            <select id="lightingSelect"></select>
+          </div>
+        </section>
+
+        <section class="section-block two-columns">
+          <div>
+            <label class="field-label" for="cameraSelect">الكاميرا</label>
+            <select id="cameraSelect"></select>
+          </div>
+          <div>
+            <label class="field-label" for="ratioSelect">نسبة الصورة</label>
+            <select id="ratioSelect">
+              <option value="9:16">9:16 عمودي</option>
+              <option value="4:3">4:3</option>
+              <option value="1:1">1:1</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="section-block realism-card">
+          <div class="section-heading"><span class="step">05</span><div><h2>محرك الواقعية</h2><p>ثابت وإجباري داخل كل Prompt.</p></div></div>
+          <div class="realism-list">
+            <span>Face realism <b>MAXIMUM</b></span>
+            <span>Skin & hair realism <b>MAXIMUM</b></span>
+            <span>Selfie geometry <b>LOCKED</b></span>
+            <span>Lighting realism <b>MAXIMUM</b></span>
+            <span>Natural imperfections <b>ON</b></span>
+            <span>Beautification <b>OFF</b></span>
+          </div>
+        </section>
+      </div>
+
+      <aside class="panel output-panel">
+        <div class="output-head">
+          <div><p class="eyebrow">OUTPUT</p><h2>الـPrompt النهائي</h2></div>
+          <button id="copyBtn" class="secondary-btn" type="button">نسخ</button>
+        </div>
+        <textarea id="promptOutput" readonly spellcheck="false"></textarea>
+        <div class="actions">
+          <button id="generateBtn" class="primary-btn" type="button">توليد Prompt</button>
+          <button id="variationBtn" class="secondary-btn" type="button">تغيير الزاوية والوضعية</button>
+        </div>
+        <p id="copyStatus" class="copy-status" aria-live="polite"></p>
+        <div class="note-box">
+          <strong>مهم</strong>
+          <p>التطبيق يصيغ Prompt يطلب أقصى واقعية فوتوغرافية ويقلّل السمات المصطنعة، لكنه لا يمكنه ضمان نتيجة "غير قابلة للاكتشاف" بنسبة 100%.</p>
+        </div>
+      </aside>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
