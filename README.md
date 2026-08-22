@@ -18,13 +18,11 @@ A mobile-first Arabic web app that builds structured English prompts for generat
 
 ## Villa visual references
 
-The repository now includes a connected villa reference contact sheet (`villa-reference-board.jpg`), a primary hall reference (`villa-hall-a.png`), and `villa-reference-manifest.json` describing the mapped villa scenes and camera angles. The app loads `villa-reference-registry-v47.js` after the villa engine.
+The repository includes `villa-reference-board.jpg`, `villa-hall-a.png`, and `villa-reference-manifest.json`. The app loads `villa-reference-registry-v47.js` after the villa scene engine so villa prompts include the connected scene/angle registry.
 
 ## Run locally
 
 Open `index.html` in a browser, or serve the folder with any static HTTP server.
-
-Example:
 
 ```bash
 npx serve .
