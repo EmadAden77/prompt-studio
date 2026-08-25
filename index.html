@@ -36,7 +36,7 @@
   <main id="workspace" class="page-shell">
     <section class="intro" aria-labelledby="pageTitle">
       <div>
-        <p class="eyebrow">SMART QUAD MODE · v1.9</p>
+        <p class="eyebrow">SMART QUAD MODE · v1.10</p>
         <h1 id="pageTitle">خمس اختيارات، والوضعية حسب مرجع الغرفة</h1>
         <p>اختر صورة مرجع الغرفة والشعر والإضاءة والتعبير والملابس. المحرّك يقترح الوضعية المتوافقة ثم يحدد جهة الجسم، الكاميرا، الذراع والفيزياء.</p>
       </div>
@@ -153,7 +153,17 @@
             <span id="promptWordCount" class="word-count">0 كلمة</span>
           </div>
           <div id="promptSummary" class="selection-summary"></div>
+          <div class="field">
+            <label for="aspectSelect">أبعاد الصورة</label>
+            <select id="aspectSelect" name="aspect">
+              <option value="9:16" selected>9:16 — رأسي</option>
+              <option value="1:1">1:1 — مربع</option>
+              <option value="16:9">16:9 — أفقي</option>
+            </select>
+            <small>إعداد إخراج صغير؛ لا يغيّر هندسة الوضعية أو المرجع.</small>
+          </div>
           <div class="prompt-editor"><pre id="finalPrompt" tabindex="0" aria-label="الأمر النهائي باللغة الإنجليزية"></pre></div>
+          <div id="sendInstruction" class="validation-summary">أرفق IMAGE A ومرجع الغرفة المختار باعتباره IMAGE B مع الأمر، وقل:<br>«سأرفق IMAGE A (هويتي) وIMAGE B (غرفتي) مع أمر هندسي كامل. ولّد صورة واحدة فقط: ابدأ بقراءة فقرة PHOTOGRAPHIC BRIEF الطبيعية (الموضوع، البيئة، الحركة، الأسلوب، الإضاءة والكاميرا)، ثم نفّذ جميع الأقسام الصارمة بعدها حرفيًا وبالترتيب. أعد الصورة النهائية فقط دون شرح.»</div>
           <div class="prompt-actions">
             <button id="autoEngineerBtn" class="secondary-button" type="button">🎲 اقتراح وضعية</button>
             <button id="validateBtn" class="ghost-button" type="button">🔍 فحص التعارضات</button>
@@ -167,7 +177,7 @@
   </main>
 
   <footer class="footer">
-    <p>Smart Quad Mode v1.9 <span>•</span> واقعية مبنية على الفيزياء</p>
+    <p>Smart Quad Mode v1.10 <span>•</span> واقعية مبنية على الفيزياء</p>
     <p>لا تزوير EXIF، لا إزالة C2PA، ولا محاكاة PRNU.</p>
   </footer>
 
