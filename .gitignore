@@ -1,0 +1,17 @@
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/
+*.swp
+
+# Local-only files
+*.log
+*.tmp
+*.zip
+
+# Optional tooling (the app itself requires no Node.js)
+node_modules/
+coverage/

@@ -1,0 +1,167 @@
+@media (max-width: 1120px) {
+  .workspace-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .output-column {
+    position: static;
+  }
+
+  #finalPrompt {
+    min-height: 480px;
+    max-height: 680px;
+  }
+}
+
+@media (max-width: 760px) {
+  :root {
+    --topbar-height: 60px;
+  }
+
+  .topbar__inner,
+  .page-shell,
+  .footer {
+    width: min(calc(100% - 24px), var(--max-width));
+  }
+
+  .save-status {
+    display: none;
+  }
+
+  .page-shell {
+    padding-block: 28px 44px;
+  }
+
+  .intro {
+    display: grid;
+    align-items: start;
+    margin-bottom: 20px;
+  }
+
+  .intro h1 {
+    font-size: 28px;
+  }
+
+  .mode-switch {
+    width: 100%;
+  }
+
+  .mode-switch__button {
+    flex: 1;
+  }
+
+  .panel {
+    padding: 17px;
+    border-radius: 18px;
+  }
+
+  .upload-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dropzone {
+    min-height: 170px;
+  }
+
+  .scene-card {
+    grid-template-columns: 1fr;
+  }
+
+  .scene-card__visual {
+    min-height: 220px;
+    max-height: 300px;
+  }
+
+  .scene-picker-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .selection-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .summary-item:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .prompt-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .primary-button {
+    grid-column: 1 / -1;
+  }
+
+  #finalPrompt {
+    min-height: 440px;
+    max-height: 62vh;
+  }
+
+  .footer {
+    display: grid;
+    text-align: center;
+  }
+}
+
+@media (max-width: 520px) {
+  .brand > span:last-child {
+    display: none;
+  }
+
+  .topbar__actions {
+    margin-inline-start: auto;
+  }
+
+  .intro > div > p:last-child {
+    font-size: 13px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .field--wide {
+    grid-column: auto;
+  }
+
+  .panel__header {
+    align-items: flex-start;
+  }
+
+  .privacy-badge,
+  .context-badge,
+  .confidence-badge {
+    max-width: 132px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .scene-option {
+    grid-template-columns: 74px minmax(0, 1fr) 22px;
+  }
+
+  .scene-option__visual {
+    height: 58px;
+  }
+
+  .prompt-panel__header {
+    padding: 17px;
+  }
+
+  .prompt-editor {
+    margin: 11px;
+  }
+
+  #finalPrompt {
+    padding: 14px;
+    font-size: 10px;
+  }
+
+  .prompt-actions {
+    padding-inline: 11px;
+  }
+
+  .modal {
+    padding: 17px;
+  }
+}

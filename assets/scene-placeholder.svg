@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" role="img" aria-labelledby="title desc">
+  <title id="title">Scene image placeholder</title>
+  <desc id="desc">Abstract placeholder used until a real bedroom reference is added.</desc>
+  <defs>
+    <linearGradient id="bg" x1="80" y1="20" x2="820" y2="540" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#242838"/>
+      <stop offset="1" stop-color="#11141d"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="translate(450 260) rotate(90) scale(250 390)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7768ee" stop-opacity=".25"/>
+      <stop offset="1" stop-color="#7768ee" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="36" height="36" patternUnits="userSpaceOnUse">
+      <path d="M36 0H0V36" fill="none" stroke="#ffffff" stroke-opacity=".035"/>
+    </pattern>
+  </defs>
+  <rect width="900" height="560" fill="url(#bg)"/>
+  <rect width="900" height="560" fill="url(#glow)"/>
+  <rect width="900" height="560" fill="url(#grid)"/>
+  <g fill="none" stroke="#a89dff" stroke-width="4" stroke-linecap="round">
+    <path d="M330 226v-38c0-11 9-20 20-20h38M570 226v-38c0-11-9-20-20-20h-38M330 334v38c0 11 9 20 20 20h38M570 334v38c0 11-9 20-20 20h-38" opacity=".7"/>
+  </g>
+  <circle cx="450" cy="280" r="42" fill="#7768ee" fill-opacity=".14" stroke="#a89dff" stroke-opacity=".8" stroke-width="3"/>
+  <circle cx="450" cy="280" r="13" fill="#a89dff" fill-opacity=".65"/>
+  <text x="450" y="450" fill="#d7d3ff" fill-opacity=".8" font-family="Inter, Arial, sans-serif" font-size="21" font-weight="600" text-anchor="middle">SCENE REFERENCE</text>
+  <text x="450" y="480" fill="#ffffff" fill-opacity=".42" font-family="Inter, Arial, sans-serif" font-size="13" text-anchor="middle" letter-spacing="2">ADD THE MATCHING IMAGE TO /SCENES</text>
+</svg>
