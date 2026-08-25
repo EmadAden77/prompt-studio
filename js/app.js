@@ -405,7 +405,7 @@ class App {
 
       [
         engineering?.strictNoMatchMessage,
-        engineering?.gateSummary,
+        engineering?.gateSummary || "مرشح صارم: لا توجد إحصاءات متاحة",
         "الخيار (أ): غيّر الوضعية من القائمة أعلاه.",
         "الخيار (ب): استخدم تجاوزًا يدويًا؛ سيظهر بتحذير وسيظل الفحص مانعًا إذا فشل المرجع."
       ].filter(Boolean).forEach((text) => {
@@ -433,7 +433,7 @@ class App {
 
     [
       engineering.sceneReason,
-      engineering.gateSummary,
+      engineering.gateSummary || "مرشح صارم: لم تتوفر إحصاءات",
       ...(engineering.sceneSelectionReasons ?? []),
       engineering.orientation
     ].filter(Boolean).forEach((text, index) => {
