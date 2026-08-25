@@ -10,37 +10,53 @@ export class AutoEngineeringEngine {
     return QUAD_POSE_ENGINEERING[poseId] ?? null;
   }
 
-  resolveScene(engineering, sceneOverrideId = null) {
+  resolveScene(engineering, lighting, sceneOverrideId = null) {
     const selectionConfig = {
       poseId: engineering.poseId,
       bodyDirection: engineering.bodyDirection,
       cameraAngle: engineering.cameraAngle,
       cameraDistance: engineering.cameraDistance,
-      requiredFeatures: engineering.requires ?? []
+      requiredFeatures: engineering.requires ?? [],
+      lightingRequiredFeatures: lighting?.required_features ?? [],
+      cameraType: engineering.cameraType,
+      bedRealismProfile: engineering.bedRealismProfile ?? null
     };
 
     if (sceneOverrideId) {
       const scene = this.sceneEngine.getById(sceneOverrideId);
       if (scene) {
         const manual = this.sceneEngine.evaluateManualSelection(scene, selectionConfig);
-        const gateStats = this.sceneEngine.hardGate(engineering.poseId, engineering.requires ?? []);
-        const requiredText = this.sceneEngine.formatRequiredFeatures(manual.gate?.missingFeatures ?? []);
+        const gateStats = this.sceneEngine.hardGate(
+          engineering.poseId,
+          engineering.requires ?? [],
+          {
+            lightingRequiredFeatures: lighting?.required_features ?? [],
+            cameraType: engineering.cameraType,
+            bedRealismProfile: engineering.bedRealismProfile ?? null
+          }
+        );
+        const missing = [
+          ...(manual.gate?.missingFeatures ?? []),
+          ...(manual.gate?.missingLightingFeatures ?? [])
+        ];
+        const requiredText = this.sceneEngine.formatRequiredFeatures(missing);
         return {
           scene,
           overridden: true,
           manualOverrideInvalid: !manual.hardGatePassed,
           hardGatePassed: manual.hardGatePassed,
           confidence: manual.hardGatePassed
-            ? "تجاوز يدوي — اجتاز البوابة"
+            ? "تجاوز يدوي — اجتاز بوابة v1.3"
             : "⚠ تجاوز يدوي — مرجع غير صالح",
           reasons: manual.reasons,
-          gateSummary: `مرشح صارم: اجتاز ${gateStats.passedCount} من ${gateStats.totalCount} مرجعًا`,
+          gateSummary: `مرشح صارم v1.3: اجتاز ${gateStats.passedCount} من ${gateStats.totalCount} مرجعًا`,
           passedCount: gateStats.passedCount,
           totalCount: gateStats.totalCount,
           requiredFeatures: gateStats.requirement.required_features_all,
+          lightingRequiredFeatures: gateStats.lightingRequiredFeatures,
           requiredMessage: manual.hardGatePassed
             ? ""
-            : `التجاوز اليدوي لا يطابق الوضعية${requiredText ? ` — العناصر الناقصة: ${requiredText}` : ""}`
+            : `التجاوز اليدوي لا يطابق بوابة v1.3${requiredText ? ` — العناصر/المصادر الناقصة: ${requiredText}` : ""}`
         };
       }
     }
@@ -57,6 +73,7 @@ export class AutoEngineeringEngine {
       passedCount: automatic.passedCount ?? 0,
       totalCount: automatic.totalCount ?? this.sceneEngine.scenes.length,
       requiredFeatures: automatic.requiredFeatures ?? [],
+      lightingRequiredFeatures: automatic.lightingRequiredFeatures ?? [],
       requiredMessage: automatic.message ?? "",
       error: automatic.error ?? null
     };
@@ -72,6 +89,18 @@ export class AutoEngineeringEngine {
   }
 
   normalizeGeometry(pose, scene, mapping) {
+    // True bed selfies use IMAGE B as room-geometry authority, not as an immutable external camera plate.
+    if (mapping.bedRealismProfile) {
+      return {
+        cameraAngle: pose.valid_angles.includes(mapping.cameraAngle)
+          ? mapping.cameraAngle
+          : pose.valid_angles[0],
+        cameraDistance: pose.valid_distances.includes(mapping.cameraDistance)
+          ? mapping.cameraDistance
+          : pose.valid_distances[0]
+      };
+    }
+
     const sharedAngles = scene
       ? pose.valid_angles.filter((angle) => scene.camera_angles.includes(angle))
       : pose.valid_angles;
@@ -93,6 +122,7 @@ export class AutoEngineeringEngine {
     const mapping = this.getPoseEngineering(pose?.id);
     if (!pose || !mapping) return null;
 
+    const requestedLighting = this.lightingEngine.getById(lightingId);
     const baseEngineering = {
       ...mapping,
       poseId: pose.id,
@@ -100,20 +130,17 @@ export class AutoEngineeringEngine {
       spatialMap: BED_SPATIAL_MAP
     };
 
-    const selection = this.resolveScene(baseEngineering, sceneOverrideId);
+    const selection = this.resolveScene(baseEngineering, requestedLighting, sceneOverrideId);
     const geometry = this.normalizeGeometry(pose, selection.scene, mapping);
     const engineering = { ...baseEngineering, ...geometry };
     const compatibleLighting = this.compatibleLighting(selection.scene, engineering.cameraType);
-    const selectedLighting = compatibleLighting.find((option) => option.id === lightingId)
-      ?? compatibleLighting[0]
-      ?? this.lightingEngine.getById(lightingId);
 
     const sceneReason = selection.overridden
       ? (selection.manualOverrideInvalid
-        ? "تجاوز يدوي: المرجع محفوظ رغم فشله في البوابة الصارمة، والـValidator سيحجبه."
-        : "تجاوز يدوي: المرجع اجتاز البوابة الصارمة ثم خضع للفحص.")
+        ? "تجاوز يدوي: المرجع محفوظ رغم فشله في بوابة v1.3، والـValidator سيحجبه."
+        : "تجاوز يدوي: المرجع اجتاز بوابة v1.3 ثم خضع للفحص.")
       : (selection.scene
-        ? "اختيار تلقائي صارم: البوابة Pass/Fail نُفذت أولًا، ثم تمت المفاضلة بين المراجع الناجحة فقط."
+        ? "اختيار تلقائي صارم v1.3: دعم الوضعية وهندسة السرير وقابلية السيلفي والإضاءة فُحصت قبل أي مفاضلة."
         : selection.requiredMessage);
 
     return {
@@ -121,8 +148,9 @@ export class AutoEngineeringEngine {
       selectedSceneId: selection.scene?.id ?? null,
       scene: selection.scene,
       sceneOverrideId: selection.overridden ? sceneOverrideId : null,
-      lightingId: selectedLighting?.id ?? lightingId,
+      lightingId: requestedLighting?.id ?? lightingId,
       compatibleLightingIds: compatibleLighting.map((option) => option.id),
+      portableLightSources: requestedLighting?.portable_sources ?? [],
       confidence: selection.confidence,
       sceneReason,
       sceneSelectionReasons: selection.reasons,
@@ -130,6 +158,7 @@ export class AutoEngineeringEngine {
       gatePassedCount: selection.passedCount,
       gateTotalCount: selection.totalCount,
       strictRequiredFeatures: selection.requiredFeatures,
+      strictRequiredLightingFeatures: selection.lightingRequiredFeatures,
       strictNoMatch: !selection.scene && Boolean(selection.error),
       strictNoMatchMessage: !selection.scene ? selection.requiredMessage : "",
       hardGatePassed: selection.hardGatePassed,
