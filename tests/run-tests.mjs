@@ -75,7 +75,7 @@ const baseConfig = {
   hair: HAIR_OPTIONS[0],
   clothing: CLOTHING_OPTIONS[0],
   lighting: lightingEngine.getById("lamp_only"),
-  roomMode: "EDIT",
+  roomMode: "GENERATE",
   uploads: {
     imageA: { name: "identity.jpg" },
     imageB: { name: scene.image_filename }
@@ -83,7 +83,25 @@ const baseConfig = {
 };
 
 const validResult = validator.validate(baseConfig);
-assert.equal(validResult.valid, true, "Physically compatible configuration must pass validation");
+assert.equal(validResult.valid, true, "Physically compatible generated bed selfie must pass validation");
+
+const editBedSelfieResult = validator.validate({
+  ...baseConfig,
+  roomMode: "EDIT"
+});
+assert.equal(editBedSelfieResult.valid, false, "Bed selfie must not pass as immutable EDIT geometry");
+assert.ok(editBedSelfieResult.conflicts.some((issue) => issue.type === "bed_selfie_requires_generate"));
+assert.ok(editBedSelfieResult.autoFixes.some((fix) => fix.field === "roomMode" && fix.value === "GENERATE"));
+
+const rearBedSelfieResult = validator.validate({
+  ...baseConfig,
+  cameraType: "rear",
+  camera: cameraEngine.getCamera("rear"),
+  lensType: "rear_standard",
+  lens: cameraEngine.getLens("rear_standard")
+});
+assert.equal(rearBedSelfieResult.valid, false);
+assert.ok(rearBedSelfieResult.conflicts.some((issue) => issue.type === "bed_selfie_camera_conflict"));
 
 const wrongLensResult = validator.validate({
   ...baseConfig,
@@ -92,15 +110,39 @@ const wrongLensResult = validator.validate({
 assert.equal(wrongLensResult.valid, false);
 assert.ok(wrongLensResult.conflicts.some((issue) => issue.type === "camera_lens_conflict"));
 
-const wrongEditAngleResult = validator.validate({
+const standingPose = poseEngine.getById("standing_center");
+const standingScene = sceneEngine.autoSelect({
+  poseId: standingPose.id,
+  bodyDirection: standingPose.preferred_direction,
+  cameraAngle: "eye_level",
+  cameraDistance: "wide"
+}).scene;
+const editConfig = {
   ...baseConfig,
+  pose: standingPose,
+  scene: standingScene,
+  poseId: standingPose.id,
+  selectedSceneId: standingScene.id,
+  bodyDirection: standingPose.preferred_direction,
+  cameraAngle: standingScene.base_camera_angle,
+  cameraDistance: standingScene.base_camera_distance,
+  lighting: lightingEngine.getById("all_ceiling_spots"),
+  roomMode: "EDIT",
+  uploads: {
+    imageA: { name: "identity.jpg" },
+    imageB: { name: standingScene.image_filename }
+  }
+};
+
+const wrongEditAngleResult = validator.validate({
+  ...editConfig,
   cameraAngle: "high_angle"
 });
 assert.ok(wrongEditAngleResult.conflicts.some((issue) => issue.type === "edit_mode_angle"));
 
 const wrongEditDistanceResult = validator.validate({
-  ...baseConfig,
-  cameraDistance: "close"
+  ...editConfig,
+  cameraDistance: "medium"
 });
 assert.ok(wrongEditDistanceResult.conflicts.some((issue) => issue.type === "edit_mode_distance"));
 
@@ -109,6 +151,8 @@ assert.match(prompt, /^CHATGPT IMAGE TASK/u);
 assert.match(prompt, /IMAGE A — IDENTITY ONLY/u);
 assert.match(prompt, /IMAGE B — ROOM ONLY/u);
 assert.match(prompt, /Use the LEFT hand as the upper selfie hand/u);
+assert.match(prompt, /BED SELFIE SPATIAL ANCHOR — BODY FIRST, CAMERA SECOND/u);
+assert.match(prompt, /The camera must move to the reachable hand position; the body must not move to satisfy the camera/u);
 assert.match(prompt, /Return only the final image/u);
 assert.doesNotMatch(prompt, /الاستلقاء|الأباجورة|التسريحة/u, "Final prompt must remain English");
 
