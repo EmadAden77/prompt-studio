@@ -36,14 +36,77 @@ export class PromptEngine {
 Always describe sides relative to the subject's own body, never as left/right of the image.`;
   }
 
+  familyOf(pose) {
+    if (pose?.id?.startsWith("sitting")) return "sitting";
+    if (pose?.id?.startsWith("standing")) return "standing";
+    return "bed";
+  }
+
   getPlacementRule(config) {
     const { pose, scene, autoEngineering } = config;
-    const region = scene?.region?.replaceAll("_", " ") ?? "the selected bed region";
+    const region = scene?.region?.replaceAll("_", " ") ?? "the selected room region";
+    const orientation = autoEngineering?.orientation ?? "follow the selected pose and support surfaces";
+
+    if (pose?.id === "mirror_selfie") {
+      return `Place the subject inside the actual vanity/mirror zone shown by IMAGE B. Keep the real mirror boundary and room geometry unchanged. Selected reference region: ${region}.`;
+    }
+    if (pose?.id === "standing_vanity") {
+      return `Place the subject on the real floor in front of the vanity zone shown by IMAGE B. Keep the vanity, mirror, floor, and room geometry fixed. This is the front-camera standing pose, not the separate mirror-selfie pose. Selected reference region: ${region}.\nDeterministic orientation: ${orientation}`;
+    }
+    if (pose?.id === "standing_bedside") {
+      return `Place the subject on the real floor beside the bed represented by IMAGE B. The bed remains nearby room geometry, not the body's primary support surface. Selected reference region: ${region}.\nDeterministic orientation: ${orientation}`;
+    }
+    if (pose?.placement === "sofa") {
+      const action = pose.id.startsWith("sitting") ? "on the real sofa seat" : "on the real floor in the sofa zone";
+      return `Place the subject strictly ${action} represented by IMAGE B. Preserve the sofa identity, scale, orientation, cushions, armrests, and surrounding room geometry. Selected reference region: ${region}.\nDeterministic orientation: ${orientation}`;
+    }
+    if (pose?.placement === "chair") {
+      return `Place the subject strictly on the real chair seat represented by IMAGE B. Preserve the chair boundaries, backrest, floor, and surrounding room geometry. Selected reference region: ${region}.\nDeterministic orientation: ${orientation}`;
+    }
+    if (pose?.placement === "floor" || pose?.placement === "center") {
+      return `Place the subject strictly on the real room floor represented by IMAGE B at the selected room location. Preserve all nearby furniture and fixed geometry. Selected reference region: ${region}.\nDeterministic orientation: ${orientation}`;
+    }
+    if (pose?.placement === "wardrobe") {
+      return `Place the subject on the real floor in the wardrobe zone represented by IMAGE B. Preserve wardrobe doors, state, scale, orientation, verticals, and surrounding geometry. Selected reference region: ${region}.\nDeterministic orientation: ${orientation}`;
+    }
     if (pose?.placement === "vanity") {
       return `Place the subject inside the actual vanity/mirror zone shown by IMAGE B. Keep the real mirror boundary and room geometry unchanged. Selected reference region: ${region}.`;
     }
     return `Place the subject strictly on the real bed/mattress geometry represented by IMAGE B. Anchor the body before solving the camera. Do not pull, enlarge, slide, or rotate the whole body toward the lens merely to improve composition. Selected reference region: ${region}.
-Deterministic orientation: ${autoEngineering?.orientation ?? "follow the selected pose and support surfaces"}`;
+Deterministic orientation: ${orientation}`;
+  }
+
+  getBodyFirstRule(pose) {
+    const family = this.familyOf(pose);
+    if (family === "sitting") {
+      return "BODY FIRST, CAMERA SECOND: solve the entire seated body, seat/floor contacts, support geometry, scale, and room-relative placement before deriving phone position. Soft supports compress only where loaded; hard supports prove weight through contact shadows and pressure. If framing would hide the only evidence of sitting or break anatomy, loosen the crop instead of moving the body off its support.";
+    }
+    if (family === "standing") {
+      return "BODY FIRST, CAMERA SECOND: solve the full standing body, both foot-floor contacts, weight shift, scale, and room-relative placement before deriving phone position. The floor remains rigid; grounding is proven by sole contact, contact shadow, stance asymmetry, and a light-consistent cast shadow. If upper-body framing would otherwise break anatomy or room continuity, loosen the crop without moving the feet.";
+    }
+    return "BODY FIRST, CAMERA SECOND: solve the entire body, mattress/pillow contacts, scale, and room-relative placement before deriving phone position. If framing would otherwise break anatomy or room continuity, loosen the crop instead of moving the body off its correct support surfaces.";
+  }
+
+  getRealismSupportText(pose) {
+    const family = this.familyOf(pose);
+    if (family === "sitting") {
+      return "real seated support response with seat/floor contact shadows, soft-cushion compression only where applicable, gravity-driven clothing folds, natural seated asymmetry";
+    }
+    if (family === "standing") {
+      return "real foot-floor grounding, sole contact shadows, natural contrapposto, gravity-driven clothing folds, light-consistent floor shadow";
+    }
+    return "local mattress and pillow compression, gravity-driven clothing folds";
+  }
+
+  getFinalSupportCheck(pose) {
+    const family = this.familyOf(pose);
+    if (family === "sitting") {
+      return "- Seated support surfaces visibly carry weight: soft cushions compress under load; hard seat/floor contacts show tight contact shadows and no floating gaps.\n- Knees/legs/feet remain physically supported according to the selected seated pose, and shoulders stay naturally asymmetric.";
+    }
+    if (family === "standing") {
+      return "- Both feet are physically grounded on the real floor with sole-hugging contact shadows; weight shifts naturally to one leg without mannequin symmetry.\n- Vertical room lines remain nearly vertical except for mild physically plausible wide-angle convergence.";
+    }
+    return "- Support surfaces visibly carry weight and compress locally.";
   }
 
   generate(config) {
@@ -113,7 +176,7 @@ ${this.roomLockEngine.buildLockText(roomMode)}`);
 
     sections.push(`SUBJECT PLACEMENT
 ${this.getPlacementRule(config)}
-BODY FIRST, CAMERA SECOND: solve the entire body, mattress/pillow contacts, scale, and room-relative placement before deriving phone position. If framing would otherwise break anatomy or room continuity, loosen the crop instead of moving the body off its correct support surfaces.`);
+${this.getBodyFirstRule(pose)}`);
 
     sections.push(poseSections?.posePhysics ?? `POSE & PHYSICS
 Keep anatomy, gravity, support, and pressure physically possible.`);
@@ -141,16 +204,18 @@ Use the selected clothing and never copy garments from IMAGE A.`);
 Apply one ordinary Xiaomi phone-camera pipeline to the entire frame. Use restrained sharpening, modest noise reduction, mild compression, realistic shadow noise, slight white-balance imperfection where physically expected, and natural phone depth of field. No fake DSLR bokeh. Face, neck, body, clothing, bedding, and room must share the same exposure, sharpness, noise, and compression logic unless depth or illumination physically explains a difference.`);
 
     sections.push(`REALISM
-Preserve natural facial asymmetry, real pores and skin-color variation, natural beard gaps, plausible hair clumps and stray strands, local mattress and pillow compression, gravity-driven clothing folds, anatomically possible arm reach, mild smartphone perspective distortion, and physically motivated light falloff. Never improve one part of the frame into a cleaner or sharper rendering style than the rest.`);
+Preserve natural facial asymmetry, real pores and skin-color variation, natural beard gaps, plausible hair clumps and stray strands, ${this.getRealismSupportText(pose)}, anatomically possible arm reach, mild smartphone perspective distortion, and physically motivated light falloff. Never improve one part of the frame into a cleaner or sharper rendering style than the rest.`);
 
+    const sideLyingCheck = pose && (pose.id === "lying_right_side" || pose.id === "lying_left_side")
+      ? "- For side-lying poses, the loaded shoulder, ribcage, hip, pillow contact, upper selfie arm, and lower support arm all agree with the same body side.\n"
+      : "";
     sections.push(`FINAL PHYSICAL CHECK
 - IMAGE A controls identity only; its expression, clothing, lighting, pose, and camera viewpoint do not transfer.
-- IMAGE B controls the same room and bed only.
+- IMAGE B controls the same room and the selected physical support/location only.
 - Subject placement is solved before camera placement.
 - The selected body side is defined relative to the subject, not the image.
-- For side-lying poses, the loaded shoulder, ribcage, hip, pillow contact, upper selfie arm, and lower support arm all agree with the same body side.
-- For front-camera selfies, the final frame must pass the SELFIE DISTANCE CHECK and visibly read as subject-held at arm's length, never as an observer or room camera.
-- Support surfaces visibly carry weight and compress locally.
+${sideLyingCheck}- For front-camera selfies, the final frame must pass the SELFIE DISTANCE CHECK and visibly read as subject-held at arm's length, never as an observer or room camera.
+${this.getFinalSupportCheck(pose)}
 - Arms, hands, phone reach, and optical axis are anatomically possible.
 - Mirror reflections, if present, preserve one ray path and correct handedness.
 - Camera, lens, perspective, exposure, depth of field, noise, and processing form one compatible capture.
@@ -159,8 +224,11 @@ Preserve natural facial asymmetry, real pores and skin-color variation, natural 
     sections.push(`FORBIDDEN RESULTS
 No cartoon, illustration, painting, CGI, 3D-render appearance, beauty filter, facial reshaping, forced symmetry, plastic or waxy skin, artificial pore maps, painted beard, wire hair, extra fingers, extra limbs, fused limbs, impossible joints, torso penetration, floating body, unsupported contact, broken reflection, third-person observer viewpoint, camera across the room, camera at the foot of the bed, doorway view, tripod shot, photo taken by another person, full-body distant selfie, whole-bed composition, hand propping the head during a selfie, fake DSLR bokeh, anamorphic distortion, destructive ISO noise, extreme motion blur, fake 8K detail, unmotivated lens flare, cinematic grading, studio softbox, EXIF spoofing, C2PA removal, PRNU simulation, forensic countermeasures, unrequested text, or logos.`);
 
+    const familyNegatives = poseSections?.familyNegative?.length
+      ? `, ${poseSections.familyNegative.join(", ")}`
+      : "";
     sections.push(`NEGATIVE PROMPT
-cartoon, illustration, painting, CGI, 3D render, plastic skin, beauty filter, face smoothing, over-sharpened pores, painted beard, wire hair, extra fingers, extra arm, fused hand, impossible elbow, wrong selfie hand, torso penetration, floating shoulder, semi-reclined side-lying hybrid, face-up side pose, third-person view, observer camera, wide room shot, camera at foot of bed, doorway camera, photo taken by another person, full-body distant view, whole bed visible, hand propping head, posing hand under cheek, tripod shot, broken anatomy, fake bokeh, cinematic lighting, studio softbox, extreme HDR, artificial glow, fake 8K, exaggerated wide-angle distortion, EXIF manipulation, C2PA removal, PRNU simulation`);
+cartoon, illustration, painting, CGI, 3D render, plastic skin, beauty filter, face smoothing, over-sharpened pores, painted beard, wire hair, extra fingers, extra arm, fused hand, impossible elbow, wrong selfie hand, torso penetration, floating shoulder, semi-reclined side-lying hybrid, face-up side pose, third-person view, observer camera, wide room shot, camera at foot of bed, doorway camera, photo taken by another person, full-body distant view, whole bed visible, hand propping head, posing hand under cheek, tripod shot, broken anatomy, fake bokeh, cinematic lighting, studio softbox, extreme HDR, artificial glow, fake 8K, exaggerated wide-angle distortion, EXIF manipulation, C2PA removal, PRNU simulation${familyNegatives}`);
 
     return sections.filter(Boolean).join("\n\n");
   }
