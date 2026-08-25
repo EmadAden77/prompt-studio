@@ -1,6 +1,14 @@
 import { hierarchyAsPromptText } from "../policies/authorityPolicy.js";
 import { MASTER_POLICY } from "../policies/masterPolicy.js";
 
+const BED_SELFIE_ARM_STRATEGIES = new Set([
+  "lying_back",
+  "lying_stomach",
+  "lying_right_side",
+  "lying_left_side",
+  "semi_reclining"
+]);
+
 export class PromptEngine {
   constructor({ identityEngine, roomLockEngine, poseEngine, cameraEngine, lightingEngine }) {
     this.identityEngine = identityEngine;
@@ -8,6 +16,10 @@ export class PromptEngine {
     this.poseEngine = poseEngine;
     this.cameraEngine = cameraEngine;
     this.lightingEngine = lightingEngine;
+  }
+
+  isBedSelfiePose(pose) {
+    return Boolean(pose?.placement === "bed" && BED_SELFIE_ARM_STRATEGIES.has(pose.arm_strategy));
   }
 
   getPlacementRule(pose, scene) {
@@ -22,6 +34,19 @@ export class PromptEngine {
     };
     const base = rules[pose?.placement] ?? "Place the subject only in a physically available region shown by IMAGE B.";
     return `${base}\nSelected reference region: ${scene?.region?.replaceAll("_", " ") ?? "the visible IMAGE B region"}.`;
+  }
+
+  getBedSelfieSpatialAnchor(pose, scene) {
+    if (!this.isBedSelfiePose(pose)) return "";
+    const region = scene?.region?.replaceAll("_", " ") ?? "the selected bed region";
+    return `BED SELFIE SPATIAL ANCHOR — BODY FIRST, CAMERA SECOND
+This is a new reachable selfie viewpoint inside the same room, not a reconstruction of IMAGE B as a different bedroom.
+1. Anchor the body first to the real mattress and pillow geometry in ${region}. Keep the torso, pelvis, head, and legs at a plausible scale relative to the known bed dimensions and surrounding furniture.
+2. Preserve the subject's location on the bed after placement. Do not pull, enlarge, slide, or rotate the whole body toward the camera merely to create a tighter selfie composition.
+3. Only after the body and all support contacts are solved, derive the phone position from the specified shoulder, elbow, wrist, and arm reach. The camera must move to the reachable hand position; the body must not move to satisfy the camera.
+4. The holding forearm may become large near a wide phone lens only as a natural near-field perspective effect. This must not make the head or torso unnaturally oversized relative to the pillow, mattress, headboard, nightstand, or room.
+5. Keep the same bed identity, headboard, pillow family, bedding, nearby furniture, clutter, walls, ceiling, and room scale from IMAGE B. A new crop may hide objects, but it must never relocate them.
+6. If the requested crop cannot be reached without breaking anatomy or room continuity, widen or loosen the crop while preserving the body placement and physical camera reach.`;
   }
 
   getReferenceName(upload, fallback) {
@@ -81,6 +106,10 @@ ${this.roomLockEngine.buildLockText(roomMode)}`);
 ${this.identityEngine.buildPersonText()}
 ${this.getPlacementRule(pose, scene)}`);
 
+    if (roomMode === "GENERATE" && this.isBedSelfiePose(pose)) {
+      sections.push(this.getBedSelfieSpatialAnchor(pose, scene));
+    }
+
     sections.push(`POSE AND BODY PHYSICS
 Pose: ${pose?.name_en ?? "Natural pose selected by the user"}.
 Body direction: ${bodyDirection.replaceAll("_", " ")}.
@@ -120,6 +149,7 @@ Light must interact consistently with face, hair, beard, neck, clothing, bedding
 - The room obeys IMAGE B and ${roomMode} mode.
 - The selected support surfaces exist and visibly respond to body weight.
 - Arms, hands, phone reach, and camera optical axis are anatomically and geometrically possible.
+- For bed selfies, body placement on the mattress is solved before camera placement and must not shift to satisfy framing.
 - Mirror reflections, if present, preserve one consistent ray path and handedness.
 - Camera, lens, distance, perspective, depth of field, exposure, and processing form one compatible capture.
 - No furniture or clutter is added, removed, moved, cleaned, mirrored, resized, or redesigned.`);
