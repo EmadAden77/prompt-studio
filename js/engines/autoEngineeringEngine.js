@@ -11,22 +11,55 @@ export class AutoEngineeringEngine {
   }
 
   resolveScene(engineering, sceneOverrideId = null) {
-    if (sceneOverrideId) {
-      const scene = this.sceneEngine.getById(sceneOverrideId);
-      if (scene) return { scene, overridden: true };
-    }
-
-    const preferred = this.sceneEngine.getById(engineering.preferredSceneId);
-    if (preferred) return { scene: preferred, overridden: false };
-
-    const fallback = this.sceneEngine.autoSelect({
+    const selectionConfig = {
       poseId: engineering.poseId,
       bodyDirection: engineering.bodyDirection,
       cameraAngle: engineering.cameraAngle,
       cameraDistance: engineering.cameraDistance,
       requiredFeatures: engineering.requires ?? []
-    });
-    return { scene: fallback.scene ?? null, overridden: false };
+    };
+
+    if (sceneOverrideId) {
+      const scene = this.sceneEngine.getById(sceneOverrideId);
+      if (scene) {
+        const manual = this.sceneEngine.evaluateManualSelection(scene, selectionConfig);
+        const gateStats = this.sceneEngine.hardGate(engineering.poseId, engineering.requires ?? []);
+        const requiredText = this.sceneEngine.formatRequiredFeatures(manual.gate?.missingFeatures ?? []);
+        return {
+          scene,
+          overridden: true,
+          manualOverrideInvalid: !manual.hardGatePassed,
+          hardGatePassed: manual.hardGatePassed,
+          confidence: manual.hardGatePassed
+            ? "تجاوز يدوي — اجتاز البوابة"
+            : "⚠ تجاوز يدوي — مرجع غير صالح",
+          reasons: manual.reasons,
+          gateSummary: `مرشح صارم: اجتاز ${gateStats.passedCount} من ${gateStats.totalCount} مرجعًا`,
+          passedCount: gateStats.passedCount,
+          totalCount: gateStats.totalCount,
+          requiredFeatures: gateStats.requirement.required_features_all,
+          requiredMessage: manual.hardGatePassed
+            ? ""
+            : `التجاوز اليدوي لا يطابق الوضعية${requiredText ? ` — العناصر الناقصة: ${requiredText}` : ""}`
+        };
+      }
+    }
+
+    const automatic = this.sceneEngine.autoSelect(selectionConfig);
+    return {
+      scene: automatic.scene ?? null,
+      overridden: false,
+      manualOverrideInvalid: false,
+      hardGatePassed: Boolean(automatic.scene),
+      confidence: automatic.confidence ?? "غير متاح",
+      reasons: automatic.reasons ?? [],
+      gateSummary: automatic.gateSummary ?? "",
+      passedCount: automatic.passedCount ?? 0,
+      totalCount: automatic.totalCount ?? this.sceneEngine.scenes.length,
+      requiredFeatures: automatic.requiredFeatures ?? [],
+      requiredMessage: automatic.message ?? "",
+      error: automatic.error ?? null
+    };
   }
 
   compatibleLighting(scene, cameraType) {
@@ -67,27 +100,40 @@ export class AutoEngineeringEngine {
       spatialMap: BED_SPATIAL_MAP
     };
 
-    const { scene, overridden } = this.resolveScene(baseEngineering, sceneOverrideId);
-    const geometry = this.normalizeGeometry(pose, scene, mapping);
+    const selection = this.resolveScene(baseEngineering, sceneOverrideId);
+    const geometry = this.normalizeGeometry(pose, selection.scene, mapping);
     const engineering = { ...baseEngineering, ...geometry };
-    const compatibleLighting = this.compatibleLighting(scene, engineering.cameraType);
+    const compatibleLighting = this.compatibleLighting(selection.scene, engineering.cameraType);
     const selectedLighting = compatibleLighting.find((option) => option.id === lightingId)
       ?? compatibleLighting[0]
       ?? this.lightingEngine.getById(lightingId);
 
-    const sceneReason = overridden
-      ? "Manual scene override retained, then checked against deterministic pose geometry."
-      : `Deterministic match: pose ${pose.id} → body orientation → reachable camera geometry → ${scene?.id ?? "no scene"}.`;
+    const sceneReason = selection.overridden
+      ? (selection.manualOverrideInvalid
+        ? "تجاوز يدوي: المرجع محفوظ رغم فشله في البوابة الصارمة، والـValidator سيحجبه."
+        : "تجاوز يدوي: المرجع اجتاز البوابة الصارمة ثم خضع للفحص.")
+      : (selection.scene
+        ? "اختيار تلقائي صارم: البوابة Pass/Fail نُفذت أولًا، ثم تمت المفاضلة بين المراجع الناجحة فقط."
+        : selection.requiredMessage);
 
     return {
       ...engineering,
-      selectedSceneId: scene?.id ?? null,
-      scene,
-      sceneOverrideId: overridden ? sceneOverrideId : null,
+      selectedSceneId: selection.scene?.id ?? null,
+      scene: selection.scene,
+      sceneOverrideId: selection.overridden ? sceneOverrideId : null,
       lightingId: selectedLighting?.id ?? lightingId,
       compatibleLightingIds: compatibleLighting.map((option) => option.id),
-      confidence: overridden ? "اختيار يدوي — تحت الفحص" : "تلقائي — دقة عالية",
-      sceneReason
+      confidence: selection.confidence,
+      sceneReason,
+      sceneSelectionReasons: selection.reasons,
+      gateSummary: selection.gateSummary,
+      gatePassedCount: selection.passedCount,
+      gateTotalCount: selection.totalCount,
+      strictRequiredFeatures: selection.requiredFeatures,
+      strictNoMatch: !selection.scene && Boolean(selection.error),
+      strictNoMatchMessage: !selection.scene ? selection.requiredMessage : "",
+      hardGatePassed: selection.hardGatePassed,
+      manualOverrideInvalid: selection.manualOverrideInvalid
     };
   }
 
