@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync, existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { APP_CONFIG } from "../js/config/appConfig.js";
 import { SCENES } from "../js/data/scenesData.js";
 import { POSES } from "../js/data/posesData.js";
 import { CAMERA_SPECS, LENSES, SELFIE_ARM_STRATEGIES } from "../js/data/cameraData.js";
@@ -9,7 +10,7 @@ import { LIGHTING_OPTIONS } from "../js/data/lightingData.js";
 import { CLOTHING_OPTIONS } from "../js/data/clothingData.js";
 import { EXPRESSION_OPTIONS } from "../js/data/expressionsData.js";
 import { HAIR_OPTIONS } from "../js/data/hairData.js";
-import { QUAD_POSE_IDS } from "../js/data/quadModeData.js";
+import { QUAD_DEFAULTS, QUAD_POSE_IDS } from "../js/data/quadModeData.js";
 import { FIXED_DATA, IMAGE_A_AUTHORITY, IMAGE_B_AUTHORITY } from "../js/data/fixedData.js";
 import { ROOM_LOCK_POLICIES } from "../js/policies/roomLockPolicy.js";
 import { SceneEngine } from "../js/engines/sceneEngine.js";
@@ -33,6 +34,24 @@ const promptEngine = new PromptEngine({ identityEngine, roomLockEngine, poseEngi
 const autoEngineeringEngine = new AutoEngineeringEngine({ sceneEngine, lightingEngine });
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
+const expectedClothingIds = [
+  "cotton_pajama", "satin_pajama", "sleep_tee_shorts", "thermal_sleep",
+  "heather_tee_jeans", "longsleeve_chino", "oxford_shirt_chino", "flannel_jeans", "polo_chino", "hoodie_sweats", "sweater_jeans",
+  "dryfit_track", "track_jacket",
+  "denim_jacket", "leather_jacket", "puffer_jacket", "wool_coat",
+  "thobe"
+];
+assert.deepEqual(CLOTHING_OPTIONS.map((item) => item.id), expectedClothingIds, "v1.1 clothing catalog must contain only the approved items in approved order");
+assert.equal(APP_CONFIG.defaultState.clothingId, "cotton_pajama");
+assert.equal(QUAD_DEFAULTS.clothingId, "cotton_pajama");
+assert.deepEqual([...new Set(CLOTHING_OPTIONS.map((item) => item.category))], ["sleepwear", "casual", "sport", "winter", "traditional"]);
+for (const outfit of CLOTHING_OPTIONS) {
+  assert.ok(outfit.name_ar && outfit.name_en && outfit.pieces, `Clothing metadata must be complete: ${outfit.id}`);
+  for (const key of ["type", "weight", "sheen", "drape", "folds", "texture", "wear"]) {
+    assert.ok(outfit.fabric?.[key], `Fabric field ${key} must exist: ${outfit.id}`);
+  }
+}
+
 const rightPose = poseEngine.getById("lying_right_side");
 const rightEngineering = autoEngineeringEngine.engineer({
   pose: rightPose,
@@ -43,6 +62,7 @@ assert.equal(rightEngineering.bodyDirection, "toward_lamp");
 assert.equal(rightEngineering.cameraType, "front");
 assert.equal(rightEngineering.lensType, "front_wide");
 assert.equal(rightEngineering.roomMode, "GENERATE");
+assert.equal(rightEngineering.clothingId, undefined, "Auto-engineering must never overwrite the user-selected clothing in v1.1");
 assert.match(rightEngineering.armFine, /LEFT/u);
 assert.match(rightEngineering.physicsFine, /RIGHT shoulder/u);
 assert.equal(rightEngineering.selfieViewpoint.holdingHand, "LEFT");
@@ -61,11 +81,12 @@ assert.equal(leftEngineering.selfieViewpoint.holdingHand, "RIGHT");
 assert.equal(leftEngineering.selfieViewpoint.otherHand, "LEFT");
 assert.match(leftEngineering.selfieViewpoint.tilt, /counterclockwise Dutch tilt/u);
 
+const cottonPajama = CLOTHING_OPTIONS.find((item) => item.id === "cotton_pajama");
 const rightPoseSections = poseEngine.engineer({
   pose: rightPose,
   expression: EXPRESSION_OPTIONS.find((item) => item.id === "serious"),
   hair: HAIR_OPTIONS.find((item) => item.id === "messy"),
-  clothing: CLOTHING_OPTIONS.find((item) => item.id === "pajamas"),
+  clothing: cottonPajama,
   autoEngineering: rightEngineering
 });
 assert.match(rightPoseSections.trueLateral, /TRUE LATERAL ENFORCEMENT/u);
@@ -74,15 +95,29 @@ assert.match(rightPoseSections.trueLateral, /LOWER RIGHT arm/u);
 assert.match(rightPoseSections.trueLateral, /SUBJECT'S own body/u);
 assert.match(rightPoseSections.expression, /overrides the expression visible in IMAGE A/u);
 assert.match(rightPoseSections.expression, /muscle-state override/u);
-assert.match(rightPoseSections.clothing, /overrides every garment visible in IMAGE A/u);
-assert.match(rightPoseSections.clothing, /Never copy IMAGE A's shirt/u);
+assert.match(rightPoseSections.clothing, /CLOTHING \(user-selected — OVERRIDES IMAGE A\)/u);
+assert.match(rightPoseSections.clothing, /loose grey cotton pajama shirt with matching pants/u);
+assert.match(rightPoseSections.clothing, /Fabric: cotton; weight light-medium; sheen: matte/u);
+assert.match(rightPoseSections.clothing, /FABRIC REALISM/u);
+assert.match(rightPoseSections.clothing, /NON-REPEATING/u);
+assert.match(rightPoseSections.clothing, /no tiled texture stamps/u);
+assert.match(rightPoseSections.clothing, /Folds are load-driven only/u);
+assert.match(rightPoseSections.clothing, /Matte cotton stays matte/u);
+assert.match(rightPoseSections.clothing, /same phone-camera pipeline/u);
+assert.match(rightPoseSections.clothing, /selected clothing overrides every shirt/u);
 assert.match(rightPoseSections.hair, /arrangement only/u);
+
+const leather = CLOTHING_OPTIONS.find((item) => item.id === "leather_jacket");
+const leatherLock = poseEngine.buildClothingLock(leather);
+assert.match(leatherLock, /soft specular highlights/u);
+assert.match(leatherLock, /natural grain, no uniform pattern/u);
+assert.match(leatherLock, /Satin and leather may show soft directional highlights only/u);
 
 const leftPoseSections = poseEngine.engineer({
   pose: leftPose,
   expression: EXPRESSION_OPTIONS.find((item) => item.id === "relaxed"),
   hair: HAIR_OPTIONS.find((item) => item.id === "same"),
-  clothing: CLOTHING_OPTIONS.find((item) => item.id === "pajamas"),
+  clothing: cottonPajama,
   autoEngineering: leftEngineering
 });
 assert.match(leftPoseSections.trueLateral, /UPPER RIGHT hand is the ONLY selfie hand/u);
@@ -145,7 +180,8 @@ const baseConfig = {
   lens: cameraEngine.getLens(rightEngineering.lensType),
   expression: EXPRESSION_OPTIONS.find((item) => item.id === "relaxed"),
   hair: HAIR_OPTIONS.find((item) => item.id === "same"),
-  clothing: CLOTHING_OPTIONS.find((item) => item.id === "pajamas"),
+  clothing: cottonPajama,
+  clothingId: cottonPajama.id,
   lighting: lightingEngine.getById(rightEngineering.lightingId),
   roomMode: rightEngineering.roomMode,
   autoEngineering: rightEngineering,
@@ -179,7 +215,9 @@ assert.match(prompt, /LOWER RIGHT arm/u);
 assert.match(prompt, /EXPRESSION LOCK/u);
 assert.match(prompt, /selected expression overrides the expression visible in IMAGE A/u);
 assert.match(prompt, /CLOTHING LOCK/u);
-assert.match(prompt, /selected clothing overrides every garment visible in IMAGE A/u);
+assert.match(prompt, /FABRIC REALISM/u);
+assert.match(prompt, /loose grey cotton pajama shirt with matching pants/u);
+assert.match(prompt, /same phone-camera pipeline/u);
 assert.match(prompt, /LAMP SIDE: RIGHT/u);
 assert.match(prompt, /Face occupies approximately 40–60% of frame height/u);
 assert.match(prompt, /third-person view, observer camera, wide room shot/u);
@@ -222,11 +260,27 @@ assert.match(leftPrompt, /UPPER RIGHT hand is the ONLY selfie hand/u);
 const indexHTML = readFileSync(resolve(projectRoot, "index.html"), "utf8");
 assert.doesNotMatch(indexHTML, /183\s*cm|82\s*kg|35 years|Middle Eastern man/u, "Fixed person data must not appear in the UI document");
 assert.match(indexHTML, /Smart Quad/u);
+assert.match(indexHTML, /خمس اختيارات/u);
 assert.match(indexHTML, /id="poseSelect"/u);
 assert.match(indexHTML, /id="hairSelect"/u);
 assert.match(indexHTML, /id="lightingSelect"/u);
 assert.match(indexHTML, /id="expressionSelect"/u);
-assert.doesNotMatch(indexHTML, /id="cameraSelect"|id="angleSelect"|id="distanceSelect"|id="clothingSelect"|id="roomModeSelect"/u, "Smart Quad UI must hide engineering controls completely");
+assert.match(indexHTML, /id="clothingSelect"/u);
+assert.doesNotMatch(indexHTML, /id="cameraSelect"|id="angleSelect"|id="distanceSelect"|id="roomModeSelect"/u, "v1.1 UI must keep engineering controls hidden");
+
+const appJS = readFileSync(resolve(projectRoot, "js/app.js"), "utf8");
+assert.match(appJS, /document\.createElement\("optgroup"\)/u);
+assert.match(appJS, /sleepwear: "ملابس نوم"/u);
+assert.match(appJS, /casual: "كاجوال"/u);
+assert.match(appJS, /sport: "رياضي"/u);
+assert.match(appJS, /winter: "شتوي"/u);
+assert.match(appJS, /traditional: "تقليدي"/u);
+assert.doesNotMatch(appJS, /derivedFields = \[[\s\S]*"clothingId"/u, "Auto-engineered fields must not overwrite the clothing choice");
+
+const changelog = readFileSync(resolve(projectRoot, "CHANGELOG.md"), "utf8");
+assert.match(changelog, /## v1\.1 — 2026-08-25/u);
+assert.match(changelog, /FABRIC REALISM/u);
+assert.match(changelog, /cotton_pajama/u);
 
 const localAssets = [...indexHTML.matchAll(/(?:href|src)="([^"#]+)"/gu)]
   .map((match) => match[1])
@@ -255,6 +309,7 @@ while (sourceFiles.length) {
 console.log("✓ Smart Quad deterministic mapping tests passed");
 console.log("✓ True lateral anatomy and reference-lock tests passed");
 console.log("✓ Selfie viewpoint lock and framing tests passed");
+console.log("✓ v1.1 clothing catalog and fabric-realism tests passed");
 console.log("✓ Validator tests passed");
 console.log("✓ Prompt generation and spatial-map tests passed");
-console.log("✓ Four-choice UI and static integrity tests passed");
+console.log("✓ Five-choice UI and static integrity tests passed");
