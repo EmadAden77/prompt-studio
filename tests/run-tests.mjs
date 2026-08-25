@@ -60,17 +60,51 @@ assert.equal(POSE_REQUIREMENTS.lying_left_side.preferred_region, "left_side_of_b
 assert.deepEqual(POSE_REQUIREMENTS.mirror_selfie.required_features_all, ["vanity_mirror"]);
 assert.equal(POSE_REQUIREMENTS.mirror_selfie.preferred_region, "vanity_area");
 
+const expectedLightingIds = [
+  "phone_screen_only", "ceiling_white", "ceiling_warm", "all_spots",
+  "lamp_only", "lamp_and_phone",
+  "window_daylight", "overcast_flat", "golden_hour",
+  "ceiling_and_lamp", "ceiling_and_phone",
+  "night_city_window", "curtain_lamp"
+];
+assert.deepEqual(LIGHTING_OPTIONS.map((item) => item.id), expectedLightingIds, "v1.6 lighting catalog must match the supplied preset order");
+assert.deepEqual([...new Set(LIGHTING_OPTIONS.map((item) => item.category))], ["screen", "ceiling", "lamp", "daylight", "mixed", "night"]);
+assert.equal(APP_CONFIG.defaultState.lightingId, "lamp_and_phone", "The existing lighting default must remain unchanged");
+for (const lighting of LIGHTING_OPTIONS) {
+  for (const key of ["name_ar", "name_en", "category", "kelvin", "quality", "iso", "physics", "shadows", "catchlights", "room_effect"]) {
+    assert.ok(lighting[key], `Lighting field ${key} must exist: ${lighting.id}`);
+  }
+}
+
 const phoneOnly = lightingEngine.getById("phone_screen_only");
 const lampAndPhone = lightingEngine.getById("lamp_and_phone");
 assert.deepEqual(phoneOnly.required_features, [], "Phone screen is a portable source and must not require a room feature");
 assert.deepEqual(phoneOnly.portable_sources, ["phone_screen"]);
 assert.deepEqual(lampAndPhone.portable_sources, ["phone_screen"]);
 assert.deepEqual(lampAndPhone.required_features, ["lamp"]);
+const phoneOnlyPrompt = lightingEngine.buildPrompt(phoneOnly);
+assert.match(phoneOnlyPrompt, /LIGHTING REALISM \(anti-AI\)/u);
+assert.match(phoneOnlyPrompt, /Inverse-square falloff/u);
+assert.match(phoneOnlyPrompt, /rectangular screen glow in both eyes/u);
+assert.match(CAMERA_SPECS.front.focal_length, /22–24 mm/u);
+assert.equal(LENSES.find((item) => item.id === "front_wide").focal_length, "22–24 mm equivalent");
 assert.match(CAMERA_SPECS.front.distance, /typically 45–70 cm/u);
 assert.match(CAMERA_SPECS.front.distance, /70–90 cm only when/u);
 
 const rightPose = poseEngine.getById("lying_right_side");
 const rightMapping = autoEngineeringEngine.getPoseEngineering(rightPose.id);
+const frontCameraPrompt = cameraEngine.buildPrompt({
+  camera: CAMERA_SPECS.front,
+  lens: LENSES.find((item) => item.id === "front_wide"),
+  pose: rightPose,
+  cameraAngle: "eye_level",
+  cameraDistance: "close"
+});
+assert.match(frontCameraPrompt, /^\[Camera Emulator\]: Xiaomi 15 Ultra - Front-Facing Camera/u);
+assert.match(frontCameraPrompt, /Focal Length: 22–24mm equivalent wide-angle front lens/u);
+assert.match(frontCameraPrompt, /STRICT NO AI POLISH/u);
+assert.doesNotMatch(frontCameraPrompt, /- Camera:/u);
+
 const rightGate = sceneEngine.hardGate(
   rightPose.id,
   rightPose.requires ?? [],
@@ -178,7 +212,7 @@ assert.match(leftLampNoMatch.strictNoMatchMessage, /أباجورة/u);
 
 const invalidManualEngineering = autoEngineeringEngine.engineer({
   pose: rightPose,
-  lightingId: "single_ceiling",
+  lightingId: "ceiling_white",
   sceneOverrideId: "vanity_mirror"
 });
 assert.equal(invalidManualEngineering.selectedSceneId, "vanity_mirror", "Manual override is retained for explicit review");
@@ -247,7 +281,7 @@ assert.equal(backEngineering.selfieViewpoint.distance, "45–75 cm");
 assert.doesNotMatch(backEngineering.cameraFine, /75–85/u);
 
 const mirrorPose = poseEngine.getById("mirror_selfie");
-const mirrorEngineering = autoEngineeringEngine.engineer({ pose: mirrorPose, lightingId: "single_ceiling" });
+const mirrorEngineering = autoEngineeringEngine.engineer({ pose: mirrorPose, lightingId: "ceiling_white" });
 assert.equal(mirrorEngineering.selectedSceneId, "vanity_mirror");
 assert.equal(mirrorEngineering.cameraType, "rear");
 assert.equal(mirrorEngineering.bodyDirection, "facing_mirror");
@@ -260,7 +294,7 @@ assert.equal(cameraEngine.selfieViewpointLock({
 
 for (const poseId of QUAD_POSE_IDS) {
   const pose = poseEngine.getById(poseId);
-  const lightingId = poseId === "mirror_selfie" ? "single_ceiling" : "phone_screen_only";
+  const lightingId = poseId === "mirror_selfie" ? "ceiling_white" : "phone_screen_only";
   const engineered = autoEngineeringEngine.engineer({ pose, lightingId });
   assert.ok(engineered?.scene, `Every Smart Quad pose needs a deterministic scene under a compatible lighting choice: ${poseId}`);
   assert.ok(engineered.hardGatePassed, `Every automatic Smart Quad scene must pass the hard gate: ${poseId}`);
@@ -335,6 +369,8 @@ assert.ok(wrongLensResult.conflicts.some((issue) => issue.type === "camera_lens_
 
 const prompt = promptEngine.generate(baseConfig);
 assert.match(prompt, /^CHATGPT IMAGE TASK/u);
+assert.match(prompt, /LIGHTING REALISM \(anti-AI\)/u);
+assert.match(prompt, /\[Camera Emulator\]: Xiaomi 15 Ultra - Front-Facing Camera/u);
 assert.match(prompt, /SELFIE VIEWPOINT LOCK — HIGHEST PRIORITY FOR CAMERA GEOMETRY/u);
 assert.match(prompt, /IMAGE A — IDENTITY ONLY/u);
 assert.match(prompt, /IMAGE B — ROOM ONLY/u);
@@ -402,6 +438,8 @@ assert.doesNotMatch(indexHTML, /id="cameraSelect"|id="angleSelect"|id="distanceS
 
 const appJS = readFileSync(resolve(projectRoot, "js/app.js"), "utf8");
 assert.match(appJS, /document\.createElement\("optgroup"\)/u);
+assert.match(appJS, /LIGHTING_CATEGORY_LABELS/u);
+assert.match(appJS, /populateLightingSelect/u);
 assert.doesNotMatch(appJS, /derivedFields = \[[\s\S]*"clothingId"/u, "Auto-engineered fields must not overwrite clothing");
 assert.match(appJS, /selectReference\(sceneId/u);
 assert.match(appJS, /getCompatiblePoseIds/u);
@@ -413,6 +451,9 @@ assert.match(promptDisplayJS, /تحذير المرجع/u);
 assert.match(promptDisplayJS, /summary-item--warning/u);
 
 const changelog = readFileSync(resolve(projectRoot, "CHANGELOG.md"), "utf8");
+assert.match(changelog, /## v1\.6 — 2026-08-25/u);
+assert.match(changelog, /Camera Emulator/u);
+assert.match(changelog, /LIGHTING REALISM/u);
 assert.match(changelog, /## v1\.4 — 2026-08-25/u);
 assert.match(changelog, /reference-first selection/u);
 assert.match(changelog, /## v1\.3\.1 — 2026-08-25/u);
@@ -450,6 +491,7 @@ while (sourceFiles.length) {
   }
 }
 
+console.log("✓ v1.6 lighting realism and Camera Emulator tests passed");
 console.log("✓ Smart Quad deterministic mapping tests passed");
 console.log("✓ v1.3 bedroom realism camera geometry tests passed");
 console.log("✓ v1.3 scene + selfie feasibility + lighting hard-gate tests passed");

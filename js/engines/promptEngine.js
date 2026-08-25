@@ -135,9 +135,7 @@ Preserve original length, density, wave pattern, and hairline from IMAGE A.`);
     sections.push(poseSections?.clothing ?? `CLOTHING LOCK
 Use the selected clothing and never copy garments from IMAGE A.`);
 
-    sections.push(`LIGHTING
-${this.lightingEngine.buildPrompt(lighting)}
-Every cast shadow, contact shadow, catchlight, reflection, and brightness gradient must trace back to a selected or reference-supported source. No cinematic fill, hidden softbox, or unexplained room brightening.`);
+    sections.push(this.lightingEngine.buildPrompt(lighting));
 
     sections.push(`CAMERA PROCESSING
 Apply one ordinary Xiaomi phone-camera pipeline to the entire frame. Use restrained sharpening, modest noise reduction, mild compression, realistic shadow noise, slight white-balance imperfection where physically expected, and natural phone depth of field. No fake DSLR bokeh. Face, neck, body, clothing, bedding, and room must share the same exposure, sharpness, noise, and compression logic unless depth or illumination physically explains a difference.`);

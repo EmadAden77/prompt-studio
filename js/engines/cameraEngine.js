@@ -1,3 +1,20 @@
+export function selfieCameraEmulator() {
+  return `[Camera Emulator]: Xiaomi 15 Ultra - Front-Facing Camera (Selfie Mode)
+
+[Optical Physics & Lens Specs]:
+- Focal Length: 22–24mm equivalent wide-angle front lens.
+- Perspective Constraints: close-quarters distance (0.4–0.7 m from subject) enforcing natural center-face protrusion and distinct perspective distortion at the frame edges.
+- Sensor Characteristics: mobile micro-sensor dynamics enforcing subtle high-ISO grain and raw chroma noise in shadow areas.
+- Lighting & Exposure: physical ambient lighting interacting naturally with skin; uneven light falloff typical of arm-length selfies with direct harsh highlights on the T-zone.
+
+[Texture & Processing Execution - STRICT NO AI POLISH]:
+- Absolutely eliminate all smooth waxy or overly processed skin textures.
+- Force raw physical imperfections: visible pores, asymmetric peach fuzz, microscopic sweat glints, uneven pigmentation, and true skin micro-contrast.
+- Mobile artifacts: subtle software over-sharpening on edges combined with micro-motion blur on extremities like loose hair to mimic handheld instability.
+
+[Depth of Field]: natural phone depth of field; only if computational portrait mode is implied, show intentional slight edge-detection flaws around hair/shoulders rather than perfect DSLR falloff.`;
+}
+
 export class CameraEngine {
   constructor(cameraSpecs, lenses, armStrategies) {
     this.cameraSpecs = cameraSpecs;
@@ -70,11 +87,9 @@ If the frame reads as though the camera is farther away than the mapped arm reac
   }
 
   buildPrompt({ camera, lens, pose, cameraAngle, cameraDistance }) {
-    const captureLabel = camera.selfie
-      ? "This is a real handheld front-camera selfie."
-      : "This is not a selfie; another person or a stable tripod operates the rear camera.";
+    if (camera?.selfie && camera.type === "front") return selfieCameraEmulator();
 
-    return `${captureLabel}
+    return `This is not a selfie; another person or a stable tripod operates the rear camera.
 - Camera: ${camera.name_en}.
 - Lens: ${lens.name_en}, ${lens.focal_length}.
 - Aperture behavior: ${camera.aperture}.

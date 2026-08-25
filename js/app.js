@@ -35,6 +35,15 @@ const CLOTHING_CATEGORY_LABELS = Object.freeze({
   traditional: "تقليدي"
 });
 
+const LIGHTING_CATEGORY_LABELS = Object.freeze({
+  screen: "شاشة الهاتف",
+  ceiling: "السقف",
+  lamp: "الأباجورة",
+  daylight: "النهار",
+  mixed: "مختلطة",
+  night: "ليلية"
+});
+
 class App {
   constructor() {
     this.storage = new StorageManager(APP_CONFIG.storageKey);
@@ -150,6 +159,30 @@ class App {
     select.replaceChildren(fragment);
     select.value = this.state.clothingId;
   }
+  populateLightingSelect(options = LIGHTING_OPTIONS) {
+    const select = this.dom.lightingSelect;
+    if (!select) return;
+    const fragment = document.createDocumentFragment();
+
+    Object.entries(LIGHTING_CATEGORY_LABELS).forEach(([category, label]) => {
+      const categoryOptions = options.filter((item) => item.category === category);
+      if (!categoryOptions.length) return;
+
+      const group = document.createElement("optgroup");
+      group.label = label;
+      categoryOptions.forEach((item) => {
+        const option = document.createElement("option");
+        option.value = item.id;
+        option.textContent = item.name_ar;
+        option.selected = item.id === this.state.lightingId;
+        group.appendChild(option);
+      });
+      fragment.appendChild(group);
+    });
+
+    select.replaceChildren(fragment);
+    select.value = this.state.lightingId;
+  }
 
   getSelectedReference() {
     return this.sceneEngine.getById(this.state.sceneOverrideId);
@@ -206,7 +239,7 @@ class App {
       : LIGHTING_OPTIONS;
     setOptions(this.dom.hairSelect, HAIR_OPTIONS, this.state.hairId);
     setOptions(this.dom.expressionSelect, quadExpressions, this.state.expressionId);
-    setOptions(this.dom.lightingSelect, lightingOptions, this.state.lightingId);
+    this.populateLightingSelect(lightingOptions);
     this.populateClothingSelect();
     if (this.dom.modeHint) this.dom.modeHint.textContent = "5 اختيارات — الوضعية تلقائية";
   }
@@ -369,7 +402,7 @@ class App {
     const options = LIGHTING_OPTIONS.filter((item) => ids.includes(item.id));
     const safeOptions = options.length ? options : LIGHTING_OPTIONS;
     this.populatePoseOptions();
-    setOptions(this.dom.lightingSelect, safeOptions, this.state.lightingId);
+    this.populateLightingSelect(safeOptions);
     if (!this.dom.poseSelect.disabled) this.dom.poseSelect.value = this.state.poseId;
     this.dom.hairSelect.value = this.state.hairId;
     this.dom.expressionSelect.value = this.state.expressionId;

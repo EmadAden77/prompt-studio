@@ -1,3 +1,5 @@
+import { buildLightingSection, LIGHTING_REALISM_BLOCK } from "../data/lightingData.js";
+
 export class LightingEngine {
   constructor(options = []) {
     this.options = [...options];
@@ -13,10 +15,10 @@ export class LightingEngine {
   }
 
   buildPrompt(lighting) {
-    if (!lighting) return "Use only physically motivated light visible or supported by IMAGE B.";
-    return `${lighting.name_en}.
-${lighting.physics}
-Exposure behavior: ${lighting.exposure}
-${lighting.room_dark ? "The room remains predominantly dark outside the source's short falloff." : "Preserve believable source-to-surface falloff throughout the room."}`;
+    if (!lighting) {
+      return `LIGHTING: Use only physically motivated light visible or supported by IMAGE B.
+${LIGHTING_REALISM_BLOCK}`;
+    }
+    return buildLightingSection(lighting);
   }
 }

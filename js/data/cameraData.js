@@ -5,7 +5,7 @@ export const CAMERA_SPECS = Object.freeze({
     name_en: "Xiaomi 15 Ultra front-facing camera",
     type: "front",
     capture: "true handheld front-camera selfie",
-    focal_length: "approximately 23–24 mm full-frame equivalent",
+    focal_length: "22–24 mm full-frame equivalent",
     aperture: "approximately f/2.0",
     sensor: "typical small front-camera phone sensor",
     dof: "natural phone depth of field with no synthetic portrait blur",
@@ -35,7 +35,7 @@ export const LENSES = Object.freeze([
     camera: "front",
     name_ar: "عدسة السيلفي الأصلية",
     name_en: "built-in front wide lens",
-    focal_length: "23–24 mm equivalent"
+    focal_length: "22–24 mm equivalent"
   },
   {
     id: "rear_standard",

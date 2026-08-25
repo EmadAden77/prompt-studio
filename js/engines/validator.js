@@ -178,7 +178,7 @@ export class Validator {
     }
 
     if (camera?.type === "rear" && lighting?.id === "phone_screen_only") {
-      conflicts.push(this.createIssue("error", "rear_screen_light_conflict", "شاشة هاتف الكاميرا الخلفية تتجه بعيدًا عن الوجه، فلا تكون مصدر الإضاءة الوحيد.", "اختر مصدرًا موجودًا في الغرفة.", { field: "lightingId", value: "single_ceiling" }));
+      conflicts.push(this.createIssue("error", "rear_screen_light_conflict", "شاشة هاتف الكاميرا الخلفية تتجه بعيدًا عن الوجه، فلا تكون مصدر الإضاءة الوحيد.", "اختر مصدرًا موجودًا في الغرفة.", { field: "lightingId", value: "ceiling_white" }));
     }
 
     if (camera?.type === "rear" && !mirrorSelfie) {

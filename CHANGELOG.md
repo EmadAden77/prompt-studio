@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.6 — 2026-08-25
+
+### Changed
+
+- Replaced the lighting catalog with the 13 supplied v1.6 presets, grouped in the UI as screen, ceiling, lamp, daylight, mixed, and night.
+- Preserved the existing default lighting selection: `lamp_and_phone`.
+- Injected the full **LIGHTING REALISM (anti-AI)** block into every generated prompt.
+- Replaced the front-camera prompt section with the supplied **Camera Emulator** and aligned the front focal range to 22–24 mm equivalent.
+- Kept all non-lighting and non-front-camera behavior unchanged.
+
 ## v1.4 — 2026-08-25
 
 ### Changed
