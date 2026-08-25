@@ -98,6 +98,12 @@ const wrongEditAngleResult = validator.validate({
 });
 assert.ok(wrongEditAngleResult.conflicts.some((issue) => issue.type === "edit_mode_angle"));
 
+const wrongEditDistanceResult = validator.validate({
+  ...baseConfig,
+  cameraDistance: "close"
+});
+assert.ok(wrongEditDistanceResult.conflicts.some((issue) => issue.type === "edit_mode_distance"));
+
 const prompt = promptEngine.generate(baseConfig);
 assert.match(prompt, /^CHATGPT IMAGE TASK/u);
 assert.match(prompt, /IMAGE A — IDENTITY ONLY/u);
