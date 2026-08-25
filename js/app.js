@@ -39,7 +39,7 @@ class App {
   constructor() {
     this.storage = new StorageManager(APP_CONFIG.storageKey);
     this.state = this.storage.load(APP_CONFIG.defaultState);
-    this.state.uploads = { imageA: null, imageB: null };
+    this.state.uploads = { imageA: null };
 
     this.poseEngine = new PoseEngine(POSES);
     this.sceneEngine = new SceneEngine(SCENES);
@@ -79,6 +79,8 @@ class App {
       clothingSelect: $("#clothingSelect"),
       autoEngineerBtn: $("#autoEngineerBtn"),
       modeHint: $("#modeHint"),
+      autoReferenceTitle: $("#autoReferenceTitle"),
+      autoReferenceMeta: $("#autoReferenceMeta"),
       sceneName: $("#sceneName"),
       sceneRegion: $("#sceneRegion"),
       sceneFilename: $("#sceneFilename"),
@@ -124,7 +126,7 @@ class App {
     if (!CLOTHING_OPTIONS.some((item) => item.id === this.state.clothingId)) this.state.clothingId = APP_CONFIG.defaultState.clothingId;
     if (!["light", "dark", "system"].includes(this.state.theme)) this.state.theme = "system";
     this.state.mode = QUAD_DEFAULTS.mode;
-    this.state.sceneOverrideId ??= QUAD_DEFAULTS.sceneOverrideId;
+    this.state.sceneOverrideId = null;
   }
 
   populateClothingSelect() {
@@ -185,14 +187,13 @@ class App {
     });
 
     this.bindUpload("imageA");
-    this.bindUpload("imageB");
 
     this.dom.autoEngineerBtn?.addEventListener("click", () => {
       this.state.sceneOverrideId = null;
       this.updateAll();
       showToast("تمت إعادة الهندسة الحتمية من الاختيارات الخمسة");
     });
-    this.dom.overrideSceneBtn.addEventListener("click", () => this.openScenePicker());
+    this.dom.overrideSceneBtn?.addEventListener("click", () => this.openScenePicker());
     this.dom.autoFixBtn.addEventListener("click", () => this.applyAutoFixes());
     this.dom.copyBtn.addEventListener("click", () => this.copyPrompt());
     this.dom.downloadBtn.addEventListener("click", () => downloadText(this.lastPrompt));
@@ -368,6 +369,7 @@ class App {
     this.lastValidation = validation;
     this.lastPrompt = this.promptEngine.generate(config);
 
+    this.renderAutoReference();
     this.renderScene();
     renderValidation({
       statusElement: this.dom.validationStatus,
@@ -391,6 +393,20 @@ class App {
     if (!initial) this.flashSaved();
   }
 
+  renderAutoReference() {
+    const scene = this.engineering?.scene;
+    if (!this.dom.autoReferenceTitle || !this.dom.autoReferenceMeta) return;
+
+    if (!scene) {
+      this.dom.autoReferenceTitle.textContent = "لم يُعثر على مرجع غرفة صالح تلقائيًا";
+      this.dom.autoReferenceMeta.textContent = "غيّر الوضعية فقط؛ سيبحث المحرك في مكتبة المراجع تلقائيًا.";
+      return;
+    }
+
+    this.dom.autoReferenceTitle.textContent = `اختير تلقائيًا: ${scene.name_ar}`;
+    this.dom.autoReferenceMeta.textContent = `${scene.image_filename} • ${scene.region.replaceAll("_", " ")}`;
+  }
+
   renderScene() {
     const engineering = this.engineering;
     const scene = engineering?.scene;
@@ -406,8 +422,7 @@ class App {
       [
         engineering?.strictNoMatchMessage,
         engineering?.gateSummary || "مرشح صارم: لا توجد إحصاءات متاحة",
-        "الخيار (أ): غيّر الوضعية من القائمة أعلاه.",
-        "الخيار (ب): استخدم تجاوزًا يدويًا؛ سيظهر بتحذير وسيظل الفحص مانعًا إذا فشل المرجع."
+        "غيّر الوضعية من القائمة أعلاه؛ سيبحث المحرك في مكتبة المراجع تلقائيًا."
       ].filter(Boolean).forEach((text) => {
         const item = document.createElement("li");
         item.textContent = text;
@@ -444,8 +459,7 @@ class App {
     });
     this.dom.sceneReasons.replaceChildren(reasons);
 
-    const uploaded = this.state.uploads.imageB;
-    this.setSceneImage(uploaded?.url ?? scene.image_url, false, Boolean(uploaded));
+    this.setSceneImage(scene.image_url, false);
   }
 
   setSceneImage(source, knownFallback = false, uploaded = false) {

@@ -191,11 +191,6 @@ export class Validator {
       warnings.push(this.createIssue("warning", "image_a_missing", "صورة الهوية غير مرفوعة داخل المعاينة.", "ارفع IMAGE A قبل استخدام الأمر مع ChatGPT."));
     }
 
-    if (!config.uploads?.imageB) {
-      warnings.push(this.createIssue("warning", "image_b_missing", "صورة المكان غير مرفوعة داخل المعاينة.", "ارفع IMAGE B المطابقة للمرجع المختار قبل الاستخدام."));
-    } else if (scene && config.uploads.imageB.name !== scene.image_filename) {
-      warnings.push(this.createIssue("warning", "image_b_filename_mismatch", `اسم IMAGE B المرفوعة مختلف عن المرجع المقترح (${scene.image_filename}).`, "تأكد بصريًا أنها صورة المنطقة نفسها؛ اختلاف الاسم وحده لا يمنع بناء الأمر."));
-    }
 
     const issues = [...conflicts, ...warnings, ...notices];
     return {

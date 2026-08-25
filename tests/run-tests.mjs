@@ -268,13 +268,16 @@ const baseConfig = {
   roomMode: rightEngineering.roomMode,
   autoEngineering: rightEngineering,
   uploads: {
-    imageA: { name: "identity.jpg" },
-    imageB: { name: scene.image_filename }
+    imageA: { name: "identity.jpg" }
   }
 };
 
 const validResult = validator.validate(baseConfig);
 assert.equal(validResult.valid, true, "Deterministic right-side v1.3 configuration must pass validation");
+assert.equal(validResult.warnings.some((issue) => issue.type === "image_b_missing"), false, "Automatic IMAGE B selection must never request an upload");
+const automaticReferencePrompt = promptEngine.generate(baseConfig);
+assert.match(automaticReferencePrompt, /automatically selected built-in room reference/u);
+assert.doesNotMatch(automaticReferencePrompt, /the attached IMAGE B room photograph/u);
 
 const invalidManualConfig = {
   ...baseConfig,
@@ -383,6 +386,8 @@ assert.match(promptDisplayJS, /تحذير المرجع/u);
 assert.match(promptDisplayJS, /summary-item--warning/u);
 
 const changelog = readFileSync(resolve(projectRoot, "CHANGELOG.md"), "utf8");
+assert.match(changelog, /## v1\.3\.1 — 2026-08-25/u);
+assert.match(changelog, /automatic room-reference selection/u);
 assert.match(changelog, /## v1\.3 — 2026-08-25/u);
 assert.match(changelog, /45–70 cm/u);
 assert.match(changelog, /portable-light/u);
@@ -423,5 +428,6 @@ console.log("✓ Portable phone-screen lighting tests passed");
 console.log("✓ True lateral anatomy and reference-lock tests passed");
 console.log("✓ Selfie viewpoint lock and framing tests passed");
 console.log("✓ Clothing and fabric-realism tests passed");
+console.log("✓ Automatic room-reference tests passed");
 console.log("✓ Validator tests passed");
 console.log("✓ Prompt generation and static integrity tests passed");

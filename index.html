@@ -36,7 +36,7 @@
   <main id="workspace" class="page-shell">
     <section class="intro" aria-labelledby="pageTitle">
       <div>
-        <p class="eyebrow">SMART QUAD MODE · v1.3</p>
+        <p class="eyebrow">SMART QUAD MODE · v1.3.1</p>
         <h1 id="pageTitle">خمس اختيارات فقط، والباقي هندسة تلقائية</h1>
         <p>اختر الوضعية والشعر والإضاءة والتعبير والملابس. المحرّك يحدد جهة الجسم، الكاميرا، الذراع، الفيزياء ومرجع الغرفة تلقائيًا.</p>
       </div>
@@ -66,19 +66,19 @@
               <p class="file-meta" id="imageAMeta" aria-live="polite"></p>
             </article>
 
-            <article class="upload-card" data-upload="imageB">
+            <article class="upload-card upload-card--automatic" data-auto-reference>
               <div class="upload-card__heading">
-                <div><strong>IMAGE B</strong><span>الغرفة والسرير فقط</span></div>
-                <button class="upload-remove" id="imageBRemove" type="button" hidden>حذف</button>
+                <div><strong>IMAGE B</strong><span>مرجع الغرفة التلقائي</span></div>
+                <span class="auto-reference-badge">تلقائي</span>
               </div>
-              <label class="dropzone" id="imageBDropzone" for="imageBInput" tabindex="0">
-                <input id="imageBInput" type="file" accept="image/jpeg,image/png,image/webp,image/avif" hidden>
-                <span class="dropzone__icon" aria-hidden="true">B</span>
-                <span class="dropzone__empty"><strong>اسحب الصورة أو اضغط للرفع</strong><small>طابقها مع المرجع التلقائي أدناه</small></span>
-                <img id="imageBPreview" alt="معاينة صورة الغرفة" hidden>
-              </label>
-              <p class="upload-card__hint">السرير والأثاث والخامات والفوضى والعلاقات المكانية فقط.</p>
-              <p class="file-meta" id="imageBMeta" aria-live="polite"></p>
+              <div class="auto-reference-card" aria-live="polite">
+                <span class="dropzone__icon" aria-hidden="true">✓</span>
+                <span class="dropzone__empty">
+                  <strong id="autoReferenceTitle">جارٍ اختيار مرجع الغرفة تلقائيًا</strong>
+                  <small id="autoReferenceMeta">المحرك يطابق الوضعية مع مكتبة المراجع دون أي رفع منك.</small>
+                </span>
+              </div>
+              <p class="upload-card__hint">لا تحتاج إلى رفع أو اختيار IMAGE B؛ الصورة المختارة أدناه تُعتمد تلقائيًا كمرجع الغرفة.</p>
             </article>
           </div>
         </section>
@@ -129,7 +129,7 @@
               <h3 id="sceneName">بانتظار الهندسة</h3>
               <p id="sceneFilename" class="scene-card__filename">—</p>
               <ul id="sceneReasons" class="reason-list"></ul>
-              <button id="overrideSceneBtn" class="secondary-button" type="button">تجاوز واختيار مرجع آخر</button>
+              <p class="scene-card__automatic-note">يتم اعتماد هذا المرجع تلقائيًا بحسب الوضعية المختارة.</p>
             </div>
           </div>
         </section>
@@ -166,7 +166,7 @@
   </main>
 
   <footer class="footer">
-    <p>Smart Quad Mode v1.3 <span>•</span> واقعية مبنية على الفيزياء</p>
+    <p>Smart Quad Mode v1.3.1 <span>•</span> واقعية مبنية على الفيزياء</p>
     <p>لا تزوير EXIF، لا إزالة C2PA، ولا محاكاة PRNU.</p>
   </footer>
 
@@ -185,10 +185,10 @@
       <button class="icon-button" data-close-dialog="helpDialog" type="button" aria-label="إغلاق">×</button>
     </div>
     <ol class="help-steps">
-      <li><strong>ارفع IMAGE A و IMAGE B</strong><span>الأولى للهوية فقط والثانية للغرفة فقط.</span></li>
+      <li><strong>ارفع IMAGE A فقط</strong><span>تُستخدم للهوية فقط؛ مرجع الغرفة يُختار تلقائيًا.</span></li>
       <li><strong>اختر خمس قيم</strong><span>الوضعية، الشعر، الإضاءة، التعبير والملابس.</span></li>
       <li><strong>دع المحرك يهندس الباقي</strong><span>جهة الجسم والكاميرا والذراع والفيزياء والمرجع تلقائيًا.</span></li>
-      <li><strong>راجع الفحص ثم انسخ</strong><span>التعارضات البسيطة تُصلح تلقائيًا، ورفع الصور يبقى بيدك.</span></li>
+      <li><strong>راجع الفحص ثم انسخ</strong><span>التعارضات البسيطة تُصلح تلقائيًا؛ لا تحتاج إلى رفع IMAGE B.</span></li>
     </ol>
   </dialog>
 

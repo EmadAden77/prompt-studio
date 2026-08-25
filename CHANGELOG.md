@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.3.1 — 2026-08-25
+
+### Changed
+- Added automatic room-reference selection: Smart Quad now chooses IMAGE B from the built-in scene library based on the selected pose.
+- Removed all IMAGE B upload and filename-match requirements, including the `image_b_missing` warning.
+- The interface now displays the automatically selected reference and keeps only IMAGE A as a user upload.
+
+### Prompt behavior
+- Generated prompts identify the selected built-in room reference instead of claiming that the user attached IMAGE B.
+
+
 ## v1.3 — 2026-08-25
 
 ### Added

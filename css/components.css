@@ -164,6 +164,43 @@
   transition: border-color var(--transition), background var(--transition), transform var(--transition);
 }
 
+.auto-reference-card {
+  display: grid;
+  min-height: 150px;
+  place-items: center;
+  gap: 9px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--surface), var(--success-soft));
+  text-align: center;
+}
+
+.auto-reference-card .dropzone__icon {
+  margin-bottom: 0;
+  color: var(--success);
+  background: var(--success-soft);
+}
+
+.auto-reference-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 25px;
+  padding: 0 9px;
+  border-radius: 999px;
+  color: var(--success);
+  background: var(--success-soft);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.scene-card__automatic-note {
+  margin: 13px 0 0;
+  color: var(--success);
+  font-size: 10px;
+  line-height: 1.7;
+}
+
 .dropzone:hover,
 .dropzone.is-dragging {
   border-color: var(--accent);
