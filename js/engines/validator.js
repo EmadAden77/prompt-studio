@@ -1,3 +1,6 @@
+import { SCENES } from "../data/scenesData.js";
+import { SceneEngine } from "./sceneEngine.js";
+
 const BED_SELFIE_POSE_IDS = new Set([
   "lying_back",
   "lying_stomach",
@@ -10,7 +13,7 @@ const BED_SELFIE_POSE_IDS = new Set([
 export class Validator {
   constructor({ lightingEngine, sceneEngine = null }) {
     this.lightingEngine = lightingEngine;
-    this.sceneEngine = sceneEngine;
+    this.sceneEngine = sceneEngine ?? new SceneEngine(SCENES);
   }
 
   createIssue(severity, type, message, suggestion = "", autoFix = null) {
@@ -19,7 +22,7 @@ export class Validator {
 
   getStrictReferenceMismatch(config) {
     const { pose, scene, lighting, camera, autoEngineering } = config;
-    if (!pose || !scene || !this.sceneEngine) return null;
+    if (!pose || !scene) return null;
 
     const gate = this.sceneEngine.evaluateHardGate(
       scene,
