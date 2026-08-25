@@ -1,3 +1,5 @@
+import { POSE_REQUIREMENTS } from "./sceneEngine.js";
+
 const BED_SELFIE_POSE_IDS = new Set([
   "lying_back",
   "lying_stomach",
@@ -7,6 +9,10 @@ const BED_SELFIE_POSE_IDS = new Set([
   "sitting_bed_edge"
 ]);
 
+function unique(items = []) {
+  return [...new Set(items.filter(Boolean))];
+}
+
 export class Validator {
   constructor({ lightingEngine }) {
     this.lightingEngine = lightingEngine;
@@ -14,6 +20,17 @@ export class Validator {
 
   createIssue(severity, type, message, suggestion = "", autoFix = null) {
     return { severity, type, message, suggestion, autoFix };
+  }
+
+  getStrictReferenceMismatch(pose, scene) {
+    if (!pose || !scene) return null;
+    const requirement = POSE_REQUIREMENTS[pose.id] ?? { required_features_all: [] };
+    const requiredFeatures = unique([...(requirement.required_features_all ?? []), ...(pose.requires ?? [])]);
+    const poseMatch = scene.supported_poses.includes(pose.id);
+    const missingFeatures = requiredFeatures.filter((feature) => !scene.visible_features.includes(feature));
+
+    if (poseMatch && missingFeatures.length === 0) return null;
+    return { poseMatch, missingFeatures, requiredFeatures };
   }
 
   validate(config) {
@@ -29,7 +46,12 @@ export class Validator {
     }
 
     if (!scene) {
-      conflicts.push(this.createIssue("error", "scene_missing", "ما فيه مرجع مكان صالح للاختيارات الحالية.", "أعد الهندسة أو اختر مرجعًا آخر."));
+      conflicts.push(this.createIssue(
+        "error",
+        "scene_missing",
+        config.autoEngineering?.strictNoMatchMessage || "لا يوجد مرجع صالح لهذه الوضعية.",
+        "غيّر الوضعية أو استخدم التجاوز اليدوي مع فهم أن المرجع غير المطابق سيظل محجوبًا في الفحص."
+      ));
     }
 
     if (bedSelfiePose && camera?.type !== "front") {
@@ -53,17 +75,28 @@ export class Validator {
     }
 
     if (pose && scene) {
-      if (!scene.supported_poses.includes(pose.id)) {
-        conflicts.push(this.createIssue("error", "pose_scene_conflict", "الوضعية غير مدعومة في مرجع المكان المختار.", "استخدم المرجع التلقائي أو مرجعًا يدعم الوضعية."));
+      const strictMismatch = this.getStrictReferenceMismatch(pose, scene);
+      if (strictMismatch) {
+        const missingText = strictMismatch.missingFeatures.length
+          ? ` العناصر الناقصة: ${strictMismatch.missingFeatures.join("، ")}.`
+          : "";
+        conflicts.push(this.createIssue(
+          "error",
+          "reference_pose_mismatch",
+          `${strictMismatch.poseMatch ? "المرجع لا يحتوي كل العناصر الإلزامية للوضعية." : "المرجع لا يدعم الوضعية المختارة."}${missingText}`,
+          config.autoEngineering?.sceneOverrideId
+            ? "ألغِ التجاوز اليدوي لاختيار أفضل مرجع ناجح تلقائيًا، أو غيّر الوضعية."
+            : "استخدم المرجع الناتج من المرشح الصارم أو غيّر الوضعية."
+        ));
       }
 
       if (!(scene.supported_directions.includes("any") || scene.supported_directions.includes(config.bodyDirection))) {
-        conflicts.push(this.createIssue("error", "direction_scene_conflict", "اتجاه الجسم غير متوافق مع مرجع المكان.", "استخدم المرجع التلقائي المرتبط بجهة الجسم."));
-      }
-
-      const missingPoseFeatures = (pose.requires ?? []).filter((feature) => !scene.visible_features.includes(feature));
-      if (missingPoseFeatures.length) {
-        conflicts.push(this.createIssue("error", "required_feature_missing", `المرجع ما يحتوي العنصر الإلزامي: ${missingPoseFeatures.join("، ")}.`, "اختر مرجعًا تظهر فيه العناصر المطلوبة بوضوح."));
+        warnings.push(this.createIssue(
+          "warning",
+          "direction_scene_warning",
+          "جهة الجسم ليست الاتجاه المفضل لهذا المرجع، لكنها لا تُسقط البوابة الصارمة وحدها.",
+          "استخدم المرجع التلقائي الأعلى ترتيبًا إن أردت تطابق الجهة أيضًا."
+        ));
       }
 
       const missingSurfaces = pose.surfaces.filter((surface) => !scene.surfaces.includes(surface));
