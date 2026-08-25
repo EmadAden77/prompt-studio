@@ -13,7 +13,7 @@ import { HAIR_OPTIONS } from "../js/data/hairData.js";
 import { QUAD_DEFAULTS, QUAD_POSE_IDS } from "../js/data/quadModeData.js";
 import { FIXED_DATA, IMAGE_A_AUTHORITY, IMAGE_B_AUTHORITY } from "../js/data/fixedData.js";
 import { ROOM_LOCK_POLICIES } from "../js/policies/roomLockPolicy.js";
-import { SceneEngine } from "../js/engines/sceneEngine.js";
+import { SceneEngine, POSE_REQUIREMENTS } from "../js/engines/sceneEngine.js";
 import { PoseEngine } from "../js/engines/poseEngine.js";
 import { CameraEngine } from "../js/engines/cameraEngine.js";
 import { LightingEngine } from "../js/engines/lightingEngine.js";
@@ -52,7 +52,32 @@ for (const outfit of CLOTHING_OPTIONS) {
   }
 }
 
+assert.deepEqual(POSE_REQUIREMENTS.lying_right_side.required_features_all, ["bed", "mattress"]);
+assert.equal(POSE_REQUIREMENTS.lying_right_side.preferred_region, "right_side_of_bed");
+assert.deepEqual(POSE_REQUIREMENTS.lying_left_side.required_features_all, ["bed", "mattress"]);
+assert.equal(POSE_REQUIREMENTS.lying_left_side.preferred_region, "left_side_of_bed");
+assert.deepEqual(POSE_REQUIREMENTS.mirror_selfie.required_features_all, ["vanity_mirror"]);
+assert.equal(POSE_REQUIREMENTS.mirror_selfie.preferred_region, "vanity_area");
+
 const rightPose = poseEngine.getById("lying_right_side");
+const rightGate = sceneEngine.hardGate(rightPose.id, rightPose.requires ?? []);
+assert.equal(rightGate.passedCount, 1, "Only the actual right-side bed reference may pass the right-side lying hard gate");
+assert.equal(rightGate.totalCount, SCENES.length);
+assert.deepEqual(rightGate.passed.map((item) => item.scene.id), ["bed_right_nightstand"]);
+assert.equal(sceneEngine.evaluateHardGate(sceneEngine.getById("vanity_mirror"), rightPose.id).pass, false, "Mirror reference must fail before ranking for bed lying");
+
+const isolatedWrongSceneEngine = new SceneEngine([sceneEngine.getById("vanity_mirror")]);
+const strictNoMatch = isolatedWrongSceneEngine.autoSelect({
+  poseId: rightPose.id,
+  bodyDirection: "toward_lamp",
+  cameraAngle: "eye_level",
+  cameraDistance: "close"
+});
+assert.equal(strictNoMatch.scene, null, "Hard gate must not choose the least-bad invalid scene");
+assert.equal(strictNoMatch.error, "strict_no_match");
+assert.equal(strictNoMatch.passedCount, 0);
+assert.match(strictNoMatch.message, /لا يوجد مرجع صالح لهذه الوضعية/u);
+
 const rightEngineering = autoEngineeringEngine.engineer({
   pose: rightPose,
   lightingId: "lamp_and_phone"
@@ -62,14 +87,18 @@ assert.equal(rightEngineering.bodyDirection, "toward_lamp");
 assert.equal(rightEngineering.cameraType, "front");
 assert.equal(rightEngineering.lensType, "front_wide");
 assert.equal(rightEngineering.roomMode, "GENERATE");
-assert.equal(rightEngineering.clothingId, undefined, "Auto-engineering must never overwrite the user-selected clothing in v1.1");
+assert.equal(rightEngineering.clothingId, undefined, "Auto-engineering must never overwrite the user-selected clothing in v1.1+");
 assert.match(rightEngineering.armFine, /LEFT/u);
 assert.match(rightEngineering.physicsFine, /RIGHT shoulder/u);
 assert.equal(rightEngineering.selfieViewpoint.holdingHand, "LEFT");
 assert.equal(rightEngineering.selfieViewpoint.otherHand, "RIGHT");
 assert.equal(rightEngineering.selfieViewpoint.distance, "35–45 cm");
 assert.match(rightEngineering.selfieViewpoint.tilt, /clockwise Dutch tilt/u);
-assert.equal(rightEngineering.confidence, "تلقائي — دقة عالية");
+assert.equal(rightEngineering.confidence, "تلقائي صارم — دقة عالية");
+assert.equal(rightEngineering.gatePassedCount, 1);
+assert.equal(rightEngineering.gateTotalCount, SCENES.length);
+assert.match(rightEngineering.gateSummary, /مرشح صارم: اجتاز 1 من 8 مرجعًا/u);
+assert.equal(rightEngineering.manualOverrideInvalid, false);
 
 const leftPose = poseEngine.getById("lying_left_side");
 const leftEngineering = autoEngineeringEngine.engineer({ pose: leftPose, lightingId: "phone_screen_only" });
@@ -80,6 +109,17 @@ assert.match(leftEngineering.orientation, /LEFT shoulder/u);
 assert.equal(leftEngineering.selfieViewpoint.holdingHand, "RIGHT");
 assert.equal(leftEngineering.selfieViewpoint.otherHand, "LEFT");
 assert.match(leftEngineering.selfieViewpoint.tilt, /counterclockwise Dutch tilt/u);
+assert.equal(leftEngineering.gatePassedCount, 1);
+
+const invalidManualEngineering = autoEngineeringEngine.engineer({
+  pose: rightPose,
+  lightingId: "single_ceiling",
+  sceneOverrideId: "vanity_mirror"
+});
+assert.equal(invalidManualEngineering.selectedSceneId, "vanity_mirror", "Manual override is retained for explicit review");
+assert.equal(invalidManualEngineering.manualOverrideInvalid, true);
+assert.equal(invalidManualEngineering.hardGatePassed, false);
+assert.match(invalidManualEngineering.confidence, /مرجع غير صالح/u);
 
 const cottonPajama = CLOTHING_OPTIONS.find((item) => item.id === "cotton_pajama");
 const rightPoseSections = poseEngine.engineer({
@@ -144,6 +184,7 @@ const mirrorEngineering = autoEngineeringEngine.engineer({ pose: mirrorPose, lig
 assert.equal(mirrorEngineering.selectedSceneId, "vanity_mirror");
 assert.equal(mirrorEngineering.cameraType, "rear");
 assert.equal(mirrorEngineering.bodyDirection, "facing_mirror");
+assert.equal(mirrorEngineering.gatePassedCount, 1);
 assert.equal(cameraEngine.selfieViewpointLock({
   camera: cameraEngine.getCamera("rear"),
   pose: mirrorPose,
@@ -154,6 +195,7 @@ for (const poseId of QUAD_POSE_IDS) {
   const pose = poseEngine.getById(poseId);
   const engineered = autoEngineeringEngine.engineer({ pose, lightingId: "lamp_and_phone" });
   assert.ok(engineered?.scene, `Every Smart Quad pose needs a deterministic scene: ${poseId}`);
+  assert.ok(engineered.hardGatePassed, `Every automatic Smart Quad scene must pass the hard gate: ${poseId}`);
   assert.ok(engineered.cameraType, `Every Smart Quad pose needs a deterministic camera: ${poseId}`);
   assert.ok(engineered.cameraFine, `Every Smart Quad pose needs fine camera geometry: ${poseId}`);
   assert.ok(engineered.armFine, `Every Smart Quad pose needs deterministic arm geometry: ${poseId}`);
@@ -193,6 +235,26 @@ const baseConfig = {
 
 const validResult = validator.validate(baseConfig);
 assert.equal(validResult.valid, true, "Deterministic right-side Smart Quad configuration must pass validation");
+
+const invalidManualConfig = {
+  ...baseConfig,
+  scene: sceneEngine.getById("vanity_mirror"),
+  selectedSceneId: "vanity_mirror",
+  cameraAngle: invalidManualEngineering.cameraAngle,
+  cameraDistance: invalidManualEngineering.cameraDistance,
+  lighting: lightingEngine.getById(invalidManualEngineering.lightingId),
+  autoEngineering: invalidManualEngineering,
+  uploads: {
+    imageA: { name: "identity.jpg" },
+    imageB: { name: "vanity_mirror.jpg" }
+  }
+};
+const invalidManualResult = validator.validate(invalidManualConfig);
+assert.equal(invalidManualResult.valid, false);
+assert.ok(invalidManualResult.conflicts.some((issue) => issue.type === "reference_pose_mismatch"), "Invalid manual scene override must create blocking reference_pose_mismatch");
+const invalidManualPrompt = promptEngine.generate(invalidManualConfig);
+assert.match(invalidManualPrompt, /^CHATGPT IMAGE TASK/u, "Prompt still builds for review even when manual reference override is blocked");
+assert.doesNotMatch(invalidManualPrompt, /التجاوز اليدوي|مرجع غير صالح/u, "Arabic override warning must stay in UI summary, not inside the English prompt");
 
 const editBedSelfieResult = validator.validate({ ...baseConfig, roomMode: "EDIT" });
 assert.equal(editBedSelfieResult.valid, false);
@@ -266,7 +328,7 @@ assert.match(indexHTML, /id="hairSelect"/u);
 assert.match(indexHTML, /id="lightingSelect"/u);
 assert.match(indexHTML, /id="expressionSelect"/u);
 assert.match(indexHTML, /id="clothingSelect"/u);
-assert.doesNotMatch(indexHTML, /id="cameraSelect"|id="angleSelect"|id="distanceSelect"|id="roomModeSelect"/u, "v1.1 UI must keep engineering controls hidden");
+assert.doesNotMatch(indexHTML, /id="cameraSelect"|id="angleSelect"|id="distanceSelect"|id="roomModeSelect"/u, "v1.2 UI must keep engineering controls hidden");
 
 const appJS = readFileSync(resolve(projectRoot, "js/app.js"), "utf8");
 assert.match(appJS, /document\.createElement\("optgroup"\)/u);
@@ -276,8 +338,18 @@ assert.match(appJS, /sport: "رياضي"/u);
 assert.match(appJS, /winter: "شتوي"/u);
 assert.match(appJS, /traditional: "تقليدي"/u);
 assert.doesNotMatch(appJS, /derivedFields = \[[\s\S]*"clothingId"/u, "Auto-engineered fields must not overwrite the clothing choice");
+assert.match(appJS, /تم تبديل المرجع تلقائيًا ليطابق الوضعية/u);
+assert.match(appJS, /مرشح صارم/u);
+assert.match(appJS, /manualOverrideInvalid/u);
+
+const promptDisplayJS = readFileSync(resolve(projectRoot, "js/ui/promptDisplay.js"), "utf8");
+assert.match(promptDisplayJS, /تحذير المرجع/u);
+assert.match(promptDisplayJS, /summary-item--warning/u);
 
 const changelog = readFileSync(resolve(projectRoot, "CHANGELOG.md"), "utf8");
+assert.match(changelog, /## v1\.2 — 2026-08-25/u);
+assert.match(changelog, /reference_pose_mismatch/u);
+assert.match(changelog, /Pass\/Fail/u);
 assert.match(changelog, /## v1\.1 — 2026-08-25/u);
 assert.match(changelog, /FABRIC REALISM/u);
 assert.match(changelog, /cotton_pajama/u);
@@ -307,6 +379,7 @@ while (sourceFiles.length) {
 }
 
 console.log("✓ Smart Quad deterministic mapping tests passed");
+console.log("✓ v1.2 strict scene hard-gate tests passed");
 console.log("✓ True lateral anatomy and reference-lock tests passed");
 console.log("✓ Selfie viewpoint lock and framing tests passed");
 console.log("✓ v1.1 clothing catalog and fabric-realism tests passed");
