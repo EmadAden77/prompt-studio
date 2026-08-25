@@ -208,16 +208,184 @@ export const QUAD_POSE_ENGINEERING = Object.freeze({
     cameraDistance: "medium",
     preferredSceneId: "bed_front_overview",
     orientation: "His pelvis and upper thighs stay on the actual mattress edge while the torso faces into the room.",
-    cameraFine: "Use eye level or very slightly below eye level, approximately 50–60 cm from the face, with the optical axis kept within normal arm reach.",
-    armFine: "His RIGHT hand holds the phone near face level. The holding shoulder advances only slightly; the LEFT arm rests naturally on the thigh, mattress, or beside the torso.",
-    physicsFine: "Load the pelvis and upper thighs into the mattress edge, producing a shallow local compression of roughly 4–6 cm where physically plausible; feet rest naturally on the floor when reachable.",
+    cameraFine: "Use a reachable front-camera position 50–70 cm from the face at the subject's seated eye level; keep the real mattress edge and enough seated support geometry in frame.",
+    armFine: "His RIGHT hand holds the phone near face level with a relaxed elbow. The LEFT arm rests naturally on the thigh, mattress edge, or beside the torso; no floating forearm.",
+    physicsFine: "Load the pelvis and upper thighs into the mattress edge, producing local compression and contact shadow; knees bend naturally and feet are physically supported on the floor when visible.",
     selfieViewpoint: {
       holdingHand: "RIGHT",
       otherHand: "LEFT",
-      distance: "50–60 cm",
-      angle: "eye level or very slightly below eye level",
+      distance: "50–70 cm",
+      angle: "eye level from the real seated height, with the mattress edge and seated support geometry readable below the torso",
       tilt: "small natural handheld roll only",
-      armVisual: "The RIGHT selfie arm extends naturally from the shoulder toward the camera without creating a long-arm perspective exaggeration."
+      armVisual: "The RIGHT selfie arm extends from the shoulder toward face level with a relaxed elbow; the LEFT arm remains supported by the thigh or mattress edge."
+    }
+  },
+  sitting_sofa: {
+    roomMode: "GENERATE",
+    bodyDirection: "facing_room",
+    cameraType: "front",
+    lensType: "front_wide",
+    cameraAngle: "eye_level",
+    cameraDistance: "medium",
+    preferredSceneId: "sofa_area",
+    orientation: "His pelvis and upper thighs stay fully inside the real sofa-seat boundaries while the torso faces the phone from a natural seated posture.",
+    cameraFine: "Place the front camera 50–70 cm from the face at seated eye height around 1.1–1.2 m. Frame head, torso, and enough real sofa seat/back/armrest to prove seated support.",
+    armFine: "Use the RIGHT hand as the selfie hand at face level with a relaxed elbow. The LEFT forearm rests on the real armrest, thigh, or knee and never floats beside the torso.",
+    physicsFine: "Compress the soft sofa cushion about 3–5 cm under the sit bones and upper thighs with slight side bulging beside the hips; keep feet supported on the floor and shoulders naturally asymmetric.",
+    selfieViewpoint: {
+      holdingHand: "RIGHT",
+      otherHand: "LEFT",
+      distance: "50–70 cm",
+      angle: "eye level from seated height around 1.1–1.2 m, never from standing height",
+      tilt: "small natural handheld roll only",
+      armVisual: "The RIGHT holding arm reaches face level with a relaxed elbow; the LEFT arm rests on a real armrest, thigh, or knee."
+    }
+  },
+  sitting_chair: {
+    roomMode: "GENERATE",
+    bodyDirection: "facing_room",
+    cameraType: "front",
+    lensType: "front_wide",
+    cameraAngle: "eye_level",
+    cameraDistance: "medium",
+    preferredSceneId: "chair_area",
+    orientation: "His pelvis stays fully inside the real chair-seat boundaries; knees and feet align with the actual chair height and floor.",
+    cameraFine: "Place the front camera 50–70 cm from the face at seated eye height around 1.1–1.2 m. Frame head, torso, and enough chair seat/back to prove seated support.",
+    armFine: "Use the RIGHT hand as the selfie hand at face level with a relaxed elbow. The LEFT hand rests on the thigh, knee, or real chair support; no floating arm or extra shoulder.",
+    physicsFine: "Maintain a clear contact shadow beneath pelvis/upper thighs on the chair seat; knees bend near 90 degrees where the chair height allows, and both feet remain supported with individual floor contact shadows.",
+    selfieViewpoint: {
+      holdingHand: "RIGHT",
+      otherHand: "LEFT",
+      distance: "50–70 cm",
+      angle: "eye level from seated height around 1.1–1.2 m, with chair seat/back geometry visible below the torso",
+      tilt: "small natural handheld roll only",
+      armVisual: "The RIGHT holding arm reaches face level with a relaxed elbow; the LEFT arm stays supported on thigh, knee, or chair."
+    }
+  },
+  sitting_floor: {
+    roomMode: "GENERATE",
+    bodyDirection: "facing_room",
+    cameraType: "front",
+    lensType: "front_wide",
+    cameraAngle: "eye_level",
+    cameraDistance: "medium",
+    preferredSceneId: "room_center",
+    orientation: "His pelvis and selected leg surfaces directly load the real floor in the center room zone; the torso rises from that support without intersecting nearby furniture.",
+    cameraFine: "Place the front camera 50–70 cm from the face at the subject's actual floor-seated eye height, lower than chair/sofa height. Include head, torso, and enough pelvis/leg/floor support to prove floor sitting.",
+    armFine: "Use the RIGHT hand as the selfie hand at face level with a relaxed elbow. The LEFT hand rests on a thigh, knee, or the floor beside the body when anatomically comfortable.",
+    physicsFine: "The rigid floor does not compress; instead show continuous contact shadows under pelvis and supporting legs, believable pressure folds in clothing, and naturally asymmetric crossed/folded/extended leg geometry.",
+    selfieViewpoint: {
+      holdingHand: "RIGHT",
+      otherHand: "LEFT",
+      distance: "50–70 cm",
+      angle: "eye level from the subject's true floor-seated height, lower than normal chair or sofa eye height",
+      tilt: "small natural handheld roll only",
+      armVisual: "The RIGHT holding arm reaches face level with a relaxed elbow; the LEFT arm rests on thigh, knee, or floor support."
+    }
+  },
+  standing_center: {
+    roomMode: "GENERATE",
+    bodyDirection: "facing_room",
+    cameraType: "front",
+    lensType: "front_wide",
+    cameraAngle: "eye_level",
+    cameraDistance: "medium",
+    preferredSceneId: "room_center",
+    orientation: "He stands fully grounded in the real center-room floor zone with a subtle one-leg weight shift and the room readable behind him.",
+    cameraFine: "Place the front camera 45–60 cm from the face at approximately 1.5 m eye height. Use upper-body framing with the room readable behind and keep vertical room lines nearly vertical with only mild edge convergence.",
+    armFine: "Use the RIGHT hand as the selfie hand at face level with a naturally relaxed elbow. The LEFT arm rests by the thigh, in a pocket, or lightly on the hip; never floating beside the torso.",
+    physicsFine: "Both soles meet the floor with tight contact shadows; shift weight subtly toward one leg, keep one knee softly unlocked, pelvis mildly counter-tilted, shoulders relaxed and uneven, and cast a floor shadow consistent with the selected light.",
+    selfieViewpoint: {
+      holdingHand: "RIGHT",
+      otherHand: "LEFT",
+      distance: "45–60 cm",
+      angle: "eye level around 1.5 m with upper-body framing and the room readable behind",
+      tilt: "small natural handheld roll only",
+      armVisual: "The RIGHT holding arm reaches face level with a relaxed elbow; the LEFT arm stays naturally by the thigh, pocket, or hip."
+    }
+  },
+  standing_bedside: {
+    roomMode: "GENERATE",
+    bodyDirection: "facing_room",
+    cameraType: "front",
+    lensType: "front_wide",
+    cameraAngle: "eye_level",
+    cameraDistance: "medium",
+    preferredSceneId: "bed_front_overview",
+    orientation: "He stands on the floor beside the real bed; the mattress is a nearby room object, not a support surface for the body unless one hand lightly touches its edge.",
+    cameraFine: "Place the front camera 45–60 cm from the face at approximately 1.5 m eye height. Frame the upper body with the bed and room readable behind while vertical room lines remain nearly vertical.",
+    armFine: "Use the RIGHT hand as the selfie hand at face level with a relaxed elbow. The LEFT hand may rest by the thigh, in a pocket, or lightly contact the real mattress edge without deforming it under body weight.",
+    physicsFine: "Both feet remain planted on the floor beside the bed with sole-hugging contact shadows and a subtle one-leg weight shift; clothing hangs vertically and the selected lighting creates a physically consistent floor shadow.",
+    selfieViewpoint: {
+      holdingHand: "RIGHT",
+      otherHand: "LEFT",
+      distance: "45–60 cm",
+      angle: "eye level around 1.5 m with upper-body framing and the bed/room readable behind",
+      tilt: "small natural handheld roll only",
+      armVisual: "The RIGHT holding arm reaches face level; the LEFT arm stays by the thigh, pocket, or lightly on the bed edge."
+    }
+  },
+  standing_sofa: {
+    roomMode: "GENERATE",
+    bodyDirection: "facing_room",
+    cameraType: "front",
+    lensType: "front_wide",
+    cameraAngle: "eye_level",
+    cameraDistance: "medium",
+    preferredSceneId: "sofa_area",
+    orientation: "He stands fully grounded on the floor in the real sofa zone with the sofa readable behind or beside him according to the selected room geometry.",
+    cameraFine: "Place the front camera 45–60 cm from the face at approximately 1.5 m eye height. Frame the upper body with the sofa and room readable behind; keep vertical lines nearly vertical.",
+    armFine: "Use the RIGHT hand as the selfie hand at face level with a relaxed elbow. The LEFT hand may rest by the thigh, in a pocket, on the hip, or lightly on the real sofa armrest.",
+    physicsFine: "Both feet fully meet the floor with contact shadows, weight shifts subtly to one leg, shoulders remain relaxed and uneven, clothing falls vertically, and the cast shadow follows the selected light source.",
+    selfieViewpoint: {
+      holdingHand: "RIGHT",
+      otherHand: "LEFT",
+      distance: "45–60 cm",
+      angle: "eye level around 1.5 m with upper-body framing and the sofa/room readable behind",
+      tilt: "small natural handheld roll only",
+      armVisual: "The RIGHT holding arm reaches face level; the LEFT arm stays by the thigh, pocket, hip, or real sofa support."
+    }
+  },
+  standing_vanity: {
+    roomMode: "GENERATE",
+    bodyDirection: "facing_room",
+    cameraType: "front",
+    lensType: "front_wide",
+    cameraAngle: "eye_level",
+    cameraDistance: "medium",
+    preferredSceneId: "vanity_mirror",
+    orientation: "He stands on the real floor in front of the vanity zone while using the phone's front camera; this is distinct from the separate rear-camera mirror-selfie pose.",
+    cameraFine: "Place the front camera 45–60 cm from the face at approximately 1.5 m eye height. Frame the upper body with the vanity/mirror zone readable behind or beside him while mirror/frame verticals remain nearly vertical.",
+    armFine: "Use the RIGHT hand as the selfie hand at face level with a relaxed elbow. The LEFT arm rests naturally by the thigh, in a pocket, or on the hip; do not create a second phone or mirror-camera arm.",
+    physicsFine: "Both feet carry weight on the real floor with contact shadows and slight contrapposto; maintain natural shoulder asymmetry, gravity-driven clothing drape, and a cast shadow consistent with the selected light.",
+    selfieViewpoint: {
+      holdingHand: "RIGHT",
+      otherHand: "LEFT",
+      distance: "45–60 cm",
+      angle: "eye level around 1.5 m with upper-body framing and the vanity zone readable behind or beside",
+      tilt: "small natural handheld roll only",
+      armVisual: "The RIGHT holding arm reaches face level; the LEFT arm stays naturally by the thigh, pocket, or hip."
+    }
+  },
+  standing_wardrobe: {
+    roomMode: "GENERATE",
+    bodyDirection: "side_to_wardrobe",
+    cameraType: "front",
+    lensType: "front_wide",
+    cameraAngle: "eye_level",
+    cameraDistance: "medium",
+    preferredSceneId: "wardrobe_area",
+    orientation: "He stands fully grounded in the real wardrobe zone, slightly side-on to the wardrobe so the fixed doors and room geometry remain readable behind him.",
+    cameraFine: "Place the front camera 45–60 cm from the face at approximately 1.5 m eye height. Frame the upper body with the wardrobe readable behind; keep door edges nearly vertical with only mild wide-angle convergence at frame edges.",
+    armFine: "Use the RIGHT hand as the selfie hand at face level with a relaxed elbow. The LEFT hand may stay by the thigh, in a pocket, on the hip, or lightly contact a visible wardrobe door without changing its state.",
+    physicsFine: "Both feet remain fully planted with contact shadows and a subtle one-leg weight shift; clothing hangs vertically, hand contact never penetrates the door, and the body floor shadow agrees with the selected light source.",
+    selfieViewpoint: {
+      holdingHand: "RIGHT",
+      otherHand: "LEFT",
+      distance: "45–60 cm",
+      angle: "eye level around 1.5 m with upper-body framing and wardrobe verticals nearly straight",
+      tilt: "small natural handheld roll only",
+      armVisual: "The RIGHT holding arm reaches face level; the LEFT arm stays by the thigh, pocket, hip, or lightly on a real wardrobe surface."
     }
   },
   mirror_selfie: {
