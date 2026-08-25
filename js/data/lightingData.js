@@ -8,13 +8,14 @@ export const LIGHTING_OPTIONS = Object.freeze([
     kelvin: "~6500K",
     quality: "close, weak, cool",
     iso: "ISO 1600–3200",
-    physics: "The phone screen is the only light in the room. Cool light at 30–45cm from the face with inverse-square falloff: face lit, everything beyond ~1m falls to near darkness. Slightly below-frontal direction creates soft upward shadows under brows and chin. Room stays dark; NO ceiling or lamp light added.",
+    physics: "The phone screen is the only light in the room. Cool light at 30–45cm from the face with inverse-square falloff: face lit, everything beyond ~1m falls to near darkness. Slightly below-frontal direction creates soft upward shadows under brows and chin. Room stays dark; NO ceiling or lamp light added. Any visible bedside lamp, lamp shade, or bulb is an unlit decorative prop: it emits ZERO light, with no warm glow, no inner illumination, no warm wall/headboard spill, and no warm eye catchlight.",
     shadows: "soft upward under-brow/chin shadows; background near black",
     catchlights: "rectangular screen glow in both eyes",
     room_effect: "room barely readable, heavy shadow noise",
     required_features: [],
     portable_sources: ["phone_screen"],
-    room_dark: true
+    room_dark: true,
+    disable_visible_lamps: true
   },
 
   // ── السقف ──
@@ -230,16 +231,3 @@ export const LIGHTING_REALISM_BLOCK = `LIGHTING REALISM (anti-AI):
 - Noise follows the light level: dark scenes show real sensor noise; bright daylight stays clean.
 - Skin specular response matches source hardness: harsh close light gives T-zone highlights; diffuse light stays matte.`;
 
-export function buildLightingSection(option) {
-  if (!option) {
-    return `LIGHTING: Use only physically motivated light visible or supported by IMAGE B.
-${LIGHTING_REALISM_BLOCK}`;
-  }
-
-  return `LIGHTING: ${option.name_en}.
-${option.physics}
-Color temperature: ${option.kelvin}. Quality: ${option.quality}.
-Shadows: ${option.shadows}. Catchlights: ${option.catchlights}.
-Room response: ${option.room_effect}. Exposure: ${option.iso}.
-${LIGHTING_REALISM_BLOCK}`;
-}

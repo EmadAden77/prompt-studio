@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.7 — 2026-08-26
+
+### Changed
+
+- Added a strict phone-screen-only enforcement block whenever `phone_screen_only` is selected.
+- Declared visible bedside lamps, shades, and bulbs as unlit decorative props with zero emitted light for that preset.
+- Added dynamic phone-screen-only negative constraints against warm lamp glow, amber/orange cast, illuminated shades, studio warm fill, and cinematic grading.
+
 ## v1.6 — 2026-08-25
 
 ### Changed
