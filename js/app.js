@@ -1,13 +1,13 @@
 import { APP_CONFIG } from "./config/appConfig.js";
 import { FIXED_DATA, IMAGE_A_AUTHORITY, IMAGE_B_AUTHORITY } from "./data/fixedData.js";
-import { POSES } from "./data/posesData.js";
+import { POSES, POSE_GROUP_IDS, SELECTABLE_POSE_IDS } from "./data/posesData.js";
 import { SCENES } from "./data/scenesData.js";
 import { CAMERA_SPECS, LENSES, SELFIE_ARM_STRATEGIES } from "./data/cameraData.js";
 import { LIGHTING_OPTIONS } from "./data/lightingData.js";
 import { CLOTHING_OPTIONS } from "./data/clothingData.js";
 import { EXPRESSION_OPTIONS } from "./data/expressionsData.js";
 import { HAIR_OPTIONS } from "./data/hairData.js";
-import { QUAD_DEFAULTS, QUAD_EXPRESSION_IDS, QUAD_POSE_IDS } from "./data/quadModeData.js";
+import { QUAD_DEFAULTS, QUAD_EXPRESSION_IDS } from "./data/quadModeData.js";
 import { ROOM_LOCK_POLICIES } from "./policies/roomLockPolicy.js";
 import { SceneEngine } from "./engines/sceneEngine.js";
 import { PoseEngine } from "./engines/poseEngine.js";
@@ -42,6 +42,12 @@ const LIGHTING_CATEGORY_LABELS = Object.freeze({
   daylight: "النهار",
   mixed: "مختلطة",
   night: "ليلية"
+});
+
+const POSE_GROUP_LABELS = Object.freeze({
+  bed: "🛏️ السرير",
+  sitting: "🛋️ الجلوس",
+  standing: "🧍 الوقوف"
 });
 
 class App {
@@ -129,7 +135,7 @@ class App {
   }
 
   sanitizeState() {
-    if (!QUAD_POSE_IDS.includes(this.state.poseId)) this.state.poseId = "lying_right_side";
+    if (!SELECTABLE_POSE_IDS.includes(this.state.poseId)) this.state.poseId = "lying_right_side";
     if (!HAIR_OPTIONS.some((item) => item.id === this.state.hairId)) this.state.hairId = "same";
     if (!QUAD_EXPRESSION_IDS.includes(this.state.expressionId)) this.state.expressionId = "relaxed";
     if (!LIGHTING_OPTIONS.some((item) => item.id === this.state.lightingId)) this.state.lightingId = "lamp_and_phone";
@@ -159,6 +165,7 @@ class App {
     select.replaceChildren(fragment);
     select.value = this.state.clothingId;
   }
+
   populateLightingSelect(options = LIGHTING_OPTIONS) {
     const select = this.dom.lightingSelect;
     if (!select) return;
@@ -184,12 +191,41 @@ class App {
     select.value = this.state.lightingId;
   }
 
+  populatePoseSelect(options = [], selectedId = null) {
+    const select = this.dom.poseSelect;
+    if (!select) return;
+    const availableIds = new Set(options.map((item) => item.id));
+    const poseById = Object.fromEntries(options.map((item) => [item.id, item]));
+    const fragment = document.createDocumentFragment();
+
+    Object.entries(POSE_GROUP_LABELS).forEach(([groupId, label]) => {
+      const ids = (POSE_GROUP_IDS[groupId] ?? []).filter((poseId) => availableIds.has(poseId));
+      if (!ids.length) return;
+
+      const group = document.createElement("optgroup");
+      group.label = label;
+      ids.forEach((poseId) => {
+        const pose = poseById[poseId];
+        if (!pose) return;
+        const option = document.createElement("option");
+        option.value = pose.id;
+        option.textContent = pose.name_ar;
+        option.selected = pose.id === selectedId;
+        group.appendChild(option);
+      });
+      fragment.appendChild(group);
+    });
+
+    select.replaceChildren(fragment);
+    if (selectedId) select.value = selectedId;
+  }
+
   getSelectedReference() {
     return this.sceneEngine.getById(this.state.sceneOverrideId);
   }
 
   getCompatiblePoseIds(scene) {
-    return this.sceneEngine.getCompatiblePoseIds(scene, QUAD_POSE_IDS)
+    return this.sceneEngine.getCompatiblePoseIds(scene, SELECTABLE_POSE_IDS)
       .filter((poseId) => Boolean(this.autoEngineeringEngine.getPoseEngineering(poseId)));
   }
 
@@ -226,7 +262,7 @@ class App {
     const suggestedPoseId = this.getSuggestedPoseId(scene);
     if (!compatiblePoseIds.includes(this.state.poseId)) this.state.poseId = suggestedPoseId;
     const compatiblePoses = POSES.filter((pose) => compatiblePoseIds.includes(pose.id));
-    setOptions(this.dom.poseSelect, compatiblePoses, this.state.poseId);
+    this.populatePoseSelect(compatiblePoses, this.state.poseId);
     this.dom.poseSelect.disabled = false;
   }
 
