@@ -38,11 +38,29 @@ export class AutoEngineeringEngine {
     });
   }
 
+  normalizeGeometry(pose, scene, mapping) {
+    const sharedAngles = scene
+      ? pose.valid_angles.filter((angle) => scene.camera_angles.includes(angle))
+      : pose.valid_angles;
+    const sharedDistances = scene
+      ? pose.valid_distances.filter((distance) => scene.camera_distances.includes(distance))
+      : pose.valid_distances;
+
+    return {
+      cameraAngle: sharedAngles.includes(mapping.cameraAngle)
+        ? mapping.cameraAngle
+        : sharedAngles[0] ?? pose.valid_angles[0],
+      cameraDistance: sharedDistances.includes(mapping.cameraDistance)
+        ? mapping.cameraDistance
+        : sharedDistances[0] ?? pose.valid_distances[0]
+    };
+  }
+
   engineer({ pose, lightingId, sceneOverrideId = null }) {
     const mapping = this.getPoseEngineering(pose?.id);
     if (!pose || !mapping) return null;
 
-    const engineering = {
+    const baseEngineering = {
       ...mapping,
       poseId: pose.id,
       requires: pose.requires ?? [],
@@ -50,7 +68,9 @@ export class AutoEngineeringEngine {
       spatialMap: BED_SPATIAL_MAP
     };
 
-    const { scene, overridden } = this.resolveScene(engineering, sceneOverrideId);
+    const { scene, overridden } = this.resolveScene(baseEngineering, sceneOverrideId);
+    const geometry = this.normalizeGeometry(pose, scene, mapping);
+    const engineering = { ...baseEngineering, ...geometry };
     const compatibleLighting = this.compatibleLighting(scene, engineering.cameraType);
     const selectedLighting = compatibleLighting.find((option) => option.id === lightingId)
       ?? compatibleLighting[0]
@@ -58,7 +78,7 @@ export class AutoEngineeringEngine {
 
     const sceneReason = overridden
       ? "Manual scene override retained, then checked against deterministic pose geometry."
-      : `Deterministic match: pose ${pose.id} → body orientation → camera geometry → ${scene?.id ?? "no scene"}.`;
+      : `Deterministic match: pose ${pose.id} → body orientation → reachable camera geometry → ${scene?.id ?? "no scene"}.`;
 
     return {
       ...engineering,
