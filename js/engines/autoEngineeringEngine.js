@@ -147,11 +147,13 @@ export class AutoEngineeringEngine {
     if (!pose || !mapping) return null;
 
     const requestedLighting = this.lightingEngine.getById(lightingId);
+    const newRoomFamily = pose.id.startsWith("standing")
+      || (pose.id.startsWith("sitting") && pose.id !== "sitting_bed_edge");
     const baseEngineering = {
       ...mapping,
       poseId: pose.id,
       requires: pose.requires ?? [],
-      spatialMap: BED_SPATIAL_MAP
+      spatialMap: newRoomFamily ? null : BED_SPATIAL_MAP
     };
 
     const selection = this.resolveScene(baseEngineering, requestedLighting, sceneOverrideId, { requireSelectedScene });
@@ -164,7 +166,7 @@ export class AutoEngineeringEngine {
         ? "المرجع الذي اخترته لا يجتاز بوابة v1.3، والـValidator سيحجبه."
         : "المرجع الذي اخترته اجتاز بوابة v1.3 ثم خضع للفحص.")
       : (selection.scene
-        ? "اختيار تلقائي صارم v1.3: دعم الوضعية وهندسة السرير وقابلية السيلفي والإضاءة فُحصت قبل أي مفاضلة."
+        ? "اختيار تلقائي صارم v1.3: دعم الوضعية، أسطح الارتكاز، قابلية الكاميرا والإضاءة فُحصت قبل أي مفاضلة."
         : selection.requiredMessage);
 
     return {
@@ -192,8 +194,8 @@ export class AutoEngineeringEngine {
   }
 
   buildSpatialPrompt(engineering) {
-    if (!engineering) return "";
-    const map = engineering.spatialMap;
+    const map = engineering?.spatialMap;
+    if (!engineering || !map) return "";
     return [
       "BED SPATIAL MAP AND SIDE REFERENCE",
       `- Fixed side rule: ${map.frame_rule}`,
