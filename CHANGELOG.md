@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.4 — 2026-08-25
+
+### Changed
+- Switched Smart Quad to **reference-first selection**: the user now chooses the built-in room reference first, then the app proposes the suitable pose.
+- The pose selector is filtered to the poses supported by the chosen reference; unsupported room references are not offered in Smart Quad.
+- The selected reference remains built-in, so IMAGE B still never requires an upload.
+- Updated prompt wording, validation guidance, the reference picker, and the help flow to reflect user-selected room references.
+
+
 ## v1.3.1 — 2026-08-25
 
 ### Changed

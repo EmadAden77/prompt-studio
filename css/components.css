@@ -182,6 +182,20 @@
   background: var(--success-soft);
 }
 
+.auto-reference-card--button {
+  width: 100%;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.auto-reference-card--button:hover,
+.auto-reference-card--button:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
 .auto-reference-badge {
   display: inline-flex;
   align-items: center;

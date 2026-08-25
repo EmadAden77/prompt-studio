@@ -46,6 +46,22 @@ export class SceneEngine {
     return this.scenes.find((scene) => scene.id === sceneId) ?? null;
   }
 
+  getCompatiblePoseIds(sceneOrId, allowedPoseIds = []) {
+    const scene = typeof sceneOrId === "string" ? this.getById(sceneOrId) : sceneOrId;
+    if (!scene) return [];
+    const allowed = [...allowedPoseIds];
+    if (!allowed.length) return [...(scene.supported_poses ?? [])];
+    return allowed.filter((poseId) => (scene.supported_poses ?? []).includes(poseId));
+  }
+
+  getSuggestedPoseId(sceneOrId, allowedPoseIds = []) {
+    const scene = typeof sceneOrId === "string" ? this.getById(sceneOrId) : sceneOrId;
+    const compatiblePoseIds = this.getCompatiblePoseIds(scene, allowedPoseIds);
+    return (scene?.default_for_poses ?? []).find((poseId) => compatiblePoseIds.includes(poseId))
+      ?? compatiblePoseIds[0]
+      ?? null;
+  }
+
   getRequirement(poseId, extraRequiredFeatures = []) {
     const defined = POSE_REQUIREMENTS[poseId] ?? { required_features_all: [], preferred_region: null };
     return {

@@ -1,4 +1,4 @@
-export function renderScenePicker({ container, scenes, selectedSceneId, onSelect }) {
+export function renderScenePicker({ container, scenes, selectedSceneId, poseLabels = {}, onSelect }) {
   const fragment = document.createDocumentFragment();
 
   scenes.forEach((scene) => {
@@ -26,7 +26,14 @@ export function renderScenePicker({ container, scenes, selectedSceneId, onSelect
     const filename = document.createElement("small");
     filename.textContent = scene.image_filename;
     const meta = document.createElement("small");
-    meta.textContent = `${scene.supported_poses.length} وضعيات • ${scene.camera_angles.length} زوايا`;
+    const compatiblePoseIds = scene.compatiblePoseIds ?? scene.supported_poses ?? [];
+    const suggestedPoseName = poseLabels[scene.suggestedPoseId] ?? scene.suggestedPoseId;
+    const compatiblePoseNames = compatiblePoseIds
+      .map((poseId) => poseLabels[poseId] ?? poseId)
+      .join("، ");
+    meta.textContent = suggestedPoseName
+      ? `المقترحة: ${suggestedPoseName} • المتوافقة: ${compatiblePoseNames}`
+      : `${compatiblePoseIds.length} وضعيات • ${scene.camera_angles.length} زوايا`;
     body.append(name, filename, meta);
 
     const check = document.createElement("span");

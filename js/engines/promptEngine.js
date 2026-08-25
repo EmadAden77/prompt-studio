@@ -10,11 +10,11 @@ export class PromptEngine {
     this.lightingEngine = lightingEngine;
   }
 
-  getReferenceName(upload, fallback, { automatic = false } = {}) {
+  getReferenceName(upload, fallback, { selected = false } = {}) {
     const safeFilename = upload?.name && /^[\x20-\x7E]+$/u.test(upload.name) ? upload.name : null;
     if (safeFilename) return `“${safeFilename}”`;
-    return automatic
-      ? `the automatically selected built-in room reference “${fallback}”`
+    return selected
+      ? `the user-selected built-in room reference “${fallback}”`
       : `the attached ${fallback}`;
   }
 
@@ -69,7 +69,7 @@ Deterministic orientation: ${autoEngineering?.orientation ?? "follow the selecte
       : "generate one new photograph from a physically reachable viewpoint inside the same three-dimensional room represented by IMAGE B, using IMAGE A only for identity";
 
     const imageAName = this.getReferenceName(uploads?.imageA, "IMAGE A identity photograph");
-    const imageBName = this.getReferenceName(uploads?.imageB, scene?.image_filename ?? "IMAGE B room photograph", { automatic: true });
+    const imageBName = this.getReferenceName(uploads?.imageB, scene?.image_filename ?? "IMAGE B room photograph", { selected: true });
     const poseSections = pose
       ? this.poseEngine.engineer({ pose, expression, hair, clothing, autoEngineering })
       : null;

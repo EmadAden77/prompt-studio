@@ -10,7 +10,7 @@ export class AutoEngineeringEngine {
     return QUAD_POSE_ENGINEERING[poseId] ?? null;
   }
 
-  resolveScene(engineering, lighting, sceneOverrideId = null) {
+  resolveScene(engineering, lighting, sceneOverrideId = null, { requireSelectedScene = false } = {}) {
     const selectionConfig = {
       poseId: engineering.poseId,
       bodyDirection: engineering.bodyDirection,
@@ -45,9 +45,10 @@ export class AutoEngineeringEngine {
           overridden: true,
           manualOverrideInvalid: !manual.hardGatePassed,
           hardGatePassed: manual.hardGatePassed,
+          userSelected: true,
           confidence: manual.hardGatePassed
-            ? "تجاوز يدوي — اجتاز بوابة v1.3"
-            : "⚠ تجاوز يدوي — مرجع غير صالح",
+            ? "مرجع اختاره المستخدم — اجتاز بوابة v1.3"
+            : "⚠ مرجع اختاره المستخدم — غير صالح",
           reasons: manual.reasons,
           gateSummary: `مرشح صارم v1.3: اجتاز ${gateStats.passedCount} من ${gateStats.totalCount} مرجعًا`,
           passedCount: gateStats.passedCount,
@@ -59,6 +60,25 @@ export class AutoEngineeringEngine {
             : `التجاوز اليدوي لا يطابق بوابة v1.3${requiredText ? ` — العناصر/المصادر الناقصة: ${requiredText}` : ""}`
         };
       }
+    }
+
+    if (requireSelectedScene) {
+      return {
+        scene: null,
+        overridden: false,
+        userSelected: false,
+        manualOverrideInvalid: false,
+        hardGatePassed: false,
+        confidence: "بانتظار اختيار المرجع",
+        reasons: [],
+        gateSummary: "مرجع الغرفة: بانتظار اختيارك",
+        passedCount: 0,
+        totalCount: this.sceneEngine.scenes.length,
+        requiredFeatures: [],
+        lightingRequiredFeatures: [],
+        requiredMessage: "اختر صورة مرجع الغرفة أولًا؛ سيقترح لك التطبيق الوضعية المناسبة تلقائيًا.",
+        error: "reference_required"
+      };
     }
 
     const automatic = this.sceneEngine.autoSelect(selectionConfig);
@@ -118,7 +138,7 @@ export class AutoEngineeringEngine {
     };
   }
 
-  engineer({ pose, lightingId, sceneOverrideId = null }) {
+  engineer({ pose, lightingId, sceneOverrideId = null, requireSelectedScene = false }) {
     const mapping = this.getPoseEngineering(pose?.id);
     if (!pose || !mapping) return null;
 
@@ -130,15 +150,15 @@ export class AutoEngineeringEngine {
       spatialMap: BED_SPATIAL_MAP
     };
 
-    const selection = this.resolveScene(baseEngineering, requestedLighting, sceneOverrideId);
+    const selection = this.resolveScene(baseEngineering, requestedLighting, sceneOverrideId, { requireSelectedScene });
     const geometry = this.normalizeGeometry(pose, selection.scene, mapping);
     const engineering = { ...baseEngineering, ...geometry };
     const compatibleLighting = this.compatibleLighting(selection.scene, engineering.cameraType);
 
     const sceneReason = selection.overridden
       ? (selection.manualOverrideInvalid
-        ? "تجاوز يدوي: المرجع محفوظ رغم فشله في بوابة v1.3، والـValidator سيحجبه."
-        : "تجاوز يدوي: المرجع اجتاز بوابة v1.3 ثم خضع للفحص.")
+        ? "المرجع الذي اخترته لا يجتاز بوابة v1.3، والـValidator سيحجبه."
+        : "المرجع الذي اخترته اجتاز بوابة v1.3 ثم خضع للفحص.")
       : (selection.scene
         ? "اختيار تلقائي صارم v1.3: دعم الوضعية وهندسة السرير وقابلية السيلفي والإضاءة فُحصت قبل أي مفاضلة."
         : selection.requiredMessage);
@@ -148,6 +168,7 @@ export class AutoEngineeringEngine {
       selectedSceneId: selection.scene?.id ?? null,
       scene: selection.scene,
       sceneOverrideId: selection.overridden ? sceneOverrideId : null,
+      userSelectedReference: Boolean(selection.userSelected),
       lightingId: requestedLighting?.id ?? lightingId,
       compatibleLightingIds: compatibleLighting.map((option) => option.id),
       portableLightSources: requestedLighting?.portable_sources ?? [],

@@ -131,6 +131,32 @@ assert.match(rightEngineering.gateSummary, /مرشح صارم v1\.3: اجتاز 
 assert.equal(rightEngineering.manualOverrideInvalid, false);
 assert.equal(rightEngineering.lightingId, "lamp_and_phone");
 
+const bedLeftCompatiblePoses = sceneEngine.getCompatiblePoseIds("bed_left_vanity", QUAD_POSE_IDS);
+assert.deepEqual(bedLeftCompatiblePoses, ["lying_back", "lying_stomach", "lying_left_side", "semi_reclining"]);
+assert.equal(sceneEngine.getSuggestedPoseId("bed_left_vanity", QUAD_POSE_IDS), "lying_left_side");
+assert.deepEqual(sceneEngine.getCompatiblePoseIds("chair_area", QUAD_POSE_IDS), []);
+assert.equal(sceneEngine.getSuggestedPoseId("chair_area", QUAD_POSE_IDS), null);
+
+const selectedReferenceEngineering = autoEngineeringEngine.engineer({
+  pose: rightPose,
+  lightingId: "lamp_and_phone",
+  sceneOverrideId: "bed_right_nightstand",
+  requireSelectedScene: true
+});
+assert.equal(selectedReferenceEngineering.selectedSceneId, "bed_right_nightstand");
+assert.equal(selectedReferenceEngineering.hardGatePassed, true);
+assert.equal(selectedReferenceEngineering.userSelectedReference, true);
+assert.match(selectedReferenceEngineering.confidence, /مرجع اختاره المستخدم/u);
+
+const waitingForReference = autoEngineeringEngine.engineer({
+  pose: rightPose,
+  lightingId: "lamp_and_phone",
+  requireSelectedScene: true
+});
+assert.equal(waitingForReference.scene, null);
+assert.equal(waitingForReference.strictNoMatch, true);
+assert.match(waitingForReference.strictNoMatchMessage, /اختر صورة مرجع الغرفة/u);
+
 const leftPose = poseEngine.getById("lying_left_side");
 const leftEngineering = autoEngineeringEngine.engineer({ pose: leftPose, lightingId: "phone_screen_only" });
 assert.equal(leftEngineering.selectedSceneId, "bed_left_vanity");
@@ -158,7 +184,7 @@ const invalidManualEngineering = autoEngineeringEngine.engineer({
 assert.equal(invalidManualEngineering.selectedSceneId, "vanity_mirror", "Manual override is retained for explicit review");
 assert.equal(invalidManualEngineering.manualOverrideInvalid, true);
 assert.equal(invalidManualEngineering.hardGatePassed, false);
-assert.match(invalidManualEngineering.confidence, /مرجع غير صالح/u);
+assert.match(invalidManualEngineering.confidence, /غير صالح/u);
 
 const cottonPajama = CLOTHING_OPTIONS.find((item) => item.id === "cotton_pajama");
 const rightPoseSections = poseEngine.engineer({
@@ -276,7 +302,7 @@ const validResult = validator.validate(baseConfig);
 assert.equal(validResult.valid, true, "Deterministic right-side v1.3 configuration must pass validation");
 assert.equal(validResult.warnings.some((issue) => issue.type === "image_b_missing"), false, "Automatic IMAGE B selection must never request an upload");
 const automaticReferencePrompt = promptEngine.generate(baseConfig);
-assert.match(automaticReferencePrompt, /automatically selected built-in room reference/u);
+assert.match(automaticReferencePrompt, /user-selected built-in room reference/u);
 assert.doesNotMatch(automaticReferencePrompt, /the attached IMAGE B room photograph/u);
 
 const invalidManualConfig = {
@@ -377,15 +403,18 @@ assert.doesNotMatch(indexHTML, /id="cameraSelect"|id="angleSelect"|id="distanceS
 const appJS = readFileSync(resolve(projectRoot, "js/app.js"), "utf8");
 assert.match(appJS, /document\.createElement\("optgroup"\)/u);
 assert.doesNotMatch(appJS, /derivedFields = \[[\s\S]*"clothingId"/u, "Auto-engineered fields must not overwrite clothing");
-assert.match(appJS, /تم تبديل المرجع تلقائيًا ليطابق الوضعية/u);
+assert.match(appJS, /selectReference\(sceneId/u);
+assert.match(appJS, /getCompatiblePoseIds/u);
+assert.match(appJS, /requireSelectedScene: true/u);
 assert.match(appJS, /مرشح صارم/u);
-assert.match(appJS, /manualOverrideInvalid/u);
 
 const promptDisplayJS = readFileSync(resolve(projectRoot, "js/ui/promptDisplay.js"), "utf8");
 assert.match(promptDisplayJS, /تحذير المرجع/u);
 assert.match(promptDisplayJS, /summary-item--warning/u);
 
 const changelog = readFileSync(resolve(projectRoot, "CHANGELOG.md"), "utf8");
+assert.match(changelog, /## v1\.4 — 2026-08-25/u);
+assert.match(changelog, /reference-first selection/u);
 assert.match(changelog, /## v1\.3\.1 — 2026-08-25/u);
 assert.match(changelog, /automatic room-reference selection/u);
 assert.match(changelog, /## v1\.3 — 2026-08-25/u);
@@ -428,6 +457,6 @@ console.log("✓ Portable phone-screen lighting tests passed");
 console.log("✓ True lateral anatomy and reference-lock tests passed");
 console.log("✓ Selfie viewpoint lock and framing tests passed");
 console.log("✓ Clothing and fabric-realism tests passed");
-console.log("✓ Automatic room-reference tests passed");
+console.log("✓ Reference-first room and compatible-pose tests passed");
 console.log("✓ Validator tests passed");
 console.log("✓ Prompt generation and static integrity tests passed");

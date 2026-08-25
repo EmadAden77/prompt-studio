@@ -36,11 +36,11 @@
   <main id="workspace" class="page-shell">
     <section class="intro" aria-labelledby="pageTitle">
       <div>
-        <p class="eyebrow">SMART QUAD MODE · v1.3.1</p>
-        <h1 id="pageTitle">خمس اختيارات فقط، والباقي هندسة تلقائية</h1>
-        <p>اختر الوضعية والشعر والإضاءة والتعبير والملابس. المحرّك يحدد جهة الجسم، الكاميرا، الذراع، الفيزياء ومرجع الغرفة تلقائيًا.</p>
+        <p class="eyebrow">SMART QUAD MODE · v1.4</p>
+        <h1 id="pageTitle">خمس اختيارات، والوضعية حسب مرجع الغرفة</h1>
+        <p>اختر صورة مرجع الغرفة والشعر والإضاءة والتعبير والملابس. المحرّك يقترح الوضعية المتوافقة ثم يحدد جهة الجسم، الكاميرا، الذراع والفيزياء.</p>
       </div>
-      <span class="context-badge" id="modeHint">5 اختيارات فقط — الباقي تلقائي</span>
+      <span class="context-badge" id="modeHint">5 اختيارات — الوضعية تلقائية</span>
     </section>
 
     <div class="workspace-grid">
@@ -68,17 +68,17 @@
 
             <article class="upload-card upload-card--automatic" data-auto-reference>
               <div class="upload-card__heading">
-                <div><strong>IMAGE B</strong><span>مرجع الغرفة التلقائي</span></div>
-                <span class="auto-reference-badge">تلقائي</span>
+                <div><strong>IMAGE B</strong><span>مرجع الغرفة الذي تختاره</span></div>
+                <span class="auto-reference-badge">اختيارك</span>
               </div>
-              <div class="auto-reference-card" aria-live="polite">
-                <span class="dropzone__icon" aria-hidden="true">✓</span>
+              <button id="selectSceneBtn" class="auto-reference-card auto-reference-card--button" type="button" aria-haspopup="dialog">
+                <span class="dropzone__icon" aria-hidden="true">B</span>
                 <span class="dropzone__empty">
-                  <strong id="autoReferenceTitle">جارٍ اختيار مرجع الغرفة تلقائيًا</strong>
-                  <small id="autoReferenceMeta">المحرك يطابق الوضعية مع مكتبة المراجع دون أي رفع منك.</small>
+                  <strong id="autoReferenceTitle">اختر صورة مرجع الغرفة</strong>
+                  <small id="autoReferenceMeta">بعد اختيارها، يعرض لك التطبيق الوضعيات المناسبة تلقائيًا.</small>
                 </span>
-              </div>
-              <p class="upload-card__hint">لا تحتاج إلى رفع أو اختيار IMAGE B؛ الصورة المختارة أدناه تُعتمد تلقائيًا كمرجع الغرفة.</p>
+              </button>
+              <p class="upload-card__hint">لا تحتاج إلى رفع IMAGE B؛ اختر مرجعك من صور الغرفة المدمجة في التطبيق.</p>
             </article>
           </div>
         </section>
@@ -90,9 +90,9 @@
           </div>
           <form id="optionsForm" class="form-grid" novalidate>
             <div class="field field--wide">
-              <label for="poseSelect">1. الوضعية</label>
+              <label for="poseSelect">1. الوضعية المناسبة</label>
               <select id="poseSelect" name="pose"></select>
-              <small>تحدد تلقائيًا الجهة، سطح الارتكاز، الذراع، زاوية الهاتف والمسافة.</small>
+              <small>يُقترح أولًا حسب المرجع الذي اخترته، وتظهر هنا الوضعيات المتوافقة فقط.</small>
             </div>
             <div class="field">
               <label for="hairSelect">2. الشعر</label>
@@ -116,7 +116,7 @@
 
         <section class="panel scene-panel" aria-labelledby="sceneTitle">
           <div class="panel__header">
-            <div><span class="step-number">03</span><h2 id="sceneTitle">مرجع الغرفة المختار تلقائيًا</h2></div>
+            <div><span class="step-number">03</span><h2 id="sceneTitle">مرجع الغرفة الذي اخترته</h2></div>
             <span class="confidence-badge" id="sceneConfidence">—</span>
           </div>
           <div class="scene-card" id="sceneCard">
@@ -129,7 +129,7 @@
               <h3 id="sceneName">بانتظار الهندسة</h3>
               <p id="sceneFilename" class="scene-card__filename">—</p>
               <ul id="sceneReasons" class="reason-list"></ul>
-              <p class="scene-card__automatic-note">يتم اعتماد هذا المرجع تلقائيًا بحسب الوضعية المختارة.</p>
+              <p class="scene-card__automatic-note">الوضعيات في القائمة متوافقة مع هذا المرجع.</p>
             </div>
           </div>
         </section>
@@ -154,7 +154,7 @@
           <div id="promptSummary" class="selection-summary"></div>
           <div class="prompt-editor"><pre id="finalPrompt" tabindex="0" aria-label="الأمر النهائي باللغة الإنجليزية"></pre></div>
           <div class="prompt-actions">
-            <button id="autoEngineerBtn" class="secondary-button" type="button">🎲 هندسة تلقائية</button>
+            <button id="autoEngineerBtn" class="secondary-button" type="button">🎲 اقتراح وضعية</button>
             <button id="validateBtn" class="ghost-button" type="button">🔍 فحص التعارضات</button>
             <button id="copyBtn" class="primary-button" type="button">📋 نسخ الأمر</button>
             <button id="rebuildBtn" class="ghost-button" type="button">🔄 إعادة بناء</button>
@@ -166,16 +166,16 @@
   </main>
 
   <footer class="footer">
-    <p>Smart Quad Mode v1.3.1 <span>•</span> واقعية مبنية على الفيزياء</p>
+    <p>Smart Quad Mode v1.4 <span>•</span> واقعية مبنية على الفيزياء</p>
     <p>لا تزوير EXIF، لا إزالة C2PA، ولا محاكاة PRNU.</p>
   </footer>
 
   <dialog id="sceneDialog" class="modal">
     <div class="modal__header">
-      <div><p class="eyebrow">SCENE OVERRIDE</p><h2>اختيار مرجع آخر</h2></div>
+      <div><p class="eyebrow">ROOM REFERENCE</p><h2>اختر صورة مرجع الغرفة</h2></div>
       <button class="icon-button" data-close-dialog="sceneDialog" type="button" aria-label="إغلاق">×</button>
     </div>
-    <p class="modal__intro">التجاوز لا يعطّل الفحص. لو المرجع لا يطابق الوضعية أو جهة الجسم سيظهر التعارض مباشرة.</p>
+    <p class="modal__intro">اختر المرجع أولًا؛ سيضبط التطبيق الوضعية المقترحة ويعرض لك الوضعيات المتوافقة فقط.</p>
     <div id="scenePickerGrid" class="scene-picker-grid"></div>
   </dialog>
 
@@ -185,10 +185,10 @@
       <button class="icon-button" data-close-dialog="helpDialog" type="button" aria-label="إغلاق">×</button>
     </div>
     <ol class="help-steps">
-      <li><strong>ارفع IMAGE A فقط</strong><span>تُستخدم للهوية فقط؛ مرجع الغرفة يُختار تلقائيًا.</span></li>
-      <li><strong>اختر خمس قيم</strong><span>الوضعية، الشعر، الإضاءة، التعبير والملابس.</span></li>
-      <li><strong>دع المحرك يهندس الباقي</strong><span>جهة الجسم والكاميرا والذراع والفيزياء والمرجع تلقائيًا.</span></li>
-      <li><strong>راجع الفحص ثم انسخ</strong><span>التعارضات البسيطة تُصلح تلقائيًا؛ لا تحتاج إلى رفع IMAGE B.</span></li>
+      <li><strong>اختر مرجع الغرفة وارفع IMAGE A</strong><span>اختر المرجع من المكتبة أولًا؛ IMAGE A للهوية فقط.</span></li>
+      <li><strong>دع التطبيق يقترح الوضعية</strong><span>يضبط وضعية مناسبة ويعرض لك الوضعيات المتوافقة مع المرجع فقط.</span></li>
+      <li><strong>اختر الشعر والإضاءة والتعبير والملابس</strong><span>الهندسة الباقية تُبنى تلقائيًا من المرجع والوضعية.</span></li>
+      <li><strong>راجع الفحص ثم انسخ</strong><span>لا تحتاج إلى رفع IMAGE B؛ المرجع المختار مدمج في التطبيق.</span></li>
     </ol>
   </dialog>
 

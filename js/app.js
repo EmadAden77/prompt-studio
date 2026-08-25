@@ -81,6 +81,7 @@ class App {
       modeHint: $("#modeHint"),
       autoReferenceTitle: $("#autoReferenceTitle"),
       autoReferenceMeta: $("#autoReferenceMeta"),
+      selectSceneBtn: $("#selectSceneBtn"),
       sceneName: $("#sceneName"),
       sceneRegion: $("#sceneRegion"),
       sceneFilename: $("#sceneFilename"),
@@ -126,7 +127,7 @@ class App {
     if (!CLOTHING_OPTIONS.some((item) => item.id === this.state.clothingId)) this.state.clothingId = APP_CONFIG.defaultState.clothingId;
     if (!["light", "dark", "system"].includes(this.state.theme)) this.state.theme = "system";
     this.state.mode = QUAD_DEFAULTS.mode;
-    this.state.sceneOverrideId = null;
+    if (!this.sceneEngine.getById(this.state.sceneOverrideId)) this.state.sceneOverrideId = null;
   }
 
   populateClothingSelect() {
@@ -150,15 +151,64 @@ class App {
     select.value = this.state.clothingId;
   }
 
+  getSelectedReference() {
+    return this.sceneEngine.getById(this.state.sceneOverrideId);
+  }
+
+  getCompatiblePoseIds(scene) {
+    return this.sceneEngine.getCompatiblePoseIds(scene, QUAD_POSE_IDS)
+      .filter((poseId) => Boolean(this.autoEngineeringEngine.getPoseEngineering(poseId)));
+  }
+
+  getSuggestedPoseId(scene) {
+    const compatiblePoseIds = this.getCompatiblePoseIds(scene);
+    return this.sceneEngine.getSuggestedPoseId(scene, compatiblePoseIds) ?? compatiblePoseIds[0] ?? null;
+  }
+
+  getSelectableScenes() {
+    return SCENES.filter((scene) => this.getCompatiblePoseIds(scene).length > 0);
+  }
+
+  ensureCompatibleLighting(scene, poseId) {
+    if (!scene || !poseId) return LIGHTING_OPTIONS;
+    const mapping = this.autoEngineeringEngine.getPoseEngineering(poseId);
+    const compatible = this.autoEngineeringEngine.compatibleLighting(scene, mapping?.cameraType);
+    if (compatible.length && !compatible.some((option) => option.id === this.state.lightingId)) {
+      this.state.lightingId = compatible[0].id;
+    }
+    return compatible;
+  }
+
+  populatePoseOptions() {
+    const scene = this.getSelectedReference();
+    const compatiblePoseIds = this.getCompatiblePoseIds(scene);
+
+    if (!scene || !compatiblePoseIds.length) {
+      this.state.sceneOverrideId = null;
+      this.dom.poseSelect.replaceChildren(new Option("اختر مرجع الغرفة أولًا", ""));
+      this.dom.poseSelect.disabled = true;
+      return;
+    }
+
+    const suggestedPoseId = this.getSuggestedPoseId(scene);
+    if (!compatiblePoseIds.includes(this.state.poseId)) this.state.poseId = suggestedPoseId;
+    const compatiblePoses = POSES.filter((pose) => compatiblePoseIds.includes(pose.id));
+    setOptions(this.dom.poseSelect, compatiblePoses, this.state.poseId);
+    this.dom.poseSelect.disabled = false;
+  }
+
   populateQuadControls() {
-    const quadPoses = POSES.filter((pose) => QUAD_POSE_IDS.includes(pose.id));
     const quadExpressions = EXPRESSION_OPTIONS.filter((item) => QUAD_EXPRESSION_IDS.includes(item.id));
-    setOptions(this.dom.poseSelect, quadPoses, this.state.poseId);
+    this.populatePoseOptions();
+    const scene = this.getSelectedReference();
+    const lightingOptions = scene
+      ? this.ensureCompatibleLighting(scene, this.state.poseId)
+      : LIGHTING_OPTIONS;
     setOptions(this.dom.hairSelect, HAIR_OPTIONS, this.state.hairId);
     setOptions(this.dom.expressionSelect, quadExpressions, this.state.expressionId);
-    setOptions(this.dom.lightingSelect, LIGHTING_OPTIONS, this.state.lightingId);
+    setOptions(this.dom.lightingSelect, lightingOptions, this.state.lightingId);
     this.populateClothingSelect();
-    if (this.dom.modeHint) this.dom.modeHint.textContent = "5 اختيارات فقط — الباقي تلقائي";
+    if (this.dom.modeHint) this.dom.modeHint.textContent = "5 اختيارات — الوضعية تلقائية";
   }
 
   bindEvents() {
@@ -170,30 +220,23 @@ class App {
       [this.dom.clothingSelect, "clothingId"]
     ].forEach(([element, field]) => {
       element.addEventListener("change", () => {
-        const previousSceneId = this.state.selectedSceneId;
         this.state[field] = element.value;
-        if (field === "poseId") this.state.sceneOverrideId = null;
+        const selectedScene = this.getSelectedReference();
+        if (field === "poseId" && selectedScene) {
+          this.ensureCompatibleLighting(selectedScene, this.state.poseId);
+        }
         this.updateAll();
 
         if (field === "poseId") {
-          const selectedScene = this.engineering?.scene;
-          if (selectedScene && previousSceneId && selectedScene.id !== previousSceneId) {
-            showToast(`تم تبديل المرجع تلقائيًا ليطابق الوضعية: ${selectedScene.name_ar}`);
-          } else if (!selectedScene) {
-            showToast(this.engineering?.strictNoMatchMessage || "لا يوجد مرجع صالح لهذه الوضعية", "error", 4200);
-          }
+          showToast("تم اعتماد وضعية متوافقة مع مرجع الغرفة المختار");
         }
       });
     });
 
     this.bindUpload("imageA");
 
-    this.dom.autoEngineerBtn?.addEventListener("click", () => {
-      this.state.sceneOverrideId = null;
-      this.updateAll();
-      showToast("تمت إعادة الهندسة الحتمية من الاختيارات الخمسة");
-    });
-    this.dom.overrideSceneBtn?.addEventListener("click", () => this.openScenePicker());
+    this.dom.autoEngineerBtn?.addEventListener("click", () => this.suggestPoseForSelectedReference());
+    this.dom.selectSceneBtn?.addEventListener("click", () => this.openScenePicker());
     this.dom.autoFixBtn.addEventListener("click", () => this.applyAutoFixes());
     this.dom.copyBtn.addEventListener("click", () => this.copyPrompt());
     this.dom.downloadBtn.addEventListener("click", () => downloadText(this.lastPrompt));
@@ -298,7 +341,8 @@ class App {
     this.engineering = this.autoEngineeringEngine.engineer({
       pose,
       lightingId: this.state.lightingId,
-      sceneOverrideId: this.state.sceneOverrideId
+      sceneOverrideId: this.state.sceneOverrideId,
+      requireSelectedScene: true
     });
     if (!this.engineering) return;
 
@@ -319,11 +363,14 @@ class App {
   }
 
   syncLightingControl() {
+    const scene = this.getSelectedReference();
+    if (scene) this.ensureCompatibleLighting(scene, this.state.poseId);
     const ids = this.engineering?.compatibleLightingIds ?? LIGHTING_OPTIONS.map((item) => item.id);
     const options = LIGHTING_OPTIONS.filter((item) => ids.includes(item.id));
     const safeOptions = options.length ? options : LIGHTING_OPTIONS;
+    this.populatePoseOptions();
     setOptions(this.dom.lightingSelect, safeOptions, this.state.lightingId);
-    this.dom.poseSelect.value = this.state.poseId;
+    if (!this.dom.poseSelect.disabled) this.dom.poseSelect.value = this.state.poseId;
     this.dom.hairSelect.value = this.state.hairId;
     this.dom.expressionSelect.value = this.state.expressionId;
     this.dom.clothingSelect.value = this.state.clothingId;
@@ -394,17 +441,17 @@ class App {
   }
 
   renderAutoReference() {
-    const scene = this.engineering?.scene;
+    const scene = this.getSelectedReference();
     if (!this.dom.autoReferenceTitle || !this.dom.autoReferenceMeta) return;
 
     if (!scene) {
-      this.dom.autoReferenceTitle.textContent = "لم يُعثر على مرجع غرفة صالح تلقائيًا";
-      this.dom.autoReferenceMeta.textContent = "غيّر الوضعية فقط؛ سيبحث المحرك في مكتبة المراجع تلقائيًا.";
+      this.dom.autoReferenceTitle.textContent = "اختر صورة مرجع الغرفة";
+      this.dom.autoReferenceMeta.textContent = "بعد اختيارها، يعرض لك التطبيق الوضعيات المناسبة تلقائيًا.";
       return;
     }
 
-    this.dom.autoReferenceTitle.textContent = `اختير تلقائيًا: ${scene.name_ar}`;
-    this.dom.autoReferenceMeta.textContent = `${scene.image_filename} • ${scene.region.replaceAll("_", " ")}`;
+    this.dom.autoReferenceTitle.textContent = `المرجع المختار: ${scene.name_ar}`;
+    this.dom.autoReferenceMeta.textContent = `${scene.image_filename} • اضغط لتغيير المرجع`;
   }
 
   renderScene() {
@@ -413,16 +460,16 @@ class App {
     const reasons = document.createDocumentFragment();
 
     if (!scene) {
-      this.dom.sceneName.textContent = "لا يوجد مرجع صالح لهذه الوضعية";
-      this.dom.sceneRegion.textContent = "STRICT NO MATCH";
-      this.dom.sceneFilename.textContent = "غيّر الوضعية أو استخدم التجاوز اليدوي";
-      this.dom.sceneConfidence.textContent = "⚠ لا يوجد مرجع ناجح";
+      this.dom.sceneName.textContent = "اختر صورة مرجع الغرفة";
+      this.dom.sceneRegion.textContent = "REFERENCE FIRST";
+      this.dom.sceneFilename.textContent = "اختر مرجعًا من مكتبة الغرفة أعلاه";
+      this.dom.sceneConfidence.textContent = "بانتظار اختيارك";
       this.dom.sceneConfidence.className = "confidence-badge is-warning";
 
       [
         engineering?.strictNoMatchMessage,
-        engineering?.gateSummary || "مرشح صارم: لا توجد إحصاءات متاحة",
-        "غيّر الوضعية من القائمة أعلاه؛ سيبحث المحرك في مكتبة المراجع تلقائيًا."
+        engineering?.gateSummary || "مرجع الغرفة: بانتظار اختيارك",
+        "بعد اختيار المرجع، سيقترح التطبيق الوضعية المناسبة تلقائيًا."
       ].filter(Boolean).forEach((text) => {
         const item = document.createElement("li");
         item.textContent = text;
@@ -440,7 +487,7 @@ class App {
     this.dom.sceneConfidence.textContent = engineering.confidence;
     if (engineering.manualOverrideInvalid) {
       this.dom.sceneConfidence.className = "confidence-badge is-warning";
-    } else if (engineering.confidence?.includes("دقة عالية")) {
+    } else if (engineering.hardGatePassed || engineering.confidence?.includes("دقة عالية")) {
       this.dom.sceneConfidence.className = "confidence-badge is-high";
     } else {
       this.dom.sceneConfidence.className = "confidence-badge";
@@ -489,22 +536,52 @@ class App {
     }
   }
 
+  selectReference(sceneId, { announce = true } = {}) {
+    const scene = this.sceneEngine.getById(sceneId);
+    const suggestedPoseId = this.getSuggestedPoseId(scene);
+    if (!scene || !suggestedPoseId) {
+      showToast("هذا المرجع لا يملك وضعية متوافقة في Smart Quad", "error", 4200);
+      return;
+    }
+
+    this.state.sceneOverrideId = scene.id;
+    this.state.poseId = suggestedPoseId;
+    this.ensureCompatibleLighting(scene, suggestedPoseId);
+    this.populatePoseOptions();
+    this.updateAll();
+
+    if (announce) {
+      const pose = this.poseEngine.getById(suggestedPoseId);
+      showToast(`تم اختيار المرجع: ${scene.name_ar} — الوضعية المقترحة: ${pose?.name_ar ?? suggestedPoseId}`, "success", 4200);
+    }
+  }
+
+  suggestPoseForSelectedReference() {
+    const scene = this.getSelectedReference();
+    if (!scene) {
+      this.openScenePicker();
+      showToast("اختر صورة مرجع الغرفة أولًا", "warning", 3200);
+      return;
+    }
+    this.selectReference(scene.id);
+  }
+
   openScenePicker() {
+    const poseLabels = Object.fromEntries(POSES.map((pose) => [pose.id, pose.name_ar]));
+    const scenes = this.getSelectableScenes().map((scene) => ({
+      ...scene,
+      compatiblePoseIds: this.getCompatiblePoseIds(scene),
+      suggestedPoseId: this.getSuggestedPoseId(scene)
+    }));
+
     renderScenePicker({
       container: this.dom.scenePickerGrid,
-      scenes: SCENES,
-      selectedSceneId: this.state.sceneOverrideId ?? this.state.selectedSceneId,
+      scenes,
+      selectedSceneId: this.state.sceneOverrideId,
+      poseLabels,
       onSelect: (sceneId) => {
-        this.state.sceneOverrideId = sceneId;
         closeDialog(this.dom.sceneDialog);
-        this.updateAll();
-        showToast(
-          this.engineering?.manualOverrideInvalid
-            ? "⚠ تم تجاوز المرجع يدويًا، لكنه لا يجتاز البوابة الصارمة لهذه الوضعية"
-            : "تم تجاوز المرجع التلقائي؛ المرجع اجتاز البوابة والفحص ما زال نشطًا",
-          this.engineering?.manualOverrideInvalid ? "warning" : "success",
-          4200
-        );
+        this.selectReference(sceneId);
       }
     });
     openDialog(this.dom.sceneDialog);
@@ -539,7 +616,7 @@ class App {
     this.updateAll();
     this.dom.finalPrompt.closest(".prompt-editor")?.classList.add("is-refreshed");
     window.setTimeout(() => this.dom.finalPrompt.closest(".prompt-editor")?.classList.remove("is-refreshed"), 500);
-    showToast("أُعيد بناء الأمر من الاختيارات الخمسة");
+    showToast("أُعيد بناء الأمر من المرجع والوضعية المتوافقة");
   }
 
   toggleTheme() {
