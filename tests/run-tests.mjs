@@ -45,6 +45,10 @@ assert.equal(rightEngineering.lensType, "front_wide");
 assert.equal(rightEngineering.roomMode, "GENERATE");
 assert.match(rightEngineering.armFine, /LEFT/u);
 assert.match(rightEngineering.physicsFine, /RIGHT shoulder/u);
+assert.equal(rightEngineering.selfieViewpoint.holdingHand, "LEFT");
+assert.equal(rightEngineering.selfieViewpoint.otherHand, "RIGHT");
+assert.equal(rightEngineering.selfieViewpoint.distance, "35–45 cm");
+assert.match(rightEngineering.selfieViewpoint.tilt, /clockwise Dutch tilt/u);
 assert.equal(rightEngineering.confidence, "تلقائي — دقة عالية");
 
 const leftPose = poseEngine.getById("lying_left_side");
@@ -53,6 +57,9 @@ assert.equal(leftEngineering.selectedSceneId, "bed_left_vanity");
 assert.equal(leftEngineering.bodyDirection, "toward_vanity");
 assert.match(leftEngineering.armFine, /RIGHT hand/u);
 assert.match(leftEngineering.orientation, /LEFT shoulder/u);
+assert.equal(leftEngineering.selfieViewpoint.holdingHand, "RIGHT");
+assert.equal(leftEngineering.selfieViewpoint.otherHand, "LEFT");
+assert.match(leftEngineering.selfieViewpoint.tilt, /counterclockwise Dutch tilt/u);
 
 const rightPoseSections = poseEngine.engineer({
   pose: rightPose,
@@ -81,11 +88,32 @@ const leftPoseSections = poseEngine.engineer({
 assert.match(leftPoseSections.trueLateral, /UPPER RIGHT hand is the ONLY selfie hand/u);
 assert.match(leftPoseSections.trueLateral, /LOWER LEFT arm/u);
 
+const rightViewpointLock = cameraEngine.selfieViewpointLock({
+  camera: cameraEngine.getCamera("front"),
+  pose: rightPose,
+  autoEngineering: rightEngineering
+});
+assert.match(rightViewpointLock, /SELFIE VIEWPOINT LOCK — HIGHEST PRIORITY FOR CAMERA GEOMETRY/u);
+assert.match(rightViewpointLock, /subject's own front-facing phone held in his LEFT hand at 35–45 cm/u);
+assert.match(rightViewpointLock, /clockwise Dutch tilt of 25–35 degrees/u);
+assert.match(rightViewpointLock, /Face occupies approximately 40–60% of frame height/u);
+assert.match(rightViewpointLock, /phone is behind the camera plane and therefore is NOT visible/u);
+assert.match(rightViewpointLock, /third-person observer camera/u);
+assert.match(rightViewpointLock, /camera at the foot of the bed/u);
+assert.match(rightViewpointLock, /whole bed/u);
+assert.match(rightViewpointLock, /hand's ONLY job is holding the phone/u);
+assert.match(rightViewpointLock, /SELFIE DISTANCE CHECK/u);
+
 const mirrorPose = poseEngine.getById("mirror_selfie");
 const mirrorEngineering = autoEngineeringEngine.engineer({ pose: mirrorPose, lightingId: "single_ceiling" });
 assert.equal(mirrorEngineering.selectedSceneId, "vanity_mirror");
 assert.equal(mirrorEngineering.cameraType, "rear");
 assert.equal(mirrorEngineering.bodyDirection, "facing_mirror");
+assert.equal(cameraEngine.selfieViewpointLock({
+  camera: cameraEngine.getCamera("rear"),
+  pose: mirrorPose,
+  autoEngineering: mirrorEngineering
+}), "", "Rear-camera mirror capture must not receive the front-camera selfie viewpoint lock");
 
 for (const poseId of QUAD_POSE_IDS) {
   const pose = poseEngine.getById(poseId);
@@ -94,6 +122,11 @@ for (const poseId of QUAD_POSE_IDS) {
   assert.ok(engineered.cameraType, `Every Smart Quad pose needs a deterministic camera: ${poseId}`);
   assert.ok(engineered.cameraFine, `Every Smart Quad pose needs fine camera geometry: ${poseId}`);
   assert.ok(engineered.armFine, `Every Smart Quad pose needs deterministic arm geometry: ${poseId}`);
+  if (engineered.cameraType === "front") {
+    assert.ok(engineered.selfieViewpoint, `Every front-camera Smart Quad pose needs a deterministic selfie viewpoint profile: ${poseId}`);
+    assert.ok(engineered.selfieViewpoint.holdingHand, `Every front-camera pose needs a deterministic holding hand: ${poseId}`);
+    assert.ok(engineered.selfieViewpoint.distance, `Every front-camera pose needs an arm-reach distance: ${poseId}`);
+  }
 }
 
 const scene = rightEngineering.scene;
@@ -135,6 +168,7 @@ assert.ok(wrongLensResult.conflicts.some((issue) => issue.type === "camera_lens_
 
 const prompt = promptEngine.generate(baseConfig);
 assert.match(prompt, /^CHATGPT IMAGE TASK/u);
+assert.match(prompt, /SELFIE VIEWPOINT LOCK — HIGHEST PRIORITY FOR CAMERA GEOMETRY/u);
 assert.match(prompt, /IMAGE A — IDENTITY ONLY/u);
 assert.match(prompt, /IMAGE B — ROOM ONLY/u);
 assert.match(prompt, /BED SPATIAL MAP/u);
@@ -147,9 +181,43 @@ assert.match(prompt, /selected expression overrides the expression visible in IM
 assert.match(prompt, /CLOTHING LOCK/u);
 assert.match(prompt, /selected clothing overrides every garment visible in IMAGE A/u);
 assert.match(prompt, /LAMP SIDE: RIGHT/u);
+assert.match(prompt, /Face occupies approximately 40–60% of frame height/u);
+assert.match(prompt, /third-person view, observer camera, wide room shot/u);
+assert.match(prompt, /hand propping head/u);
 assert.match(prompt, /NEGATIVE PROMPT/u);
 assert.match(prompt, /Return only the final image/u);
+assert.ok(
+  prompt.indexOf("CHATGPT IMAGE TASK") < prompt.indexOf("SELFIE VIEWPOINT LOCK — HIGHEST PRIORITY FOR CAMERA GEOMETRY")
+  && prompt.indexOf("SELFIE VIEWPOINT LOCK — HIGHEST PRIORITY FOR CAMERA GEOMETRY") < prompt.indexOf("PROMPT ENGINEERING POLICY"),
+  "Selfie viewpoint lock must be injected immediately after the task and before the general prompt policy"
+);
 assert.doesNotMatch(prompt, /الاستلقاء|الأباجورة|التسريحة/u, "Final prompt must remain English");
+
+const leftConfig = {
+  ...baseConfig,
+  pose: leftPose,
+  scene: leftEngineering.scene,
+  poseId: leftPose.id,
+  selectedSceneId: leftEngineering.selectedSceneId,
+  bodyDirection: leftEngineering.bodyDirection,
+  cameraAngle: leftEngineering.cameraAngle,
+  cameraDistance: leftEngineering.cameraDistance,
+  cameraType: leftEngineering.cameraType,
+  camera: cameraEngine.getCamera(leftEngineering.cameraType),
+  lensType: leftEngineering.lensType,
+  lens: cameraEngine.getLens(leftEngineering.lensType),
+  roomMode: leftEngineering.roomMode,
+  autoEngineering: leftEngineering,
+  lighting: lightingEngine.getById(leftEngineering.lightingId),
+  uploads: {
+    imageA: { name: "identity.jpg" },
+    imageB: { name: leftEngineering.scene.image_filename }
+  }
+};
+const leftPrompt = promptEngine.generate(leftConfig);
+assert.match(leftPrompt, /front-facing phone held in his RIGHT hand at 30–40 cm/u);
+assert.match(leftPrompt, /counterclockwise Dutch tilt of 25–35 degrees/u);
+assert.match(leftPrompt, /UPPER RIGHT hand is the ONLY selfie hand/u);
 
 const indexHTML = readFileSync(resolve(projectRoot, "index.html"), "utf8");
 assert.doesNotMatch(indexHTML, /183\s*cm|82\s*kg|35 years|Middle Eastern man/u, "Fixed person data must not appear in the UI document");
@@ -186,6 +254,7 @@ while (sourceFiles.length) {
 
 console.log("✓ Smart Quad deterministic mapping tests passed");
 console.log("✓ True lateral anatomy and reference-lock tests passed");
+console.log("✓ Selfie viewpoint lock and framing tests passed");
 console.log("✓ Validator tests passed");
 console.log("✓ Prompt generation and spatial-map tests passed");
 console.log("✓ Four-choice UI and static integrity tests passed");
