@@ -18,6 +18,32 @@ export class PromptEngine {
       : `the attached ${fallback}`;
   }
 
+  buildNaturalBrief(c) {
+    const personDescription = this.identityEngine.fixedData?.person?.description
+      ?? "Middle Eastern man, 35 years old, 183 cm tall, 82 kg, with a lightly athletic build";
+    const sceneName = c.scene?.name_en ?? "the selected bedroom reference";
+    const poseName = c.pose?.name_en?.toLowerCase() ?? "positioned naturally in the selected scene";
+    const lightingName = c.lighting?.name_en?.toLowerCase() ?? "the selected physically motivated lighting";
+    const aspect = ["9:16", "1:1", "16:9"].includes(c.aspect) ? c.aspect : "9:16";
+    const aspectLabel = aspect === "9:16"
+      ? "vertical phone selfie"
+      : aspect === "1:1"
+        ? "square phone selfie"
+        : "horizontal phone selfie";
+    const cameraPhrase = c.camera?.type === "rear"
+      ? "the Xiaomi 15 Ultra rear camera toward the real mirror with ordinary phone processing"
+      : "the Xiaomi 15 Ultra front camera at arm's length with mild wide-angle perspective and ordinary phone processing";
+
+    return `PHOTOGRAPHIC BRIEF — NATURAL LANGUAGE (read this first)
+Create a photorealistic, ordinary smartphone selfie photograph, not a studio shot.
+The subject is the exact real man from IMAGE A, who is a ${personDescription}, with the same face, skin tone, hair, and beard, photographed again rather than recreated as a look-alike.
+The setting is ${sceneName}, exactly the same room as IMAGE B with the same furniture, materials, layout, and visible clutter.
+He is ${poseName}, with the pose reading naturally and physically supported by the real surface or floor shown in the room.
+The result should feel like a candid, unedited phone photo with ordinary imperfections, no beauty filter, no CGI feel, and no cinematic grading.
+Use ${lightingName} with physically believable light behavior, captured on ${cameraPhrase}.
+Aspect ratio: ${aspect} ${aspectLabel}.`;
+  }
+
   buildSpatialMap(engineering) {
     if (!engineering?.spatialMap) return "";
     const map = engineering.spatialMap;
@@ -176,6 +202,8 @@ Deterministic orientation: ${orientation}`;
 
     sections.push(`CHATGPT IMAGE TASK
 ChatGPT, ${taskVerb}. Produce one ordinary, coherent, physically believable smartphone photograph. Use one camera, one reachable viewpoint, one exposure, one lighting event, and one image-processing pipeline. Return only the final image.`);
+
+    sections.push(this.buildNaturalBrief(config));
 
     if (selfieViewpointLock) sections.push(selfieViewpointLock);
 
