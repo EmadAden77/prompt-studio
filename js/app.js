@@ -92,6 +92,7 @@ class App {
       hairSelect: $("#hairSelect"),
       lightingSelect: $("#lightingSelect"),
       clothingSelect: $("#clothingSelect"),
+      aspectSelect: $("#aspectSelect"),
       autoEngineerBtn: $("#autoEngineerBtn"),
       modeHint: $("#modeHint"),
       autoReferenceTitle: $("#autoReferenceTitle"),
@@ -140,6 +141,7 @@ class App {
     if (!QUAD_EXPRESSION_IDS.includes(this.state.expressionId)) this.state.expressionId = "relaxed";
     if (!LIGHTING_OPTIONS.some((item) => item.id === this.state.lightingId)) this.state.lightingId = "lamp_and_phone";
     if (!CLOTHING_OPTIONS.some((item) => item.id === this.state.clothingId)) this.state.clothingId = APP_CONFIG.defaultState.clothingId;
+    if (!["9:16", "1:1", "16:9"].includes(this.state.aspect)) this.state.aspect = APP_CONFIG.defaultState.aspect;
     if (!["light", "dark", "system"].includes(this.state.theme)) this.state.theme = "system";
     this.state.mode = QUAD_DEFAULTS.mode;
     if (!this.sceneEngine.getById(this.state.sceneOverrideId)) this.state.sceneOverrideId = null;
@@ -277,6 +279,7 @@ class App {
     setOptions(this.dom.expressionSelect, quadExpressions, this.state.expressionId);
     this.populateLightingSelect(lightingOptions);
     this.populateClothingSelect();
+    this.dom.aspectSelect.value = this.state.aspect;
     if (this.dom.modeHint) this.dom.modeHint.textContent = "5 اختيارات — الوضعية تلقائية";
   }
 
@@ -286,7 +289,8 @@ class App {
       [this.dom.hairSelect, "hairId"],
       [this.dom.lightingSelect, "lightingId"],
       [this.dom.expressionSelect, "expressionId"],
-      [this.dom.clothingSelect, "clothingId"]
+      [this.dom.clothingSelect, "clothingId"],
+      [this.dom.aspectSelect, "aspect"]
     ].forEach(([element, field]) => {
       element.addEventListener("change", () => {
         this.state[field] = element.value;
@@ -443,6 +447,7 @@ class App {
     this.dom.hairSelect.value = this.state.hairId;
     this.dom.expressionSelect.value = this.state.expressionId;
     this.dom.clothingSelect.value = this.state.clothingId;
+    this.dom.aspectSelect.value = this.state.aspect;
   }
 
   buildConfig() {
