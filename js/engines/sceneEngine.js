@@ -23,8 +23,15 @@ const FEATURE_LABELS_AR = Object.freeze({
   vanity_mirror: "مرآة التسريحة",
   sofa: "أريكة",
   chair: "كرسي",
-  wardrobe: "دولاب"
+  wardrobe: "دولاب",
+  lamp: "أباجورة",
+  ceiling_light: "لمبة سقف",
+  ceiling_spots: "سبوتات سقف",
+  daylight_access: "مدخل ضوء نهاري"
 });
+
+const SELFIE_NEAR_DISTANCES = new Set(["close", "medium"]);
+const SELFIE_CAMERA_ANGLES = new Set(["eye_level", "high_angle", "low_angle"]);
 
 function unique(items = []) {
   return [...new Set(items.filter(Boolean))];
@@ -59,15 +66,41 @@ export class SceneEngine {
     return requiredFeatures.every((feature) => scene.visible_features.includes(feature));
   }
 
-  evaluateHardGate(scene, poseId, extraRequiredFeatures = []) {
+  evaluateSelfieCameraFeasibility(scene, { cameraType = null, bedRealismProfile = null } = {}) {
+    if (!scene || cameraType !== "front" || !bedRealismProfile) {
+      return { pass: true, surfacePass: true, nearViewSupport: true, cameraAngleSupport: true };
+    }
+
+    const requiredSurface = bedRealismProfile.requiredSurface;
+    const surfacePass = requiredSurface === "bed"
+      ? scene.visible_features.includes("bed") && scene.visible_features.includes("mattress")
+      : !requiredSurface || scene.surfaces.includes(requiredSurface);
+    const nearViewSupport = scene.camera_distances.some((distance) => SELFIE_NEAR_DISTANCES.has(distance));
+    const cameraAngleSupport = scene.camera_angles.some((angle) => SELFIE_CAMERA_ANGLES.has(angle));
+
+    return {
+      pass: surfacePass && nearViewSupport && cameraAngleSupport,
+      surfacePass,
+      nearViewSupport,
+      cameraAngleSupport
+    };
+  }
+
+  evaluateHardGate(scene, poseId, extraRequiredFeatures = [], context = {}) {
     const requirement = this.getRequirement(poseId, extraRequiredFeatures);
+    const lightingRequiredFeatures = unique(context.lightingRequiredFeatures ?? []);
+
     if (!scene) {
       return {
         pass: false,
         poseMatch: false,
         featureMatch: false,
+        lightingMatch: false,
+        selfieCameraFeasible: false,
         missingFeatures: [...requirement.required_features_all],
-        requirement
+        missingLightingFeatures: [...lightingRequiredFeatures],
+        requirement,
+        selfieFeasibility: { pass: false }
       };
     }
 
@@ -75,21 +108,32 @@ export class SceneEngine {
     const missingFeatures = requirement.required_features_all.filter(
       (feature) => !scene.visible_features.includes(feature)
     );
+    const missingLightingFeatures = lightingRequiredFeatures.filter(
+      (feature) => !scene.visible_features.includes(feature)
+    );
+    const selfieFeasibility = this.evaluateSelfieCameraFeasibility(scene, context);
 
     return {
-      pass: poseMatch && missingFeatures.length === 0,
+      pass: poseMatch
+        && missingFeatures.length === 0
+        && missingLightingFeatures.length === 0
+        && selfieFeasibility.pass,
       poseMatch,
       featureMatch: missingFeatures.length === 0,
+      lightingMatch: missingLightingFeatures.length === 0,
+      selfieCameraFeasible: selfieFeasibility.pass,
       missingFeatures,
-      requirement
+      missingLightingFeatures,
+      requirement,
+      selfieFeasibility
     };
   }
 
-  hardGate(poseId, extraRequiredFeatures = []) {
+  hardGate(poseId, extraRequiredFeatures = [], context = {}) {
     const requirement = this.getRequirement(poseId, extraRequiredFeatures);
     const evaluated = this.scenes.map((scene) => ({
       scene,
-      gate: this.evaluateHardGate(scene, poseId, extraRequiredFeatures)
+      gate: this.evaluateHardGate(scene, poseId, extraRequiredFeatures, context)
     }));
     const passed = evaluated.filter((item) => item.gate.pass);
     const rejected = evaluated.filter((item) => !item.gate.pass);
@@ -99,19 +143,19 @@ export class SceneEngine {
       passed,
       rejected,
       passedCount: passed.length,
-      totalCount: this.scenes.length
+      totalCount: this.scenes.length,
+      lightingRequiredFeatures: unique(context.lightingRequiredFeatures ?? [])
     };
   }
 
-  getCompatibleScenes(poseId, bodyDirection, requiredFeatures = []) {
-    // v1.2: compatibility is a hard Pass/Fail gate. Direction belongs to ranking, not gating.
-    return this.hardGate(poseId, requiredFeatures).passed.map((item) => item.scene);
+  getCompatibleScenes(poseId, bodyDirection, requiredFeatures = [], context = {}) {
+    return this.hardGate(poseId, requiredFeatures, context).passed.map((item) => item.scene);
   }
 
   scoreScene(scene, { poseId, bodyDirection, cameraAngle, cameraDistance, requiredFeatures = [] }) {
     const requirement = this.getRequirement(poseId, requiredFeatures);
     let score = 0;
-    const reasons = ["اجتاز البوابة الصارمة: الوضعية مدعومة وكل العناصر الإلزامية موجودة"];
+    const reasons = [];
 
     if (requirement.preferred_region && scene.region === requirement.preferred_region) {
       score += 50;
@@ -125,12 +169,12 @@ export class SceneEngine {
 
     if (scene.camera_angles.includes(cameraAngle)) {
       score += 20;
-      reasons.push("زاوية الكاميرا متطابقة");
+      reasons.push("بيانات المرجع تساعد على مصالحة زاوية الخلفية مع موضع السيلفي");
     }
 
     if (scene.camera_distances.includes(cameraDistance)) {
       score += 10;
-      reasons.push("مسافة التصوير متطابقة");
+      reasons.push("بيانات المرجع تساعد على مصالحة مسافة الخلفية مع موضع السيلفي");
     }
 
     if (scene.default_for_poses.includes(poseId)) {
@@ -147,7 +191,16 @@ export class SceneEngine {
     return "تلقائي صارم — دقة منخفضة";
   }
 
-  autoSelect({ poseId, bodyDirection, cameraAngle, cameraDistance, requiredFeatures = [] }) {
+  autoSelect({
+    poseId,
+    bodyDirection,
+    cameraAngle,
+    cameraDistance,
+    requiredFeatures = [],
+    lightingRequiredFeatures = [],
+    cameraType = null,
+    bedRealismProfile = null
+  }) {
     if (!poseId || !bodyDirection) {
       return {
         error: "missing_input",
@@ -156,34 +209,50 @@ export class SceneEngine {
       };
     }
 
-    // HARD GATE FIRST. No score is calculated until this pass/fail stage finishes.
-    const gate = this.hardGate(poseId, requiredFeatures);
+    const context = { lightingRequiredFeatures, cameraType, bedRealismProfile };
+    // v1.3 HARD GATE FIRST: pose + required geometry + reachable selfie feasibility + selected lighting support.
+    const gate = this.hardGate(poseId, requiredFeatures, context);
     if (gate.passedCount === 0) {
-      const requiredText = this.formatRequiredFeatures(gate.requirement.required_features_all) || "مرجع يدعم الوضعية نفسها";
+      const required = unique([
+        ...gate.requirement.required_features_all,
+        ...gate.lightingRequiredFeatures
+      ]);
+      const requiredText = this.formatRequiredFeatures(required) || "مرجع يدعم الوضعية نفسها";
+      const selfieText = cameraType === "front" && bedRealismProfile
+        ? " + منظور سيلفي قريب قابل للمصالحة مع هندسة السرير"
+        : "";
       return {
         error: "strict_no_match",
         scene: null,
-        message: `لا يوجد مرجع صالح لهذه الوضعية — المطلوب: ${requiredText}`,
+        message: `لا يوجد مرجع صالح لهذه الوضعية — المطلوب: ${requiredText}${selfieText}`,
         requiredFeatures: gate.requirement.required_features_all,
+        lightingRequiredFeatures: gate.lightingRequiredFeatures,
         preferredRegion: gate.requirement.preferred_region,
         passedCount: 0,
         totalCount: gate.totalCount,
-        gateSummary: `مرشح صارم: اجتاز 0 من ${gate.totalCount} مرجعًا`,
+        gateSummary: `مرشح صارم v1.3: اجتاز 0 من ${gate.totalCount} مرجعًا`,
         alternatives: [],
         reasons: [],
         mode: "تلقائي صارم"
       };
     }
 
-    // Ranking happens ONLY among scenes that passed the hard gate.
     const ranked = gate.passed
-      .map(({ scene }) => this.scoreScene(scene, {
-        poseId,
-        bodyDirection,
-        cameraAngle,
-        cameraDistance,
-        requiredFeatures
-      }))
+      .map(({ scene, gate: sceneGate }) => {
+        const scored = this.scoreScene(scene, {
+          poseId,
+          bodyDirection,
+          cameraAngle,
+          cameraDistance,
+          requiredFeatures
+        });
+        const gateReasons = [
+          "اجتاز دعم الوضعية وهندسة السرير الإلزامية",
+          sceneGate.selfieCameraFeasible ? "اجتاز قابلية منظور السيلفي القريب" : "",
+          sceneGate.lightingMatch ? "اجتاز توافق مصدر الإضاءة المختار" : ""
+        ].filter(Boolean);
+        return { ...scored, reasons: [...gateReasons, ...scored.reasons] };
+      })
       .sort((a, b) => (
         b.score - a.score
         || (b.scene.priority ?? 0) - (a.scene.priority ?? 0)
@@ -198,17 +267,23 @@ export class SceneEngine {
       reasons: best.reasons,
       alternatives: ranked.slice(1, 3),
       requiredFeatures: gate.requirement.required_features_all,
+      lightingRequiredFeatures: gate.lightingRequiredFeatures,
       preferredRegion: gate.requirement.preferred_region,
       passedCount: gate.passedCount,
       totalCount: gate.totalCount,
-      gateSummary: `مرشح صارم: اجتاز ${gate.passedCount} من ${gate.totalCount} مرجعًا`,
+      gateSummary: `مرشح صارم v1.3: اجتاز ${gate.passedCount} من ${gate.totalCount} مرجعًا`,
       mode: "تلقائي صارم"
     };
   }
 
   evaluateManualSelection(scene, config) {
     if (!scene) return { score: 0, reasons: [], compatible: false, hardGatePassed: false };
-    const gate = this.evaluateHardGate(scene, config.poseId, config.requiredFeatures ?? []);
+    const context = {
+      lightingRequiredFeatures: config.lightingRequiredFeatures ?? [],
+      cameraType: config.cameraType ?? null,
+      bedRealismProfile: config.bedRealismProfile ?? null
+    };
+    const gate = this.evaluateHardGate(scene, config.poseId, config.requiredFeatures ?? [], context);
     const scored = this.scoreScene(scene, config);
     const directionMatch = this.directionMatches(scene, config.bodyDirection);
 
@@ -221,10 +296,14 @@ export class SceneEngine {
       reasons: [
         gate.poseMatch ? "الوضعية مدعومة" : "الوضعية غير مدعومة",
         gate.featureMatch
-          ? "العناصر الإلزامية موجودة"
+          ? "هندسة السرير والعناصر الإلزامية موجودة"
           : `العناصر الإلزامية الناقصة: ${this.formatRequiredFeatures(gate.missingFeatures)}`,
+        gate.selfieCameraFeasible ? "منظور السيلفي القريب قابل للمصالحة" : "منظور السيلفي القريب غير قابل للمصالحة مع بيانات المرجع",
+        gate.lightingMatch
+          ? "مصدر الإضاءة المختار مدعوم"
+          : `مصادر الإضاءة الناقصة: ${this.formatRequiredFeatures(gate.missingLightingFeatures)}`,
         directionMatch ? "جهة الجسم مدعومة" : "جهة الجسم غير مفضلة في هذا المرجع",
-        ...scored.reasons.slice(1)
+        ...scored.reasons
       ]
     };
   }
