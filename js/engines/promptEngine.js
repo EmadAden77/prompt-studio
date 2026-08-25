@@ -70,10 +70,17 @@ Deterministic orientation: ${autoEngineering?.orientation ?? "follow the selecte
     const poseSections = pose
       ? this.poseEngine.engineer({ pose, expression, hair, clothing, autoEngineering })
       : null;
+    const selfieViewpointLock = this.cameraEngine.selfieViewpointLock({
+      camera,
+      pose,
+      autoEngineering
+    });
     const sections = [];
 
     sections.push(`CHATGPT IMAGE TASK
 ChatGPT, ${taskVerb}. Produce one ordinary, coherent, physically believable smartphone photograph. Use one camera, one reachable viewpoint, one exposure, one lighting event, and one image-processing pipeline. Return only the final image.`);
+
+    if (selfieViewpointLock) sections.push(selfieViewpointLock);
 
     sections.push(`PROMPT ENGINEERING POLICY
 ${MASTER_POLICY.eventRule}
@@ -114,7 +121,7 @@ Keep anatomy, gravity, support, and pressure physically possible.`);
 ${this.cameraEngine.buildPrompt({ camera, lens, pose, cameraAngle, cameraDistance })}
 Fine camera engineering: ${autoEngineering?.cameraFine ?? "Use the mapped reachable viewpoint."}
 ${poseSections?.armStrategy ?? "Keep every shoulder, elbow, wrist, and hand anatomically reachable."}
-The phone position is derived after body placement. If framing would force impossible anatomy, loosen the crop instead of moving the body or lengthening the arm.`);
+The phone position is derived after body placement. If framing would force impossible anatomy, loosen the crop instead of moving the body or lengthening the arm. For front-camera selfies, this section must remain subordinate to the earlier SELFIE VIEWPOINT LOCK.`);
 
     sections.push(poseSections?.expression ?? `EXPRESSION LOCK
 Change facial muscle state only; preserve identity geometry and natural asymmetry from IMAGE A.`);
@@ -141,6 +148,7 @@ Preserve natural facial asymmetry, real pores and skin-color variation, natural 
 - Subject placement is solved before camera placement.
 - The selected body side is defined relative to the subject, not the image.
 - For side-lying poses, the loaded shoulder, ribcage, hip, pillow contact, upper selfie arm, and lower support arm all agree with the same body side.
+- For front-camera selfies, the final frame must pass the SELFIE DISTANCE CHECK and visibly read as subject-held at arm's length, never as an observer or room camera.
 - Support surfaces visibly carry weight and compress locally.
 - Arms, hands, phone reach, and optical axis are anatomically possible.
 - Mirror reflections, if present, preserve one ray path and correct handedness.
@@ -148,10 +156,10 @@ Preserve natural facial asymmetry, real pores and skin-color variation, natural 
 - No furniture, clutter, doors, windows, mirrors, fixtures, or room dimensions are moved, cleaned, mirrored, resized, or redesigned.`);
 
     sections.push(`FORBIDDEN RESULTS
-No cartoon, illustration, painting, CGI, 3D-render appearance, beauty filter, facial reshaping, forced symmetry, plastic or waxy skin, artificial pore maps, painted beard, wire hair, extra fingers, extra limbs, fused limbs, impossible joints, torso penetration, floating body, unsupported contact, broken reflection, fake DSLR bokeh, anamorphic distortion, destructive ISO noise, extreme motion blur, fake 8K detail, unmotivated lens flare, cinematic grading, studio softbox, EXIF spoofing, C2PA removal, PRNU simulation, forensic countermeasures, unrequested text, or logos.`);
+No cartoon, illustration, painting, CGI, 3D-render appearance, beauty filter, facial reshaping, forced symmetry, plastic or waxy skin, artificial pore maps, painted beard, wire hair, extra fingers, extra limbs, fused limbs, impossible joints, torso penetration, floating body, unsupported contact, broken reflection, third-person observer viewpoint, camera across the room, camera at the foot of the bed, doorway view, tripod shot, photo taken by another person, full-body distant selfie, whole-bed composition, hand propping the head during a selfie, fake DSLR bokeh, anamorphic distortion, destructive ISO noise, extreme motion blur, fake 8K detail, unmotivated lens flare, cinematic grading, studio softbox, EXIF spoofing, C2PA removal, PRNU simulation, forensic countermeasures, unrequested text, or logos.`);
 
     sections.push(`NEGATIVE PROMPT
-cartoon, illustration, painting, CGI, 3D render, plastic skin, beauty filter, face smoothing, over-sharpened pores, painted beard, wire hair, extra fingers, extra arm, fused hand, impossible elbow, wrong selfie hand, torso penetration, floating shoulder, semi-reclined side-lying hybrid, face-up side pose, broken anatomy, fake bokeh, cinematic lighting, studio softbox, extreme HDR, artificial glow, fake 8K, exaggerated wide-angle distortion, EXIF manipulation, C2PA removal, PRNU simulation`);
+cartoon, illustration, painting, CGI, 3D render, plastic skin, beauty filter, face smoothing, over-sharpened pores, painted beard, wire hair, extra fingers, extra arm, fused hand, impossible elbow, wrong selfie hand, torso penetration, floating shoulder, semi-reclined side-lying hybrid, face-up side pose, third-person view, observer camera, wide room shot, camera at foot of bed, doorway camera, photo taken by another person, full-body distant view, whole bed visible, hand propping head, posing hand under cheek, tripod shot, broken anatomy, fake bokeh, cinematic lighting, studio softbox, extreme HDR, artificial glow, fake 8K, exaggerated wide-angle distortion, EXIF manipulation, C2PA removal, PRNU simulation`);
 
     return sections.filter(Boolean).join("\n\n");
   }
