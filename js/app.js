@@ -27,6 +27,14 @@ import { renderPrompt, renderPromptSummary } from "./ui/promptDisplay.js";
 import { renderValidation } from "./ui/conflictModal.js";
 import { renderScenePicker } from "./ui/scenePicker.js";
 
+const CLOTHING_CATEGORY_LABELS = Object.freeze({
+  sleepwear: "ملابس نوم",
+  casual: "كاجوال",
+  sport: "رياضي",
+  winter: "شتوي",
+  traditional: "تقليدي"
+});
+
 class App {
   constructor() {
     this.storage = new StorageManager(APP_CONFIG.storageKey);
@@ -68,6 +76,7 @@ class App {
       expressionSelect: $("#expressionSelect"),
       hairSelect: $("#hairSelect"),
       lightingSelect: $("#lightingSelect"),
+      clothingSelect: $("#clothingSelect"),
       autoEngineerBtn: $("#autoEngineerBtn"),
       modeHint: $("#modeHint"),
       sceneName: $("#sceneName"),
@@ -112,10 +121,31 @@ class App {
     if (!HAIR_OPTIONS.some((item) => item.id === this.state.hairId)) this.state.hairId = "same";
     if (!QUAD_EXPRESSION_IDS.includes(this.state.expressionId)) this.state.expressionId = "relaxed";
     if (!LIGHTING_OPTIONS.some((item) => item.id === this.state.lightingId)) this.state.lightingId = "lamp_and_phone";
+    if (!CLOTHING_OPTIONS.some((item) => item.id === this.state.clothingId)) this.state.clothingId = APP_CONFIG.defaultState.clothingId;
     if (!["light", "dark", "system"].includes(this.state.theme)) this.state.theme = "system";
     this.state.mode = QUAD_DEFAULTS.mode;
-    this.state.clothingId = QUAD_DEFAULTS.clothingId;
     this.state.sceneOverrideId ??= QUAD_DEFAULTS.sceneOverrideId;
+  }
+
+  populateClothingSelect() {
+    const select = this.dom.clothingSelect;
+    if (!select) return;
+    const fragment = document.createDocumentFragment();
+
+    Object.entries(CLOTHING_CATEGORY_LABELS).forEach(([category, label]) => {
+      const group = document.createElement("optgroup");
+      group.label = label;
+      CLOTHING_OPTIONS.filter((item) => item.category === category).forEach((item) => {
+        const option = document.createElement("option");
+        option.value = item.id;
+        option.textContent = item.name_ar;
+        group.appendChild(option);
+      });
+      fragment.appendChild(group);
+    });
+
+    select.replaceChildren(fragment);
+    select.value = this.state.clothingId;
   }
 
   populateQuadControls() {
@@ -125,7 +155,8 @@ class App {
     setOptions(this.dom.hairSelect, HAIR_OPTIONS, this.state.hairId);
     setOptions(this.dom.expressionSelect, quadExpressions, this.state.expressionId);
     setOptions(this.dom.lightingSelect, LIGHTING_OPTIONS, this.state.lightingId);
-    if (this.dom.modeHint) this.dom.modeHint.textContent = "4 اختيارات فقط — الباقي تلقائي";
+    this.populateClothingSelect();
+    if (this.dom.modeHint) this.dom.modeHint.textContent = "5 اختيارات فقط — الباقي تلقائي";
   }
 
   bindEvents() {
@@ -133,7 +164,8 @@ class App {
       [this.dom.poseSelect, "poseId"],
       [this.dom.hairSelect, "hairId"],
       [this.dom.lightingSelect, "lightingId"],
-      [this.dom.expressionSelect, "expressionId"]
+      [this.dom.expressionSelect, "expressionId"],
+      [this.dom.clothingSelect, "clothingId"]
     ].forEach(([element, field]) => {
       element.addEventListener("change", () => {
         this.state[field] = element.value;
@@ -148,7 +180,7 @@ class App {
     this.dom.autoEngineerBtn?.addEventListener("click", () => {
       this.state.sceneOverrideId = null;
       this.updateAll();
-      showToast("تمت إعادة الهندسة الحتمية من الاختيارات الأربعة");
+      showToast("تمت إعادة الهندسة الحتمية من الاختيارات الخمسة");
     });
     this.dom.overrideSceneBtn.addEventListener("click", () => this.openScenePicker());
     this.dom.autoFixBtn.addEventListener("click", () => this.applyAutoFixes());
@@ -267,8 +299,7 @@ class App {
       "lensType",
       "roomMode",
       "selectedSceneId",
-      "lightingId",
-      "clothingId"
+      "lightingId"
     ];
     derivedFields.forEach((field) => {
       this.state[field] = this.engineering[field];
@@ -284,6 +315,7 @@ class App {
     this.dom.poseSelect.value = this.state.poseId;
     this.dom.hairSelect.value = this.state.hairId;
     this.dom.expressionSelect.value = this.state.expressionId;
+    this.dom.clothingSelect.value = this.state.clothingId;
   }
 
   buildConfig() {
@@ -451,7 +483,7 @@ class App {
     this.updateAll();
     this.dom.finalPrompt.closest(".prompt-editor")?.classList.add("is-refreshed");
     window.setTimeout(() => this.dom.finalPrompt.closest(".prompt-editor")?.classList.remove("is-refreshed"), 500);
-    showToast("أُعيد بناء الأمر من الاختيارات الأربعة");
+    showToast("أُعيد بناء الأمر من الاختيارات الخمسة");
   }
 
   toggleTheme() {
