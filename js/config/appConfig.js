@@ -14,7 +14,7 @@ export const APP_CONFIG = Object.freeze({
     lensType: "front_wide",
     expressionId: "relaxed",
     hairId: "same",
-    clothingId: "pajamas",
+    clothingId: "cotton_pajama",
     lightingId: "lamp_and_phone",
     roomMode: "GENERATE",
     selectedSceneId: "bed_right_nightstand",
