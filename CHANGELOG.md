@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.10 — 2026-08-26
+
+### Added
+
+- Added `PHOTOGRAPHIC BRIEF — NATURAL LANGUAGE (read this first)` directly after `CHATGPT IMAGE TASK` and before all prompt-engineering policies.
+- The natural brief summarizes the five guide elements in six ordinary English sentences: subject, setting, action/pose, photographic style, and lighting/camera.
+- The brief deliberately avoids repeating the strict technical details that remain authoritative in the existing identity, room, pose/grounding, lighting, camera, processing, and negative sections.
+- Added an aspect-ratio output control with `9:16`, `1:1`, and `16:9`; the default remains `9:16`.
+- Added a dynamic final brief line for the selected ratio: `Aspect ratio: 9:16 vertical phone selfie.`, `Aspect ratio: 1:1 square phone selfie.`, or `Aspect ratio: 16:9 horizontal phone selfie.`
+- Added the fixed send instruction above the copy controls, telling the user to attach IMAGE A and the selected room reference as IMAGE B, read the natural brief first, then execute the strict sections in order and return only one final image.
+
+### Preserved
+
+- All existing frozen strict prompt sections remain in their prior order and wording after the new natural brief.
+- Existing identity, room/reference, pose-family grounding, selfie viewpoint, camera, lighting, processing, realism, forbidden-result, and negative-prompt behavior remains authoritative.
+- Mirror-selfie camera behavior stays on its existing rear-camera path; the natural brief reflects the actual configured camera instead of forcing front-camera wording onto a rear-camera pose.
+
 ## v1.9 — 2026-08-26
 
 ### Changed
