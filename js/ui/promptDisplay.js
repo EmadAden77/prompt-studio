@@ -22,6 +22,7 @@ export function renderPromptSummary(container, config) {
     makeSummaryItem("الشعر", config.hair?.name_ar ?? "غير متاح"),
     makeSummaryItem("الإضاءة", config.lighting?.name_ar ?? "غير متاح"),
     makeSummaryItem("التعبير", config.expression?.name_ar ?? "غير متاح"),
+    makeSummaryItem("الملابس", config.clothing?.name_ar ?? "غير متاح"),
     makeSummaryItem("المرجع التلقائي", config.scene?.name_ar ?? "غير متاح"),
     makeSummaryItem("الثقة", config.autoEngineering?.confidence ?? "تحت الفحص")
   );
