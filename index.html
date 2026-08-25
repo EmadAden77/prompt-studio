@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="Smart Quad Mode لبناء أوامر سيلفي سرير واقعية من أربعة اختيارات فقط.">
+  <meta name="description" content="Smart Quad Mode لبناء أوامر سيلفي سرير واقعية من خمسة اختيارات فقط.">
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#0d1117">
   <title>AI Selfie Prompt Studio — Smart Quad</title>
@@ -36,11 +36,11 @@
   <main id="workspace" class="page-shell">
     <section class="intro" aria-labelledby="pageTitle">
       <div>
-        <p class="eyebrow">SMART QUAD MODE</p>
-        <h1 id="pageTitle">أربع اختيارات فقط، والباقي هندسة تلقائية</h1>
-        <p>اختر الوضعية والشعر والإضاءة والتعبير. المحرّك يحدد جهة الجسم، الكاميرا، الذراع، الفيزياء ومرجع الغرفة تلقائيًا.</p>
+        <p class="eyebrow">SMART QUAD MODE · v1.1</p>
+        <h1 id="pageTitle">خمس اختيارات فقط، والباقي هندسة تلقائية</h1>
+        <p>اختر الوضعية والشعر والإضاءة والتعبير والملابس. المحرّك يحدد جهة الجسم، الكاميرا، الذراع، الفيزياء ومرجع الغرفة تلقائيًا.</p>
       </div>
-      <span class="context-badge" id="modeHint">4 اختيارات فقط — الباقي تلقائي</span>
+      <span class="context-badge" id="modeHint">5 اختيارات فقط — الباقي تلقائي</span>
     </section>
 
     <div class="workspace-grid">
@@ -106,6 +106,11 @@
               <label for="expressionSelect">4. تعبير الوجه</label>
               <select id="expressionSelect" name="expression"></select>
             </div>
+            <div class="field field--wide">
+              <label for="clothingSelect">5. الملابس</label>
+              <select id="clothingSelect" name="clothing"></select>
+              <small>مصنفة إلى ملابس نوم، كاجوال، رياضي، شتوي وتقليدي. القماش والطيّات واللمعان تُحقن تلقائيًا في الأمر.</small>
+            </div>
           </form>
         </section>
 
@@ -161,7 +166,7 @@
   </main>
 
   <footer class="footer">
-    <p>Smart Quad Mode <span>•</span> واقعية مبنية على الفيزياء</p>
+    <p>Smart Quad Mode v1.1 <span>•</span> واقعية مبنية على الفيزياء</p>
     <p>لا تزوير EXIF، لا إزالة C2PA، ولا محاكاة PRNU.</p>
   </footer>
 
@@ -181,7 +186,7 @@
     </div>
     <ol class="help-steps">
       <li><strong>ارفع IMAGE A و IMAGE B</strong><span>الأولى للهوية فقط والثانية للغرفة فقط.</span></li>
-      <li><strong>اختر أربع قيم</strong><span>الوضعية، الشعر، الإضاءة، التعبير.</span></li>
+      <li><strong>اختر خمس قيم</strong><span>الوضعية، الشعر، الإضاءة، التعبير والملابس.</span></li>
       <li><strong>دع المحرك يهندس الباقي</strong><span>جهة الجسم والكاميرا والذراع والفيزياء والمرجع تلقائيًا.</span></li>
       <li><strong>راجع الفحص ثم انسخ</strong><span>التعارضات البسيطة تُصلح تلقائيًا، ورفع الصور يبقى بيدك.</span></li>
     </ol>
