@@ -27,6 +27,14 @@ import { renderScenePicker } from "./ui/scenePicker.js";
 import { activateSmartMode } from "./ui/smartMode.js";
 import { activateManualMode } from "./ui/manualMode.js";
 
+const BED_SELFIE_ARM_STRATEGIES = new Set([
+  "lying_back",
+  "lying_stomach",
+  "lying_right_side",
+  "lying_left_side",
+  "semi_reclining"
+]);
+
 class App {
   constructor() {
     this.storage = new StorageManager(APP_CONFIG.storageKey);
@@ -269,6 +277,10 @@ class App {
     }
   }
 
+  isBedSelfiePose(pose) {
+    return Boolean(pose?.placement === "bed" && BED_SELFIE_ARM_STRATEGIES.has(pose.arm_strategy));
+  }
+
   setMode(mode) {
     if (this.state.mode === mode) return;
     this.state.mode = mode;
@@ -297,6 +309,12 @@ class App {
     const smartCameraType = pose?.arm_strategy === "mirror" ? "rear" : "front";
     this.state.cameraType = smartCameraType;
     this.state.lensType = smartCameraType === "rear" ? "rear_standard" : "front_wide";
+
+    if (this.isBedSelfiePose(pose)) {
+      this.state.roomMode = "GENERATE";
+      this.state.cameraType = "front";
+      this.state.lensType = "front_wide";
+    }
   }
 
   getCompatibleLightingOptions(scene) {
@@ -312,6 +330,14 @@ class App {
     const compatible = this.getCompatibleLightingOptions(scene);
     const preferredIds = ["lamp_only", "lamp_and_phone", "single_ceiling", "all_ceiling_spots", "daylight_semidark", "phone_screen_only"];
     return preferredIds.find((id) => compatible.some((option) => option.id === id)) ?? compatible[0]?.id ?? "phone_screen_only";
+  }
+
+  normalizeSmartLighting() {
+    if (this.state.mode !== "smart" || !this.sceneResult?.scene) return;
+    const compatibleLighting = this.getCompatibleLightingOptions(this.sceneResult.scene);
+    if (!compatibleLighting.some((option) => option.id === this.state.lightingId)) {
+      this.state.lightingId = this.chooseCompatibleLighting(this.sceneResult.scene);
+    }
   }
 
   resolveScene() {
@@ -446,8 +472,10 @@ class App {
     this.dom.clothingSelect.value = this.state.clothingId;
 
     const smartMode = this.state.mode === "smart";
+    const bedSelfiePose = this.isBedSelfiePose(pose);
     this.dom.cameraSelect.disabled = smartMode;
     this.dom.lensSelect.disabled = smartMode;
+    this.dom.roomModeSelect.disabled = smartMode && bedSelfiePose;
     this.dom.angleSelect.disabled = smartMode && this.state.roomMode === "EDIT";
     this.dom.distanceSelect.disabled = smartMode && this.state.roomMode === "EDIT";
 
@@ -519,21 +547,35 @@ class App {
     }
   }
 
+  applyFixesToState(fixes = []) {
+    fixes.forEach((fix) => {
+      this.state[fix.field] = fix.value;
+      if (fix.secondary) this.state[fix.secondary.field] = fix.secondary.value;
+    });
+    this.state.lensType = this.cameraEngine.normalizeLens(this.state.cameraType, this.state.lensType);
+  }
+
   updateAll({ initial = false } = {}) {
     this.normalizeSmartState();
     this.sceneResult = this.resolveScene();
+    this.normalizeSmartLighting();
 
-    if (this.state.mode === "smart" && this.sceneResult.scene) {
-      const compatibleLighting = this.getCompatibleLightingOptions(this.sceneResult.scene);
-      if (!compatibleLighting.some((option) => option.id === this.state.lightingId)) {
-        this.state.lightingId = this.chooseCompatibleLighting(this.sceneResult.scene);
+    let config = this.buildConfig();
+    let validation = this.validator.validate(config);
+
+    if (this.state.mode === "smart") {
+      for (let attempt = 0; attempt < 3 && validation.autoFixes.length; attempt += 1) {
+        this.applyFixesToState(validation.autoFixes);
+        this.normalizeSmartState();
+        this.sceneResult = this.resolveScene();
+        this.normalizeSmartLighting();
+        config = this.buildConfig();
+        validation = this.validator.validate(config);
       }
     }
 
     this.syncControls();
-
-    const config = this.buildConfig();
-    this.lastValidation = this.validator.validate(config);
+    this.lastValidation = validation;
     this.lastPrompt = this.promptEngine.generate(config);
 
     this.renderScene();
@@ -578,11 +620,7 @@ class App {
 
   applyAutoFixes() {
     if (!this.lastValidation?.autoFixes.length) return;
-    this.lastValidation.autoFixes.forEach((fix) => {
-      this.state[fix.field] = fix.value;
-      if (fix.secondary) this.state[fix.secondary.field] = fix.secondary.value;
-    });
-    this.state.lensType = this.cameraEngine.normalizeLens(this.state.cameraType, this.state.lensType);
+    this.applyFixesToState(this.lastValidation.autoFixes);
     this.updateAll();
     showToast("تم تطبيق الإصلاحات الممكنة");
   }
