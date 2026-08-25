@@ -54,6 +54,33 @@ assert.equal(leftEngineering.bodyDirection, "toward_vanity");
 assert.match(leftEngineering.armFine, /RIGHT hand/u);
 assert.match(leftEngineering.orientation, /LEFT shoulder/u);
 
+const rightPoseSections = poseEngine.engineer({
+  pose: rightPose,
+  expression: EXPRESSION_OPTIONS.find((item) => item.id === "serious"),
+  hair: HAIR_OPTIONS.find((item) => item.id === "messy"),
+  clothing: CLOTHING_OPTIONS.find((item) => item.id === "pajamas"),
+  autoEngineering: rightEngineering
+});
+assert.match(rightPoseSections.trueLateral, /TRUE LATERAL ENFORCEMENT/u);
+assert.match(rightPoseSections.trueLateral, /UPPER LEFT hand is the ONLY selfie hand/u);
+assert.match(rightPoseSections.trueLateral, /LOWER RIGHT arm/u);
+assert.match(rightPoseSections.trueLateral, /SUBJECT'S own body/u);
+assert.match(rightPoseSections.expression, /overrides the expression visible in IMAGE A/u);
+assert.match(rightPoseSections.expression, /muscle-state override/u);
+assert.match(rightPoseSections.clothing, /overrides every garment visible in IMAGE A/u);
+assert.match(rightPoseSections.clothing, /Never copy IMAGE A's shirt/u);
+assert.match(rightPoseSections.hair, /arrangement only/u);
+
+const leftPoseSections = poseEngine.engineer({
+  pose: leftPose,
+  expression: EXPRESSION_OPTIONS.find((item) => item.id === "relaxed"),
+  hair: HAIR_OPTIONS.find((item) => item.id === "same"),
+  clothing: CLOTHING_OPTIONS.find((item) => item.id === "pajamas"),
+  autoEngineering: leftEngineering
+});
+assert.match(leftPoseSections.trueLateral, /UPPER RIGHT hand is the ONLY selfie hand/u);
+assert.match(leftPoseSections.trueLateral, /LOWER LEFT arm/u);
+
 const mirrorPose = poseEngine.getById("mirror_selfie");
 const mirrorEngineering = autoEngineeringEngine.engineer({ pose: mirrorPose, lightingId: "single_ceiling" });
 assert.equal(mirrorEngineering.selectedSceneId, "vanity_mirror");
@@ -112,7 +139,13 @@ assert.match(prompt, /IMAGE A — IDENTITY ONLY/u);
 assert.match(prompt, /IMAGE B — ROOM ONLY/u);
 assert.match(prompt, /BED SPATIAL MAP/u);
 assert.match(prompt, /BODY FIRST, CAMERA SECOND/u);
-assert.match(prompt, /upper LEFT hand/u);
+assert.match(prompt, /TRUE LATERAL ENFORCEMENT — NON-NEGOTIABLE/u);
+assert.match(prompt, /UPPER LEFT hand is the ONLY selfie hand/u);
+assert.match(prompt, /LOWER RIGHT arm/u);
+assert.match(prompt, /EXPRESSION LOCK/u);
+assert.match(prompt, /selected expression overrides the expression visible in IMAGE A/u);
+assert.match(prompt, /CLOTHING LOCK/u);
+assert.match(prompt, /selected clothing overrides every garment visible in IMAGE A/u);
 assert.match(prompt, /LAMP SIDE: RIGHT/u);
 assert.match(prompt, /NEGATIVE PROMPT/u);
 assert.match(prompt, /Return only the final image/u);
@@ -152,6 +185,7 @@ while (sourceFiles.length) {
 }
 
 console.log("✓ Smart Quad deterministic mapping tests passed");
+console.log("✓ True lateral anatomy and reference-lock tests passed");
 console.log("✓ Validator tests passed");
 console.log("✓ Prompt generation and spatial-map tests passed");
 console.log("✓ Four-choice UI and static integrity tests passed");
