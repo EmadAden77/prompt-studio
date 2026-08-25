@@ -14,9 +14,11 @@ export function renderValidation({ statusElement, summaryElement, listElement, a
   summaryElement.className = `validation-summary ${result.valid ? "is-valid" : "is-invalid"}`;
   summaryElement.textContent = result.valid
     ? warningCount
-      ? `الأمر قابل للاستخدام، وعندك ${warningCount} تنبيه غير مانع.`
-      : "كل السلطات والوضعية والكاميرا والإضاءة متوافقة."
-    : "الأمر ما زال يُبنى للمعاينة، لكن أصلح التعارضات الحمراء قبل استخدامه.";
+      ? `لا توجد تعارضات مانعة. يوجد ${warningCount} ${warningCount === 1 ? "تنبيه" : "تنبيهات"} يحتاج انتباهك قبل الاستخدام، مثل رفع الصور المرجعية.`
+      : "التحقق ناجح: لا توجد تعارضات مانعة أو تنبيهات معلّقة."
+    : result.autoFixes.length
+      ? "توجد تعارضات مانعة قابلة للإصلاح. في الوضع الذكي سيحاول التطبيق إصلاحها تلقائيًا؛ وفي الوضع اليدوي يمكنك تطبيق الإصلاحات المقترحة."
+      : "توجد تعارضات مانعة لا يمكن حلها تلقائيًا. غيّر الاختيارات الموضحة باللون الأحمر قبل الاستخدام.";
 
   const fragment = document.createDocumentFragment();
   result.issues.forEach((issue) => {
@@ -52,4 +54,7 @@ export function renderValidation({ statusElement, summaryElement, listElement, a
 
   listElement.replaceChildren(fragment);
   autoFixButton.hidden = result.autoFixes.length === 0;
+  if (!autoFixButton.hidden) {
+    autoFixButton.textContent = "إصلاح التعارضات القابلة للإصلاح";
+  }
 }
