@@ -1,5 +1,3 @@
-import { POSE_REQUIREMENTS } from "./sceneEngine.js";
-
 const BED_SELFIE_POSE_IDS = new Set([
   "lying_back",
   "lying_stomach",
@@ -9,28 +7,32 @@ const BED_SELFIE_POSE_IDS = new Set([
   "sitting_bed_edge"
 ]);
 
-function unique(items = []) {
-  return [...new Set(items.filter(Boolean))];
-}
-
 export class Validator {
-  constructor({ lightingEngine }) {
+  constructor({ lightingEngine, sceneEngine = null }) {
     this.lightingEngine = lightingEngine;
+    this.sceneEngine = sceneEngine;
   }
 
   createIssue(severity, type, message, suggestion = "", autoFix = null) {
     return { severity, type, message, suggestion, autoFix };
   }
 
-  getStrictReferenceMismatch(pose, scene) {
-    if (!pose || !scene) return null;
-    const requirement = POSE_REQUIREMENTS[pose.id] ?? { required_features_all: [] };
-    const requiredFeatures = unique([...(requirement.required_features_all ?? []), ...(pose.requires ?? [])]);
-    const poseMatch = scene.supported_poses.includes(pose.id);
-    const missingFeatures = requiredFeatures.filter((feature) => !scene.visible_features.includes(feature));
+  getStrictReferenceMismatch(config) {
+    const { pose, scene, lighting, camera, autoEngineering } = config;
+    if (!pose || !scene || !this.sceneEngine) return null;
 
-    if (poseMatch && missingFeatures.length === 0) return null;
-    return { poseMatch, missingFeatures, requiredFeatures };
+    const gate = this.sceneEngine.evaluateHardGate(
+      scene,
+      pose.id,
+      pose.requires ?? [],
+      {
+        lightingRequiredFeatures: lighting?.required_features ?? [],
+        cameraType: camera?.type ?? null,
+        bedRealismProfile: autoEngineering?.bedRealismProfile ?? null
+      }
+    );
+
+    return gate.pass ? null : gate;
   }
 
   validate(config) {
@@ -39,6 +41,7 @@ export class Validator {
     const notices = [];
     const { pose, scene, camera, lens, lighting } = config;
     const bedSelfiePose = Boolean(pose && BED_SELFIE_POSE_IDS.has(pose.id));
+    const physicalBedSelfie = Boolean(config.autoEngineering?.bedRealismProfile);
     const mirrorSelfie = pose?.id === "mirror_selfie";
 
     if (!pose) {
@@ -50,7 +53,7 @@ export class Validator {
         "error",
         "scene_missing",
         config.autoEngineering?.strictNoMatchMessage || "لا يوجد مرجع صالح لهذه الوضعية.",
-        "غيّر الوضعية أو استخدم التجاوز اليدوي مع فهم أن المرجع غير المطابق سيظل محجوبًا في الفحص."
+        "غيّر الوضعية أو الإضاءة، أو استخدم التجاوز اليدوي مع فهم أن المرجع غير المطابق سيظل محجوبًا في الفحص."
       ));
     }
 
@@ -68,25 +71,34 @@ export class Validator {
       conflicts.push(this.createIssue(
         "error",
         "bed_selfie_requires_generate",
-        "سيلفي السرير يحتاج موضع كاميرا جديد داخل مدى الذراع، لذلك لا يُنفّذ كـ EDIT على لوحة ثابتة.",
-        "استخدم GENERATE لنفس الغرفة من موضع سيلفي قابل للوصول.",
+        "سيلفي السرير يحتاج موضع كاميرا جديد عند نهاية الذراع، لذلك لا يُنفّذ كـ EDIT على منظور خارجي ثابت.",
+        "استخدم GENERATE لنفس الغرفة مع بقاء هندسة الغرفة ثابتة وتحريك الكاميرا فقط إلى موضع الهاتف القابل للوصول.",
         { field: "roomMode", value: "GENERATE" }
       ));
     }
 
+    let strictMismatch = null;
     if (pose && scene) {
-      const strictMismatch = this.getStrictReferenceMismatch(pose, scene);
+      strictMismatch = this.getStrictReferenceMismatch(config);
       if (strictMismatch) {
-        const missingText = strictMismatch.missingFeatures.length
-          ? ` العناصر الناقصة: ${strictMismatch.missingFeatures.join("، ")}.`
-          : "";
+        const details = [];
+        if (!strictMismatch.poseMatch) details.push("المرجع لا يدعم الوضعية");
+        if (strictMismatch.missingFeatures?.length) {
+          details.push(`العناصر الإلزامية الناقصة: ${strictMismatch.missingFeatures.join("، ")}`);
+        }
+        if (!strictMismatch.selfieCameraFeasible) {
+          details.push("منظور السيلفي القريب غير قابل للمصالحة مع هندسة المرجع");
+        }
+        if (strictMismatch.missingLightingFeatures?.length) {
+          details.push(`مصادر الإضاءة الناقصة: ${strictMismatch.missingLightingFeatures.join("، ")}`);
+        }
         conflicts.push(this.createIssue(
           "error",
           "reference_pose_mismatch",
-          `${strictMismatch.poseMatch ? "المرجع لا يحتوي كل العناصر الإلزامية للوضعية." : "المرجع لا يدعم الوضعية المختارة."}${missingText}`,
+          `المرجع فشل بوابة v1.3: ${details.join("؛ ")}.`,
           config.autoEngineering?.sceneOverrideId
-            ? "ألغِ التجاوز اليدوي لاختيار أفضل مرجع ناجح تلقائيًا، أو غيّر الوضعية."
-            : "استخدم المرجع الناتج من المرشح الصارم أو غيّر الوضعية."
+            ? "ألغِ التجاوز اليدوي ليختار المحرك مرجعًا ينجح في الوضعية وهندسة السرير ومنظور السيلفي والإضاءة، أو غيّر أحد الاختيارات."
+            : "استخدم المرجع الناتج من بوابة v1.3 أو غيّر الوضعية/الإضاءة."
         ));
       }
 
@@ -104,23 +116,35 @@ export class Validator {
         conflicts.push(this.createIssue("error", "surface_not_available", `أسطح الارتكاز المطلوبة غير متوفرة: ${missingSurfaces.join("، ")}.`, "اختر مرجعًا يحتوي أسطح التلامس الفعلية."));
       }
 
-      if (!pose.valid_angles.includes(config.cameraAngle) || !scene.camera_angles.includes(config.cameraAngle)) {
+      const poseAngleInvalid = !pose.valid_angles.includes(config.cameraAngle);
+      const sceneAngleInvalid = !physicalBedSelfie && !scene.camera_angles.includes(config.cameraAngle);
+      if (poseAngleInvalid || sceneAngleInvalid) {
         conflicts.push(this.createIssue(
           "error",
           "camera_angle_conflict",
-          "زاوية الكاميرا غير ممكنة للوضعية أو غير مدعومة في المرجع.",
+          physicalBedSelfie
+            ? "زاوية الكاميرا لا تتوافق مع الوضعية الفيزيائية المختارة."
+            : "زاوية الكاميرا غير ممكنة للوضعية أو غير مدعومة في المرجع.",
           "استخدم الهندسة التلقائية للزاوية المتوافقة.",
-          { field: "cameraAngle", value: scene.camera_angles.find((angle) => pose.valid_angles.includes(angle)) ?? pose.valid_angles[0] }
+          { field: "cameraAngle", value: physicalBedSelfie
+            ? pose.valid_angles[0]
+            : scene.camera_angles.find((angle) => pose.valid_angles.includes(angle)) ?? pose.valid_angles[0] }
         ));
       }
 
-      if (!pose.valid_distances.includes(config.cameraDistance) || !scene.camera_distances.includes(config.cameraDistance)) {
+      const poseDistanceInvalid = !pose.valid_distances.includes(config.cameraDistance);
+      const sceneDistanceInvalid = !physicalBedSelfie && !scene.camera_distances.includes(config.cameraDistance);
+      if (poseDistanceInvalid || sceneDistanceInvalid) {
         conflicts.push(this.createIssue(
           "error",
           "camera_distance_conflict",
-          "مسافة التصوير غير مدعومة للوضعية أو المرجع.",
+          physicalBedSelfie
+            ? "فئة مسافة الكاميرا لا تتوافق مع الوضعية الفيزيائية المختارة."
+            : "مسافة التصوير غير مدعومة للوضعية أو المرجع.",
           "استخدم الهندسة التلقائية للمسافة المتوافقة.",
-          { field: "cameraDistance", value: scene.camera_distances.find((distance) => pose.valid_distances.includes(distance)) ?? pose.valid_distances[0] }
+          { field: "cameraDistance", value: physicalBedSelfie
+            ? pose.valid_distances[0]
+            : scene.camera_distances.find((distance) => pose.valid_distances.includes(distance)) ?? pose.valid_distances[0] }
         ));
       }
 
@@ -133,13 +157,13 @@ export class Validator {
       }
 
       const missingLightFeatures = this.lightingEngine.getMissingFeatures(lighting, scene);
-      if (missingLightFeatures.length) {
+      const lightingAlreadyBlockedByGate = Boolean(strictMismatch?.missingLightingFeatures?.length);
+      if (missingLightFeatures.length && !lightingAlreadyBlockedByGate) {
         conflicts.push(this.createIssue(
           "error",
           "light_source_missing",
           `مصدر الإضاءة المختار غير مثبت في المرجع: ${missingLightFeatures.join("، ")}.`,
-          "اختر إضاءة مدعومة في المرجع الحالي.",
-          { field: "lightingId", value: "phone_screen_only" }
+          "غيّر المرجع أو الإضاءة؛ شاشة الهاتف فقط تُعامل كمصدر محمول ولا تحتاج أن تظهر في IMAGE B."
         ));
       }
     }
