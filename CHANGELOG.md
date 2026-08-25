@@ -1,5 +1,29 @@
 # Changelog
 
+## v1.11 — 2026-08-26
+
+### Added
+
+- Added a new **قالب جاهز (اختياري)** field to Smart Quad.
+- Added scene-aware preset groups for bed, sitting, standing, and vanity-mirror captures.
+- Templates set one coherent value for pose, hair, lighting, expression, clothing, and aspect ratio; they never inject multiple poses or multiple choice lists into the final prompt.
+- Templates are filtered against the currently selected IMAGE B reference. A template is shown only when its pose is supported by that reference and at least one of its preferred lighting choices is physically supported by the reference metadata.
+- Added adaptive lighting fallback inside templates: the first physically supported declared source is selected rather than forcing an unsupported lamp, window, or ceiling source.
+- Added dedicated template regression tests and CI coverage.
+
+### Camera corrections
+
+- Removed the generic fixed-distance wording from the front Camera Emulator. The emulator now defers to the pose-specific SELFIE VIEWPOINT LOCK and its mapped reach, avoiding conflicts between supine, side-lying, seated, and standing distances.
+- Removed baked-in generic harsh face-light behavior from the camera description; exposure and highlights now explicitly follow the selected lighting event.
+- Added a dedicated **MIRROR SELFIE CAMERA — REAR CAMERA, SUBJECT-HELD** path so mirror selfies no longer inherit the contradictory “another person or tripod operates the rear camera” wording.
+- Mirror selfies now require one consistent subject → mirror → rear-camera ray path with correct handedness, gaze, phone occlusion, reflection scale, and room/mirror perspective.
+
+### Preserved
+
+- The final prompt still contains exactly one selected pose family and its matching grounding/camera/arm logic.
+- Existing identity, room, clothing realism, lighting realism, CPR-01, pose grounding, and negative constraints remain unchanged.
+- Manual controls remain available after applying a template; changing any manual control returns the template field to **تخصيص يدوي**.
+
 ## v1.10 — 2026-08-26
 
 ### Added
