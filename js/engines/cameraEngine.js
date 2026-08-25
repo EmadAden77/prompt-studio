@@ -3,16 +3,16 @@ export function selfieCameraEmulator() {
 
 [Optical Physics & Lens Specs]:
 - Focal Length: 22–24mm equivalent wide-angle front lens.
-- Perspective Constraints: close-quarters distance (0.4–0.7 m from subject) enforcing natural center-face protrusion and distinct perspective distortion at the frame edges.
-- Sensor Characteristics: mobile micro-sensor dynamics enforcing subtle high-ISO grain and raw chroma noise in shadow areas.
-- Lighting & Exposure: physical ambient lighting interacting naturally with skin; uneven light falloff typical of arm-length selfies with direct harsh highlights on the T-zone.
+- Perspective Constraints: obey the pose-specific SELFIE VIEWPOINT LOCK distance exactly; ordinary mapped reach is typically about 0.45–0.70 m, with only explicitly mapped extensions such as the supine 0.45–0.75 m case. Enforce natural center-face protrusion and mild perspective stretch only near the frame edges.
+- Sensor Characteristics: mobile micro-sensor dynamics with subtle high-ISO grain and raw chroma noise in shadow areas when the selected exposure requires it.
+- Lighting & Exposure: use only the declared selected lighting event. Highlights, shadow direction, white balance, and falloff must follow that source geometry; do not bake in a generic harsh face-light pattern when the selected light is diffuse.
 
 [Texture & Processing Execution - STRICT NO AI POLISH]:
 - Absolutely eliminate all smooth waxy or overly processed skin textures.
-- Force raw physical imperfections: visible pores, asymmetric peach fuzz, microscopic sweat glints, uneven pigmentation, and true skin micro-contrast.
-- Mobile artifacts: subtle software over-sharpening on edges combined with micro-motion blur on extremities like loose hair to mimic handheld instability.
+- Force raw physical imperfections: visible pores, asymmetric peach fuzz, microscopic sweat glints where illumination supports them, uneven pigmentation, and true skin micro-contrast.
+- Mobile artifacts: subtle software edge sharpening combined with restrained micro-motion blur on genuinely moving extremities such as loose hair; never apply blur as a decorative effect.
 
-[Depth of Field]: natural phone depth of field; only if computational portrait mode is implied, show intentional slight edge-detection flaws around hair/shoulders rather than perfect DSLR falloff.`;
+[Depth of Field]: natural phone depth of field; only if computational portrait mode is implied, show restrained edge-detection imperfections around hair/shoulders rather than perfect DSLR falloff.`;
 }
 
 export class CameraEngine {
@@ -120,8 +120,25 @@ SELFIE DISTANCE CHECK
 ${invalidCheck} Re-render from the subject's mapped front-camera phone-in-hand viewpoint without moving the body off its real support surfaces.`;
   }
 
+  buildMirrorSelfiePrompt({ camera, lens, cameraAngle, cameraDistance }) {
+    return `MIRROR SELFIE CAMERA — REAR CAMERA, SUBJECT-HELD
+This is a real mirror selfie taken by the subject himself. The subject holds the phone and points the Xiaomi 15 Ultra rear camera at the real vanity mirror; no second photographer, tripod, remote camera, or observer viewpoint exists.
+- Camera: ${camera.name_en}.
+- Lens: ${lens.name_en}, ${lens.focal_length}.
+- Aperture behavior: ${camera.aperture}.
+- Camera position: ${cameraAngle.replaceAll("_", " ")}; framing distance: ${cameraDistance}.
+- The phone is visible only through the mirror reflection at its true hand-held position, with one physically consistent subject → mirror → rear-camera ray path.
+- Reflection handedness, gaze, body scale, phone occlusion, back-of-head/shoulder visibility, and mirror-frame perspective must all agree with the same ray geometry.
+- The holding elbow remains close to the body in a natural grip; the opposite arm rests naturally at the side, pocket, hip, or another explicitly mapped support.
+- Keep mirror and room verticals physically straight except for mild lens-perspective convergence. Never create a duplicated phone, duplicated reflected arm, impossible reflection angle, or a camera outside the subject's hand.`;
+  }
+
   buildPrompt({ camera, lens, pose, cameraAngle, cameraDistance }) {
     if (camera?.selfie && camera.type === "front") return selfieCameraEmulator();
+
+    if (camera?.type === "rear" && pose?.id === "mirror_selfie") {
+      return this.buildMirrorSelfiePrompt({ camera, lens, cameraAngle, cameraDistance });
+    }
 
     return `This is not a selfie; another person or a stable tripod operates the rear camera.
 - Camera: ${camera.name_en}.
