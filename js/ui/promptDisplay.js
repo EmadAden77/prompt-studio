@@ -1,5 +1,3 @@
-import { UI_LABELS } from "../config/appConfig.js";
-
 function makeSummaryItem(label, value) {
   const item = document.createElement("div");
   item.className = "summary-item";
@@ -20,11 +18,12 @@ export function renderPrompt({ promptElement, countElement, prompt }) {
 export function renderPromptSummary(container, config) {
   const fragment = document.createDocumentFragment();
   fragment.append(
-    makeSummaryItem("الوضعية", config.pose.name_ar),
-    makeSummaryItem("المرجع", config.scene?.name_ar ?? "غير متاح"),
-    makeSummaryItem("الكاميرا", config.camera.name_ar),
-    makeSummaryItem("الإضاءة", config.lighting.name_ar),
-    makeSummaryItem("الغرفة", UI_LABELS.roomModes[config.roomMode])
+    makeSummaryItem("الوضعية", config.pose?.name_ar ?? "غير متاح"),
+    makeSummaryItem("الشعر", config.hair?.name_ar ?? "غير متاح"),
+    makeSummaryItem("الإضاءة", config.lighting?.name_ar ?? "غير متاح"),
+    makeSummaryItem("التعبير", config.expression?.name_ar ?? "غير متاح"),
+    makeSummaryItem("المرجع التلقائي", config.scene?.name_ar ?? "غير متاح"),
+    makeSummaryItem("الثقة", config.autoEngineering?.confidence ?? "تحت الفحص")
   );
   container.replaceChildren(fragment);
 }
