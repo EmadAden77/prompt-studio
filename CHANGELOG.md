@@ -1,5 +1,39 @@
 # Changelog
 
+## v1.3 — 2026-08-25
+
+### Added
+- Integrated the uploaded **SELFIE BEDROOM REALISM ENGINE** into the bed-selfie pipeline only.
+- Added explicit bed-realism profiles for `lying_back`, `lying_stomach`, `lying_right_side`, `lying_left_side`, and `semi_reclining`.
+- Updated front-camera reach geometry to ordinary handheld ranges: typically 45–70 cm, with extended reach only when anatomy physically supports it.
+- Updated right-side and left-side lying camera geometry to 45–70 cm with physically modest yaw/pitch instead of a forced Dutch angle.
+- Updated supine camera geometry to 45–75 cm with approximately 15–35° downward pitch and restrained yaw.
+- Expanded the strict reference gate to require: pose support, mandatory bed geometry, near-selfie camera feasibility, and selected lighting-source support before ranking.
+- Added portable-light metadata so the subject's own phone screen is allowed as a light source without needing to pre-exist in IMAGE B.
+- Changed auto-engineering so the user's selected lighting is never silently replaced to make a scene pass.
+- Updated the validator to use the same v1.3 hard gate and to stop treating IMAGE B's original external camera angle as a camera lock for true generated bed selfies.
+
+### Decision order
+1. Pose and required bed surface.
+2. Body support and contact physics.
+3. Head / neck orientation.
+4. Free-arm detection and selfie-arm selection.
+5. Reachable front-camera zone.
+6. Scene hard gate: room geometry + selfie feasibility + selected lighting support.
+7. Background ranking among passing references only.
+8. Lighting / pose coherence.
+9. Smartphone exposure, white balance, processing, crop, and validation.
+
+### Preserved
+- IMAGE A identity-only authority and IMAGE B room-geometry authority.
+- SELFIE VIEWPOINT LOCK and third-person-view prohibition.
+- TRUE LATERAL ENFORCEMENT and body-relative left/right rules.
+- BODY FIRST, CAMERA SECOND.
+- Expression lock, hair lock, clothing lock, and FABRIC REALISM.
+- Existing five-choice Smart Quad interface.
+- Mirror selfie remains on its rear-camera mirror pipeline and is outside the bed-realism engine.
+- No EXIF spoofing, C2PA removal, PRNU simulation, or forensic countermeasures.
+
 ## v1.2 — 2026-08-25
 
 ### Added
