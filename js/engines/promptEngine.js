@@ -44,6 +44,31 @@ Use ${lightingName} with physically believable light behavior, captured on ${cam
 Aspect ratio: ${aspect} ${aspectLabel}.`;
   }
 
+  buildClothingPhotorealEnforcement() {
+    return `CLOTHING PHOTOREAL ENFORCEMENT — ALWAYS ACTIVE
+- The selected outfit must look like a real manufactured garment physically worn by the subject, never painted onto the body and never generated as a smooth synthetic shell.
+- Fabric thickness, weave/knit scale, edge softness, seams, collars, cuffs, hems, buttons, closures, and pocket construction must stay consistent with the selected material and the phone-camera resolving distance.
+- Texture remains naturally irregular at small scale. Repeated patterns, when the selected garment actually contains one, must follow perspective, body curvature, seam alignment, and occlusion without tiled or mirrored repetition.
+- Every fold has a physical cause: gravity, joint bending, body curvature, waistband or shoulder suspension, friction, or pressure against the mattress, chair, sofa, floor, or other real support. No decorative floating wrinkles.
+- Compression produces localized flattening and short pressure wrinkles only where the body or support surface actually loads the garment; released fabric relaxes progressively away from the contact zone.
+- Material response follows the selected lighting only: matte cotton remains mostly diffuse, fleece/wool stays soft, denim keeps restrained directional texture, and satin/leather may show limited material-correct highlights without plastic shine.
+- Clothing must share the exact same exposure, white balance, sensor noise, motion softness, sharpening, compression, and depth behavior as the face, body, bedding, and room. It must never look cleaner, sharper, smoother, or more perfectly rendered than the rest of the photograph.
+- Preserve small believable construction and wear variation without inventing damage: tiny seam irregularity, slight collar roll, mild fabric bunching, and material-appropriate wear are acceptable; impossible seams, rubbery cloth, painted texture, floating hems, and uniform synthetic wrinkles are forbidden.`;
+  }
+
+  buildLightingPhotorealEnforcement() {
+    return `LIGHTING PHOTOREAL ENFORCEMENT — ALWAYS ACTIVE
+- Use only the explicitly selected physical light source or sources. Never invent an invisible fill, beauty light, rim light, studio softbox, or extra ambient source to improve the face.
+- Source position, apparent size, distance, color temperature, and intensity must jointly determine shadow direction, penumbra softness, highlight placement, eye catchlights, reflections, and brightness falloff throughout the entire room.
+- Apply inverse-square falloff to nearby practical sources and realistic room bounce only from surfaces that actually exist in IMAGE B. Bounce light stays weaker, broader, and color-shifted by the real reflecting material.
+- Contact shadows stay attached to real contact points. Cast shadows point away from the declared source geometry and change softness only for a physically valid reason. No duplicated or conflicting shadow directions.
+- Use one camera exposure and one white-balance solution for the whole frame. Mixed-color lighting may remain slightly imperfect and locally tinted; do not neutralize every surface into clean white.
+- Smartphone HDR and highlight roll-off remain ordinary rather than polished: bright bulbs/windows may clip modestly, skin highlights roll off naturally, dark regions retain limited detail, and no local tone mapping selectively beautifies the face.
+- Sensor response follows actual illumination: darker zones carry more luminance noise and restrained chroma noise, bright areas carry less, and noise/sharpening/compression remain continuous across face, clothing, furniture, walls, mirrors, and bedding.
+- Reflections on eyes, mirrors, glass, polished tile, metal, glossy furniture, and skin must correspond to the declared source shape and direction. No decorative glow, fake volumetric beam, cinematic haze, orange-teal grade, or artificial global illumination.
+- Changing the selected lighting changes illumination only. Do not move, redesign, recolor, clean, add, remove, resize, or replace any room object, fixture, furniture item, material, or clutter element.`;
+  }
+
   buildSpatialMap(engineering) {
     if (!engineering?.spatialMap) return "";
     const map = engineering.spatialMap;
@@ -256,8 +281,10 @@ Preserve original length, density, wave pattern, and hairline from IMAGE A.`);
 
     sections.push(poseSections?.clothing ?? `CLOTHING LOCK
 Use the selected clothing and never copy garments from IMAGE A.`);
+    sections.push(this.buildClothingPhotorealEnforcement());
 
     sections.push(this.lightingEngine.buildPrompt(lighting));
+    sections.push(this.buildLightingPhotorealEnforcement());
 
     sections.push(`CAMERA PROCESSING
 Apply one ordinary Xiaomi phone-camera pipeline to the entire frame. Use restrained sharpening, modest noise reduction, mild compression, realistic shadow noise, slight white-balance imperfection where physically expected, and natural phone depth of field. No fake DSLR bokeh. Face, neck, body, clothing, bedding, and room must share the same exposure, sharpness, noise, and compression logic unless depth or illumination physically explains a difference.`);
