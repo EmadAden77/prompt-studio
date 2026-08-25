@@ -67,6 +67,9 @@ Deterministic orientation: ${autoEngineering?.orientation ?? "follow the selecte
 
     const imageAName = this.getReferenceName(uploads?.imageA, "IMAGE A identity photograph");
     const imageBName = this.getReferenceName(uploads?.imageB, scene?.image_filename ?? "IMAGE B room photograph");
+    const poseSections = pose
+      ? this.poseEngine.engineer({ pose, expression, hair, clothing, autoEngineering })
+      : null;
     const sections = [];
 
     sections.push(`CHATGPT IMAGE TASK
@@ -91,6 +94,8 @@ ${this.roomLockEngine.buildAuthorityText()}`);
 ${this.identityEngine.buildPersonText()}
 Depict the exact same real person photographed again, not a look-alike. Preserve natural asymmetry, real skin-tone variation, normal pores, beard gaps, imperfect hairline, and apparent age. Do not beautify, symmetrize, reshape, or clean the face more than the neck, clothing, bedding, or room.`);
 
+    if (poseSections?.subject) sections.push(poseSections.subject);
+
     sections.push(`ROOM LOCK
 ${this.roomLockEngine.buildLockText(roomMode)}`);
 
@@ -100,30 +105,25 @@ ${this.roomLockEngine.buildLockText(roomMode)}`);
 ${this.getPlacementRule(config)}
 BODY FIRST, CAMERA SECOND: solve the entire body, mattress/pillow contacts, scale, and room-relative placement before deriving phone position. If framing would otherwise break anatomy or room continuity, loosen the crop instead of moving the body off its correct support surfaces.`);
 
-    sections.push(`POSE AND PHYSICS
-Pose: ${pose?.name_en ?? "selected pose"}.
-Body direction: ${bodyDirection?.replaceAll("_", " ") ?? "deterministic orientation"}.
-${pose ? this.poseEngine.buildPhysicsText(pose) : "Keep anatomy and support physically possible."}
-${autoEngineering?.physicsFine ?? ""}
-Maintain correct joint order, limb count, hand structure, weight distribution, local pressure response, contact shadows, and non-intersection between body and bedding.`);
+    sections.push(poseSections?.posePhysics ?? `POSE & PHYSICS
+Keep anatomy, gravity, support, and pressure physically possible.`);
+
+    if (poseSections?.trueLateral) sections.push(poseSections.trueLateral);
 
     sections.push(`CAMERA AND ARM STRATEGY
 ${this.cameraEngine.buildPrompt({ camera, lens, pose, cameraAngle, cameraDistance })}
 Fine camera engineering: ${autoEngineering?.cameraFine ?? "Use the mapped reachable viewpoint."}
-Fine arm engineering: ${autoEngineering?.armFine ?? "Keep every shoulder, elbow, wrist, and hand anatomically reachable."}
-The phone position is derived from the selected arm strategy after body placement. Never create an overlong arm, extra shoulder, impossible wrist direction, or a hand arriving from the wrong side of the body.`);
+${poseSections?.armStrategy ?? "Keep every shoulder, elbow, wrist, and hand anatomically reachable."}
+The phone position is derived after body placement. If framing would force impossible anatomy, loosen the crop instead of moving the body or lengthening the arm.`);
 
-    sections.push(`FACIAL EXPRESSION
-${expression?.prompt ?? "Keep a natural neutral expression."}
-Change facial muscle state only. Do not alter facial proportions, identity, or apparent age.`);
+    sections.push(poseSections?.expression ?? `EXPRESSION LOCK
+Change facial muscle state only; preserve identity geometry and natural asymmetry from IMAGE A.`);
 
-    sections.push(`HAIR
-${hair?.prompt ?? "Keep the original hair arrangement."}
-Change arrangement only within the original length, density, wave pattern, and hairline. Where hair touches a pillow, flatten only the contact side according to pressure and friction.`);
+    sections.push(poseSections?.hair ?? `HAIR LOCK
+Preserve original length, density, wave pattern, and hairline from IMAGE A.`);
 
-    sections.push(`CLOTHING
-${clothing?.prompt ?? "Use simple modest home clothing."}
-Fabric follows gravity, body curvature, pressure, friction, and the selected pose. Use irregular load-driven folds and no repeated synthetic texture stamps.`);
+    sections.push(poseSections?.clothing ?? `CLOTHING LOCK
+Use the selected clothing and never copy garments from IMAGE A.`);
 
     sections.push(`LIGHTING
 ${this.lightingEngine.buildPrompt(lighting)}
@@ -136,10 +136,11 @@ Apply one ordinary Xiaomi phone-camera pipeline to the entire frame. Use restrai
 Preserve natural facial asymmetry, real pores and skin-color variation, natural beard gaps, plausible hair clumps and stray strands, local mattress and pillow compression, gravity-driven clothing folds, anatomically possible arm reach, mild smartphone perspective distortion, and physically motivated light falloff. Never improve one part of the frame into a cleaner or sharper rendering style than the rest.`);
 
     sections.push(`FINAL PHYSICAL CHECK
-- IMAGE A controls identity only.
+- IMAGE A controls identity only; its expression, clothing, lighting, pose, and camera viewpoint do not transfer.
 - IMAGE B controls the same room and bed only.
 - Subject placement is solved before camera placement.
 - The selected body side is defined relative to the subject, not the image.
+- For side-lying poses, the loaded shoulder, ribcage, hip, pillow contact, upper selfie arm, and lower support arm all agree with the same body side.
 - Support surfaces visibly carry weight and compress locally.
 - Arms, hands, phone reach, and optical axis are anatomically possible.
 - Mirror reflections, if present, preserve one ray path and correct handedness.
@@ -150,7 +151,7 @@ Preserve natural facial asymmetry, real pores and skin-color variation, natural 
 No cartoon, illustration, painting, CGI, 3D-render appearance, beauty filter, facial reshaping, forced symmetry, plastic or waxy skin, artificial pore maps, painted beard, wire hair, extra fingers, extra limbs, fused limbs, impossible joints, torso penetration, floating body, unsupported contact, broken reflection, fake DSLR bokeh, anamorphic distortion, destructive ISO noise, extreme motion blur, fake 8K detail, unmotivated lens flare, cinematic grading, studio softbox, EXIF spoofing, C2PA removal, PRNU simulation, forensic countermeasures, unrequested text, or logos.`);
 
     sections.push(`NEGATIVE PROMPT
-cartoon, illustration, painting, CGI, 3D render, plastic skin, beauty filter, face smoothing, over-sharpened pores, painted beard, wire hair, extra fingers, extra arm, fused hand, impossible elbow, torso penetration, floating shoulder, broken anatomy, fake bokeh, cinematic lighting, studio softbox, extreme HDR, artificial glow, fake 8K, exaggerated wide-angle distortion, EXIF manipulation, C2PA removal, PRNU simulation`);
+cartoon, illustration, painting, CGI, 3D render, plastic skin, beauty filter, face smoothing, over-sharpened pores, painted beard, wire hair, extra fingers, extra arm, fused hand, impossible elbow, wrong selfie hand, torso penetration, floating shoulder, semi-reclined side-lying hybrid, face-up side pose, broken anatomy, fake bokeh, cinematic lighting, studio softbox, extreme HDR, artificial glow, fake 8K, exaggerated wide-angle distortion, EXIF manipulation, C2PA removal, PRNU simulation`);
 
     return sections.filter(Boolean).join("\n\n");
   }
