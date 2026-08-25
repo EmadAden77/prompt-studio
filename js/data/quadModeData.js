@@ -173,7 +173,7 @@ export const QUAD_POSE_ENGINEERING = Object.freeze({
 });
 
 export const QUAD_DEFAULTS = Object.freeze({
-  clothingId: "pajamas",
+  clothingId: "cotton_pajama",
   mode: "smart",
   sceneOverrideId: null
 });
