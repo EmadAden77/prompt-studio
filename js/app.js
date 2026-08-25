@@ -1,4 +1,4 @@
-import { APP_CONFIG, UI_LABELS } from "./config/appConfig.js";
+import { APP_CONFIG } from "./config/appConfig.js";
 import { FIXED_DATA, IMAGE_A_AUTHORITY, IMAGE_B_AUTHORITY } from "./data/fixedData.js";
 import { POSES } from "./data/posesData.js";
 import { SCENES } from "./data/scenesData.js";
@@ -7,6 +7,7 @@ import { LIGHTING_OPTIONS } from "./data/lightingData.js";
 import { CLOTHING_OPTIONS } from "./data/clothingData.js";
 import { EXPRESSION_OPTIONS } from "./data/expressionsData.js";
 import { HAIR_OPTIONS } from "./data/hairData.js";
+import { QUAD_DEFAULTS, QUAD_EXPRESSION_IDS, QUAD_POSE_IDS } from "./data/quadModeData.js";
 import { ROOM_LOCK_POLICIES } from "./policies/roomLockPolicy.js";
 import { SceneEngine } from "./engines/sceneEngine.js";
 import { PoseEngine } from "./engines/poseEngine.js";
@@ -16,6 +17,7 @@ import { IdentityEngine } from "./engines/identityEngine.js";
 import { RoomLockEngine } from "./engines/roomLockEngine.js";
 import { PromptEngine } from "./engines/promptEngine.js";
 import { Validator } from "./engines/validator.js";
+import { AutoEngineeringEngine } from "./engines/autoEngineeringEngine.js";
 import { StorageManager } from "./utils/storage.js";
 import { ImageHandler, formatBytes } from "./utils/imageHandler.js";
 import { copyText } from "./utils/clipboard.js";
@@ -24,16 +26,6 @@ import { $, $$, closeDialog, openDialog, setOptions, showToast } from "./ui/dom.
 import { renderPrompt, renderPromptSummary } from "./ui/promptDisplay.js";
 import { renderValidation } from "./ui/conflictModal.js";
 import { renderScenePicker } from "./ui/scenePicker.js";
-import { activateSmartMode } from "./ui/smartMode.js";
-import { activateManualMode } from "./ui/manualMode.js";
-
-const BED_SELFIE_ARM_STRATEGIES = new Set([
-  "lying_back",
-  "lying_stomach",
-  "lying_right_side",
-  "lying_left_side",
-  "semi_reclining"
-]);
 
 class App {
   constructor() {
@@ -47,6 +39,10 @@ class App {
     this.lightingEngine = new LightingEngine(LIGHTING_OPTIONS);
     this.identityEngine = new IdentityEngine(FIXED_DATA, IMAGE_A_AUTHORITY);
     this.roomLockEngine = new RoomLockEngine(ROOM_LOCK_POLICIES, IMAGE_B_AUTHORITY);
+    this.autoEngineeringEngine = new AutoEngineeringEngine({
+      sceneEngine: this.sceneEngine,
+      lightingEngine: this.lightingEngine
+    });
     this.promptEngine = new PromptEngine({
       identityEngine: this.identityEngine,
       roomLockEngine: this.roomLockEngine,
@@ -60,29 +56,20 @@ class App {
       acceptedTypes: APP_CONFIG.acceptedImageTypes
     });
 
+    this.engineering = null;
     this.lastPrompt = "";
     this.lastValidation = null;
-    this.sceneResult = null;
-    this.lastChangedField = null;
     this.dom = this.cacheDOM();
   }
 
   cacheDOM() {
     return {
-      smartModeBtn: $("#smartModeBtn"),
-      manualModeBtn: $("#manualModeBtn"),
-      modeHint: $("#modeHint"),
       poseSelect: $("#poseSelect"),
-      directionSelect: $("#directionSelect"),
-      roomModeSelect: $("#roomModeSelect"),
-      angleSelect: $("#angleSelect"),
-      distanceSelect: $("#distanceSelect"),
-      cameraSelect: $("#cameraSelect"),
-      lensSelect: $("#lensSelect"),
       expressionSelect: $("#expressionSelect"),
       hairSelect: $("#hairSelect"),
-      clothingSelect: $("#clothingSelect"),
       lightingSelect: $("#lightingSelect"),
+      autoEngineerBtn: $("#autoEngineerBtn"),
+      modeHint: $("#modeHint"),
       sceneName: $("#sceneName"),
       sceneRegion: $("#sceneRegion"),
       sceneFilename: $("#sceneFilename"),
@@ -114,65 +101,55 @@ class App {
 
   init() {
     this.sanitizeState();
-    this.populateStaticControls();
+    this.populateQuadControls();
     this.bindEvents();
     this.applyTheme();
     this.updateAll({ initial: true });
   }
 
   sanitizeState() {
-    const defaults = APP_CONFIG.defaultState;
-    if (!POSES.some((item) => item.id === this.state.poseId)) this.state.poseId = defaults.poseId;
-    if (!CAMERA_SPECS[this.state.cameraType]) this.state.cameraType = defaults.cameraType;
-    if (!EXPRESSION_OPTIONS.some((item) => item.id === this.state.expressionId)) this.state.expressionId = defaults.expressionId;
-    if (!HAIR_OPTIONS.some((item) => item.id === this.state.hairId)) this.state.hairId = defaults.hairId;
-    if (!CLOTHING_OPTIONS.some((item) => item.id === this.state.clothingId)) this.state.clothingId = defaults.clothingId;
-    if (!LIGHTING_OPTIONS.some((item) => item.id === this.state.lightingId)) this.state.lightingId = defaults.lightingId;
-    if (!["smart", "manual"].includes(this.state.mode)) this.state.mode = defaults.mode;
-    if (!["EDIT", "GENERATE"].includes(this.state.roomMode)) this.state.roomMode = defaults.roomMode;
-    if (!["light", "dark", "system"].includes(this.state.theme)) this.state.theme = defaults.theme;
-    const directions = new Set(POSES.flatMap((item) => item.valid_directions));
-    if (!directions.has(this.state.bodyDirection)) this.state.bodyDirection = defaults.bodyDirection;
-    if (!Object.hasOwn(UI_LABELS.cameraAngles, this.state.cameraAngle)) this.state.cameraAngle = defaults.cameraAngle;
-    if (!Object.hasOwn(UI_LABELS.cameraDistances, this.state.cameraDistance)) this.state.cameraDistance = defaults.cameraDistance;
-    this.state.lensType = this.cameraEngine.normalizeLens(this.state.cameraType, this.state.lensType);
+    if (!QUAD_POSE_IDS.includes(this.state.poseId)) this.state.poseId = "lying_right_side";
+    if (!HAIR_OPTIONS.some((item) => item.id === this.state.hairId)) this.state.hairId = "same";
+    if (!QUAD_EXPRESSION_IDS.includes(this.state.expressionId)) this.state.expressionId = "relaxed";
+    if (!LIGHTING_OPTIONS.some((item) => item.id === this.state.lightingId)) this.state.lightingId = "lamp_and_phone";
+    if (!["light", "dark", "system"].includes(this.state.theme)) this.state.theme = "system";
+    this.state.mode = QUAD_DEFAULTS.mode;
+    this.state.clothingId = QUAD_DEFAULTS.clothingId;
+    this.state.sceneOverrideId ??= QUAD_DEFAULTS.sceneOverrideId;
   }
 
-  populateStaticControls() {
-    setOptions(this.dom.poseSelect, POSES, this.state.poseId);
-    setOptions(this.dom.cameraSelect, Object.values(CAMERA_SPECS), this.state.cameraType);
-    setOptions(this.dom.expressionSelect, EXPRESSION_OPTIONS, this.state.expressionId);
+  populateQuadControls() {
+    const quadPoses = POSES.filter((pose) => QUAD_POSE_IDS.includes(pose.id));
+    const quadExpressions = EXPRESSION_OPTIONS.filter((item) => QUAD_EXPRESSION_IDS.includes(item.id));
+    setOptions(this.dom.poseSelect, quadPoses, this.state.poseId);
     setOptions(this.dom.hairSelect, HAIR_OPTIONS, this.state.hairId);
-    setOptions(this.dom.clothingSelect, CLOTHING_OPTIONS, this.state.clothingId);
+    setOptions(this.dom.expressionSelect, quadExpressions, this.state.expressionId);
     setOptions(this.dom.lightingSelect, LIGHTING_OPTIONS, this.state.lightingId);
-    this.dom.roomModeSelect.value = this.state.roomMode;
+    if (this.dom.modeHint) this.dom.modeHint.textContent = "4 اختيارات فقط — الباقي تلقائي";
   }
 
   bindEvents() {
-    this.dom.smartModeBtn.addEventListener("click", () => this.setMode("smart"));
-    this.dom.manualModeBtn.addEventListener("click", () => this.setMode("manual"));
-
-    const bindings = [
+    [
       [this.dom.poseSelect, "poseId"],
-      [this.dom.directionSelect, "bodyDirection"],
-      [this.dom.roomModeSelect, "roomMode"],
-      [this.dom.angleSelect, "cameraAngle"],
-      [this.dom.distanceSelect, "cameraDistance"],
-      [this.dom.cameraSelect, "cameraType"],
-      [this.dom.lensSelect, "lensType"],
-      [this.dom.expressionSelect, "expressionId"],
       [this.dom.hairSelect, "hairId"],
-      [this.dom.clothingSelect, "clothingId"],
-      [this.dom.lightingSelect, "lightingId"]
-    ];
-
-    bindings.forEach(([element, field]) => {
-      element.addEventListener("change", () => this.changeState(field, element.value));
+      [this.dom.lightingSelect, "lightingId"],
+      [this.dom.expressionSelect, "expressionId"]
+    ].forEach(([element, field]) => {
+      element.addEventListener("change", () => {
+        this.state[field] = element.value;
+        if (field === "poseId") this.state.sceneOverrideId = null;
+        this.updateAll();
+      });
     });
 
     this.bindUpload("imageA");
     this.bindUpload("imageB");
 
+    this.dom.autoEngineerBtn?.addEventListener("click", () => {
+      this.state.sceneOverrideId = null;
+      this.updateAll();
+      showToast("تمت إعادة الهندسة الحتمية من الاختيارات الأربعة");
+    });
     this.dom.overrideSceneBtn.addEventListener("click", () => this.openScenePicker());
     this.dom.autoFixBtn.addEventListener("click", () => this.applyAutoFixes());
     this.dom.copyBtn.addEventListener("click", () => this.copyPrompt());
@@ -217,14 +194,12 @@ class App {
         dropzone.classList.add("is-dragging");
       });
     });
-
     ["dragleave", "drop"].forEach((type) => {
       dropzone.addEventListener(type, (event) => {
         event.preventDefault();
         dropzone.classList.remove("is-dragging");
       });
     });
-
     dropzone.addEventListener("drop", (event) => this.handleImage(key, event.dataTransfer?.files?.[0]));
     dropzone.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") {
@@ -240,9 +215,7 @@ class App {
       showToast(validation.error, "error", 3600);
       return;
     }
-
-    const preview = this.imageHandler.createPreview(key, file);
-    this.state.uploads[key] = preview;
+    this.state.uploads[key] = this.imageHandler.createPreview(key, file);
     this.renderUpload(key);
     this.updateAll();
     showToast(key === "imageA" ? "تمت إضافة صورة الهوية" : "تمت إضافة صورة المكان");
@@ -277,121 +250,40 @@ class App {
     }
   }
 
-  isBedSelfiePose(pose) {
-    return Boolean(pose?.placement === "bed" && BED_SELFIE_ARM_STRATEGIES.has(pose.arm_strategy));
-  }
-
-  setMode(mode) {
-    if (this.state.mode === mode) return;
-    this.state.mode = mode;
-    if (mode === "manual" && !this.state.selectedSceneId) {
-      this.state.selectedSceneId = SCENES[0].id;
-    }
-    this.updateAll();
-    if (mode === "manual") this.openScenePicker();
-  }
-
-  changeState(field, value) {
-    this.state[field] = value;
-    this.lastChangedField = field;
-    if (field === "cameraType") {
-      this.state.lensType = this.cameraEngine.normalizeLens(value, this.state.lensType);
-    }
-    this.updateAll();
-  }
-
-  normalizeSmartState() {
-    if (this.state.mode !== "smart") return;
-    this.state = { ...this.state, ...this.poseEngine.normalizeSelection(this.state) };
-    this.state.uploads ??= { imageA: null, imageB: null };
-
+  engineerState() {
     const pose = this.poseEngine.getById(this.state.poseId);
-    const smartCameraType = pose?.arm_strategy === "mirror" ? "rear" : "front";
-    this.state.cameraType = smartCameraType;
-    this.state.lensType = smartCameraType === "rear" ? "rear_standard" : "front_wide";
-
-    if (this.isBedSelfiePose(pose)) {
-      this.state.roomMode = "GENERATE";
-      this.state.cameraType = "front";
-      this.state.lensType = "front_wide";
-    }
-  }
-
-  getCompatibleLightingOptions(scene) {
-    if (!scene) return LIGHTING_OPTIONS;
-    return LIGHTING_OPTIONS.filter((option) => {
-      if (this.lightingEngine.getMissingFeatures(option, scene).length) return false;
-      if (this.state.cameraType === "rear" && option.id === "phone_screen_only") return false;
-      return true;
+    this.engineering = this.autoEngineeringEngine.engineer({
+      pose,
+      lightingId: this.state.lightingId,
+      sceneOverrideId: this.state.sceneOverrideId
     });
-  }
+    if (!this.engineering) return;
 
-  chooseCompatibleLighting(scene) {
-    const compatible = this.getCompatibleLightingOptions(scene);
-    const preferredIds = ["lamp_only", "lamp_and_phone", "single_ceiling", "all_ceiling_spots", "daylight_semidark", "phone_screen_only"];
-    return preferredIds.find((id) => compatible.some((option) => option.id === id)) ?? compatible[0]?.id ?? "phone_screen_only";
-  }
-
-  normalizeSmartLighting() {
-    if (this.state.mode !== "smart" || !this.sceneResult?.scene) return;
-    const compatibleLighting = this.getCompatibleLightingOptions(this.sceneResult.scene);
-    if (!compatibleLighting.some((option) => option.id === this.state.lightingId)) {
-      this.state.lightingId = this.chooseCompatibleLighting(this.sceneResult.scene);
-    }
-  }
-
-  resolveScene() {
-    const pose = this.poseEngine.getById(this.state.poseId);
-    if (this.state.mode === "smart") {
-      let result = this.sceneEngine.autoSelect({
-        poseId: pose.id,
-        bodyDirection: this.state.bodyDirection,
-        cameraAngle: this.state.cameraAngle,
-        cameraDistance: this.state.cameraDistance,
-        requiredFeatures: pose.requires ?? []
-      });
-
-      if (result.scene && this.state.roomMode === "EDIT") {
-        for (let attempt = 0; attempt < 2 && result.scene; attempt += 1) {
-          const targetAngle = result.scene.base_camera_angle;
-          const targetDistance = result.scene.base_camera_distance;
-          const canUseAngle = pose.valid_angles.includes(targetAngle) && result.scene.camera_angles.includes(targetAngle);
-          const canUseDistance = pose.valid_distances.includes(targetDistance) && result.scene.camera_distances.includes(targetDistance);
-          const angleChanged = canUseAngle && this.state.cameraAngle !== targetAngle;
-          const distanceChanged = canUseDistance && this.state.cameraDistance !== targetDistance;
-          if (!angleChanged && !distanceChanged) break;
-
-          if (angleChanged) this.state.cameraAngle = targetAngle;
-          if (distanceChanged) this.state.cameraDistance = targetDistance;
-          result = this.sceneEngine.autoSelect({
-            poseId: pose.id,
-            bodyDirection: this.state.bodyDirection,
-            cameraAngle: this.state.cameraAngle,
-            cameraDistance: this.state.cameraDistance,
-            requiredFeatures: pose.requires ?? []
-          });
-        }
-      }
-
-      this.state.selectedSceneId = result.scene?.id ?? null;
-      return result;
-    }
-
-    const scene = this.sceneEngine.getById(this.state.selectedSceneId);
-    const evaluation = this.sceneEngine.evaluateManualSelection(scene, {
-      poseId: pose.id,
-      bodyDirection: this.state.bodyDirection,
-      cameraAngle: this.state.cameraAngle,
-      cameraDistance: this.state.cameraDistance,
-      requiredFeatures: pose.requires ?? []
+    const derivedFields = [
+      "bodyDirection",
+      "cameraAngle",
+      "cameraDistance",
+      "cameraType",
+      "lensType",
+      "roomMode",
+      "selectedSceneId",
+      "lightingId",
+      "clothingId"
+    ];
+    derivedFields.forEach((field) => {
+      this.state[field] = this.engineering[field];
     });
-    return {
-      scene,
-      confidence: evaluation.compatible ? "اختيار يدوي متوافق" : "اختيار يدوي يحتاج مراجعة",
-      score: evaluation.score,
-      reasons: evaluation.reasons,
-      mode: "يدوي"
-    };
+    this.state.mode = "smart";
+  }
+
+  syncLightingControl() {
+    const ids = this.engineering?.compatibleLightingIds ?? LIGHTING_OPTIONS.map((item) => item.id);
+    const options = LIGHTING_OPTIONS.filter((item) => ids.includes(item.id));
+    const safeOptions = options.length ? options : LIGHTING_OPTIONS;
+    setOptions(this.dom.lightingSelect, safeOptions, this.state.lightingId);
+    this.dom.poseSelect.value = this.state.poseId;
+    this.dom.hairSelect.value = this.state.hairId;
+    this.dom.expressionSelect.value = this.state.expressionId;
   }
 
   buildConfig() {
@@ -406,94 +298,63 @@ class App {
       expression: EXPRESSION_OPTIONS.find((item) => item.id === this.state.expressionId) ?? EXPRESSION_OPTIONS[0],
       hair: HAIR_OPTIONS.find((item) => item.id === this.state.hairId) ?? HAIR_OPTIONS[0],
       clothing: CLOTHING_OPTIONS.find((item) => item.id === this.state.clothingId) ?? CLOTHING_OPTIONS[0],
-      lighting: this.lightingEngine.getById(this.state.lightingId)
+      lighting: this.lightingEngine.getById(this.state.lightingId),
+      autoEngineering: this.engineering
     };
   }
 
-  syncControls() {
-    const pose = this.poseEngine.getById(this.state.poseId);
-    const allDirections = [...new Set(POSES.flatMap((item) => item.valid_directions))];
-    const allAngles = Object.keys(UI_LABELS.cameraAngles);
-    const allDistances = Object.keys(UI_LABELS.cameraDistances);
+  applyFixesToState(fixes = []) {
+    fixes.forEach((fix) => {
+      this.state[fix.field] = fix.value;
+      if (fix.secondary) this.state[fix.secondary.field] = fix.secondary.value;
+    });
+  }
 
-    let directions = allDirections;
-    let angles = allAngles;
-    let distances = allDistances;
-    let cameras = Object.values(CAMERA_SPECS);
-    let lenses = this.cameraEngine.getLensesForCamera(this.state.cameraType);
-    let lightingOptions = LIGHTING_OPTIONS;
+  updateAll({ initial = false } = {}) {
+    this.engineerState();
+    let config = this.buildConfig();
+    let validation = this.validator.validate(config);
 
-    if (this.state.mode === "smart") {
-      directions = pose.valid_directions;
-      const compatibleScenes = this.sceneEngine.getCompatibleScenes(
-        pose.id,
-        this.state.bodyDirection,
-        pose.requires ?? []
-      );
-
-      if (this.state.roomMode === "EDIT" && this.sceneResult?.scene) {
-        const scene = this.sceneResult.scene;
-        angles = [scene.base_camera_angle].filter((angle) => pose.valid_angles.includes(angle));
-        distances = [scene.base_camera_distance].filter((distance) => pose.valid_distances.includes(distance));
-      } else {
-        angles = pose.valid_angles.filter((angle) => compatibleScenes.some((scene) => scene.camera_angles.includes(angle)));
-        distances = pose.valid_distances.filter((distance) => compatibleScenes.some((scene) => scene.camera_distances.includes(distance)));
-      }
-
-      if (!angles.length) angles = pose.valid_angles;
-      if (!distances.length) distances = pose.valid_distances;
-
-      cameras = [CAMERA_SPECS[this.state.cameraType]];
-      lenses = [this.cameraEngine.getLens(this.state.lensType)].filter(Boolean);
-      lightingOptions = this.getCompatibleLightingOptions(this.sceneResult?.scene);
-      if (!lightingOptions.length) lightingOptions = [this.lightingEngine.getById(this.state.lightingId)].filter(Boolean);
+    for (let attempt = 0; attempt < 3 && validation.autoFixes.length; attempt += 1) {
+      this.applyFixesToState(validation.autoFixes);
+      this.engineerState();
+      config = this.buildConfig();
+      validation = this.validator.validate(config);
     }
 
-    setOptions(this.dom.directionSelect, directions, this.state.bodyDirection, (value) => ({
-      value,
-      label: UI_LABELS.bodyDirections[value] ?? value
-    }));
-    setOptions(this.dom.angleSelect, angles, this.state.cameraAngle, (value) => ({
-      value,
-      label: UI_LABELS.cameraAngles[value] ?? value
-    }));
-    setOptions(this.dom.distanceSelect, distances, this.state.cameraDistance, (value) => ({
-      value,
-      label: UI_LABELS.cameraDistances[value] ?? value
-    }));
-    setOptions(this.dom.cameraSelect, cameras, this.state.cameraType);
-    setOptions(this.dom.lensSelect, lenses, this.state.lensType);
-    setOptions(this.dom.lightingSelect, lightingOptions, this.state.lightingId);
+    this.syncLightingControl();
+    this.lastValidation = validation;
+    this.lastPrompt = this.promptEngine.generate(config);
 
-    this.dom.poseSelect.value = this.state.poseId;
-    this.dom.roomModeSelect.value = this.state.roomMode;
-    this.dom.expressionSelect.value = this.state.expressionId;
-    this.dom.hairSelect.value = this.state.hairId;
-    this.dom.clothingSelect.value = this.state.clothingId;
+    this.renderScene();
+    renderValidation({
+      statusElement: this.dom.validationStatus,
+      summaryElement: this.dom.validationSummary,
+      listElement: this.dom.conflictsList,
+      autoFixButton: this.dom.autoFixBtn,
+      result: validation
+    });
+    renderPrompt({
+      promptElement: this.dom.finalPrompt,
+      countElement: this.dom.promptWordCount,
+      prompt: this.lastPrompt
+    });
+    renderPromptSummary(this.dom.promptSummary, config);
 
-    const smartMode = this.state.mode === "smart";
-    const bedSelfiePose = this.isBedSelfiePose(pose);
-    this.dom.cameraSelect.disabled = smartMode;
-    this.dom.lensSelect.disabled = smartMode;
-    this.dom.roomModeSelect.disabled = smartMode && bedSelfiePose;
-    this.dom.angleSelect.disabled = smartMode && this.state.roomMode === "EDIT";
-    this.dom.distanceSelect.disabled = smartMode && this.state.roomMode === "EDIT";
+    this.dom.copyBtn.disabled = !validation.valid;
+    this.dom.downloadBtn.disabled = !validation.valid;
+    this.dom.copyBtn.title = validation.valid ? "نسخ الأمر النهائي" : "أصلح التعارضات أولًا";
 
-    const modeElements = {
-      smartButton: this.dom.smartModeBtn,
-      manualButton: this.dom.manualModeBtn,
-      modeHint: this.dom.modeHint
-    };
-    if (smartMode) activateSmartMode(modeElements);
-    else activateManualMode(modeElements);
+    this.storage.save(this.state);
+    if (!initial) this.flashSaved();
   }
 
   renderScene() {
-    const scene = this.sceneResult?.scene;
+    const scene = this.engineering?.scene;
     if (!scene) {
-      this.dom.sceneName.textContent = "ما لقينا مرجعًا مطابقًا";
+      this.dom.sceneName.textContent = "لا يوجد مرجع متوافق";
       this.dom.sceneRegion.textContent = "NO MATCH";
-      this.dom.sceneFilename.textContent = "غيّر الوضعية أو الاتجاه";
+      this.dom.sceneFilename.textContent = "أعد الهندسة";
       this.dom.sceneConfidence.textContent = "غير متاح";
       this.dom.sceneReasons.replaceChildren();
       this.setSceneImage("assets/scene-placeholder.svg", true);
@@ -503,15 +364,16 @@ class App {
     this.dom.sceneName.textContent = scene.name_ar;
     this.dom.sceneRegion.textContent = scene.region.replaceAll("_", " ").toUpperCase();
     this.dom.sceneFilename.textContent = scene.image_filename;
-    this.dom.sceneConfidence.textContent = `${this.sceneResult.confidence} • ${this.sceneResult.score}`;
-    this.dom.sceneConfidence.className = `confidence-badge${this.sceneResult.confidence.includes("عالية") || this.sceneResult.confidence.includes("متوافق") ? " is-high" : ""}`;
+    this.dom.sceneConfidence.textContent = this.engineering.confidence;
+    this.dom.sceneConfidence.className = `confidence-badge${this.engineering.sceneOverrideId ? "" : " is-high"}`;
 
     const reasons = document.createDocumentFragment();
-    (this.sceneResult.reasons ?? []).slice(0, 4).forEach((reason) => {
-      const item = document.createElement("li");
-      item.textContent = reason;
-      reasons.append(item);
-    });
+    const item = document.createElement("li");
+    item.textContent = this.engineering.sceneReason;
+    reasons.append(item);
+    const sideRule = document.createElement("li");
+    sideRule.textContent = this.engineering.orientation;
+    reasons.append(sideRule);
     this.dom.sceneReasons.replaceChildren(reasons);
 
     const uploaded = this.state.uploads.imageB;
@@ -529,7 +391,6 @@ class App {
     if (!knownFallback && !uploaded) {
       image.onerror = () => {
         image.onerror = null;
-        image.onload = null;
         image.src = "assets/scene-placeholder.svg";
         image.classList.add("is-placeholder");
         fallback.hidden = false;
@@ -539,7 +400,6 @@ class App {
         image.classList.remove("is-placeholder");
       };
     }
-
     image.src = source;
     if (uploaded) {
       fallback.hidden = true;
@@ -547,72 +407,16 @@ class App {
     }
   }
 
-  applyFixesToState(fixes = []) {
-    fixes.forEach((fix) => {
-      this.state[fix.field] = fix.value;
-      if (fix.secondary) this.state[fix.secondary.field] = fix.secondary.value;
-    });
-    this.state.lensType = this.cameraEngine.normalizeLens(this.state.cameraType, this.state.lensType);
-  }
-
-  updateAll({ initial = false } = {}) {
-    this.normalizeSmartState();
-    this.sceneResult = this.resolveScene();
-    this.normalizeSmartLighting();
-
-    let config = this.buildConfig();
-    let validation = this.validator.validate(config);
-
-    if (this.state.mode === "smart") {
-      for (let attempt = 0; attempt < 3 && validation.autoFixes.length; attempt += 1) {
-        this.applyFixesToState(validation.autoFixes);
-        this.normalizeSmartState();
-        this.sceneResult = this.resolveScene();
-        this.normalizeSmartLighting();
-        config = this.buildConfig();
-        validation = this.validator.validate(config);
-      }
-    }
-
-    this.syncControls();
-    this.lastValidation = validation;
-    this.lastPrompt = this.promptEngine.generate(config);
-
-    this.renderScene();
-    renderValidation({
-      statusElement: this.dom.validationStatus,
-      summaryElement: this.dom.validationSummary,
-      listElement: this.dom.conflictsList,
-      autoFixButton: this.dom.autoFixBtn,
-      result: this.lastValidation
-    });
-    renderPrompt({
-      promptElement: this.dom.finalPrompt,
-      countElement: this.dom.promptWordCount,
-      prompt: this.lastPrompt
-    });
-    renderPromptSummary(this.dom.promptSummary, config);
-
-    this.dom.copyBtn.disabled = !this.lastValidation.valid;
-    this.dom.downloadBtn.disabled = !this.lastValidation.valid;
-    this.dom.copyBtn.title = this.lastValidation.valid ? "نسخ الأمر النهائي" : "أصلح التعارضات أولًا";
-
-    this.storage.save(this.state);
-    this.lastChangedField = null;
-    if (!initial) this.flashSaved();
-  }
-
   openScenePicker() {
     renderScenePicker({
       container: this.dom.scenePickerGrid,
       scenes: SCENES,
-      selectedSceneId: this.state.selectedSceneId,
+      selectedSceneId: this.state.sceneOverrideId ?? this.state.selectedSceneId,
       onSelect: (sceneId) => {
-        this.state.mode = "manual";
-        this.state.selectedSceneId = sceneId;
+        this.state.sceneOverrideId = sceneId;
         closeDialog(this.dom.sceneDialog);
         this.updateAll();
-        showToast("تم اعتماد المرجع اليدوي");
+        showToast("تم تجاوز المرجع التلقائي؛ الفحص ما زال نشطًا");
       }
     });
     openDialog(this.dom.sceneDialog);
@@ -622,7 +426,7 @@ class App {
     if (!this.lastValidation?.autoFixes.length) return;
     this.applyFixesToState(this.lastValidation.autoFixes);
     this.updateAll();
-    showToast("تم تطبيق الإصلاحات الممكنة");
+    showToast("تم إصلاح التعارضات القابلة للإصلاح");
   }
 
   async copyPrompt() {
@@ -640,19 +444,19 @@ class App {
 
   focusValidation() {
     $(".validation-panel")?.scrollIntoView({ behavior: "smooth", block: "center" });
-    showToast(this.lastValidation.valid ? "الفحص مكتمل: ما فيه تعارضات مانعة" : "راجع التعارضات الحمراء", this.lastValidation.valid ? "success" : "error");
+    showToast(this.lastValidation.valid ? "الفحص مكتمل: لا توجد تعارضات مانعة" : "راجع التعارضات الحمراء", this.lastValidation.valid ? "success" : "error");
   }
 
   rebuildPrompt() {
     this.updateAll();
-    this.dom.finalPrompt.closest(".prompt-editor").classList.add("is-refreshed");
-    window.setTimeout(() => this.dom.finalPrompt.closest(".prompt-editor").classList.remove("is-refreshed"), 500);
-    showToast("أُعيد بناء الأمر من الاختيارات الحالية");
+    this.dom.finalPrompt.closest(".prompt-editor")?.classList.add("is-refreshed");
+    window.setTimeout(() => this.dom.finalPrompt.closest(".prompt-editor")?.classList.remove("is-refreshed"), 500);
+    showToast("أُعيد بناء الأمر من الاختيارات الأربعة");
   }
 
   toggleTheme() {
-    const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const currentDark = this.state.theme === "dark" || (this.state.theme === "system" && isDark);
+    const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const currentDark = this.state.theme === "dark" || (this.state.theme === "system" && systemDark);
     this.state.theme = currentDark ? "light" : "dark";
     this.applyTheme();
     this.storage.save(this.state);
