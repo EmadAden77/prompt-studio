@@ -54,6 +54,47 @@ export class CameraEngine {
     const angle = profile.angle ?? "a physically reachable front-camera selfie angle";
     const tilt = profile.tilt ?? "a small natural handheld roll only";
     const armVisual = profile.armVisual ?? `The ${holdingHand} selfie arm must originate from the matching shoulder and follow a physically reachable path toward the camera.`;
+    const family = pose.id.startsWith("sitting") ? "sitting"
+      : pose.id.startsWith("standing") ? "standing" : "bed";
+
+    const forbiddenFamily = family === "sitting"
+      ? `- standing-height observer viewpoint for a seated subject
+- crop that hides the only seat/support evidence`
+      : family === "standing"
+        ? `- full-body distant selfie when upper-body arm-length framing is required
+- camera height inconsistent with the subject's standing eye level`
+        : `- camera at the foot of the bed
+- wide room shot, full-body distant shot, or composition showing the whole bed as the subject`;
+
+    const framing = family === "sitting"
+      ? `- The frame must immediately read as a real arm's-length seated phone selfie.
+- Show head + torso + enough support geometry to prove sitting. For sofa/chair, part of the seat plus armrest/backrest must remain visible; for floor sitting, enough pelvis/leg/floor support must remain visible.
+- Camera remains at the subject's real seated eye height: about 1.1–1.2 m for chair/sofa, lower for floor sitting. The background must read from seated height, never standing height.
+- ${armVisual}
+- The ${holdingHand} hand's ONLY job is holding the phone near face level with a relaxed elbow.
+- The opposite ${otherHand} arm rests on a real armrest, thigh, knee, mattress edge, or floor support as the pose permits; no floating forearm and no extra shoulder.
+- The seat/support, subject, and background share one coherent near-field perspective. Do not hide the support with an impossible crop.`
+      : family === "standing"
+        ? `- The frame must immediately read as a real arm's-length standing phone selfie.
+- Use upper-body framing with the room readable behind. Solve the full standing body and floor contacts before crop even when the feet fall outside frame.
+- Camera remains around the subject's standing eye height (~1.5 m). Doors, wardrobe edges, wall corners, and mirror frames stay nearly vertical with only mild wide-angle convergence near the frame edges.
+- ${armVisual}
+- The ${holdingHand} hand's ONLY job is holding the phone near face level with a relaxed elbow.
+- The opposite ${otherHand} arm rests naturally by the thigh, in a pocket, on the hip, or on a real nearby support surface. No floating arm and no extra shoulder.
+- Background equals the fixed bedroom as seen from the subject's true standing location at arm's length, never an across-the-room observer view.`
+        : `- The frame must immediately read as a real arm's-length phone selfie.
+- Face occupies approximately 40–60% of frame height. Show head and upper torso only; chest and one or both shoulders may appear as anatomy requires, but never the full body or whole bed.
+- ${armVisual}
+- The ${holdingHand} hand's ONLY job is holding the phone. It must not prop the head, rest under the cheek, or become a posing hand.
+- The lower/opposite ${otherHand} arm rests naturally according to the pose and must never cross through, merge into, or penetrate the torso.
+- Background equals the bedroom as seen FROM the subject's actual position on the bed at arm's length. The bed, pillow, headboard, lamp, and nearby room details are only near background, never an across-the-room composition.
+- Mild near-field wide-angle stretch is allowed only on the closest visible part of the selfie arm; do not enlarge the head, torso, bed, or room unnaturally.`;
+
+    const invalidCheck = family === "sitting"
+      ? "If the camera reads as standing-height, the seat/support is hidden, the subject appears to float above the support, or the camera is farther away than the mapped arm reach, the render is INVALID."
+      : family === "standing"
+        ? "If the camera reads as a room observer, the upper-body framing becomes a distant full-body shot, vertical room lines bend without lens reason, or the camera is farther away than the mapped arm reach, the render is INVALID."
+        : "If the frame reads as though the camera is farther away than the mapped arm reach, shows the whole bed, shows most of the body, or looks like another person took the picture, the render is INVALID.";
 
     return `SELFIE VIEWPOINT LOCK — HIGHEST PRIORITY FOR CAMERA GEOMETRY
 This image IS a handheld front-camera selfie taken BY THE SUBJECT HIMSELF.
@@ -65,25 +106,18 @@ Camera angle: ${angle}; ${tilt}.
 FORBIDDEN VIEWPOINTS
 - third-person observer camera
 - camera across the room
-- camera at the foot of the bed
 - doorway view
 - tripod or remote camera
 - another person taking the photo
 - any viewpoint farther from the face than the mapped arm-reach distance
-- wide room shot, full-body distant shot, or composition showing the whole bed as the subject
+${forbiddenFamily}
 
 SELFIE FRAMING LOCK
-- The frame must immediately read as a real arm's-length phone selfie.
-- Face occupies approximately 40–60% of frame height. Show head and upper torso only; chest and one or both shoulders may appear as anatomy requires, but never the full body or whole bed.
-- ${armVisual}
-- The ${holdingHand} hand's ONLY job is holding the phone. It must not prop the head, rest under the cheek, or become a posing hand.
+${framing}
 - The phone is behind the camera plane and therefore is NOT visible in the finished image; at most, a few fingertips or a tiny edge-contact cue may appear at the extreme frame boundary if physically unavoidable.
-- The lower/opposite ${otherHand} arm rests naturally according to the pose and must never cross through, merge into, or penetrate the torso.
-- Background equals the bedroom as seen FROM the subject's actual position on the bed at arm's length. The bed, pillow, headboard, lamp, and nearby room details are only near background, never an across-the-room composition.
-- Mild near-field wide-angle stretch is allowed only on the closest visible part of the selfie arm; do not enlarge the head, torso, bed, or room unnaturally.
 
 SELFIE DISTANCE CHECK
-If the frame reads as though the camera is farther away than the mapped arm reach, shows the whole bed, shows most of the body, or looks like another person took the picture, the render is INVALID. Re-render from the subject's mapped front-camera phone-in-hand viewpoint without moving the body off its support surfaces.`;
+${invalidCheck} Re-render from the subject's mapped front-camera phone-in-hand viewpoint without moving the body off its real support surfaces.`;
   }
 
   buildPrompt({ camera, lens, pose, cameraAngle, cameraDistance }) {
