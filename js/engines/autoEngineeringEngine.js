@@ -101,8 +101,12 @@ export class AutoEngineeringEngine {
 
   compatibleLighting(scene, cameraType) {
     if (!scene) return [];
+    // Keep the full user lighting catalog visible. Scene compatibility must never
+    // silently remove or replace a user lighting choice. The validator/hard gate
+    // may still flag a physically unsupported room source after the user selects it.
+    // Rear-camera capture keeps the one genuine optical exception: the phone screen
+    // faces away from the subject and cannot be the sole face light.
     return this.lightingEngine.options.filter((option) => {
-      if (this.lightingEngine.getMissingFeatures(option, scene).length) return false;
       if (cameraType === "rear" && option.id === "phone_screen_only") return false;
       return true;
     });
