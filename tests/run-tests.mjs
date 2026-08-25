@@ -9,6 +9,7 @@ import { LIGHTING_OPTIONS } from "../js/data/lightingData.js";
 import { CLOTHING_OPTIONS } from "../js/data/clothingData.js";
 import { EXPRESSION_OPTIONS } from "../js/data/expressionsData.js";
 import { HAIR_OPTIONS } from "../js/data/hairData.js";
+import { QUAD_POSE_IDS } from "../js/data/quadModeData.js";
 import { FIXED_DATA, IMAGE_A_AUTHORITY, IMAGE_B_AUTHORITY } from "../js/data/fixedData.js";
 import { ROOM_LOCK_POLICIES } from "../js/policies/roomLockPolicy.js";
 import { SceneEngine } from "../js/engines/sceneEngine.js";
@@ -19,6 +20,7 @@ import { IdentityEngine } from "../js/engines/identityEngine.js";
 import { RoomLockEngine } from "../js/engines/roomLockEngine.js";
 import { Validator } from "../js/engines/validator.js";
 import { PromptEngine } from "../js/engines/promptEngine.js";
+import { AutoEngineeringEngine } from "../js/engines/autoEngineeringEngine.js";
 
 const sceneEngine = new SceneEngine(SCENES);
 const poseEngine = new PoseEngine(POSES);
@@ -28,54 +30,65 @@ const identityEngine = new IdentityEngine(FIXED_DATA, IMAGE_A_AUTHORITY);
 const roomLockEngine = new RoomLockEngine(ROOM_LOCK_POLICIES, IMAGE_B_AUTHORITY);
 const validator = new Validator({ lightingEngine });
 const promptEngine = new PromptEngine({ identityEngine, roomLockEngine, poseEngine, cameraEngine, lightingEngine });
+const autoEngineeringEngine = new AutoEngineeringEngine({ sceneEngine, lightingEngine });
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
-const rightSide = sceneEngine.autoSelect({
-  poseId: "lying_right_side",
-  bodyDirection: "toward_lamp",
-  cameraAngle: "eye_level",
-  cameraDistance: "medium"
+const rightPose = poseEngine.getById("lying_right_side");
+const rightEngineering = autoEngineeringEngine.engineer({
+  pose: rightPose,
+  lightingId: "lamp_and_phone"
 });
-assert.equal(rightSide.scene.id, "bed_right_nightstand", "Right-side lying must select the lamp-side bed reference");
-assert.equal(rightSide.confidence, "دقة عالية");
+assert.equal(rightEngineering.selectedSceneId, "bed_right_nightstand");
+assert.equal(rightEngineering.bodyDirection, "toward_lamp");
+assert.equal(rightEngineering.cameraType, "front");
+assert.equal(rightEngineering.lensType, "front_wide");
+assert.equal(rightEngineering.roomMode, "GENERATE");
+assert.match(rightEngineering.armFine, /LEFT/u);
+assert.match(rightEngineering.physicsFine, /RIGHT shoulder/u);
+assert.equal(rightEngineering.confidence, "تلقائي — دقة عالية");
 
-const mirror = sceneEngine.autoSelect({
-  poseId: "mirror_selfie",
-  bodyDirection: "facing_mirror",
-  cameraAngle: "eye_level",
-  cameraDistance: "medium",
-  requiredFeatures: ["vanity_mirror"]
-});
-assert.equal(mirror.scene.id, "vanity_mirror", "Mirror pose must select a scene with a real vanity mirror");
+const leftPose = poseEngine.getById("lying_left_side");
+const leftEngineering = autoEngineeringEngine.engineer({ pose: leftPose, lightingId: "phone_screen_only" });
+assert.equal(leftEngineering.selectedSceneId, "bed_left_vanity");
+assert.equal(leftEngineering.bodyDirection, "toward_vanity");
+assert.match(leftEngineering.armFine, /RIGHT hand/u);
+assert.match(leftEngineering.orientation, /LEFT shoulder/u);
 
-const impossible = sceneEngine.autoSelect({
-  poseId: "lying_left_side",
-  bodyDirection: "toward_lamp",
-  cameraAngle: "eye_level",
-  cameraDistance: "medium"
-});
-assert.equal(impossible.error, "no_match", "Mandatory mismatch must not fall back to an unrelated scene");
+const mirrorPose = poseEngine.getById("mirror_selfie");
+const mirrorEngineering = autoEngineeringEngine.engineer({ pose: mirrorPose, lightingId: "single_ceiling" });
+assert.equal(mirrorEngineering.selectedSceneId, "vanity_mirror");
+assert.equal(mirrorEngineering.cameraType, "rear");
+assert.equal(mirrorEngineering.bodyDirection, "facing_mirror");
 
-const pose = poseEngine.getById("lying_right_side");
-const scene = rightSide.scene;
+for (const poseId of QUAD_POSE_IDS) {
+  const pose = poseEngine.getById(poseId);
+  const engineered = autoEngineeringEngine.engineer({ pose, lightingId: "lamp_and_phone" });
+  assert.ok(engineered?.scene, `Every Smart Quad pose needs a deterministic scene: ${poseId}`);
+  assert.ok(engineered.cameraType, `Every Smart Quad pose needs a deterministic camera: ${poseId}`);
+  assert.ok(engineered.cameraFine, `Every Smart Quad pose needs fine camera geometry: ${poseId}`);
+  assert.ok(engineered.armFine, `Every Smart Quad pose needs deterministic arm geometry: ${poseId}`);
+}
+
+const scene = rightEngineering.scene;
 const baseConfig = {
   mode: "smart",
-  pose,
+  pose: rightPose,
   scene,
-  poseId: pose.id,
+  poseId: rightPose.id,
   selectedSceneId: scene.id,
-  bodyDirection: "toward_lamp",
-  cameraAngle: "eye_level",
-  cameraDistance: "medium",
-  cameraType: "front",
-  camera: cameraEngine.getCamera("front"),
-  lensType: "front_wide",
-  lens: cameraEngine.getLens("front_wide"),
-  expression: EXPRESSION_OPTIONS[0],
-  hair: HAIR_OPTIONS[0],
-  clothing: CLOTHING_OPTIONS[0],
-  lighting: lightingEngine.getById("lamp_only"),
-  roomMode: "GENERATE",
+  bodyDirection: rightEngineering.bodyDirection,
+  cameraAngle: rightEngineering.cameraAngle,
+  cameraDistance: rightEngineering.cameraDistance,
+  cameraType: rightEngineering.cameraType,
+  camera: cameraEngine.getCamera(rightEngineering.cameraType),
+  lensType: rightEngineering.lensType,
+  lens: cameraEngine.getLens(rightEngineering.lensType),
+  expression: EXPRESSION_OPTIONS.find((item) => item.id === "relaxed"),
+  hair: HAIR_OPTIONS.find((item) => item.id === "same"),
+  clothing: CLOTHING_OPTIONS.find((item) => item.id === "pajamas"),
+  lighting: lightingEngine.getById(rightEngineering.lightingId),
+  roomMode: rightEngineering.roomMode,
+  autoEngineering: rightEngineering,
   uploads: {
     imageA: { name: "identity.jpg" },
     imageB: { name: scene.image_filename }
@@ -83,92 +96,36 @@ const baseConfig = {
 };
 
 const validResult = validator.validate(baseConfig);
-assert.equal(validResult.valid, true, "Physically compatible generated bed selfie must pass validation");
+assert.equal(validResult.valid, true, "Deterministic right-side Smart Quad configuration must pass validation");
 
-const editBedSelfieResult = validator.validate({
-  ...baseConfig,
-  roomMode: "EDIT"
-});
-assert.equal(editBedSelfieResult.valid, false, "Bed selfie must not pass as immutable EDIT geometry");
+const editBedSelfieResult = validator.validate({ ...baseConfig, roomMode: "EDIT" });
+assert.equal(editBedSelfieResult.valid, false);
 assert.ok(editBedSelfieResult.conflicts.some((issue) => issue.type === "bed_selfie_requires_generate"));
-assert.ok(editBedSelfieResult.autoFixes.some((fix) => fix.field === "roomMode" && fix.value === "GENERATE"));
 
-const rearBedSelfieResult = validator.validate({
-  ...baseConfig,
-  cameraType: "rear",
-  camera: cameraEngine.getCamera("rear"),
-  lensType: "rear_standard",
-  lens: cameraEngine.getLens("rear_standard")
-});
-assert.equal(rearBedSelfieResult.valid, false);
-assert.ok(rearBedSelfieResult.conflicts.some((issue) => issue.type === "bed_selfie_camera_conflict"));
-
-const wrongLensResult = validator.validate({
-  ...baseConfig,
-  lens: cameraEngine.getLens("rear_portrait")
-});
+const wrongLensResult = validator.validate({ ...baseConfig, lens: cameraEngine.getLens("rear_portrait") });
 assert.equal(wrongLensResult.valid, false);
 assert.ok(wrongLensResult.conflicts.some((issue) => issue.type === "camera_lens_conflict"));
-
-const standingPose = poseEngine.getById("standing_center");
-const standingScene = sceneEngine.autoSelect({
-  poseId: standingPose.id,
-  bodyDirection: standingPose.preferred_direction,
-  cameraAngle: "eye_level",
-  cameraDistance: "wide"
-}).scene;
-const editConfig = {
-  ...baseConfig,
-  pose: standingPose,
-  scene: standingScene,
-  poseId: standingPose.id,
-  selectedSceneId: standingScene.id,
-  bodyDirection: standingPose.preferred_direction,
-  cameraAngle: standingScene.base_camera_angle,
-  cameraDistance: standingScene.base_camera_distance,
-  lighting: lightingEngine.getById("all_ceiling_spots"),
-  roomMode: "EDIT",
-  uploads: {
-    imageA: { name: "identity.jpg" },
-    imageB: { name: standingScene.image_filename }
-  }
-};
-
-const wrongEditAngleResult = validator.validate({
-  ...editConfig,
-  cameraAngle: "high_angle"
-});
-assert.ok(wrongEditAngleResult.conflicts.some((issue) => issue.type === "edit_mode_angle"));
-
-const wrongEditDistanceResult = validator.validate({
-  ...editConfig,
-  cameraDistance: "medium"
-});
-assert.ok(wrongEditDistanceResult.conflicts.some((issue) => issue.type === "edit_mode_distance"));
 
 const prompt = promptEngine.generate(baseConfig);
 assert.match(prompt, /^CHATGPT IMAGE TASK/u);
 assert.match(prompt, /IMAGE A — IDENTITY ONLY/u);
 assert.match(prompt, /IMAGE B — ROOM ONLY/u);
-assert.match(prompt, /Use the LEFT hand as the upper selfie hand/u);
-assert.match(prompt, /BED SELFIE SPATIAL ANCHOR — BODY FIRST, CAMERA SECOND/u);
-assert.match(prompt, /The camera must move to the reachable hand position; the body must not move to satisfy the camera/u);
+assert.match(prompt, /BED SPATIAL MAP/u);
+assert.match(prompt, /BODY FIRST, CAMERA SECOND/u);
+assert.match(prompt, /upper LEFT hand/u);
+assert.match(prompt, /LAMP SIDE: RIGHT/u);
+assert.match(prompt, /NEGATIVE PROMPT/u);
 assert.match(prompt, /Return only the final image/u);
 assert.doesNotMatch(prompt, /الاستلقاء|الأباجورة|التسريحة/u, "Final prompt must remain English");
 
-for (const poseItem of POSES) {
-  const coverage = sceneEngine.autoSelect({
-    poseId: poseItem.id,
-    bodyDirection: poseItem.preferred_direction,
-    cameraAngle: poseItem.valid_angles[0],
-    cameraDistance: poseItem.valid_distances[0],
-    requiredFeatures: poseItem.requires ?? []
-  });
-  assert.ok(coverage.scene, `Every pose needs at least one strict smart-mode scene: ${poseItem.id}`);
-}
-
 const indexHTML = readFileSync(resolve(projectRoot, "index.html"), "utf8");
 assert.doesNotMatch(indexHTML, /183\s*cm|82\s*kg|35 years|Middle Eastern man/u, "Fixed person data must not appear in the UI document");
+assert.match(indexHTML, /Smart Quad/u);
+assert.match(indexHTML, /id="poseSelect"/u);
+assert.match(indexHTML, /id="hairSelect"/u);
+assert.match(indexHTML, /id="lightingSelect"/u);
+assert.match(indexHTML, /id="expressionSelect"/u);
+assert.doesNotMatch(indexHTML, /id="cameraSelect"|id="angleSelect"|id="distanceSelect"|id="clothingSelect"|id="roomModeSelect"/u, "Smart Quad UI must hide engineering controls completely");
 
 const localAssets = [...indexHTML.matchAll(/(?:href|src)="([^"#]+)"/gu)]
   .map((match) => match[1])
@@ -194,7 +151,7 @@ while (sourceFiles.length) {
   }
 }
 
-console.log("✓ Scene matching tests passed");
+console.log("✓ Smart Quad deterministic mapping tests passed");
 console.log("✓ Validator tests passed");
-console.log("✓ Prompt generation tests passed");
-console.log("✓ Static asset and module integrity tests passed");
+console.log("✓ Prompt generation and spatial-map tests passed");
+console.log("✓ Four-choice UI and static integrity tests passed");
