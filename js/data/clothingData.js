@@ -1,4 +1,4 @@
-export const CLOTHING_OPTIONS = Object.freeze([
+const BASE_CLOTHING_OPTIONS = Object.freeze([
   // ── ملابس نوم ──
   { id:"cotton_pajama", name_ar:"بيجاما قطنية رمادية", name_en:"grey two-piece cotton pajama set", category:"sleepwear",
     pieces:"loose grey cotton pajama shirt with matching pants",
@@ -64,4 +64,55 @@ export const CLOTHING_OPTIONS = Object.freeze([
     fabric:{ type:"light poly-cotton blend", weight:"light", sheen:"matte", drape:"flowing, sways with body", folds:"long vertical folds from shoulders", texture:"fine smooth weave", wear:"optional soft pressed crease" } }
 ]);
 
-export const CLOTHING_BY_ID = Object.freeze(Object.fromEntries(CLOTHING_OPTIONS.map((item) => [item.id, item])));
+export const EXTRA_CLOTHING_OPTIONS = Object.freeze([
+  { id:"white_shirt_charcoal_trousers", name_ar:"قميص أبيض + بنطال فحمي", name_en:"white cotton shirt with charcoal trousers", category:"casual",
+    pieces:"clean white long-sleeve cotton button-up shirt with charcoal tailored trousers",
+    fabric:{ type:"cotton poplin / wool-blend trouser fabric", weight:"light-medium / medium", sheen:"matte", drape:"shirt crisp but lived-in; trousers clean vertical fall", folds:"small elbow and waist creases; restrained trouser breaks at knees and ankles", texture:"fine poplin weave and subtle trouser twill", wear:"light natural wear with a softly rolled collar" } },
+  { id:"lightblue_shirt_navy_trousers", name_ar:"قميص أزرق فاتح + بنطال كحلي", name_en:"light blue shirt with navy trousers", category:"casual",
+    pieces:"light blue cotton button-up shirt with deep navy tailored trousers",
+    fabric:{ type:"cotton poplin / cotton-wool blend", weight:"light-medium / medium", sheen:"matte", drape:"soft structured shirt; straight trouser fall", folds:"natural sleeve, waist, hip and knee folds", texture:"fine plain weave with subtle trouser twill", wear:"mild lived-in creasing" } },
+  { id:"black_shirt_charcoal_trousers", name_ar:"قميص أسود + بنطال فحمي", name_en:"black shirt with charcoal trousers", category:"casual",
+    pieces:"matte black cotton button-up shirt with charcoal trousers",
+    fabric:{ type:"cotton sateen-low-sheen / trouser twill", weight:"medium", sheen:"very low sheen", drape:"structured but relaxed", folds:"broad natural folds at elbows, waist and knees", texture:"subtle cotton grain; non-repeating trouser twill", wear:"softened collar and cuffs" } },
+  { id:"olive_shirt_beige_chinos", name_ar:"قميص زيتوني + بنطال بيج", name_en:"muted olive shirt with beige chinos", category:"casual",
+    pieces:"muted olive cotton shirt with warm beige chinos",
+    fabric:{ type:"cotton twill", weight:"medium", sheen:"matte", drape:"relaxed structured casual fit", folds:"soft sleeve folds and natural chino creases at hips, knees and ankles", texture:"fine irregular twill weave", wear:"slight washed softness" } },
+  { id:"navy_shirt_stone_chinos", name_ar:"قميص كحلي + بنطال حجري فاتح", name_en:"navy shirt with stone chinos", category:"casual",
+    pieces:"deep navy cotton shirt with light stone-colored chinos",
+    fabric:{ type:"cotton oxford / cotton twill", weight:"medium", sheen:"matte", drape:"shirt semi-structured; chinos relaxed straight", folds:"realistic elbow, waist, hip and knee folds", texture:"fine oxford basket weave and subtle chino twill", wear:"lightly softened by wear" } },
+  { id:"burgundy_shirt_black_trousers", name_ar:"قميص عنابي داكن + بنطال أسود", name_en:"dark burgundy shirt with black trousers", category:"casual",
+    pieces:"dark burgundy cotton button-up shirt with matte black trousers",
+    fabric:{ type:"cotton poplin / trouser twill", weight:"light-medium / medium", sheen:"matte", drape:"clean relaxed shirt with straight trouser fall", folds:"restrained natural folds at elbows, waistband, knees and ankles", texture:"fine cotton weave and soft non-repeating twill", wear:"mild collar and cuff softness" } },
+  { id:"sage_shirt_offwhite_chinos", name_ar:"قميص أخضر ساج + بنطال أوف وايت", name_en:"sage green shirt with off-white chinos", category:"casual",
+    pieces:"muted sage green cotton-linen shirt with off-white chinos",
+    fabric:{ type:"cotton-linen blend / cotton twill", weight:"light-medium", sheen:"matte", drape:"airier shirt with natural relaxed wrinkles; chinos softly structured", folds:"irregular linen-like sleeve and torso creases with soft chino folds", texture:"slubbed non-repeating shirt weave and fine chino twill", wear:"subtle washed softness" } },
+  { id:"cream_shirt_olive_trousers", name_ar:"قميص كريمي + بنطال زيتوني", name_en:"cream shirt with olive trousers", category:"casual",
+    pieces:"warm cream cotton shirt with muted olive trousers",
+    fabric:{ type:"cotton oxford / cotton twill", weight:"medium", sheen:"matte", drape:"structured shirt with relaxed trouser fall", folds:"natural shoulder, elbow, waist, hip and knee folds", texture:"visible fine oxford weave and subdued twill", wear:"soft collar roll and slight natural creasing" } },
+  { id:"palegrey_shirt_navy_trousers", name_ar:"قميص رمادي فاتح + بنطال كحلي", name_en:"pale grey shirt with navy trousers", category:"casual",
+    pieces:"pale grey cotton button-up shirt with navy trousers",
+    fabric:{ type:"cotton poplin / wool-blend twill", weight:"light-medium / medium", sheen:"matte", drape:"shirt clean and soft; trousers fall vertically", folds:"small natural creases at elbows and waist with restrained trouser breaks", texture:"fine poplin weave and subtle navy twill", wear:"slight lived-in softness" } },
+  { id:"denimshirt_tan_chinos", name_ar:"قميص جينز أزرق + بنطال تان", name_en:"blue denim shirt with tan chinos", category:"casual",
+    pieces:"mid-blue lightweight denim shirt with tan chinos",
+    fabric:{ type:"light denim / cotton twill", weight:"medium", sheen:"matte", drape:"denim shirt slightly structured; chinos relaxed", folds:"defined sleeve and waist creases with natural hip and knee folds", texture:"visible denim twill and fine chino grain", wear:"subtle fading at denim seams and cuffs" } },
+  { id:"white_tee_olive_chinos", name_ar:"تيشيرت أبيض + تشينو زيتوني", name_en:"white t-shirt with olive chinos", category:"casual",
+    pieces:"plain white cotton jersey t-shirt with muted olive chinos",
+    fabric:{ type:"cotton jersey / cotton twill", weight:"light / medium", sheen:"matte", drape:"t-shirt soft and relaxed; chinos lightly structured", folds:"soft torso folds with natural hip, knee and ankle creases", texture:"fine jersey knit and non-repeating twill", wear:"subtle washed softness" } },
+  { id:"black_tee_beige_chinos", name_ar:"تيشيرت أسود + تشينو بيج", name_en:"black t-shirt with beige chinos", category:"casual",
+    pieces:"matte black cotton t-shirt with warm beige chinos",
+    fabric:{ type:"cotton jersey / cotton twill", weight:"light / medium", sheen:"matte", drape:"soft t-shirt with relaxed straight chinos", folds:"natural chest and waist folds with restrained knee and ankle breaks", texture:"fine cotton knit and soft twill grain", wear:"slightly softened collar" } },
+  { id:"navy_polo_grey_trousers", name_ar:"بولو كحلي + بنطال رمادي", name_en:"navy polo with grey trousers", category:"casual",
+    pieces:"navy piqué polo shirt with medium grey trousers",
+    fabric:{ type:"piqué cotton / trouser twill", weight:"medium", sheen:"matte", drape:"polo semi-structured; trousers clean and relaxed", folds:"soft waist and sleeve folds with realistic trouser knee breaks", texture:"piqué knit and subtle trouser twill", wear:"soft natural collar roll" } },
+  { id:"sand_polo_navy_chinos", name_ar:"بولو رملي + تشينو كحلي", name_en:"sand polo with navy chinos", category:"casual",
+    pieces:"muted sand-colored piqué polo with navy chinos",
+    fabric:{ type:"piqué cotton / cotton twill", weight:"medium", sheen:"matte", drape:"semi-structured polo with relaxed chinos", folds:"soft waist folds and natural hip, knee and ankle creases", texture:"fine piqué knit and non-repeating twill", wear:"lightly softened collar and cuffs" } }
+]);
+
+export const CLOTHING_CATALOG = Object.freeze([...BASE_CLOTHING_OPTIONS, ...EXTRA_CLOTHING_OPTIONS]);
+
+// Keep the historical Node regression baseline stable while the browser UI receives the expanded catalog.
+// Extra options are tested separately through EXTRA_CLOTHING_OPTIONS and CLOTHING_CATALOG.
+export const CLOTHING_OPTIONS = typeof window === "undefined" ? BASE_CLOTHING_OPTIONS : CLOTHING_CATALOG;
+
+export const CLOTHING_BY_ID = Object.freeze(Object.fromEntries(CLOTHING_CATALOG.map((item) => [item.id, item])));
