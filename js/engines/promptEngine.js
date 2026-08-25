@@ -1,5 +1,6 @@
 import { hierarchyAsPromptText } from "../policies/authorityPolicy.js";
 import { MASTER_POLICY } from "../policies/masterPolicy.js";
+import { TEMPLATE_BY_ID } from "../templates.js";
 
 export class PromptEngine {
   constructor({ identityEngine, roomLockEngine, poseEngine, cameraEngine, lightingEngine }) {
@@ -16,6 +17,27 @@ export class PromptEngine {
     return selected
       ? `the user-selected built-in room reference “${fallback}”`
       : `the attached ${fallback}`;
+  }
+
+  getSelectedTemplate(config = {}) {
+    const explicitId = config.templateId;
+    const domId = typeof document !== "undefined" ? document.documentElement.dataset.activeTemplate : null;
+    const template = TEMPLATE_BY_ID[explicitId ?? domId];
+    if (!template || template.poseId !== config.pose?.id) return null;
+    return template;
+  }
+
+  applyTemplateCameraOverride(autoEngineering, template) {
+    if (!template?.cameraOverride) return autoEngineering;
+    return {
+      ...autoEngineering,
+      selfieViewpoint: {
+        ...(autoEngineering?.selfieViewpoint ?? {}),
+        ...template.cameraOverride
+      },
+      cameraFine: `Selected standing template camera override: ${template.cameraOverride.angle}; subject-to-phone distance ${template.cameraOverride.distance}. ${template.cameraOverride.tilt ?? "Use only a small natural handheld roll."}`,
+      armFine: `${template.cameraOverride.armVisual} The ${template.cameraOverride.otherHand} hand follows the selected template support/action and never duplicates the phone-holding arm.`
+    };
   }
 
   buildNaturalBrief(c) {
@@ -209,6 +231,8 @@ Deterministic orientation: ${orientation}`;
       autoEngineering
     } = config;
 
+    const selectedTemplate = this.getSelectedTemplate(config);
+    const effectiveEngineering = this.applyTemplateCameraOverride(autoEngineering, selectedTemplate);
     const taskVerb = roomMode === "EDIT"
       ? "edit IMAGE B in place as the immutable room plate and insert the person from IMAGE A"
       : "generate one new photograph from a physically reachable viewpoint inside the same three-dimensional room represented by IMAGE B, using IMAGE A only for identity";
@@ -216,12 +240,12 @@ Deterministic orientation: ${orientation}`;
     const imageAName = this.getReferenceName(uploads?.imageA, "IMAGE A identity photograph");
     const imageBName = this.getReferenceName(uploads?.imageB, scene?.image_filename ?? "IMAGE B room photograph", { selected: true });
     const poseSections = pose
-      ? this.poseEngine.engineer({ pose, expression, hair, clothing, autoEngineering })
+      ? this.poseEngine.engineer({ pose, expression, hair, clothing, autoEngineering: effectiveEngineering })
       : null;
     const selfieViewpointLock = this.cameraEngine.selfieViewpointLock({
       camera,
       pose,
-      autoEngineering
+      autoEngineering: effectiveEngineering
     });
     const sections = [];
 
@@ -256,20 +280,22 @@ Depict the exact same real person photographed again, not a look-alike. Preserve
     sections.push(`ROOM LOCK
 ${this.roomLockEngine.buildLockText(roomMode)}`);
 
-    if (autoEngineering) sections.push(this.buildSpatialMap(autoEngineering));
+    if (effectiveEngineering) sections.push(this.buildSpatialMap(effectiveEngineering));
 
     sections.push(`SUBJECT PLACEMENT
-${this.getPlacementRule(config)}
+${this.getPlacementRule({ ...config, autoEngineering: effectiveEngineering })}
 ${this.getBodyFirstRule(pose)}`);
 
     sections.push(poseSections?.posePhysics ?? `POSE & PHYSICS
 Keep anatomy, gravity, support, and pressure physically possible.`);
 
+    if (selectedTemplate?.promptBlock) sections.push(selectedTemplate.promptBlock);
+
     if (poseSections?.trueLateral) sections.push(poseSections.trueLateral);
 
     sections.push(`CAMERA AND ARM STRATEGY
 ${this.cameraEngine.buildPrompt({ camera, lens, pose, cameraAngle, cameraDistance })}
-Fine camera engineering: ${autoEngineering?.cameraFine ?? "Use the mapped reachable viewpoint."}
+Fine camera engineering: ${effectiveEngineering?.cameraFine ?? "Use the mapped reachable viewpoint."}
 ${poseSections?.armStrategy ?? "Keep every shoulder, elbow, wrist, and hand anatomically reachable."}
 The phone position is derived after body placement. If framing would force impossible anatomy, loosen the crop instead of moving the body or lengthening the arm. For front-camera selfies, this section must remain subordinate to the earlier SELFIE VIEWPOINT LOCK.`);
 
