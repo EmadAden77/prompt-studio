@@ -98,15 +98,46 @@ Deterministic orientation: ${orientation}`;
     return "local mattress and pillow compression, gravity-driven clothing folds";
   }
 
-  getFinalSupportCheck(pose) {
+  buildFinalPhysicalCheck(pose) {
     const family = this.familyOf(pose);
     if (family === "sitting") {
-      return "- Seated support surfaces visibly carry weight: soft cushions compress under load; hard seat/floor contacts show tight contact shadows and no floating gaps.\n- Knees/legs/feet remain physically supported according to the selected seated pose, and shoulders stay naturally asymmetric.";
+      return `FINAL PHYSICAL CHECK
+- IMAGE A controls identity only; its expression, clothing, lighting, pose, and camera viewpoint do not transfer.
+- IMAGE B controls the same room and the selected real seat/support location only.
+- Subject placement is solved before camera placement.
+- For front-camera selfies, the final frame must pass the SELFIE DISTANCE CHECK and visibly read as subject-held at arm's length, never as an observer or room camera.
+- Seated support surfaces visibly carry weight: soft cushions compress under load; hard seat/floor contacts show tight contact shadows and no floating gaps.
+- Knees/legs/feet remain physically supported according to the selected seated pose, and shoulders stay naturally asymmetric.
+- Arms, hands, phone reach, and optical axis are anatomically possible.
+- Mirror reflections, if present, preserve one ray path and correct handedness.
+- Camera, lens, perspective, exposure, depth of field, noise, and processing form one compatible capture.
+- No furniture, clutter, doors, windows, mirrors, fixtures, or room dimensions are moved, cleaned, mirrored, resized, or redesigned.`;
     }
     if (family === "standing") {
-      return "- Both feet are physically grounded on the real floor with sole-hugging contact shadows; weight shifts naturally to one leg without mannequin symmetry.\n- Vertical room lines remain nearly vertical except for mild physically plausible wide-angle convergence.";
+      return `FINAL PHYSICAL CHECK
+- IMAGE A controls identity only; its expression, clothing, lighting, pose, and camera viewpoint do not transfer.
+- IMAGE B controls the same room and the selected real standing location only.
+- Subject placement is solved before camera placement.
+- For front-camera selfies, the final frame must pass the SELFIE DISTANCE CHECK and visibly read as subject-held at arm's length, never as an observer or room camera.
+- Both feet are physically grounded on the real floor with sole-hugging contact shadows; weight shifts naturally to one leg without mannequin symmetry.
+- Vertical room lines remain nearly vertical except for mild physically plausible wide-angle convergence.
+- Arms, hands, phone reach, and optical axis are anatomically possible.
+- Mirror reflections, if present, preserve one ray path and correct handedness.
+- Camera, lens, perspective, exposure, depth of field, noise, and processing form one compatible capture.
+- No furniture, clutter, doors, windows, mirrors, fixtures, or room dimensions are moved, cleaned, mirrored, resized, or redesigned.`;
     }
-    return "- Support surfaces visibly carry weight and compress locally.";
+    return `FINAL PHYSICAL CHECK
+- IMAGE A controls identity only; its expression, clothing, lighting, pose, and camera viewpoint do not transfer.
+- IMAGE B controls the same room and bed only.
+- Subject placement is solved before camera placement.
+- The selected body side is defined relative to the subject, not the image.
+- For side-lying poses, the loaded shoulder, ribcage, hip, pillow contact, upper selfie arm, and lower support arm all agree with the same body side.
+- For front-camera selfies, the final frame must pass the SELFIE DISTANCE CHECK and visibly read as subject-held at arm's length, never as an observer or room camera.
+- Support surfaces visibly carry weight and compress locally.
+- Arms, hands, phone reach, and optical axis are anatomically possible.
+- Mirror reflections, if present, preserve one ray path and correct handedness.
+- Camera, lens, perspective, exposure, depth of field, noise, and processing form one compatible capture.
+- No furniture, clutter, doors, windows, mirrors, fixtures, or room dimensions are moved, cleaned, mirrored, resized, or redesigned.`;
   }
 
   generate(config) {
@@ -206,20 +237,7 @@ Apply one ordinary Xiaomi phone-camera pipeline to the entire frame. Use restrai
     sections.push(`REALISM
 Preserve natural facial asymmetry, real pores and skin-color variation, natural beard gaps, plausible hair clumps and stray strands, ${this.getRealismSupportText(pose)}, anatomically possible arm reach, mild smartphone perspective distortion, and physically motivated light falloff. Never improve one part of the frame into a cleaner or sharper rendering style than the rest.`);
 
-    const sideLyingCheck = pose && (pose.id === "lying_right_side" || pose.id === "lying_left_side")
-      ? "- For side-lying poses, the loaded shoulder, ribcage, hip, pillow contact, upper selfie arm, and lower support arm all agree with the same body side.\n"
-      : "";
-    sections.push(`FINAL PHYSICAL CHECK
-- IMAGE A controls identity only; its expression, clothing, lighting, pose, and camera viewpoint do not transfer.
-- IMAGE B controls the same room and the selected physical support/location only.
-- Subject placement is solved before camera placement.
-- The selected body side is defined relative to the subject, not the image.
-${sideLyingCheck}- For front-camera selfies, the final frame must pass the SELFIE DISTANCE CHECK and visibly read as subject-held at arm's length, never as an observer or room camera.
-${this.getFinalSupportCheck(pose)}
-- Arms, hands, phone reach, and optical axis are anatomically possible.
-- Mirror reflections, if present, preserve one ray path and correct handedness.
-- Camera, lens, perspective, exposure, depth of field, noise, and processing form one compatible capture.
-- No furniture, clutter, doors, windows, mirrors, fixtures, or room dimensions are moved, cleaned, mirrored, resized, or redesigned.`);
+    sections.push(this.buildFinalPhysicalCheck(pose));
 
     sections.push(`FORBIDDEN RESULTS
 No cartoon, illustration, painting, CGI, 3D-render appearance, beauty filter, facial reshaping, forced symmetry, plastic or waxy skin, artificial pore maps, painted beard, wire hair, extra fingers, extra limbs, fused limbs, impossible joints, torso penetration, floating body, unsupported contact, broken reflection, third-person observer viewpoint, camera across the room, camera at the foot of the bed, doorway view, tripod shot, photo taken by another person, full-body distant selfie, whole-bed composition, hand propping the head during a selfie, fake DSLR bokeh, anamorphic distortion, destructive ISO noise, extreme motion blur, fake 8K detail, unmotivated lens flare, cinematic grading, studio softbox, EXIF spoofing, C2PA removal, PRNU simulation, forensic countermeasures, unrequested text, or logos.`);
