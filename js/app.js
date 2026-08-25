@@ -168,9 +168,19 @@ class App {
       [this.dom.clothingSelect, "clothingId"]
     ].forEach(([element, field]) => {
       element.addEventListener("change", () => {
+        const previousSceneId = this.state.selectedSceneId;
         this.state[field] = element.value;
         if (field === "poseId") this.state.sceneOverrideId = null;
         this.updateAll();
+
+        if (field === "poseId") {
+          const selectedScene = this.engineering?.scene;
+          if (selectedScene && previousSceneId && selectedScene.id !== previousSceneId) {
+            showToast(`تم تبديل المرجع تلقائيًا ليطابق الوضعية: ${selectedScene.name_ar}`);
+          } else if (!selectedScene) {
+            showToast(this.engineering?.strictNoMatchMessage || "لا يوجد مرجع صالح لهذه الوضعية", "error", 4200);
+          }
+        }
       });
     });
 
@@ -382,13 +392,29 @@ class App {
   }
 
   renderScene() {
-    const scene = this.engineering?.scene;
+    const engineering = this.engineering;
+    const scene = engineering?.scene;
+    const reasons = document.createDocumentFragment();
+
     if (!scene) {
-      this.dom.sceneName.textContent = "لا يوجد مرجع متوافق";
-      this.dom.sceneRegion.textContent = "NO MATCH";
-      this.dom.sceneFilename.textContent = "أعد الهندسة";
-      this.dom.sceneConfidence.textContent = "غير متاح";
-      this.dom.sceneReasons.replaceChildren();
+      this.dom.sceneName.textContent = "لا يوجد مرجع صالح لهذه الوضعية";
+      this.dom.sceneRegion.textContent = "STRICT NO MATCH";
+      this.dom.sceneFilename.textContent = "غيّر الوضعية أو استخدم التجاوز اليدوي";
+      this.dom.sceneConfidence.textContent = "⚠ لا يوجد مرجع ناجح";
+      this.dom.sceneConfidence.className = "confidence-badge is-warning";
+
+      [
+        engineering?.strictNoMatchMessage,
+        engineering?.gateSummary,
+        "الخيار (أ): غيّر الوضعية من القائمة أعلاه.",
+        "الخيار (ب): استخدم تجاوزًا يدويًا؛ سيظهر بتحذير وسيظل الفحص مانعًا إذا فشل المرجع."
+      ].filter(Boolean).forEach((text) => {
+        const item = document.createElement("li");
+        item.textContent = text;
+        if (text.startsWith("الخيار") || text.includes("لا يوجد")) item.classList.add("is-warning");
+        reasons.append(item);
+      });
+      this.dom.sceneReasons.replaceChildren(reasons);
       this.setSceneImage("assets/scene-placeholder.svg", true);
       return;
     }
@@ -396,16 +422,26 @@ class App {
     this.dom.sceneName.textContent = scene.name_ar;
     this.dom.sceneRegion.textContent = scene.region.replaceAll("_", " ").toUpperCase();
     this.dom.sceneFilename.textContent = scene.image_filename;
-    this.dom.sceneConfidence.textContent = this.engineering.confidence;
-    this.dom.sceneConfidence.className = `confidence-badge${this.engineering.sceneOverrideId ? "" : " is-high"}`;
+    this.dom.sceneConfidence.textContent = engineering.confidence;
+    if (engineering.manualOverrideInvalid) {
+      this.dom.sceneConfidence.className = "confidence-badge is-warning";
+    } else if (engineering.confidence?.includes("دقة عالية")) {
+      this.dom.sceneConfidence.className = "confidence-badge is-high";
+    } else {
+      this.dom.sceneConfidence.className = "confidence-badge";
+    }
 
-    const reasons = document.createDocumentFragment();
-    const item = document.createElement("li");
-    item.textContent = this.engineering.sceneReason;
-    reasons.append(item);
-    const sideRule = document.createElement("li");
-    sideRule.textContent = this.engineering.orientation;
-    reasons.append(sideRule);
+    [
+      engineering.sceneReason,
+      engineering.gateSummary,
+      ...(engineering.sceneSelectionReasons ?? []),
+      engineering.orientation
+    ].filter(Boolean).forEach((text, index) => {
+      const item = document.createElement("li");
+      item.textContent = text;
+      if (engineering.manualOverrideInvalid && index === 0) item.classList.add("is-warning");
+      reasons.append(item);
+    });
     this.dom.sceneReasons.replaceChildren(reasons);
 
     const uploaded = this.state.uploads.imageB;
@@ -448,7 +484,13 @@ class App {
         this.state.sceneOverrideId = sceneId;
         closeDialog(this.dom.sceneDialog);
         this.updateAll();
-        showToast("تم تجاوز المرجع التلقائي؛ الفحص ما زال نشطًا");
+        showToast(
+          this.engineering?.manualOverrideInvalid
+            ? "⚠ تم تجاوز المرجع يدويًا، لكنه لا يجتاز البوابة الصارمة لهذه الوضعية"
+            : "تم تجاوز المرجع التلقائي؛ المرجع اجتاز البوابة والفحص ما زال نشطًا",
+          this.engineering?.manualOverrideInvalid ? "warning" : "success",
+          4200
+        );
       }
     });
     openDialog(this.dom.sceneDialog);
