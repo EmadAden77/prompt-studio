@@ -132,7 +132,7 @@ assert.equal(rightEngineering.manualOverrideInvalid, false);
 assert.equal(rightEngineering.lightingId, "lamp_and_phone");
 
 const bedLeftCompatiblePoses = sceneEngine.getCompatiblePoseIds("bed_left_vanity", QUAD_POSE_IDS);
-assert.deepEqual(bedLeftCompatiblePoses, ["lying_back", "lying_stomach", "lying_left_side", "semi_reclining"]);
+assert.deepEqual(bedLeftCompatiblePoses, ["lying_back", "lying_stomach", "lying_left_side", "semi_reclining", "sitting_bed_edge"]);
 assert.equal(sceneEngine.getSuggestedPoseId("bed_left_vanity", QUAD_POSE_IDS), "lying_left_side");
 assert.deepEqual(sceneEngine.getCompatiblePoseIds("chair_area", QUAD_POSE_IDS), []);
 assert.equal(sceneEngine.getSuggestedPoseId("chair_area", QUAD_POSE_IDS), null);
