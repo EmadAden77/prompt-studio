@@ -1,3 +1,11 @@
+const BED_SELFIE_ARM_STRATEGIES = new Set([
+  "lying_back",
+  "lying_stomach",
+  "lying_right_side",
+  "lying_left_side",
+  "semi_reclining"
+]);
+
 export class Validator {
   constructor({ lightingEngine }) {
     this.lightingEngine = lightingEngine;
@@ -12,6 +20,10 @@ export class Validator {
     const warnings = [];
     const notices = [];
     const { pose, scene, camera, lens, lighting } = config;
+    const bedSelfiePose = Boolean(
+      pose?.placement === "bed"
+      && BED_SELFIE_ARM_STRATEGIES.has(pose.arm_strategy)
+    );
 
     if (!pose) {
       conflicts.push(this.createIssue("error", "pose_missing", "ما تم اختيار وضعية صالحة.", "اختر وضعية من القائمة."));
@@ -19,6 +31,26 @@ export class Validator {
 
     if (!scene) {
       conflicts.push(this.createIssue("error", "scene_missing", "ما فيه مرجع مكان صالح للاختيارات الحالية.", "غيّر الوضعية أو الاتجاه، أو اختر مرجعًا يدويًا."));
+    }
+
+    if (bedSelfiePose && camera?.type !== "front") {
+      conflicts.push(this.createIssue(
+        "error",
+        "bed_selfie_camera_conflict",
+        "وضعيات سيلفي السرير المعتمدة تحتاج الكاميرا الأمامية الفعلية؛ الكاميرا الخلفية تغيّر الحدث إلى تصوير خارجي.",
+        "استخدم الكاميرا الأمامية وعدسة السيلفي الأصلية.",
+        { field: "cameraType", value: "front", secondary: { field: "lensType", value: "front_wide" } }
+      ));
+    }
+
+    if (bedSelfiePose && config.roomMode === "EDIT") {
+      conflicts.push(this.createIssue(
+        "error",
+        "bed_selfie_requires_generate",
+        "سيلفي السرير يغيّر موضع الكاميرا إلى نقطة داخل مدى الذراع، لذلك لا يمكن تنفيذه كـ EDIT على لوحة IMAGE B ثابتة.",
+        "استخدم GENERATE حتى تبقى الغرفة نفسها لكن من موضع كاميرا سيلفي قابل للوصول.",
+        { field: "roomMode", value: "GENERATE" }
+      ));
     }
 
     if (pose && scene) {
@@ -80,7 +112,7 @@ export class Validator {
         ));
       }
 
-      if (config.roomMode === "EDIT" && config.cameraAngle !== scene.base_camera_angle) {
+      if (!bedSelfiePose && config.roomMode === "EDIT" && config.cameraAngle !== scene.base_camera_angle) {
         conflicts.push(this.createIssue(
           "error",
           "edit_mode_angle",
@@ -90,7 +122,7 @@ export class Validator {
         ));
       }
 
-      if (config.roomMode === "EDIT" && config.cameraDistance !== scene.base_camera_distance) {
+      if (!bedSelfiePose && config.roomMode === "EDIT" && config.cameraDistance !== scene.base_camera_distance) {
         conflicts.push(this.createIssue(
           "error",
           "edit_mode_distance",
