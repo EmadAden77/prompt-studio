@@ -8,6 +8,14 @@ export const QUAD_POSE_IDS = Object.freeze([
   "mirror_selfie"
 ]);
 
+export const BED_REALISM_POSE_IDS = Object.freeze([
+  "lying_back",
+  "lying_stomach",
+  "lying_right_side",
+  "lying_left_side",
+  "semi_reclining"
+]);
+
 export const QUAD_EXPRESSION_IDS = Object.freeze([
   "neutral",
   "smile",
@@ -26,7 +34,7 @@ export const BED_SPATIAL_MAP = Object.freeze({
   vanity_side: "LEFT",
   window_daylight: "daylight access is supported by the wider room references; exact body-relative window side is not asserted by the mapper unless visible in the selected IMAGE B",
   pillows: "pillows remain in the head-of-bed zone exactly as recorded by the selected reference",
-  image_b_camera_rule: "the selected scene metadata defines the reference camera region; generated selfies may move only to a physically reachable new camera point in the same room",
+  image_b_camera_rule: "IMAGE B is scene-geometry authority rather than an immutable external camera plate for true handheld selfies. The virtual camera moves only to the physically reachable phone endpoint while the room itself remains fixed.",
   ambiguity_rule: "never invent a cropped or unverified room element; omit it from the prompt unless the selected reference or scene metadata supports it"
 });
 
@@ -39,17 +47,28 @@ export const QUAD_POSE_ENGINEERING = Object.freeze({
     cameraAngle: "high_angle",
     cameraDistance: "medium",
     preferredSceneId: "bed_front_overview",
-    orientation: "His back is down on the mattress, head in the pillow zone, face directed upward toward the phone.",
-    cameraFine: "Place the phone above the face at a steep top-down angle of approximately 75–85 degrees, about 60–80 cm from the face, with the optical axis centered toward the eyes.",
-    armFine: "His RIGHT hand holds the phone above the face within normal shoulder reach. The LEFT arm rests naturally on the mattress or torso. If showing the full holding arm or phone would distort anatomy, keep the phone, hand, and most of that arm outside frame while preserving a physically believable shoulder and elbow path.",
-    physicsFine: "Distribute weight across the back, shoulder blades, pelvis, and posterior legs. Compress the pillow locally under the head by a shallow believable amount and let contact-side hair spread and flatten naturally.",
+    orientation: "His back is down on the mattress, head supported by the pillow zone, and the face turns only as far as the neck and upper torso can support naturally.",
+    cameraFine: "Place the front camera slightly above the face at a physically reachable arm endpoint, approximately 45–75 cm from the face, with about 15–35 degrees of downward pitch and no more than about 20 degrees of yaw to either side.",
+    armFine: "Resolve the selfie arm deterministically from the reachable shoulder arc; use the RIGHT hand when both sides are equally feasible. The other arm rests naturally on the mattress or torso. Keep the phone and most of the forearm outside frame if showing them would create distortion.",
+    physicsFine: "Distribute weight across the back of the head or pillow-supported head, upper back, shoulder blades, pelvis, and posterior thighs as the leg position requires. Mattress and pillow compression must follow those load points.",
+    bedRealismProfile: {
+      supportSide: "back",
+      loadPoints: ["occiput", "upper_back", "shoulder_blades", "pelvis"],
+      preferredSelfieArm: "AUTO",
+      resolvedSelfieArm: "RIGHT",
+      cameraDistanceCm: [45, 75],
+      cameraPitchDeg: [15, 35],
+      cameraYawDeg: [-20, 20],
+      headSupport: "pillow",
+      requiredSurface: "bed"
+    },
     selfieViewpoint: {
       holdingHand: "RIGHT",
       otherHand: "LEFT",
-      distance: "60–80 cm",
-      angle: "steep top-down 75–85 degrees directly above the face",
-      tilt: "minimal handheld roll only",
-      armVisual: "The RIGHT selfie arm follows a believable upward reach from the shoulder; crop most of it if edge stretching would become anatomically distracting."
+      distance: "45–75 cm",
+      angle: "slightly above the face with approximately 15–35 degrees of downward pitch and yaw kept within about 20 degrees either side",
+      tilt: "small casual handheld roll only",
+      armVisual: "The RIGHT selfie arm follows a continuous reachable chain from shoulder to elbow to wrist; crop most of it if edge stretching would become anatomically distracting."
     }
   },
   lying_stomach: {
@@ -60,17 +79,28 @@ export const QUAD_POSE_ENGINEERING = Object.freeze({
     cameraAngle: "eye_level",
     cameraDistance: "close",
     preferredSceneId: "bed_right_nightstand",
-    orientation: "His torso faces the mattress while his head turns comfortably toward the phone and the lamp-side room context.",
-    cameraFine: "Keep the front camera very low near mattress level, approximately 30–40 cm from the face, looking slightly upward by about 15–20 degrees without dropping below the real mattress boundary.",
-    armFine: "His RIGHT hand holds the phone close to the face while the LEFT elbow remains visibly supported by the mattress. The supporting elbow must carry real load and neither forearm may intersect the chest or bedding unnaturally.",
-    physicsFine: "Load the chest, abdomen, pelvis, and thighs into the mattress with a natural lumbar curve. Any raised upper torso must be explained by planted elbows and visible mattress compression.",
+    orientation: "His chest and abdomen face the mattress while the neck turns only within a plausible range toward the reachable phone position.",
+    cameraFine: "Place the front camera at a reachable forward or diagonal endpoint of the selfie arm, typically 45–70 cm from the face, near or slightly above eye level, with roughly 5–25 degrees of downward pitch and 10–35 degrees of yaw as anatomy allows.",
+    armFine: "Use the arm that can extend forward or diagonally without intersecting the mattress, torso, head, or pillow. A supporting elbow may bear part of the upper-body load only if it remains visibly planted and anatomically comfortable.",
+    physicsFine: "Load the chest, abdomen, pelvis, and thighs into the mattress. Preserve a plausible neck turn, natural lumbar curve, and local mattress compression under the real load points.",
+    bedRealismProfile: {
+      supportSide: "front",
+      loadPoints: ["chest", "abdomen", "pelvis", "thighs"],
+      preferredSelfieArm: "AUTO",
+      resolvedSelfieArm: "RIGHT",
+      cameraDistanceCm: [45, 70],
+      cameraPitchDeg: [5, 25],
+      cameraYawDeg: [10, 35],
+      headSupport: "optional_pillow",
+      requiredSurface: "bed"
+    },
     selfieViewpoint: {
       holdingHand: "RIGHT",
       otherHand: "LEFT",
-      distance: "30–40 cm",
-      angle: "very low near mattress level, looking upward approximately 15–20 degrees toward the face",
+      distance: "45–70 cm",
+      angle: "a reachable forward or diagonal front-camera position near or slightly above eye level, with about 5–25 degrees downward pitch and 10–35 degrees yaw",
       tilt: "small natural handheld roll only",
-      armVisual: "The RIGHT holding forearm approaches the camera from a reachable low position; keep most of the phone and hand behind the camera plane."
+      armVisual: "The RIGHT holding arm follows a continuous shoulder-to-elbow-to-wrist path toward the camera; never hide an impossible elbow inside the mattress or torso."
     }
   },
   lying_right_side: {
@@ -82,16 +112,27 @@ export const QUAD_POSE_ENGINEERING = Object.freeze({
     cameraDistance: "close",
     preferredSceneId: "bed_right_nightstand",
     orientation: "His RIGHT shoulder, RIGHT ribcage, and RIGHT hip are down; he is oriented toward the real LAMP SIDE from the spatial map.",
-    cameraFine: "Use an intimate close selfie with a clockwise Dutch tilt of approximately 25–35 degrees, about 35–45 cm from the face, while keeping the optical axis reachable from the upper arm.",
-    armFine: "His upper LEFT hand is the selfie hand and the LEFT elbow stays supported on the mattress. His lower RIGHT arm rests forward near the torso or partly under the pillow and must never penetrate the ribcage or disappear through the body.",
-    physicsFine: "Carry weight through the RIGHT shoulder, RIGHT ribcage, RIGHT hip, head, and right-side legs. Compress the pillow under the head and right-side hair and create local mattress compression under the shoulder and hip.",
+    cameraFine: "Use the upper LEFT arm as the selfie arm. Place the front camera at its physically reachable endpoint, approximately 45–70 cm from the face, with about 5–20 degrees of downward pitch and 10–30 degrees of yaw toward the face.",
+    armFine: "His upper LEFT hand is the selfie hand and the LEFT elbow remains anatomically plausible relative to the mattress. His lower RIGHT arm rests forward near the torso or partly under the pillow and never penetrates the ribcage.",
+    physicsFine: "Carry weight through the RIGHT shoulder, RIGHT ribcage, RIGHT hip, and right-side thigh as supported. Preserve realistic pillow compression, lower-shoulder compression, neck angle, and local mattress deformation.",
+    bedRealismProfile: {
+      supportSide: "right",
+      loadPoints: ["right_shoulder", "right_ribcage", "right_hip", "right_thigh"],
+      preferredSelfieArm: "LEFT",
+      resolvedSelfieArm: "LEFT",
+      cameraDistanceCm: [45, 70],
+      cameraPitchDeg: [5, 20],
+      cameraYawDeg: [10, 30],
+      headSupport: "pillow",
+      requiredSurface: "bed"
+    },
     selfieViewpoint: {
       holdingHand: "LEFT",
       otherHand: "RIGHT",
-      distance: "35–45 cm",
-      angle: "eye-level intimate side-lying selfie",
-      tilt: "clockwise Dutch tilt of 25–35 degrees",
-      armVisual: "The upper LEFT selfie arm visibly originates at the LEFT shoulder and extends toward a near frame corner with only mild near-field wide-angle stretch."
+      distance: "45–70 cm",
+      angle: "a reachable side-lying front-camera position with approximately 5–20 degrees of downward pitch and 10–30 degrees of yaw toward the face",
+      tilt: "small casual handheld roll only; do not force a Dutch angle",
+      armVisual: "The upper LEFT selfie arm visibly originates from the LEFT shoulder and extends toward the camera with only mild near-field wide-angle stretch."
     }
   },
   lying_left_side: {
@@ -103,16 +144,27 @@ export const QUAD_POSE_ENGINEERING = Object.freeze({
     cameraDistance: "close",
     preferredSceneId: "bed_left_vanity",
     orientation: "His LEFT shoulder, LEFT ribcage, and LEFT hip are down; he is oriented toward the real VANITY SIDE from the spatial map.",
-    cameraFine: "Use an intimate close selfie with the Dutch tilt mirrored relative to the right-side pose, approximately 25–35 degrees, about 30–40 cm from the face.",
-    armFine: "His upper RIGHT hand is the selfie hand with the RIGHT elbow supported on the mattress. His lower LEFT arm remains in front of the torso or partly under the pillow and must never penetrate the body.",
-    physicsFine: "Carry weight through the LEFT shoulder, LEFT ribcage, LEFT hip, head, and left-side legs. Compress the pillow and mattress locally on the loaded side and flatten only the contact-side hair.",
+    cameraFine: "Use the upper RIGHT arm as the selfie arm. Place the front camera at its physically reachable endpoint, approximately 45–70 cm from the face, with about 5–20 degrees of downward pitch and 10–30 degrees of yaw toward the face.",
+    armFine: "His upper RIGHT hand is the selfie hand and the RIGHT elbow remains anatomically plausible relative to the mattress. His lower LEFT arm stays in front of the torso or partly under the pillow and never penetrates the body.",
+    physicsFine: "Carry weight through the LEFT shoulder, LEFT ribcage, LEFT hip, and left-side thigh as supported. Preserve pillow compression, lower-shoulder compression, realistic neck angle, and local mattress deformation.",
+    bedRealismProfile: {
+      supportSide: "left",
+      loadPoints: ["left_shoulder", "left_ribcage", "left_hip", "left_thigh"],
+      preferredSelfieArm: "RIGHT",
+      resolvedSelfieArm: "RIGHT",
+      cameraDistanceCm: [45, 70],
+      cameraPitchDeg: [5, 20],
+      cameraYawDeg: [10, 30],
+      headSupport: "pillow",
+      requiredSurface: "bed"
+    },
     selfieViewpoint: {
       holdingHand: "RIGHT",
       otherHand: "LEFT",
-      distance: "30–40 cm",
-      angle: "eye-level intimate side-lying selfie",
-      tilt: "counterclockwise Dutch tilt of 25–35 degrees",
-      armVisual: "The upper RIGHT selfie arm visibly originates at the RIGHT shoulder and extends toward a near frame corner with only mild near-field wide-angle stretch."
+      distance: "45–70 cm",
+      angle: "a reachable side-lying front-camera position with approximately 5–20 degrees of downward pitch and 10–30 degrees of yaw toward the face",
+      tilt: "small casual handheld roll only; do not force a Dutch angle",
+      armVisual: "The upper RIGHT selfie arm visibly originates from the RIGHT shoulder and extends toward the camera with only mild near-field wide-angle stretch."
     }
   },
   semi_reclining: {
@@ -120,20 +172,31 @@ export const QUAD_POSE_ENGINEERING = Object.freeze({
     bodyDirection: "toward_lamp",
     cameraType: "front",
     lensType: "front_wide",
-    cameraAngle: "low_angle",
+    cameraAngle: "eye_level",
     cameraDistance: "close",
     preferredSceneId: "bed_right_nightstand",
-    orientation: "His pelvis stays on the mattress while the torso reclines against real pillows or the headboard at approximately 45–60 degrees.",
-    cameraFine: "Hold the phone around chest level and point it upward toward the face by approximately 30–45 degrees, within normal arm reach.",
-    armFine: "His RIGHT hand holds the phone at chest level; the shoulder remains seated naturally and the elbow may rest lightly on bedding if needed. Do not enlarge the arm or shoulder to manufacture the low angle.",
-    physicsFine: "Support the back broadly against the actual pillows or headboard, keep the pelvis and legs loaded by the mattress, and maintain a natural neck-to-spine line.",
+    orientation: "His pelvis stays on the mattress while the back and shoulders are partially supported by real pillows or the headboard; torso angle follows the actual support thickness rather than a fixed theatrical pose.",
+    cameraFine: "Use a reachable front-camera position typically 45–70 cm from the face, near or slightly above eye level, with about 5–25 degrees of downward pitch and 10–35 degrees of yaw as the supported torso angle allows.",
+    armFine: "Use the RIGHT hand when both arms are equally feasible. Keep the shoulder, elbow, forearm, wrist, and unseen phone on one continuous reachable chain; the other arm rests naturally on bedding or torso.",
+    physicsFine: "Load the pelvis, lower back, upper back, and shoulders according to the real pillow or headboard support. Keep the head, neck, shoulder line, and upper thoracic spine physically connected.",
+    bedRealismProfile: {
+      supportSide: "reclined_back",
+      loadPoints: ["pelvis", "lower_back", "upper_back", "shoulders"],
+      preferredSelfieArm: "AUTO",
+      resolvedSelfieArm: "RIGHT",
+      cameraDistanceCm: [45, 70],
+      cameraPitchDeg: [5, 25],
+      cameraYawDeg: [10, 35],
+      headSupport: "pillows_or_headboard",
+      requiredSurface: "bed"
+    },
     selfieViewpoint: {
       holdingHand: "RIGHT",
       otherHand: "LEFT",
-      distance: "35–50 cm",
-      angle: "from chest level pointing upward approximately 30–45 degrees toward the face",
+      distance: "45–70 cm",
+      angle: "a reachable front-camera position near or slightly above eye level, with about 5–25 degrees downward pitch and 10–35 degrees yaw",
       tilt: "small natural handheld roll only",
-      armVisual: "The RIGHT holding arm rises from chest level within normal reach; do not enlarge the shoulder or forearm to force the low angle."
+      armVisual: "The RIGHT selfie arm stays within normal reach and preserves a continuous shoulder-to-wrist path without enlarging the shoulder or forearm."
     }
   },
   sitting_bed_edge: {
