@@ -90,6 +90,16 @@ export class Validator {
         ));
       }
 
+      if (config.roomMode === "EDIT" && config.cameraDistance !== scene.base_camera_distance) {
+        conflicts.push(this.createIssue(
+          "error",
+          "edit_mode_distance",
+          "وضع EDIT يحافظ على القص والمنظور الأصليين، لذلك مسافة التصوير لازم تطابق اللوحة المرجعية.",
+          "استخدم مسافة المرجع الأصلية أو حوّل إلى GENERATE.",
+          { field: "cameraDistance", value: scene.base_camera_distance }
+        ));
+      }
+
       const missingLightFeatures = this.lightingEngine.getMissingFeatures(lighting, scene);
       if (missingLightFeatures.length) {
         conflicts.push(this.createIssue(
