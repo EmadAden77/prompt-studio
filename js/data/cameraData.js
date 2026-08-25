@@ -10,7 +10,7 @@ export const CAMERA_SPECS = Object.freeze({
     sensor: "typical small front-camera phone sensor",
     dof: "natural phone depth of field with no synthetic portrait blur",
     distortion: "mild near-field wide-angle perspective, strongest only at frame edges",
-    distance: "40–70 cm from the face within natural arm reach",
+    distance: "typically 45–70 cm from the face within natural arm reach; 70–90 cm only when the solved shoulder, elbow, forearm, and wrist geometry physically justify an extended-arm reach",
     selfie: true
   },
   rear: {
@@ -54,13 +54,13 @@ export const LENSES = Object.freeze([
 ]);
 
 export const SELFIE_ARM_STRATEGIES = Object.freeze({
-  standing: "The holding shoulder advances slightly and the elbow remains gently bent; the phone stays at face level or slightly above within 40–70 cm.",
+  standing: "The holding shoulder advances slightly and the elbow remains gently bent; the phone stays at face level or slightly above within natural reach.",
   sitting: "The holding arm extends within natural reach from a supported seated torso, with the shoulder and elbow aligned to the phone position.",
-  lying_back: "The phone is held above the face within reachable distance; the optical axis points toward the eyes and the shoulder remains seated in its socket.",
-  lying_stomach: "One elbow visibly supports the upper body on the mattress while the opposite hand holds the phone without overextending the shoulder.",
-  lying_right_side: "The upper LEFT hand holds the phone while the left elbow rests on the mattress; the lower right arm remains anatomically separate from the torso.",
-  lying_left_side: "The upper RIGHT hand holds the phone while the right elbow rests on the mattress; the lower left arm remains anatomically separate from the torso.",
-  semi_reclining: "The holding arm extends from a supported torso; the elbow may rest lightly on bedding while the phone remains at face level.",
+  lying_back: "The phone is held above the face within reachable distance; the optical axis points toward the face and the shoulder remains seated in its socket.",
+  lying_stomach: "Use the arm that can extend forward or diagonally without intersecting the mattress, torso, head, or pillow; any supporting elbow must visibly carry real load.",
+  lying_right_side: "The upper LEFT hand is preferred as the selfie hand; the lower right arm remains anatomically separate from the torso and bedding.",
+  lying_left_side: "The upper RIGHT hand is preferred as the selfie hand; the lower left arm remains anatomically separate from the torso and bedding.",
+  semi_reclining: "The holding arm extends from the supported torso through one continuous shoulder-to-wrist chain, with the phone remaining within natural reach.",
   mirror: "The phone is visible in the mirror at chest or face level, with correct reflected handedness, grip, occlusion, and gaze direction.",
   rear_camera: "No arm reaches toward the lens. Both arms rest naturally or interact with a real support because the rear-camera photograph is made by another person or a tripod."
 });
