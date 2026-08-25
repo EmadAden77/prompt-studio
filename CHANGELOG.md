@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.9 — 2026-08-26
+
+### Changed
+
+- Restored the full lighting catalog in the Smart Quad selector instead of hiding room-incompatible choices from the user.
+- Lighting choices are no longer silently replaced by scene filtering; the user-selected preset remains the authoritative lighting request, while the validator may still flag a source that the chosen reference cannot support.
+- Added explicit `CPR-01 — SELECTED LIGHTING AUTHORITY` to every generated lighting section.
+- The selected lighting preset is now passed literally into the final prompt and is the only authoritative lighting-source description; conflicting lighting text is ignored.
+- Lighting changes are explicitly forbidden from moving, resizing, recoloring, cleaning, replacing, redesigning, adding, or removing furniture, landmarks, fixtures, clutter, walls, floors, ceilings, bedding, mirrors, curtains, windows, or materials.
+- Added stricter real-phone photometric behavior for shadows, catchlights, reflections, mixed color temperatures, daylight patches, night darkness, ISO/chroma noise, HDR, white balance, and one unified exposure/tone-mapping pipeline.
+- Corrected the strict phone-screen-only light distance to the same physically reachable 45–70 cm front-selfie distance used by the camera geometry.
+
 ## v1.8 — 2026-08-26
 
 ### Changed
