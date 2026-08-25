@@ -131,7 +131,7 @@ export const QUAD_POSE_ENGINEERING = Object.freeze({
       otherHand: "RIGHT",
       distance: "45–70 cm",
       angle: "a reachable side-lying front-camera position with approximately 5–20 degrees of downward pitch and 10–30 degrees of yaw toward the face",
-      tilt: "small casual handheld roll only; do not force a Dutch angle",
+      tilt: "small casual handheld roll only; do not impose a fixed roll angle",
       armVisual: "The upper LEFT selfie arm visibly originates from the LEFT shoulder and extends toward the camera with only mild near-field wide-angle stretch."
     }
   },
@@ -163,7 +163,7 @@ export const QUAD_POSE_ENGINEERING = Object.freeze({
       otherHand: "LEFT",
       distance: "45–70 cm",
       angle: "a reachable side-lying front-camera position with approximately 5–20 degrees of downward pitch and 10–30 degrees of yaw toward the face",
-      tilt: "small casual handheld roll only; do not force a Dutch angle",
+      tilt: "small casual handheld roll only; do not impose a fixed roll angle",
       armVisual: "The upper RIGHT selfie arm visibly originates from the RIGHT shoulder and extends toward the camera with only mild near-field wide-angle stretch."
     }
   },
