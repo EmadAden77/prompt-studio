@@ -23,5 +23,7 @@ jobs:
         run: node tests/run-tests.mjs
       - name: Run template preset tests
         run: node tests/templates.mjs
+      - name: Run expanded clothing tests
+        run: node tests/clothing-extra.mjs
       - name: Run library coverage report
         run: node tests/library-coverage.mjs
