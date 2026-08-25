@@ -68,6 +68,11 @@ export class PoseEngine {
       clothing: this.buildClothingLock(clothing)
     };
 
+    if (pose.id.startsWith("lying")) {
+      sections.grounding = this._buildGroundingSection(pose);
+      sections.posePhysics = `${sections.posePhysics}\n\n${sections.grounding}`;
+    }
+
     if (this.trueLateralEnabled && this.isSideLying(pose.id)) {
       sections.trueLateral = this.buildTrueLateralEnforcement(pose);
     }
@@ -81,6 +86,29 @@ export class PoseEngine {
 
   buildPosePhysics(pose, autoEngineering = null) {
     return `POSE & PHYSICS\n${this.buildPhysicsText(pose)}\n${autoEngineering?.physicsFine ?? ""}\nBody placement must be solved before camera placement. Preserve natural spinal alignment, gravity, local pressure, mattress/pillow deformation, fabric displacement, and contact shadows. No body part may intersect the torso, mattress, pillow, headboard, or nearby furniture.`.trim();
+  }
+
+  _buildGroundingSection(pose) {
+    const side = pose.id === "lying_right_side" ? "right" :
+      pose.id === "lying_left_side" ? "left" : null;
+
+    return `LYING GROUNDING (mandatory):
+HIGHEST PRIORITY FOR THIS RENDER — OVERRIDES COMPOSITION.
+- The subject is LYING on the mattress, never sitting, leaning, or upright in front of the bed.
+- Body plane lies ON the mattress, torso foreshortened away from the camera; upright torso with bed as backdrop is FORBIDDEN.
+- Head sinks 4–6 cm into the pillow; pillow fabric bulges and wrinkles around the ${side ? side + " side of the" : ""} head; soft contact shadow between head and pillow.
+- Shoulders/back/hips depress the mattress; sheets and blanket conform to the body with load-driven wrinkles radiating from contact lines.
+- Soft occlusion shadows at every support point; no floating gap under the body.
+- Gravity: hair falls toward the bedding; support-side cheek and jaw show slight compression; clothing folds fall toward the bed surface; blanket drapes over the lower body.
+- Camera above the lying face: pillow/headboard surround the head, bed surface extends along the torso; the bed SURROUNDS the body, never stands behind an upright torso. Wall, AC, or room may appear only at the extreme top edge and remain heavily foreshortened.
+- FORBIDDEN: upright torso with bed as backdrop; head hovering in front of an untouched pillow; missing compression; missing contact shadows; floating body; sitting-on-edge look; third-person room viewpoint.
+
+FINAL GROUNDING CHECK (must pass before output):
+- Head sinks into a deformed pillow ✔
+- Body plane parallel to mattress, torso foreshortened ✔
+- Contact shadows at every support point ✔
+- Bed surrounds the body in the background ✔
+If any fails → re-render from scratch.`;
   }
 
   buildArmStrategy(pose, autoEngineering = null) {

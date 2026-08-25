@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.8 — 2026-08-26
+
+### Changed
+
+- Added mandatory `LYING GROUNDING` for every pose whose ID starts with `lying`.
+- Grounding now requires a body plane on the mattress, 4–6 cm pillow compression, mattress load deformation, contact shadows, gravity cues, and bed-surrounding camera geometry.
+- Added forbidden upright/backdrop poses and a final re-render grounding check before output.
+
 ## v1.7 — 2026-08-26
 
 ### Changed
