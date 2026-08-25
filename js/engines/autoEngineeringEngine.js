@@ -1,4 +1,4 @@
-import { BED_SPATIAL_MAP, QUAD_DEFAULTS, QUAD_POSE_ENGINEERING } from "../data/quadModeData.js";
+import { BED_SPATIAL_MAP, QUAD_POSE_ENGINEERING } from "../data/quadModeData.js";
 
 export class AutoEngineeringEngine {
   constructor({ sceneEngine, lightingEngine }) {
@@ -64,7 +64,6 @@ export class AutoEngineeringEngine {
       ...mapping,
       poseId: pose.id,
       requires: pose.requires ?? [],
-      clothingId: QUAD_DEFAULTS.clothingId,
       spatialMap: BED_SPATIAL_MAP
     };
 
