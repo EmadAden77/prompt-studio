@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="Smart Quad Mode لبناء أوامر سيلفي سرير واقعية من خمسة اختيارات فقط.">
+  <meta name="description" content="Smart Quad Mode لبناء أوامر سيلفي واقعية عبر قوالب جاهزة أو تخصيص يدوي بخمس اختيارات.">
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#0d1117">
   <title>AI Selfie Prompt Studio — Smart Quad</title>
@@ -36,11 +36,11 @@
   <main id="workspace" class="page-shell">
     <section class="intro" aria-labelledby="pageTitle">
       <div>
-        <p class="eyebrow">SMART QUAD MODE · v1.10</p>
-        <h1 id="pageTitle">خمس اختيارات، والوضعية حسب مرجع الغرفة</h1>
-        <p>اختر صورة مرجع الغرفة والشعر والإضاءة والتعبير والملابس. المحرّك يقترح الوضعية المتوافقة ثم يحدد جهة الجسم، الكاميرا، الذراع والفيزياء.</p>
+        <p class="eyebrow">SMART QUAD MODE · v1.11</p>
+        <h1 id="pageTitle">قالب جاهز أو تخصيص يدوي حسب مرجع الغرفة</h1>
+        <p>اختر مرجع الغرفة ثم استخدم قالبًا متوافقًا معه، أو عدّل الوضعية والشعر والإضاءة والتعبير والملابس بنفسك. الأمر النهائي يرسل وضعية واحدة فقط ولا يخلط بين القوالب.</p>
       </div>
-      <span class="context-badge" id="modeHint">5 اختيارات — الوضعية تلقائية</span>
+      <span class="context-badge" id="modeHint">قالب جاهز أو 5 اختيارات</span>
     </section>
 
     <div class="workspace-grid">
@@ -90,6 +90,13 @@
           </div>
           <form id="optionsForm" class="form-grid" novalidate>
             <div class="field field--wide">
+              <label for="templateSelect">قالب جاهز (اختياري)</label>
+              <select id="templateSelect" name="template" disabled>
+                <option value="custom">اختر مرجع الغرفة أولًا</option>
+              </select>
+              <small>تظهر فقط القوالب المتوافقة فعليًا مع IMAGE B الحالي. القالب يضبط اختيارًا واحدًا متماسكًا للوضعية والشعر والإضاءة والتعبير والملابس والأبعاد، ويمكنك تعديل أي خانة بعده.</small>
+            </div>
+            <div class="field field--wide">
               <label for="poseSelect">1. الوضعية المناسبة</label>
               <select id="poseSelect" name="pose"></select>
               <small>يُقترح أولًا حسب المرجع الذي اخترته، وتظهر هنا الوضعيات المتوافقة فقط.</small>
@@ -130,7 +137,7 @@
               <h3 id="sceneName">بانتظار الهندسة</h3>
               <p id="sceneFilename" class="scene-card__filename">—</p>
               <ul id="sceneReasons" class="reason-list"></ul>
-              <p class="scene-card__automatic-note">الوضعيات في القائمة متوافقة مع هذا المرجع.</p>
+              <p class="scene-card__automatic-note">الوضعيات والقوالب في القوائم متوافقة مع هذا المرجع.</p>
             </div>
           </div>
         </section>
@@ -177,7 +184,7 @@
   </main>
 
   <footer class="footer">
-    <p>Smart Quad Mode v1.10 <span>•</span> واقعية مبنية على الفيزياء</p>
+    <p>Smart Quad Mode v1.11 <span>•</span> واقعية مبنية على الفيزياء</p>
     <p>لا تزوير EXIF، لا إزالة C2PA، ولا محاكاة PRNU.</p>
   </footer>
 
@@ -186,7 +193,7 @@
       <div><p class="eyebrow">ROOM REFERENCE</p><h2>اختر صورة مرجع الغرفة</h2></div>
       <button class="icon-button" data-close-dialog="sceneDialog" type="button" aria-label="إغلاق">×</button>
     </div>
-    <p class="modal__intro">اختر المرجع أولًا؛ سيضبط التطبيق الوضعية المقترحة ويعرض لك الوضعيات المتوافقة فقط.</p>
+    <p class="modal__intro">اختر المرجع أولًا؛ سيضبط التطبيق الوضعية المقترحة ويعرض لك الوضعيات والقوالب المتوافقة فقط.</p>
     <div id="scenePickerGrid" class="scene-picker-grid"></div>
   </dialog>
 
@@ -197,13 +204,14 @@
     </div>
     <ol class="help-steps">
       <li><strong>اختر مرجع الغرفة وارفع IMAGE A</strong><span>اختر المرجع من المكتبة أولًا؛ IMAGE A للهوية فقط.</span></li>
-      <li><strong>دع التطبيق يقترح الوضعية</strong><span>يضبط وضعية مناسبة ويعرض لك الوضعيات المتوافقة مع المرجع فقط.</span></li>
-      <li><strong>اختر الشعر والإضاءة والتعبير والملابس</strong><span>الهندسة الباقية تُبنى تلقائيًا من المرجع والوضعية.</span></li>
+      <li><strong>استخدم قالبًا أو خصص يدويًا</strong><span>القوالب لا تظهر إلا عندما تكون الوضعية والإضاءة قابلة للتنفيذ مع المرجع الحالي.</span></li>
+      <li><strong>عدّل أي اختيار بعد القالب</strong><span>الوضعية والشعر والإضاءة والتعبير والملابس تبقى قابلة للتغيير، ويستخدم الأمر النهائي اختيارًا واحدًا فقط من كل نوع.</span></li>
       <li><strong>راجع الفحص ثم انسخ</strong><span>لا تحتاج إلى رفع IMAGE B؛ المرجع المختار مدمج في التطبيق.</span></li>
     </ol>
   </dialog>
 
   <div id="toastRegion" class="toast-region" aria-live="polite" aria-atomic="true"></div>
   <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/templates.js"></script>
 </body>
 </html>
