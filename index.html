@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="أداة احترافية لبناء أوامر صور سيلفي واقعية ومتماسكة لـ ChatGPT Image Generation.">
+  <meta name="description" content="Smart Quad Mode لبناء أوامر سيلفي سرير واقعية من أربعة اختيارات فقط.">
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#0d1117">
-  <title>AI Selfie Prompt Studio</title>
+  <title>AI Selfie Prompt Studio — Smart Quad</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,21 +23,12 @@
     <div class="topbar__inner">
       <a class="brand" href="#" aria-label="AI Selfie Prompt Studio — الرئيسية">
         <span class="brand__mark" aria-hidden="true">S</span>
-        <span>
-          <strong>AI Selfie</strong>
-          <small>Prompt Studio</small>
-        </span>
+        <span><strong>AI Selfie</strong><small>Smart Quad Studio</small></span>
       </a>
-
       <div class="topbar__actions">
-        <span class="save-status" id="saveStatus" aria-live="polite">
-          <span class="save-status__dot"></span>
-          محفوظ محليًا
-        </span>
+        <span class="save-status" id="saveStatus" aria-live="polite"><span class="save-status__dot"></span> محفوظ محليًا</span>
         <button class="icon-button" id="helpBtn" type="button" aria-label="فتح دليل الاستخدام" title="دليل الاستخدام">؟</button>
-        <button class="icon-button" id="themeBtn" type="button" aria-label="تبديل المظهر" title="تبديل المظهر">
-          <span id="themeIcon" aria-hidden="true">◐</span>
-        </button>
+        <button class="icon-button" id="themeBtn" type="button" aria-label="تبديل المظهر" title="تبديل المظهر"><span id="themeIcon" aria-hidden="true">◐</span></button>
       </div>
     </div>
   </header>
@@ -45,71 +36,48 @@
   <main id="workspace" class="page-shell">
     <section class="intro" aria-labelledby="pageTitle">
       <div>
-        <p class="eyebrow">PHYSICS-FIRST PROMPT ENGINEERING</p>
-        <h1 id="pageTitle">ابنِ صورة ممكنة قبل ما تكون جميلة</h1>
-        <p>اربط الهوية بالمكان، ثم خلّ المحركات تضبط الوضعية والكاميرا والإضاءة داخل حدث تصوير واحد.</p>
+        <p class="eyebrow">SMART QUAD MODE</p>
+        <h1 id="pageTitle">أربع اختيارات فقط، والباقي هندسة تلقائية</h1>
+        <p>اختر الوضعية والشعر والإضاءة والتعبير. المحرّك يحدد جهة الجسم، الكاميرا، الذراع، الفيزياء ومرجع الغرفة تلقائيًا.</p>
       </div>
-      <div class="mode-switch" role="group" aria-label="طريقة اختيار المرجع">
-        <button id="smartModeBtn" type="button" class="mode-switch__button is-active" aria-pressed="true">
-          <span aria-hidden="true">✦</span> الوضع الذكي
-        </button>
-        <button id="manualModeBtn" type="button" class="mode-switch__button" aria-pressed="false">
-          الوضع اليدوي
-        </button>
-      </div>
+      <span class="context-badge" id="modeHint">4 اختيارات فقط — الباقي تلقائي</span>
     </section>
 
     <div class="workspace-grid">
       <div class="configuration-column">
         <section class="panel" aria-labelledby="referencesTitle">
           <div class="panel__header">
-            <div>
-              <span class="step-number">01</span>
-              <h2 id="referencesTitle">الصور المرجعية</h2>
-            </div>
+            <div><span class="step-number">01</span><h2 id="referencesTitle">الصور المرجعية</h2></div>
             <span class="privacy-badge">تبقى على جهازك</span>
           </div>
-
           <div class="upload-grid">
             <article class="upload-card" data-upload="imageA">
               <div class="upload-card__heading">
-                <div>
-                  <strong>IMAGE A</strong>
-                  <span>الهوية فقط</span>
-                </div>
-                <button class="upload-remove" id="imageARemove" type="button" hidden aria-label="حذف صورة الهوية">حذف</button>
+                <div><strong>IMAGE A</strong><span>الهوية فقط</span></div>
+                <button class="upload-remove" id="imageARemove" type="button" hidden>حذف</button>
               </div>
               <label class="dropzone" id="imageADropzone" for="imageAInput" tabindex="0">
                 <input id="imageAInput" type="file" accept="image/jpeg,image/png,image/webp,image/avif" hidden>
                 <span class="dropzone__icon" aria-hidden="true">A</span>
-                <span class="dropzone__empty">
-                  <strong>اسحب الصورة أو اضغط للرفع</strong>
-                  <small>JPG, PNG, WEBP أو AVIF — حتى 12MB</small>
-                </span>
+                <span class="dropzone__empty"><strong>اسحب الصورة أو اضغط للرفع</strong><small>JPG, PNG, WEBP أو AVIF — حتى 12MB</small></span>
                 <img id="imageAPreview" alt="معاينة صورة الهوية" hidden>
               </label>
-              <p class="upload-card__hint">الوجه، البشرة، الشعر واللحية — بدون نقل التعبير أو الملابس.</p>
+              <p class="upload-card__hint">الوجه والبشرة والشعر واللحية فقط، بدون نقل الوضعية أو التعبير أو الملابس.</p>
               <p class="file-meta" id="imageAMeta" aria-live="polite"></p>
             </article>
 
             <article class="upload-card" data-upload="imageB">
               <div class="upload-card__heading">
-                <div>
-                  <strong>IMAGE B</strong>
-                  <span>المكان فقط</span>
-                </div>
-                <button class="upload-remove" id="imageBRemove" type="button" hidden aria-label="حذف صورة المكان">حذف</button>
+                <div><strong>IMAGE B</strong><span>الغرفة والسرير فقط</span></div>
+                <button class="upload-remove" id="imageBRemove" type="button" hidden>حذف</button>
               </div>
               <label class="dropzone" id="imageBDropzone" for="imageBInput" tabindex="0">
                 <input id="imageBInput" type="file" accept="image/jpeg,image/png,image/webp,image/avif" hidden>
                 <span class="dropzone__icon" aria-hidden="true">B</span>
-                <span class="dropzone__empty">
-                  <strong>اسحب الصورة أو اضغط للرفع</strong>
-                  <small>طابقها مع المرجع المقترح أدناه</small>
-                </span>
-                <img id="imageBPreview" alt="معاينة صورة المكان" hidden>
+                <span class="dropzone__empty"><strong>اسحب الصورة أو اضغط للرفع</strong><small>طابقها مع المرجع التلقائي أدناه</small></span>
+                <img id="imageBPreview" alt="معاينة صورة الغرفة" hidden>
               </label>
-              <p class="upload-card__hint">هندسة الغرفة، الأثاث، الخامات، الفوضى والمنظور.</p>
+              <p class="upload-card__hint">السرير والأثاث والخامات والفوضى والعلاقات المكانية فقط.</p>
               <p class="file-meta" id="imageBMeta" aria-live="polite"></p>
             </article>
           </div>
@@ -117,181 +85,109 @@
 
         <section class="panel" aria-labelledby="optionsTitle">
           <div class="panel__header">
-            <div>
-              <span class="step-number">02</span>
-              <h2 id="optionsTitle">بناء لقطة التصوير</h2>
-            </div>
-            <span class="context-badge" id="modeHint">اختيار المرجع تلقائي</span>
+            <div><span class="step-number">02</span><h2 id="optionsTitle">Smart Quad</h2></div>
+            <span class="context-badge">Deterministic</span>
           </div>
-
           <form id="optionsForm" class="form-grid" novalidate>
             <div class="field field--wide">
-              <label for="poseSelect">الوضعية</label>
+              <label for="poseSelect">1. الوضعية</label>
               <select id="poseSelect" name="pose"></select>
-              <small id="poseHint">يتم ضبط نقاط التلامس واستراتيجية الذراع تلقائيًا.</small>
+              <small>تحدد تلقائيًا الجهة، سطح الارتكاز، الذراع، زاوية الهاتف والمسافة.</small>
             </div>
-
             <div class="field">
-              <label for="directionSelect">اتجاه الجسم</label>
-              <select id="directionSelect" name="direction"></select>
-            </div>
-
-            <div class="field">
-              <label for="roomModeSelect">وضع الغرفة</label>
-              <select id="roomModeSelect" name="roomMode">
-                <option value="EDIT">EDIT — تعديل موضعي</option>
-                <option value="GENERATE">GENERATE — زاوية جديدة</option>
-              </select>
-            </div>
-
-            <div class="field">
-              <label for="angleSelect">زاوية الكاميرا</label>
-              <select id="angleSelect" name="angle"></select>
-            </div>
-
-            <div class="field">
-              <label for="distanceSelect">حجم المشهد</label>
-              <select id="distanceSelect" name="distance"></select>
-            </div>
-
-            <div class="field">
-              <label for="cameraSelect">نوع الكاميرا</label>
-              <select id="cameraSelect" name="camera"></select>
-            </div>
-
-            <div class="field">
-              <label for="lensSelect">العدسة</label>
-              <select id="lensSelect" name="lens"></select>
-            </div>
-
-            <div class="field">
-              <label for="expressionSelect">التعبير</label>
-              <select id="expressionSelect" name="expression"></select>
-            </div>
-
-            <div class="field">
-              <label for="hairSelect">ترتيب الشعر</label>
+              <label for="hairSelect">2. الشعر</label>
               <select id="hairSelect" name="hair"></select>
             </div>
-
             <div class="field">
-              <label for="clothingSelect">الملابس</label>
-              <select id="clothingSelect" name="clothing"></select>
-            </div>
-
-            <div class="field">
-              <label for="lightingSelect">الإضاءة</label>
+              <label for="lightingSelect">3. الإضاءة</label>
               <select id="lightingSelect" name="lighting"></select>
+            </div>
+            <div class="field field--wide">
+              <label for="expressionSelect">4. تعبير الوجه</label>
+              <select id="expressionSelect" name="expression"></select>
             </div>
           </form>
         </section>
 
         <section class="panel scene-panel" aria-labelledby="sceneTitle">
           <div class="panel__header">
-            <div>
-              <span class="step-number">03</span>
-              <h2 id="sceneTitle">مرجع المكان المختار</h2>
-            </div>
+            <div><span class="step-number">03</span><h2 id="sceneTitle">مرجع الغرفة المختار تلقائيًا</h2></div>
             <span class="confidence-badge" id="sceneConfidence">—</span>
           </div>
-
           <div class="scene-card" id="sceneCard">
             <div class="scene-card__visual">
-              <img id="sceneImage" src="assets/scene-placeholder.svg" alt="معاينة مرجع المكان">
-              <span class="scene-card__fallback" id="sceneFallback">أضف الصورة لاحقًا داخل مجلد scenes</span>
+              <img id="sceneImage" src="assets/scene-placeholder.svg" alt="معاينة مرجع الغرفة">
+              <span class="scene-card__fallback" id="sceneFallback">المرجع غير متاح</span>
             </div>
             <div class="scene-card__body">
               <p class="scene-card__region" id="sceneRegion">—</p>
-              <h3 id="sceneName">بانتظار الاختيارات</h3>
+              <h3 id="sceneName">بانتظار الهندسة</h3>
               <p id="sceneFilename" class="scene-card__filename">—</p>
               <ul id="sceneReasons" class="reason-list"></ul>
-              <button id="overrideSceneBtn" class="secondary-button" type="button">اختيار مرجع آخر</button>
+              <button id="overrideSceneBtn" class="secondary-button" type="button">تجاوز واختيار مرجع آخر</button>
             </div>
           </div>
         </section>
 
         <section class="panel validation-panel" aria-labelledby="validationTitle">
           <div class="panel__header">
-            <div>
-              <span class="step-number">04</span>
-              <h2 id="validationTitle">الفحص الفيزيائي</h2>
-            </div>
+            <div><span class="step-number">04</span><h2 id="validationTitle">الفحص الفيزيائي</h2></div>
             <span class="validation-status" id="validationStatus">جارٍ الفحص</span>
           </div>
           <div id="validationSummary" class="validation-summary" aria-live="polite"></div>
           <div id="conflictsList" class="issues-list"></div>
-          <button id="autoFixBtn" class="secondary-button" type="button" hidden>إصلاح التعارضات الممكنة</button>
+          <button id="autoFixBtn" class="secondary-button" type="button" hidden>إصلاح التعارضات القابلة للإصلاح</button>
         </section>
       </div>
 
       <aside class="output-column" aria-labelledby="promptTitle">
         <section class="prompt-panel">
           <div class="prompt-panel__header">
-            <div>
-              <p class="eyebrow">READY FOR CHATGPT</p>
-              <h2 id="promptTitle">FINAL PROMPT</h2>
-            </div>
+            <div><p class="eyebrow">READY FOR CHATGPT</p><h2 id="promptTitle">FINAL PROMPT</h2></div>
             <span id="promptWordCount" class="word-count">0 كلمة</span>
           </div>
-
           <div id="promptSummary" class="selection-summary"></div>
-
-          <div class="prompt-editor">
-            <pre id="finalPrompt" tabindex="0" aria-label="الأمر النهائي باللغة الإنجليزية"></pre>
-          </div>
-
+          <div class="prompt-editor"><pre id="finalPrompt" tabindex="0" aria-label="الأمر النهائي باللغة الإنجليزية"></pre></div>
           <div class="prompt-actions">
-            <button id="copyBtn" class="primary-button" type="button">
-              <span aria-hidden="true">▣</span> نسخ الأمر
-            </button>
-            <button id="downloadBtn" class="secondary-button" type="button">تنزيل TXT</button>
-            <button id="validateBtn" class="ghost-button" type="button">فحص</button>
-            <button id="rebuildBtn" class="ghost-button" type="button">إعادة بناء</button>
+            <button id="autoEngineerBtn" class="secondary-button" type="button">🎲 هندسة تلقائية</button>
+            <button id="validateBtn" class="ghost-button" type="button">🔍 فحص التعارضات</button>
+            <button id="copyBtn" class="primary-button" type="button">📋 نسخ الأمر</button>
+            <button id="rebuildBtn" class="ghost-button" type="button">🔄 إعادة بناء</button>
+            <button id="downloadBtn" type="button" hidden>تنزيل TXT</button>
           </div>
-
-          <p class="shortcut-hint">اختصار النسخ: <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd></p>
         </section>
       </aside>
     </div>
   </main>
 
   <footer class="footer">
-    <p>AI Selfie Prompt Studio <span>•</span> واقعية صادقة مبنية على الفيزياء</p>
-    <p>تُعالج الصور محليًا داخل المتصفح ولا يتم رفعها إلى خادم.</p>
+    <p>Smart Quad Mode <span>•</span> واقعية مبنية على الفيزياء</p>
+    <p>لا تزوير EXIF، لا إزالة C2PA، ولا محاكاة PRNU.</p>
   </footer>
 
   <dialog id="sceneDialog" class="modal">
     <div class="modal__header">
-      <div>
-        <p class="eyebrow">MANUAL SCENE LIBRARY</p>
-        <h2>اختيار مرجع المكان</h2>
-      </div>
+      <div><p class="eyebrow">SCENE OVERRIDE</p><h2>اختيار مرجع آخر</h2></div>
       <button class="icon-button" data-close-dialog="sceneDialog" type="button" aria-label="إغلاق">×</button>
     </div>
-    <p class="modal__intro">الاختيار اليدوي ما يتجاوز الفحص؛ أي تعارض مع الوضعية أو السطح بيظهر لك مباشرة.</p>
+    <p class="modal__intro">التجاوز لا يعطّل الفحص. لو المرجع لا يطابق الوضعية أو جهة الجسم سيظهر التعارض مباشرة.</p>
     <div id="scenePickerGrid" class="scene-picker-grid"></div>
   </dialog>
 
   <dialog id="helpDialog" class="modal modal--narrow">
     <div class="modal__header">
-      <div>
-        <p class="eyebrow">QUICK GUIDE</p>
-        <h2>كيف تستخدم الاستوديو؟</h2>
-      </div>
+      <div><p class="eyebrow">SMART QUAD GUIDE</p><h2>كيف يعمل؟</h2></div>
       <button class="icon-button" data-close-dialog="helpDialog" type="button" aria-label="إغلاق">×</button>
     </div>
     <ol class="help-steps">
-      <li><strong>ارفع IMAGE A</strong><span>صورة واضحة للهوية فقط.</span></li>
-      <li><strong>ارفع IMAGE B</strong><span>صورة الغرفة المطابقة للمنطقة المختارة.</span></li>
-      <li><strong>اختر اللقطة</strong><span>الوضع الذكي يطابق المرجع ويضبط القيود.</span></li>
-      <li><strong>راجع الفحص</strong><span>أصلح أي تعارض أحمر قبل الاستخدام.</span></li>
-      <li><strong>انسخ FINAL PROMPT</strong><span>أرفق الصورتين معه داخل ChatGPT.</span></li>
+      <li><strong>ارفع IMAGE A و IMAGE B</strong><span>الأولى للهوية فقط والثانية للغرفة فقط.</span></li>
+      <li><strong>اختر أربع قيم</strong><span>الوضعية، الشعر، الإضاءة، التعبير.</span></li>
+      <li><strong>دع المحرك يهندس الباقي</strong><span>جهة الجسم والكاميرا والذراع والفيزياء والمرجع تلقائيًا.</span></li>
+      <li><strong>راجع الفحص ثم انسخ</strong><span>التعارضات البسيطة تُصلح تلقائيًا، ورفع الصور يبقى بيدك.</span></li>
     </ol>
-    <p class="help-note">الاستوديو يبني الأمر فقط ولا يولّد الصور.</p>
   </dialog>
 
   <div id="toastRegion" class="toast-region" aria-live="polite" aria-atomic="true"></div>
-
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
