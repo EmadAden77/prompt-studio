@@ -285,13 +285,6 @@ class App {
     if (field === "cameraType") {
       this.state.lensType = this.cameraEngine.normalizeLens(value, this.state.lensType);
     }
-    if (field === "poseId" && this.state.mode === "smart") {
-      const pose = this.poseEngine.getById(value);
-      if (pose?.arm_strategy === "mirror") {
-        this.state.cameraType = "rear";
-        this.state.lensType = "rear_standard";
-      }
-    }
     this.updateAll();
   }
 
@@ -299,19 +292,26 @@ class App {
     if (this.state.mode !== "smart") return;
     this.state = { ...this.state, ...this.poseEngine.normalizeSelection(this.state) };
     this.state.uploads ??= { imageA: null, imageB: null };
+
     const pose = this.poseEngine.getById(this.state.poseId);
-    if (pose?.arm_strategy === "mirror") {
-      this.state.cameraType = "rear";
-    }
-    this.state.lensType = this.cameraEngine.normalizeLens(this.state.cameraType, this.state.lensType);
+    const smartCameraType = pose?.arm_strategy === "mirror" ? "rear" : "front";
+    this.state.cameraType = smartCameraType;
+    this.state.lensType = smartCameraType === "rear" ? "rear_standard" : "front_wide";
+  }
+
+  getCompatibleLightingOptions(scene) {
+    if (!scene) return LIGHTING_OPTIONS;
+    return LIGHTING_OPTIONS.filter((option) => {
+      if (this.lightingEngine.getMissingFeatures(option, scene).length) return false;
+      if (this.state.cameraType === "rear" && option.id === "phone_screen_only") return false;
+      return true;
+    });
   }
 
   chooseCompatibleLighting(scene) {
-    if (scene.visible_features.includes("lamp")) return "lamp_only";
-    if (scene.visible_features.includes("ceiling_light")) return "single_ceiling";
-    if (scene.visible_features.includes("ceiling_spots")) return "all_ceiling_spots";
-    if (scene.visible_features.includes("daylight_access")) return "daylight_semidark";
-    return "phone_screen_only";
+    const compatible = this.getCompatibleLightingOptions(scene);
+    const preferredIds = ["lamp_only", "lamp_and_phone", "single_ceiling", "all_ceiling_spots", "daylight_semidark", "phone_screen_only"];
+    return preferredIds.find((id) => compatible.some((option) => option.id === id)) ?? compatible[0]?.id ?? "phone_screen_only";
   }
 
   resolveScene() {
@@ -325,9 +325,18 @@ class App {
         requiredFeatures: pose.requires ?? []
       });
 
-      if (result.scene && this.state.roomMode === "EDIT" && this.state.cameraAngle !== result.scene.base_camera_angle) {
-        if (pose.valid_angles.includes(result.scene.base_camera_angle)) {
-          this.state.cameraAngle = result.scene.base_camera_angle;
+      if (result.scene && this.state.roomMode === "EDIT") {
+        for (let attempt = 0; attempt < 2 && result.scene; attempt += 1) {
+          const targetAngle = result.scene.base_camera_angle;
+          const targetDistance = result.scene.base_camera_distance;
+          const canUseAngle = pose.valid_angles.includes(targetAngle) && result.scene.camera_angles.includes(targetAngle);
+          const canUseDistance = pose.valid_distances.includes(targetDistance) && result.scene.camera_distances.includes(targetDistance);
+          const angleChanged = canUseAngle && this.state.cameraAngle !== targetAngle;
+          const distanceChanged = canUseDistance && this.state.cameraDistance !== targetDistance;
+          if (!angleChanged && !distanceChanged) break;
+
+          if (angleChanged) this.state.cameraAngle = targetAngle;
+          if (distanceChanged) this.state.cameraDistance = targetDistance;
           result = this.sceneEngine.autoSelect({
             poseId: pose.id,
             bodyDirection: this.state.bodyDirection,
@@ -381,9 +390,38 @@ class App {
     const allAngles = Object.keys(UI_LABELS.cameraAngles);
     const allDistances = Object.keys(UI_LABELS.cameraDistances);
 
-    const directions = this.state.mode === "smart" ? pose.valid_directions : allDirections;
-    const angles = this.state.mode === "smart" ? pose.valid_angles : allAngles;
-    const distances = this.state.mode === "smart" ? pose.valid_distances : allDistances;
+    let directions = allDirections;
+    let angles = allAngles;
+    let distances = allDistances;
+    let cameras = Object.values(CAMERA_SPECS);
+    let lenses = this.cameraEngine.getLensesForCamera(this.state.cameraType);
+    let lightingOptions = LIGHTING_OPTIONS;
+
+    if (this.state.mode === "smart") {
+      directions = pose.valid_directions;
+      const compatibleScenes = this.sceneEngine.getCompatibleScenes(
+        pose.id,
+        this.state.bodyDirection,
+        pose.requires ?? []
+      );
+
+      if (this.state.roomMode === "EDIT" && this.sceneResult?.scene) {
+        const scene = this.sceneResult.scene;
+        angles = [scene.base_camera_angle].filter((angle) => pose.valid_angles.includes(angle));
+        distances = [scene.base_camera_distance].filter((distance) => pose.valid_distances.includes(distance));
+      } else {
+        angles = pose.valid_angles.filter((angle) => compatibleScenes.some((scene) => scene.camera_angles.includes(angle)));
+        distances = pose.valid_distances.filter((distance) => compatibleScenes.some((scene) => scene.camera_distances.includes(distance)));
+      }
+
+      if (!angles.length) angles = pose.valid_angles;
+      if (!distances.length) distances = pose.valid_distances;
+
+      cameras = [CAMERA_SPECS[this.state.cameraType]];
+      lenses = [this.cameraEngine.getLens(this.state.lensType)].filter(Boolean);
+      lightingOptions = this.getCompatibleLightingOptions(this.sceneResult?.scene);
+      if (!lightingOptions.length) lightingOptions = [this.lightingEngine.getById(this.state.lightingId)].filter(Boolean);
+    }
 
     setOptions(this.dom.directionSelect, directions, this.state.bodyDirection, (value) => ({
       value,
@@ -397,24 +435,28 @@ class App {
       value,
       label: UI_LABELS.cameraDistances[value] ?? value
     }));
-
-    const lenses = this.cameraEngine.getLensesForCamera(this.state.cameraType);
+    setOptions(this.dom.cameraSelect, cameras, this.state.cameraType);
     setOptions(this.dom.lensSelect, lenses, this.state.lensType);
+    setOptions(this.dom.lightingSelect, lightingOptions, this.state.lightingId);
 
     this.dom.poseSelect.value = this.state.poseId;
-    this.dom.cameraSelect.value = this.state.cameraType;
     this.dom.roomModeSelect.value = this.state.roomMode;
     this.dom.expressionSelect.value = this.state.expressionId;
     this.dom.hairSelect.value = this.state.hairId;
     this.dom.clothingSelect.value = this.state.clothingId;
-    this.dom.lightingSelect.value = this.state.lightingId;
+
+    const smartMode = this.state.mode === "smart";
+    this.dom.cameraSelect.disabled = smartMode;
+    this.dom.lensSelect.disabled = smartMode;
+    this.dom.angleSelect.disabled = smartMode && this.state.roomMode === "EDIT";
+    this.dom.distanceSelect.disabled = smartMode && this.state.roomMode === "EDIT";
 
     const modeElements = {
       smartButton: this.dom.smartModeBtn,
       manualButton: this.dom.manualModeBtn,
       modeHint: this.dom.modeHint
     };
-    if (this.state.mode === "smart") activateSmartMode(modeElements);
+    if (smartMode) activateSmartMode(modeElements);
     else activateManualMode(modeElements);
   }
 
@@ -480,16 +522,14 @@ class App {
   updateAll({ initial = false } = {}) {
     this.normalizeSmartState();
     this.sceneResult = this.resolveScene();
-    if (
-      this.state.mode === "smart"
-      && ["poseId", "bodyDirection"].includes(this.lastChangedField)
-      && this.sceneResult.scene
-    ) {
-      const selectedLighting = this.lightingEngine.getById(this.state.lightingId);
-      if (this.lightingEngine.getMissingFeatures(selectedLighting, this.sceneResult.scene).length) {
+
+    if (this.state.mode === "smart" && this.sceneResult.scene) {
+      const compatibleLighting = this.getCompatibleLightingOptions(this.sceneResult.scene);
+      if (!compatibleLighting.some((option) => option.id === this.state.lightingId)) {
         this.state.lightingId = this.chooseCompatibleLighting(this.sceneResult.scene);
       }
     }
+
     this.syncControls();
 
     const config = this.buildConfig();
