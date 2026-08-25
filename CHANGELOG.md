@@ -11,6 +11,26 @@
 - Lighting changes are explicitly forbidden from moving, resizing, recoloring, cleaning, replacing, redesigning, adding, or removing furniture, landmarks, fixtures, clutter, walls, floors, ceilings, bedding, mirrors, curtains, windows, or materials.
 - Added stricter real-phone photometric behavior for shadows, catchlights, reflections, mixed color temperatures, daylight patches, night darkness, ISO/chroma noise, HDR, white balance, and one unified exposure/tone-mapping pipeline.
 - Corrected the strict phone-screen-only light distance to the same physically reachable 45–70 cm front-selfie distance used by the camera geometry.
+- Expanded the pose selector into three `optgroup` families: **🛏️ bed**, **🛋️ sitting**, and **🧍 standing** while preserving the existing bed poses.
+- Activated `sitting_sofa`, `sitting_chair`, `sitting_floor`, `standing_center`, `standing_bedside`, `standing_sofa`, `standing_vanity`, and `standing_wardrobe` as selectable deterministic poses.
+- Added mandatory `SITTING GROUNDING` with seat/support load, sofa compression, chair/floor contact shadows, supported legs/feet, gravity folds, and natural seated asymmetry.
+- Added mandatory `STANDING GROUNDING` with full foot-floor contact, contrapposto weight shift, gravity drape, light-consistent floor shadow, and near-vertical room lines.
+- Added family camera/arm rules: sitting selfies use 50–70 cm at actual seated eye height; standing selfies use 45–60 cm near ~1.5 m eye height; the holding elbow remains naturally relaxed and the opposite arm must rest on a real support, thigh, pocket, hip, or equivalent grounded position.
+- Added dynamic sitting negatives: `floating above cushion`, `uncompressed sofa cushion`, `feet without floor contact`, `mannequin sitting posture`, and `seat hidden by impossible crop`.
+- Added dynamic standing negatives: `floating feet`, `missing foot contact shadow`, `hovering heels`, `symmetrical mannequin stance`, and `bent room lines without lens reason`.
+- Preserved the frozen bed prompt path; the new family placement, framing, grounding, and final physical checks are injected only for sitting/standing families.
+- Added and executed `libraryCoverageReport`; all new pose families have real local references already present in the repository, so no invented scenes were added.
+
+### Library coverage
+
+- `sitting_sofa` → `sofa_area`
+- `sitting_chair` → `chair_area`
+- `sitting_floor` → `room_center`
+- `standing_center` → `room_center`
+- `standing_bedside` → three valid bed references, with `bed_front_overview` selected as the primary automatic reference
+- `standing_sofa` → `sofa_area`
+- `standing_vanity` → `vanity_mirror`
+- `standing_wardrobe` → `wardrobe_area`
 
 ## v1.8 — 2026-08-26
 
