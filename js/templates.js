@@ -32,18 +32,18 @@ const standingBlock = (pose, grounding, arm, camera) => `STANDING TEMPLATE — S
 export const TEMPLATE_PRESETS = Object.freeze([
   preset("back_relaxed", "bed", "استلقاء على الظهر — طبيعي هادئ", "lying_back", "relaxed", "messy", "cotton_pajama", ["window_daylight", "ceiling_white", "lamp_and_phone", "phone_screen_only"]),
   preset("stomach_relaxed", "bed", "استلقاء على البطن — سيلفي طبيعي", "lying_stomach", "relaxed", "messy", "sleep_tee_shorts", ["window_daylight", "ceiling_white", "lamp_and_phone", "phone_screen_only"]),
-  preset("right_side_warm", "bed", "الجانب الأيمن — إضاءة دافئة واقعية", "lying_right_side", "relaxed", "messy", "cotton_pajama", ["lamp_only", "lamp_and_phone", "phone_screen_only"]),
-  preset("left_side_lowlight", "bed", "الجانب الأيسر — إضاءة هاتف خافتة", "lying_left_side", "relaxed", "messy", "cotton_pajama", ["phone_screen_only"]),
+  preset("right_side_warm", "bed", "الجانب الأيمن — وضعية جانبية", "lying_right_side", "relaxed", "messy", "cotton_pajama", ["lamp_only", "lamp_and_phone", "phone_screen_only"]),
+  preset("left_side_lowlight", "bed", "الجانب الأيسر — وضعية جانبية", "lying_left_side", "relaxed", "messy", "cotton_pajama", ["phone_screen_only", "ceiling_white"]),
   preset("semi_reclining_home", "bed", "نصف استلقاء — منزلي عفوي", "semi_reclining", "serious", "same", "thermal_sleep", ["lamp_and_phone", "ceiling_warm", "ceiling_white", "phone_screen_only"]),
-  preset("bed_edge_casual", "bed", "حافة السرير — كاجوال طبيعي", "sitting_bed_edge", "serious", "neat", "heather_tee_jeans", ["window_daylight", "ceiling_white", "lamp_and_phone", "phone_screen_only"]),
-  preset("sofa_casual", "sitting", "الأريكة — كاجوال نهاري", "sitting_sofa", "relaxed", "same", "heather_tee_jeans", ["window_daylight", "overcast_flat", "phone_screen_only"]),
-  preset("chair_neat", "sitting", "الكرسي — مرتب داخلي", "sitting_chair", "serious", "neat", "oxford_shirt_chino", ["ceiling_white", "phone_screen_only"]),
+  preset("bed_edge_casual", "bed", "حافة السرير — جلسة طبيعية", "sitting_bed_edge", "serious", "neat", "heather_tee_jeans", ["window_daylight", "ceiling_white", "lamp_and_phone", "phone_screen_only"]),
+  preset("sofa_casual", "sitting", "الأريكة — جلسة عفوية", "sitting_sofa", "relaxed", "same", "heather_tee_jeans", ["window_daylight", "overcast_flat", "phone_screen_only"]),
+  preset("chair_neat", "sitting", "الكرسي — جلسة مرتبة", "sitting_chair", "serious", "neat", "oxford_shirt_chino", ["ceiling_white", "phone_screen_only"]),
   preset("floor_relaxed", "sitting", "الأرض — جلسة عفوية", "sitting_floor", "relaxed", "messy", "hoodie_sweats", ["window_daylight", "ceiling_white", "phone_screen_only"]),
 
   preset("standing_center_relaxed", "standing", "وسط الغرفة — وقوف طبيعي هادئ", "standing_center", "relaxed", "same", "longsleeve_chino", ["ceiling_white", "overcast_flat", "phone_screen_only"], "9:16", {
     promptBlock: standingBlock(
       "standing in the center of the room, torso generally facing the camera with relaxed natural asymmetry rather than a rigid squared stance.",
-      "Both feet are flat with contact shadows hugging the sole lines; weight shifts slightly toward one leg in a natural contrapposto; shoulders remain relaxed and mildly uneven; garments hang vertically with gravity-driven drape.",
+      "Both feet are flat with contact shadows hugging the sole lines; weight shifts slightly toward one leg in a natural contrapposto; shoulders remain relaxed and mildly uneven; the selected garments hang with gravity-driven drape.",
       "The selfie hand holds the phone at face level 45–60 cm away with a softly bent elbow; the free hand hangs naturally or rests in a pocket.",
       "Eye level around 1.5 m; upper body with the room readable behind; vertical room lines remain nearly vertical with only mild wide-angle convergence."
     )
@@ -84,16 +84,16 @@ export const TEMPLATE_PRESETS = Object.freeze([
       "Eye level; the wardrobe doors and their real material fill one side of the background while vertical edges remain physically straight."
     )
   }),
-  preset("standing_wall_lean", "standing", "اتكاء على الجدار — ليلي هادئ", "standing_center", "serious", "neat", "hoodie_sweats", ["phone_screen_only", "ceiling_white"], "9:16", {
+  preset("standing_wall_lean", "standing", "اتكاء على الجدار — وقوف مريح", "standing_center", "serious", "neat", "hoodie_sweats", ["phone_screen_only", "ceiling_white", "overcast_flat"], "9:16", {
     requiresAll: ["full_room_overview"],
     promptBlock: standingBlock(
       "standing with the shoulder and upper back leaning lightly against a visible wall plane.",
-      "A soft contact shadow sits directly behind the loaded shoulder and upper back. The main standing foot carries body weight with a firm floor shadow; the other leg may cross lightly or bend with only the toe touching nearby. Clothing compresses subtly at the leaning shoulder. Do not force a shoe sole flat against the wall.",
+      "A soft contact shadow sits directly behind the loaded shoulder and upper back according to the selected light source. The main standing foot carries body weight with a firm floor contact shadow; the other leg may cross lightly or bend with only the toe touching nearby. The selected garment compresses subtly at the leaning shoulder. Do not force a shoe sole flat against the wall.",
       "The phone remains 45–60 cm away; the free arm hangs low, rests in a pocket, or crosses loosely.",
       "Eye level or only slightly below; a real wall plane occupies one side and room depth stays readable behind."
     )
   }),
-  preset("standing_low_angle_power", "standing", "وقوف منخفض الزاوية — حضور قوي", "standing_center", "confident", "neat", "oxford_shirt_chino", ["ceiling_white", "phone_screen_only"], "9:16", {
+  preset("standing_low_angle_power", "standing", "وقوف منخفض الزاوية — حضور قوي", "standing_center", "confident", "neat", "oxford_shirt_chino", ["ceiling_white", "phone_screen_only", "lamp_only"], "9:16", {
     requiresCameraAngle: "low_angle",
     cameraOverride: Object.freeze({
       holdingHand: "RIGHT",
@@ -105,12 +105,12 @@ export const TEMPLATE_PRESETS = Object.freeze([
     }),
     promptBlock: standingBlock(
       "standing tall with the chin tipped slightly down toward the lens.",
-      "Both feet are planted in a natural stance; the body casts a floor shadow consistent with the selected light; hems hang straight with realistic gravity-driven drape.",
+      "Both feet are planted in a natural stance; the body cast shadow follows only the user-selected lighting; hems of the selected outfit hang straight with realistic gravity-driven drape.",
       "The RIGHT hand holds the phone at chest or waist level 45–60 cm away, pointing upward about 30–40 degrees; the free arm hangs naturally or rests on the hip.",
       "Low-angle selfie looking upward. Natural perspective may broaden the shoulders slightly; a ceiling edge may enter the top of frame; vertical lines converge mildly upward from the wide lens only, without architectural bending."
     )
   }),
-  preset("standing_phone_above_head", "standing", "الهاتف فوق الرأس — منظور علوي", "standing_center", "relaxed", "same", "longsleeve_chino", ["ceiling_white", "overcast_flat"], "9:16", {
+  preset("standing_phone_above_head", "standing", "الهاتف فوق الرأس — منظور علوي", "standing_center", "relaxed", "same", "longsleeve_chino", ["ceiling_white", "overcast_flat", "phone_screen_only"], "9:16", {
     requiresCameraAngle: "high_angle",
     cameraOverride: Object.freeze({
       holdingHand: "RIGHT",
@@ -122,21 +122,21 @@ export const TEMPLATE_PRESETS = Object.freeze([
     }),
     promptBlock: standingBlock(
       "standing naturally while raising the phone above the head.",
-      "Both feet remain grounded and readable near the lower frame with individual floor contact shadows. The body tapers downward through natural foreshortening and clothing falls close to the legs.",
+      "Both feet remain grounded and readable near the lower frame with individual floor contact shadows. The body tapers downward through natural foreshortening and the selected clothing follows gravity naturally.",
       "The RIGHT selfie arm extends upward with the elbow near-straight but unlocked; the free LEFT hand rests in a pocket or by the thigh.",
       "Camera looks downward about 30–45 degrees. Face sits near the upper third; floor, feet, and lower room remain readable below. Distortion is mild and restricted to outer frame regions; face and phone hand stay sharp."
     )
   }),
-  preset("standing_window_sidelight", "standing", "بجانب النافذة — ضوء جانبي", "standing_center", "serious", "same", "oxford_shirt_chino", ["window_daylight", "golden_hour"], "9:16", {
+  preset("standing_window_sidelight", "standing", "بجانب النافذة — زاوية جانبية", "standing_center", "serious", "same", "oxford_shirt_chino", ["window_daylight", "golden_hour", "ceiling_white", "phone_screen_only"], "9:16", {
     requiresAll: ["daylight_access"],
     promptBlock: standingBlock(
-      "standing roughly 1–1.5 m from the real daylight access, torso angled and face turned toward the camera.",
-      "Directional daylight models the face into a brighter plane and a naturally darker plane according to the real source direction; the floor shadow extends opposite the source. A mild natural squint is allowed. Light rakes across fabric texture without changing the garment.",
-      "Use the physically reachable selfie hand that keeps the phone clear of the window-side body contour; the free arm hangs naturally or rests in a pocket.",
-      "Eye level; only show a window frame or curtain edge if it is actually visible in IMAGE B. Never invent a new window to justify the lighting."
+      "standing roughly 1–1.5 m from the real daylight-access side of the room, torso angled and face turned toward the camera.",
+      "Both feet remain physically grounded. Do not invent daylight, a bright window beam, or a floor shadow from the window unless the user-selected lighting actually uses that source. All shadow direction, facial modeling, and fabric highlights must come only from the separately selected lighting preset.",
+      "Use the physically reachable selfie hand that keeps the phone clear of the nearby room edge; the free arm hangs naturally or rests in a pocket.",
+      "Eye level; only show a window frame or curtain edge if it is actually visible in IMAGE B. Never invent a new window or use this template to override the user's lighting selection."
     )
   }),
-  preset("standing_walk_pause", "standing", "خطوة متوقفة — لقطة عفوية", "standing_center", "relaxed", "same", "heather_tee_jeans", ["overcast_flat", "window_daylight", "ceiling_white"], "9:16", {
+  preset("standing_walk_pause", "standing", "خطوة متوقفة — لقطة عفوية", "standing_center", "relaxed", "same", "heather_tee_jeans", ["overcast_flat", "window_daylight", "ceiling_white", "phone_screen_only"], "9:16", {
     promptBlock: standingBlock(
       "paused during a very small step as if he has just noticed the phone camera, not performing a large walking stride.",
       "The front foot is flat with a full contact shadow; the rear heel lifts slightly with a small real shadow gap underneath. The interrupted step creates mild natural shoulder asymmetry while balance remains stable.",
@@ -154,7 +154,7 @@ const LIGHTING_BY_ID = Object.freeze(Object.fromEntries(LIGHTING_OPTIONS.map((it
 const POSE_IDS = new Set(POSES.map((item) => item.id));
 const EXPRESSION_IDS = new Set(EXPRESSION_OPTIONS.map((item) => item.id));
 const HAIR_IDS = new Set(HAIR_OPTIONS.map((item) => item.id));
-const CLOTHING_IDS = new Set(CLOTHING_OPTIONS.map((item) => [item.id, item]).map(([id]) => id));
+const CLOTHING_IDS = new Set(CLOTHING_OPTIONS.map((item) => item.id));
 
 export function isLightingSupportedByScene(lightingId, scene) {
   const lighting = LIGHTING_BY_ID[lightingId];
@@ -220,11 +220,18 @@ function currentSceneFromUI() {
   return SCENES.find((scene) => scene.image_filename === filename) ?? null;
 }
 
+function updateTemplateHelpText() {
+  const select = document.querySelector("#templateSelect");
+  const hint = select?.parentElement?.querySelector("small");
+  if (hint) hint.textContent = "القالب يضبط الوضعية وهندسة السيلفي فقط. الملابس وتعبير الوجه والإضاءة والشعر تبقى دائمًا من اختيارك ويمكن تغييرها داخل أي قالب دون إلغاء القالب.";
+}
+
 function initTemplateControl() {
   const templateSelect = document.querySelector("#templateSelect");
   const sceneFilename = document.querySelector("#sceneFilename");
   if (!templateSelect || !sceneFilename) return;
 
+  updateTemplateHelpText();
   let applyingTemplate = false;
   let lastSceneFilename = null;
 
@@ -262,8 +269,10 @@ function initTemplateControl() {
   templateSelect.addEventListener("change", () => {
     if (templateSelect.value === "custom") {
       setActiveTemplate("custom");
+      document.querySelector("#rebuildBtn")?.click();
       return;
     }
+
     const template = TEMPLATE_BY_ID[templateSelect.value];
     const scene = currentSceneFromUI();
     if (!template || !scene || !isTemplateCompatibleWithScene(template, scene)) {
@@ -273,38 +282,39 @@ function initTemplateControl() {
       return;
     }
 
-    const lightingId = resolveTemplateLighting(template, scene);
     applyingTemplate = true;
     setActiveTemplate(template.id);
-    const applied = [
-      setSelectValue("poseSelect", template.poseId),
-      setSelectValue("hairSelect", template.hairId),
-      setSelectValue("lightingSelect", lightingId),
-      setSelectValue("expressionSelect", template.expressionId),
-      setSelectValue("clothingSelect", template.clothingId),
-      setSelectValue("aspectSelect", template.aspect)
-    ];
+    const poseApplied = setSelectValue("poseSelect", template.poseId);
+    const aspectApplied = setSelectValue("aspectSelect", template.aspect);
     applyingTemplate = false;
 
-    if (!applied.every(Boolean)) {
+    if (!poseApplied || !aspectApplied) {
       templateSelect.value = "custom";
       setActiveTemplate("custom");
-      showToast("تعذر تطبيق القالب كاملًا على هذا المرجع", "error", 4200);
+      showToast("تعذر تطبيق هندسة القالب على هذا المرجع", "error", 4200);
       return;
     }
 
     templateSelect.value = template.id;
     setActiveTemplate(template.id);
     document.querySelector("#rebuildBtn")?.click();
-    showToast(`تم تطبيق القالب: ${template.name_ar}`, "success", 3600);
+    showToast(`تم تطبيق القالب: ${template.name_ar} — اختياراتك للملابس والتعبير والإضاءة والشعر بقيت كما هي`, "success", 4200);
   });
 
-  ["poseSelect", "hairSelect", "lightingSelect", "expressionSelect", "clothingSelect", "aspectSelect"].forEach((id) => {
+  ["poseSelect", "aspectSelect"].forEach((id) => {
     document.querySelector(`#${id}`)?.addEventListener("change", () => {
       if (!applyingTemplate) {
         templateSelect.value = "custom";
         setActiveTemplate("custom");
       }
+    });
+  });
+
+  // Appearance controls are intentionally independent from templates.
+  // Changing any of them rebuilds the prompt through app.js while the selected template remains active.
+  ["hairSelect", "lightingSelect", "expressionSelect", "clothingSelect"].forEach((id) => {
+    document.querySelector(`#${id}`)?.addEventListener("change", () => {
+      if (templateSelect.value !== "custom") setActiveTemplate(templateSelect.value);
     });
   });
 
