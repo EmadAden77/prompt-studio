@@ -1,14 +1,6 @@
 import { hierarchyAsPromptText } from "../policies/authorityPolicy.js";
 import { MASTER_POLICY } from "../policies/masterPolicy.js";
 
-const BED_SELFIE_ARM_STRATEGIES = new Set([
-  "lying_back",
-  "lying_stomach",
-  "lying_right_side",
-  "lying_left_side",
-  "semi_reclining"
-]);
-
 export class PromptEngine {
   constructor({ identityEngine, roomLockEngine, poseEngine, cameraEngine, lightingEngine }) {
     this.identityEngine = identityEngine;
@@ -18,40 +10,37 @@ export class PromptEngine {
     this.lightingEngine = lightingEngine;
   }
 
-  isBedSelfiePose(pose) {
-    return Boolean(pose?.placement === "bed" && BED_SELFIE_ARM_STRATEGIES.has(pose.arm_strategy));
-  }
-
-  getPlacementRule(pose, scene) {
-    const rules = {
-      bed: "Place the subject strictly within the existing bed area defined by IMAGE B. Mattress contact, edge contact, or bedside floor contact must follow the selected pose; never relocate the subject onto another object.",
-      sofa: "Place the subject at the exact existing sofa. Any seated pelvis must remain within a real seat-cushion boundary, and any standing contact must use the real armrest without shifting it.",
-      chair: "Place the pelvis fully within the existing chair seat boundary, with feet and back aligned to the actual chair geometry.",
-      vanity: "Place the subject in front of the same vanity mirror visible in IMAGE B. Preserve the real mirror boundary and use geometrically accurate reflected scale, handedness, gaze, phone position, and occlusion.",
-      wardrobe: "Place the subject inside the visible wardrobe zone without changing door positions, contents, reflections, or object arrangement.",
-      floor: "Place the subject on an unobstructed visible floor area without intersecting the bed, rug edge, tables, or other furniture.",
-      center: "Place the subject on the existing floor near the room center while preserving furniture clearance and the original room circulation space."
-    };
-    const base = rules[pose?.placement] ?? "Place the subject only in a physically available region shown by IMAGE B.";
-    return `${base}\nSelected reference region: ${scene?.region?.replaceAll("_", " ") ?? "the visible IMAGE B region"}.`;
-  }
-
-  getBedSelfieSpatialAnchor(pose, scene) {
-    if (!this.isBedSelfiePose(pose)) return "";
-    const region = scene?.region?.replaceAll("_", " ") ?? "the selected bed region";
-    return `BED SELFIE SPATIAL ANCHOR — BODY FIRST, CAMERA SECOND
-This is a new reachable selfie viewpoint inside the same room, not a reconstruction of IMAGE B as a different bedroom.
-1. Anchor the body first to the real mattress and pillow geometry in ${region}. Keep the torso, pelvis, head, and legs at a plausible scale relative to the known bed dimensions and surrounding furniture.
-2. Preserve the subject's location on the bed after placement. Do not pull, enlarge, slide, or rotate the whole body toward the camera merely to create a tighter selfie composition.
-3. Only after the body and all support contacts are solved, derive the phone position from the specified shoulder, elbow, wrist, and arm reach. The camera must move to the reachable hand position; the body must not move to satisfy the camera.
-4. The holding forearm may become large near a wide phone lens only as a natural near-field perspective effect. This must not make the head or torso unnaturally oversized relative to the pillow, mattress, headboard, nightstand, or room.
-5. Keep the same bed identity, headboard, pillow family, bedding, nearby furniture, clutter, walls, ceiling, and room scale from IMAGE B. A new crop may hide objects, but it must never relocate them.
-6. If the requested crop cannot be reached without breaking anatomy or room continuity, widen or loosen the crop while preserving the body placement and physical camera reach.`;
-  }
-
   getReferenceName(upload, fallback) {
     const safeFilename = upload?.name && /^[\x20-\x7E]+$/u.test(upload.name) ? upload.name : null;
     return safeFilename ? `“${safeFilename}”` : `the attached ${fallback}`;
+  }
+
+  buildSpatialMap(engineering) {
+    if (!engineering?.spatialMap) return "";
+    const map = engineering.spatialMap;
+    return `BED SPATIAL MAP
+- Side reference rule: ${map.frame_rule}
+- Head direction: ${map.head_direction}.
+- Foot direction: ${map.foot_direction}.
+- Subject's RIGHT side: ${map.person_right_side}.
+- Subject's LEFT side: ${map.person_left_side}.
+- LAMP SIDE: ${map.lamp_side}.
+- VANITY SIDE: ${map.vanity_side}.
+- Window/daylight: ${map.window_daylight}.
+- Pillows: ${map.pillows}.
+- IMAGE B viewpoint rule: ${map.image_b_camera_rule}.
+- Ambiguity rule: ${map.ambiguity_rule}.
+Always describe sides relative to the subject's own body, never as left/right of the image.`;
+  }
+
+  getPlacementRule(config) {
+    const { pose, scene, autoEngineering } = config;
+    const region = scene?.region?.replaceAll("_", " ") ?? "the selected bed region";
+    if (pose?.placement === "vanity") {
+      return `Place the subject inside the actual vanity/mirror zone shown by IMAGE B. Keep the real mirror boundary and room geometry unchanged. Selected reference region: ${region}.`;
+    }
+    return `Place the subject strictly on the real bed/mattress geometry represented by IMAGE B. Anchor the body before solving the camera. Do not pull, enlarge, slide, or rotate the whole body toward the lens merely to improve composition. Selected reference region: ${region}.
+Deterministic orientation: ${autoEngineering?.orientation ?? "follow the selected pose and support surfaces"}`;
   }
 
   generate(config) {
@@ -68,95 +57,101 @@ This is a new reachable selfie viewpoint inside the same room, not a reconstruct
       bodyDirection,
       cameraAngle,
       cameraDistance,
-      uploads
+      uploads,
+      autoEngineering
     } = config;
 
     const taskVerb = roomMode === "EDIT"
-      ? "edit IMAGE B in place as an immutable base photograph and insert the person from IMAGE A"
-      : "generate one new photograph of the same room represented by IMAGE B and place the person from IMAGE A inside it";
+      ? "edit IMAGE B in place as the immutable room plate and insert the person from IMAGE A"
+      : "generate one new photograph from a physically reachable viewpoint inside the same three-dimensional room represented by IMAGE B, using IMAGE A only for identity";
 
+    const imageAName = this.getReferenceName(uploads?.imageA, "IMAGE A identity photograph");
+    const imageBName = this.getReferenceName(uploads?.imageB, scene?.image_filename ?? "IMAGE B room photograph");
     const sections = [];
 
     sections.push(`CHATGPT IMAGE TASK
-ChatGPT, ${taskVerb}. Produce one ordinary, coherent, physically believable photograph. Use one camera, one reachable viewpoint, one exposure, one lighting event, and one image-processing pipeline. Return only the final image.`);
+ChatGPT, ${taskVerb}. Produce one ordinary, coherent, physically believable smartphone photograph. Use one camera, one reachable viewpoint, one exposure, one lighting event, and one image-processing pipeline. Return only the final image.`);
 
-    sections.push(`MASTER PROMPT ENGINEERING DIRECTIVE
+    sections.push(`PROMPT ENGINEERING POLICY
 ${MASTER_POLICY.eventRule}
 Check consistency across ${MASTER_POLICY.conflictDomains.join(", ")}.
-Resolve any minor conflict through the authority hierarchy below instead of blending incompatible instructions. If a lower-priority request conflicts with a higher-priority physical or reference constraint, preserve the higher-priority constraint. Do not disclose this reasoning and do not introduce an unrequested visual style.
-${MASTER_POLICY.realismRule}`);
+Resolve minor conflicts through the authority hierarchy below instead of blending incompatible instructions. Preserve the higher-priority physical or reference constraint whenever a lower-priority request conflicts with it. Do not disclose this reasoning. Realism must come from anatomy, pressure, gravity, optics, light falloff, sensor limitations, and ordinary phone processing. Never use EXIF spoofing, C2PA removal, PRNU simulation, or forensic countermeasures.`);
 
     sections.push(`AUTHORITY HIERARCHY — LOWER NUMBER WINS
 ${hierarchyAsPromptText()}`);
 
-    const imageAName = this.getReferenceName(uploads?.imageA, "IMAGE A identity photograph");
-    const imageBName = this.getReferenceName(uploads?.imageB, scene?.image_filename ?? "IMAGE B room photograph");
-
     sections.push(`REFERENCE AUTHORITY
-IMAGE A — IDENTITY ONLY: Use ${imageAName} exclusively for the person's identity.
+IMAGE A — IDENTITY ONLY: Use ${imageAName} exclusively for identity.
 ${this.identityEngine.buildLockText()}
 
 IMAGE B — ROOM ONLY: Use ${imageBName} as the sole room reference${scene ? ` for the ${scene.region.replaceAll("_", " ")} region` : ""}.
 ${this.roomLockEngine.buildAuthorityText()}`);
 
-    sections.push(`ROOM CONTINUITY
+    sections.push(`IDENTITY LOCK
+${this.identityEngine.buildPersonText()}
+Depict the exact same real person photographed again, not a look-alike. Preserve natural asymmetry, real skin-tone variation, normal pores, beard gaps, imperfect hairline, and apparent age. Do not beautify, symmetrize, reshape, or clean the face more than the neck, clothing, bedding, or room.`);
+
+    sections.push(`ROOM LOCK
 ${this.roomLockEngine.buildLockText(roomMode)}`);
 
-    sections.push(`SUBJECT AND PLACEMENT
-${this.identityEngine.buildPersonText()}
-${this.getPlacementRule(pose, scene)}`);
+    if (autoEngineering) sections.push(this.buildSpatialMap(autoEngineering));
 
-    if (roomMode === "GENERATE" && this.isBedSelfiePose(pose)) {
-      sections.push(this.getBedSelfieSpatialAnchor(pose, scene));
-    }
+    sections.push(`SUBJECT PLACEMENT
+${this.getPlacementRule(config)}
+BODY FIRST, CAMERA SECOND: solve the entire body, mattress/pillow contacts, scale, and room-relative placement before deriving phone position. If framing would otherwise break anatomy or room continuity, loosen the crop instead of moving the body off its correct support surfaces.`);
 
-    sections.push(`POSE AND BODY PHYSICS
-Pose: ${pose?.name_en ?? "Natural pose selected by the user"}.
-Body direction: ${bodyDirection.replaceAll("_", " ")}.
+    sections.push(`POSE AND PHYSICS
+Pose: ${pose?.name_en ?? "selected pose"}.
+Body direction: ${bodyDirection?.replaceAll("_", " ") ?? "deterministic orientation"}.
 ${pose ? this.poseEngine.buildPhysicsText(pose) : "Keep anatomy and support physically possible."}
-Maintain correct joint order, limb count, hand structure, weight distribution, pressure response, contact shadows, and non-intersection between the body and nearby objects.`);
+${autoEngineering?.physicsFine ?? ""}
+Maintain correct joint order, limb count, hand structure, weight distribution, local pressure response, contact shadows, and non-intersection between body and bedding.`);
 
-    sections.push(`CAMERA AND ARM GEOMETRY
+    sections.push(`CAMERA AND ARM STRATEGY
 ${this.cameraEngine.buildPrompt({ camera, lens, pose, cameraAngle, cameraDistance })}
-The crop must follow the reachable camera position. Do not reveal a camera position that the stated arm, photographer, room boundary, or mirror geometry cannot physically support.`);
+Fine camera engineering: ${autoEngineering?.cameraFine ?? "Use the mapped reachable viewpoint."}
+Fine arm engineering: ${autoEngineering?.armFine ?? "Keep every shoulder, elbow, wrist, and hand anatomically reachable."}
+The phone position is derived from the selected arm strategy after body placement. Never create an overlong arm, extra shoulder, impossible wrist direction, or a hand arriving from the wrong side of the body.`);
 
     sections.push(`FACIAL EXPRESSION
-${expression.prompt}
-Expression changes only facial muscle state; preserve the identity geometry and natural asymmetry defined by IMAGE A.`);
+${expression?.prompt ?? "Keep a natural neutral expression."}
+Change facial muscle state only. Do not alter facial proportions, identity, or apparent age.`);
 
     sections.push(`HAIR
-${hair.prompt}
-Where the head touches a pillow or cushion, compress only the contact-side hair according to pressure and friction. Do not change haircut, hairline, density, or growth pattern.`);
+${hair?.prompt ?? "Keep the original hair arrangement."}
+Change arrangement only within the original length, density, wave pattern, and hairline. Where hair touches a pillow, flatten only the contact side according to pressure and friction.`);
 
     sections.push(`CLOTHING
-${clothing.prompt}
-Fabric follows gravity, body curvature, pressure, friction, and the selected pose. Produce irregular, load-driven folds appropriate to material thickness. Avoid repeated texture stamps, melted edges, or geometry that ignores contact surfaces.`);
+${clothing?.prompt ?? "Use simple modest home clothing."}
+Fabric follows gravity, body curvature, pressure, friction, and the selected pose. Use irregular load-driven folds and no repeated synthetic texture stamps.`);
 
-    sections.push(`LIGHTING AND EXPOSURE
+    sections.push(`LIGHTING
 ${this.lightingEngine.buildPrompt(lighting)}
-Light must interact consistently with face, hair, beard, neck, clothing, bedding, furniture, mirrors, and nearby surfaces. Every cast shadow, contact shadow, catchlight, reflection, and brightness gradient must trace back to a selected or reference-supported source.`);
+Every cast shadow, contact shadow, catchlight, reflection, and brightness gradient must trace back to a selected or reference-supported source. No cinematic fill, hidden softbox, or unexplained room brightening.`);
 
-    sections.push(`PHONE-CAMERA PROCESSING
-- Apply one ordinary Xiaomi phone-camera pipeline to the entire frame.
-- Use restrained sharpening, noise reduction, tone mapping, and compression appropriate to the selected light level.
-- Preserve natural phone depth of field; do not add DSLR-style blur, broken portrait segmentation, or artificial edge separation around hair.
-- Allow mild, physically expected white-balance imperfection under mixed light without stylized color grading.
-- Face, neck, body, clothing, and room must share the same exposure logic, noise character, resolution, sharpness, and compression unless depth or illumination physically explains a difference.
-- Retain realistic material response: skin is neither waxy nor over-detailed; hair is neither wire-like nor sculpted; beard edges are neither painted nor uniformly dense.`);
+    sections.push(`CAMERA PROCESSING
+Apply one ordinary Xiaomi phone-camera pipeline to the entire frame. Use restrained sharpening, modest noise reduction, mild compression, realistic shadow noise, slight white-balance imperfection where physically expected, and natural phone depth of field. No fake DSLR bokeh. Face, neck, body, clothing, bedding, and room must share the same exposure, sharpness, noise, and compression logic unless depth or illumination physically explains a difference.`);
+
+    sections.push(`REALISM
+Preserve natural facial asymmetry, real pores and skin-color variation, natural beard gaps, plausible hair clumps and stray strands, local mattress and pillow compression, gravity-driven clothing folds, anatomically possible arm reach, mild smartphone perspective distortion, and physically motivated light falloff. Never improve one part of the frame into a cleaner or sharper rendering style than the rest.`);
 
     sections.push(`FINAL PHYSICAL CHECK
-- The person is the exact IMAGE A identity under new conditions.
-- The room obeys IMAGE B and ${roomMode} mode.
-- The selected support surfaces exist and visibly respond to body weight.
-- Arms, hands, phone reach, and camera optical axis are anatomically and geometrically possible.
-- For bed selfies, body placement on the mattress is solved before camera placement and must not shift to satisfy framing.
-- Mirror reflections, if present, preserve one consistent ray path and handedness.
-- Camera, lens, distance, perspective, depth of field, exposure, and processing form one compatible capture.
-- No furniture or clutter is added, removed, moved, cleaned, mirrored, resized, or redesigned.`);
+- IMAGE A controls identity only.
+- IMAGE B controls the same room and bed only.
+- Subject placement is solved before camera placement.
+- The selected body side is defined relative to the subject, not the image.
+- Support surfaces visibly carry weight and compress locally.
+- Arms, hands, phone reach, and optical axis are anatomically possible.
+- Mirror reflections, if present, preserve one ray path and correct handedness.
+- Camera, lens, perspective, exposure, depth of field, noise, and processing form one compatible capture.
+- No furniture, clutter, doors, windows, mirrors, fixtures, or room dimensions are moved, cleaned, mirrored, resized, or redesigned.`);
 
     sections.push(`FORBIDDEN RESULTS
-No cartoon, illustration, painting, 3D-render appearance, beauty filter, facial reshaping, forced symmetry, plastic or waxy skin, artificial pore maps, painted beard, wire hair, extra fingers, extra limbs, fused limbs, impossible joints, torso penetration, floating body, unsupported contact, broken reflection, fake DSLR bokeh, anamorphic distortion, destructive ISO noise, extreme motion blur, fake 8K detail, unmotivated lens flare, cinematic grading, studio softbox, EXIF spoofing, C2PA removal, PRNU simulation, forensic countermeasures, or unrequested text and logos.`);
+No cartoon, illustration, painting, CGI, 3D-render appearance, beauty filter, facial reshaping, forced symmetry, plastic or waxy skin, artificial pore maps, painted beard, wire hair, extra fingers, extra limbs, fused limbs, impossible joints, torso penetration, floating body, unsupported contact, broken reflection, fake DSLR bokeh, anamorphic distortion, destructive ISO noise, extreme motion blur, fake 8K detail, unmotivated lens flare, cinematic grading, studio softbox, EXIF spoofing, C2PA removal, PRNU simulation, forensic countermeasures, unrequested text, or logos.`);
 
-    return sections.join("\n\n");
+    sections.push(`NEGATIVE PROMPT
+cartoon, illustration, painting, CGI, 3D render, plastic skin, beauty filter, face smoothing, over-sharpened pores, painted beard, wire hair, extra fingers, extra arm, fused hand, impossible elbow, torso penetration, floating shoulder, broken anatomy, fake bokeh, cinematic lighting, studio softbox, extreme HDR, artificial glow, fake 8K, exaggerated wide-angle distortion, EXIF manipulation, C2PA removal, PRNU simulation`);
+
+    return sections.filter(Boolean).join("\n\n");
   }
 }
