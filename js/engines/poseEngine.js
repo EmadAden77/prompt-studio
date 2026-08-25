@@ -1,3 +1,14 @@
+const STANDING_GROUNDING = `STANDING GROUNDING — FULL WEIGHT ON THE FLOOR
+1) FOOT CONTACT: both feet flat (or one slightly forward), soles fully meeting the floor; contact shadow hugs the sole line; on reflective floors a faint correct reflection appears.
+2) NATURAL STANCE: weight shifted slightly to one leg (contrapposto): pelvis mildly tilted, shoulders relaxed and uneven, one knee softly unlocked — no symmetrical mannequin pose.
+3) CLOTHING GRAVITY: garments hang vertically from shoulders and waist with natural drape folds; hems fall straight; no floating fabric indoors.
+4) HAND CONTACT (optional): if a hand rests on bed edge, sofa armrest or wardrobe door, fingers spread naturally with slight skin pressure and no interpenetration; the surface does not deform under a light hand contact.
+5) CAST SHADOW: the body casts a floor shadow consistent with the selected light source direction and height; shadow length matches light angle.
+6) CAMERA CONSISTENCY: arm's-length selfie at ~1.5 m eye height; vertical room lines stay nearly vertical with only mild wide-angle convergence at frame edges; upper-body framing with the room readable behind.
+7) FORBIDDEN: floating feet, missing foot contact shadow, hovering heels, perfectly mirrored stance, room lines bending without lens reason.
+
+ANTI-MANNEQUIN TRIAD: contact shadows + real weight support + gravity-driven clothing folds + natural left/right asymmetry must all agree in one body solution.`;
+
 export class PoseEngine {
   constructor(poses = []) {
     this.poses = [...poses];
@@ -48,6 +59,15 @@ export class PoseEngine {
     ].filter(Boolean).join("\n");
   }
 
+  familyOf(poseOrId) {
+    const poseId = typeof poseOrId === "string" ? poseOrId : poseOrId?.id;
+    if (!poseId) return "other";
+    if (poseId.startsWith("sitting")) return "sitting";
+    if (poseId.startsWith("standing")) return "standing";
+    if (poseId.startsWith("lying")) return "lying";
+    return "other";
+  }
+
   isSideLying(poseId) {
     return poseId === "lying_right_side" || poseId === "lying_left_side";
   }
@@ -65,12 +85,14 @@ export class PoseEngine {
       armStrategy: this.buildArmStrategy(pose, autoEngineering),
       expression: this.buildExpressionLock(expression),
       hair: this.buildHairLock(hair),
-      clothing: this.buildClothingLock(clothing)
+      clothing: this.buildClothingLock(clothing),
+      familyNegative: this.getFamilyNegativePrompt(pose)
     };
 
-    if (pose.id.startsWith("lying")) {
-      sections.grounding = this._buildGroundingSection(pose);
-      sections.posePhysics = `${sections.posePhysics}\n\n${sections.grounding}`;
+    const grounding = this._buildFamilyGrounding(pose);
+    if (grounding) {
+      sections.grounding = grounding;
+      sections.posePhysics = `${sections.posePhysics}\n\n${grounding}`;
     }
 
     if (this.trueLateralEnabled && this.isSideLying(pose.id)) {
@@ -81,11 +103,44 @@ export class PoseEngine {
   }
 
   buildSubjectLock(pose) {
-    return `[Absolute Identity Lock: use IMAGE A. 100% reference fidelity. NO modification to facial geometry. Same real person photographed again, not a look-alike.]\n\nSUBJECT: The exact man from IMAGE A, identity locked, performing the pose “${pose.name_en}” on the bed represented by IMAGE B. IMAGE A contributes identity only, never pose, expression, clothing, lighting, background, or camera viewpoint.`;
+    let placementText = "inside the same room represented by IMAGE B";
+    if (pose.id.startsWith("lying") || pose.id === "semi_reclining") {
+      placementText = "on the bed represented by IMAGE B";
+    } else if (pose.id === "sitting_bed_edge") {
+      placementText = "on the real mattress edge represented by IMAGE B";
+    } else if (pose.id === "standing_bedside") {
+      placementText = "on the floor beside the real bed represented by IMAGE B";
+    } else if (pose.placement === "sofa") {
+      placementText = pose.id.startsWith("sitting")
+        ? "on the real sofa represented by IMAGE B"
+        : "on the floor in the real sofa zone represented by IMAGE B";
+    } else if (pose.placement === "chair") {
+      placementText = "on the real chair represented by IMAGE B";
+    } else if (pose.placement === "floor" || pose.placement === "center") {
+      placementText = "on the real room floor represented by IMAGE B";
+    } else if (pose.placement === "vanity") {
+      placementText = "in the real vanity zone represented by IMAGE B";
+    } else if (pose.placement === "wardrobe") {
+      placementText = "in the real wardrobe zone represented by IMAGE B";
+    }
+
+    return `[Absolute Identity Lock: use IMAGE A. 100% reference fidelity. NO modification to facial geometry. Same real person photographed again, not a look-alike.]\n\nSUBJECT: The exact man from IMAGE A, identity locked, performing the pose “${pose.name_en}” ${placementText}. IMAGE A contributes identity only, never pose, expression, clothing, lighting, background, or camera viewpoint.`;
   }
 
   buildPosePhysics(pose, autoEngineering = null) {
-    return `POSE & PHYSICS\n${this.buildPhysicsText(pose)}\n${autoEngineering?.physicsFine ?? ""}\nBody placement must be solved before camera placement. Preserve natural spinal alignment, gravity, local pressure, mattress/pillow deformation, fabric displacement, and contact shadows. No body part may intersect the torso, mattress, pillow, headboard, or nearby furniture.`.trim();
+    const family = this.familyOf(pose);
+    const universal = family === "sitting" || family === "standing"
+      ? "Body placement must be solved before camera placement. Preserve natural spinal alignment, gravity, real support/load response, fabric displacement, contact shadows, and natural asymmetry. No body part may intersect the torso, floor, seat, armrest, backrest, or nearby furniture."
+      : "Body placement must be solved before camera placement. Preserve natural spinal alignment, gravity, local pressure, mattress/pillow deformation, fabric displacement, and contact shadows. No body part may intersect the torso, mattress, pillow, headboard, or nearby furniture.";
+    return `POSE & PHYSICS\n${this.buildPhysicsText(pose)}\n${autoEngineering?.physicsFine ?? ""}\n${universal}`.trim();
+  }
+
+  _buildFamilyGrounding(pose) {
+    const family = this.familyOf(pose);
+    if (family === "lying") return this._buildGroundingSection(pose);
+    if (family === "sitting") return this._buildSittingGrounding(pose);
+    if (family === "standing") return STANDING_GROUNDING;
+    return null;
   }
 
   _buildGroundingSection(pose) {
@@ -111,6 +166,81 @@ FINAL GROUNDING CHECK (must pass before output):
 If any fails → re-render from scratch.`;
   }
 
+  _buildSittingGrounding(pose) {
+    const supportRule = pose.id === "sitting_sofa"
+      ? "SOFA LOAD: weight on sit bones and upper thighs; the soft sofa cushion visibly compresses about 3–5 cm and bulges slightly beside the hips."
+      : pose.id === "sitting_chair"
+        ? "CHAIR LOAD: weight stays fully inside the hard chair-seat boundary; show a clear seat contact shadow and only slight garment/seat indentation where physically possible."
+        : pose.id === "sitting_floor"
+          ? "FLOOR LOAD: pelvis and selected leg surfaces directly load the rigid floor. The floor itself does not compress; grounding is proven by continuous contact shadows and believable body-pressure flattening in clothing/soft tissue."
+          : "BED-EDGE LOAD: pelvis and upper thighs load the real mattress edge with local downward compression and radiating bedding tension.";
+    const legRule = pose.id === "sitting_floor"
+      ? "LEG LOGIC: crossed, folded, or gently extended legs must remain anatomically plausible and visibly supported by the floor; no floating knee, ankle, heel, or lower leg."
+      : "LEG LOGIC: knees bend naturally near 90° where anatomy and furniture height allow; feet are physically supported on the floor when visible, each with its own contact shadow; no dangling unsupported legs.";
+    const framingRule = pose.id === "sitting_floor"
+      ? "CAMERA CONSISTENCY: camera is at the subject's actual seated eye height, lower than chair/sofa eye height; frame head, torso, pelvis support, and enough floor/legs to prove the seated geometry."
+      : "CAMERA CONSISTENCY: seat surface plus armrest or backrest remains visible around the lower torso; background is seen from seated eye height, about 1.1–1.2 m for a normal chair/sofa, never from standing height.";
+
+    return `SITTING GROUNDING — THE BODY MUST PHYSICALLY LOAD THE SUPPORT
+1) ${supportRule}
+2) ${legRule}
+3) BACK CONTACT: leaning back → the real backrest/cushion compresses or carries a broad contact shadow behind the shoulder blades; leaning forward → forearms/elbows may rest on knees with visible pressure folds. Floor sitting uses only physically present support.
+4) CONTACT SHADOWS: under thighs and pelvis on the seat/support, under feet or supporting lower legs on the floor, and under forearms on real armrests/knees — no floating gap and no bright line under the body.
+5) GRAVITY FOLDS: shirt gathers naturally at the waist/lower belly when seated; trousers show tension at bent knees and relax at hips; folds must follow gravity and pressure rather than decorative symmetry.
+6) POSTURE: natural slight slouch or lean; shoulders relaxed and mildly asymmetric — no mannequin stiffness.
+7) ${framingRule}
+8) FORBIDDEN: floating above the support, uncompressed soft sofa cushion, feet/lower legs without support, rigid symmetrical posture, or a crop that hides the only visual evidence of sitting geometry.
+
+ANTI-MANNEQUIN TRIAD: contact shadows + real support/compression + gravity-driven folds + natural asymmetry must all agree in one body solution.`;
+  }
+
+  _buildFamilyCameraArm(pose) {
+    const family = this.familyOf(pose);
+    if (family === "sitting") {
+      const height = pose.id === "sitting_floor"
+        ? "the subject's true floor-seated eye height (lower than chair/sofa height)"
+        : "seated eye height around 1.1–1.2 m";
+      return `SITTING SELFIE CAMERA & ARM — FAMILY OVERRIDE
+- Front-camera distance: 50–70 cm from the face.
+- Camera height/angle: eye level from ${height}; never a standing-height observer view.
+- Framing: head + torso + enough seat/support geometry to prove sitting. For sofa/chair, keep part of the seat and armrest/backrest visible; for floor sitting, keep enough pelvis/leg/floor support visible.
+- Holding arm: extended toward face level with a naturally relaxed elbow and one continuous shoulder → elbow → wrist chain.
+- Other arm: rests on a real armrest, thigh, knee, or other actual support. No floating arm and no extra shoulder.`;
+    }
+    if (family === "standing") {
+      return `STANDING SELFIE CAMERA & ARM — FAMILY OVERRIDE
+- Front-camera distance: 45–60 cm from the face.
+- Camera height/angle: approximately eye level around 1.5 m, derived from the subject's real standing anatomy.
+- Framing: upper body with the room readable behind; solve full-body floor grounding before crop. Vertical doors, wardrobe edges, wall corners, and mirror frames remain nearly vertical, with only mild wide-angle convergence near frame edges.
+- Holding arm: extended toward face level with a naturally relaxed elbow and one continuous shoulder → elbow → wrist chain.
+- Other arm: rests naturally by the thigh, in a pocket, on the hip, or on a real nearby support surface when selected. No floating arm and no extra shoulder.`;
+    }
+    return "";
+  }
+
+  getFamilyNegativePrompt(pose) {
+    const family = this.familyOf(pose);
+    if (family === "sitting") {
+      return [
+        "floating above cushion",
+        "uncompressed sofa cushion",
+        "feet without floor contact",
+        "mannequin sitting posture",
+        "seat hidden by impossible crop"
+      ];
+    }
+    if (family === "standing") {
+      return [
+        "floating feet",
+        "missing foot contact shadow",
+        "hovering heels",
+        "symmetrical mannequin stance",
+        "bent room lines without lens reason"
+      ];
+    }
+    return [];
+  }
+
   buildArmStrategy(pose, autoEngineering = null) {
     const deterministic = autoEngineering?.armFine
       ?? pose.selfie_notes
@@ -119,8 +249,9 @@ If any fails → re-render from scratch.`;
     const rearRule = autoEngineering?.cameraType === "rear"
       ? "Rear-camera capture is not a front-camera selfie. Do not extend an arm toward the lens; both arms must remain naturally supported unless a mirror-selfie grip is explicitly mapped."
       : "For a true front-camera selfie, derive the phone position from the mapped shoulder, elbow, wrist, and hand only after the body is anchored to its support surfaces.";
+    const familyCameraArm = this._buildFamilyCameraArm(pose);
 
-    return `ARM STRATEGY\n${deterministic}\n${rearRule}\nUniversal arm rules: no overlong arm, no extra shoulder, no duplicated hand, no wrist from an impossible direction, no hand arriving from the wrong side of the subject's body, and no limb penetrating the torso. If showing the phone, hand, or forearm would force anatomical distortion, keep the phone, hand, and most of that forearm outside frame while preserving a physically logical shoulder and elbow path.`;
+    return `ARM STRATEGY\n${deterministic}\n${rearRule}\nUniversal arm rules: no overlong arm, no extra shoulder, no duplicated hand, no wrist from an impossible direction, no hand arriving from the wrong side of the subject's body, and no limb penetrating the torso. If showing the phone, hand, or forearm would force anatomical distortion, keep the phone, hand, and most of that forearm outside frame while preserving a physically logical shoulder and elbow path.${familyCameraArm ? `\n\n${familyCameraArm}` : ""}`;
   }
 
   buildExpressionLock(expression) {
