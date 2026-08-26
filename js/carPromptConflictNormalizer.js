@@ -110,7 +110,7 @@ function patchPromptEngine() {
   proto.generate = function generateWithCarConflictNormalization(config = {}) {
     const result = originalGenerate.call(this, config);
     const pose = getActiveCarTemplate();
-    if (!pose || pose.category !== "car") return result;
+    if (!pose) return result;
     return normalizeCarPrompt(result);
   };
 
@@ -121,8 +121,7 @@ let uiDefaults = null;
 let syncQueued = false;
 
 function activeCarTemplate() {
-  const pose = getActiveCarTemplate();
-  return pose?.category === "car" ? pose : null;
+  return getActiveCarTemplate();
 }
 
 function captureUiDefaults() {
