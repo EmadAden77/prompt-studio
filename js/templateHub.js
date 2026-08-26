@@ -13,10 +13,6 @@ function setSelect(id, value, dispatch = true) {
   return true;
 }
 
-function currentSceneId() {
-  return document.querySelector("#scenePickerGrid [aria-pressed='true']")?.dataset?.sceneId ?? null;
-}
-
 function selectInternalScene(sceneId) {
   if (!sceneId) return true;
   const opener = document.querySelector("#selectSceneBtn");
@@ -37,9 +33,11 @@ function clearLegacyTemplateState() {
   setSelect("hiddenArmTemplateSelect", "custom", false);
   setSelect("indoorDayTemplateSelect", "custom", false);
   setSelect("indoorNightTemplateSelect", "custom", false);
+  ["hubClothingPrepTemplate", "hubPostShowerTemplate"].forEach((id) => setSelect(id, "custom", false));
   delete document.documentElement.dataset.activeTemplate;
   delete document.documentElement.dataset.activeTemplateHub;
   delete document.documentElement.dataset.activeIndoorTimeTemplate;
+  delete document.documentElement.dataset.activeRoomScenario;
 }
 
 function applyTemplate(template, select) {
@@ -76,18 +74,22 @@ function applyTemplate(template, select) {
   requestAnimationFrame(() => requestAnimationFrame(run));
 }
 
-function hideLegacyTemplateUI() {
+function removeLegacyBedroomTemplateUI() {
   const legacyTemplateField = document.querySelector("#templateSelect")?.closest(".field");
   if (legacyTemplateField) legacyTemplateField.hidden = true;
 
-  document.querySelectorAll('[data-indoor-time-templates]').forEach((panel) => {
-    panel.hidden = true;
+  document.querySelectorAll('[data-indoor-time-templates]').forEach((panel) => panel.remove());
+  document.querySelectorAll('[data-room-scenario-group]').forEach((card) => card.remove());
+
+  ["hiddenArmTemplateSelect", "indoorDayTemplateSelect", "indoorNightTemplateSelect", "hubClothingPrepTemplate", "hubPostShowerTemplate"].forEach((id) => {
+    const node = document.querySelector(`#${id}`);
+    const holder = node?.closest(".template-hub__card, .field, section, article");
+    holder?.remove();
   });
 
-  ["hiddenArmTemplateSelect", "indoorDayTemplateSelect", "indoorNightTemplateSelect"].forEach((id) => {
-    const field = document.querySelector(`#${id}`)?.closest(".field, section, article");
-    if (field) field.hidden = true;
-  });
+  const clothing = document.querySelector("#clothingSelect");
+  if (clothing) clothing.disabled = false;
+  document.querySelectorAll("[data-scenario-clothing-note]").forEach((note) => note.remove());
 
   const optionsTitle = document.querySelector("#optionsTitle");
   if (optionsTitle) optionsTitle.textContent = "خيارات القالب";
@@ -96,8 +98,7 @@ function hideLegacyTemplateUI() {
 }
 
 function buildHub() {
-  const old = document.querySelector("#templateHub");
-  old?.remove();
+  document.querySelector("#templateHub")?.remove();
 
   const intro = document.querySelector(".intro");
   if (!intro) return;
@@ -129,7 +130,7 @@ function buildHub() {
     select.id = `bedroomV2_${group}`;
     select.dataset.bedroomTemplateSelect = "true";
     select.appendChild(new Option("اختر قالبًا", "custom"));
-    templates.forEach((template) => select.appendChild(new Option(template.name_ar, template.id)));
+    templates.forEach((item) => select.appendChild(new Option(item.name_ar, item.id)));
     select.addEventListener("change", () => {
       if (select.value === "custom") return;
       const selected = templates.find((item) => item.id === select.value);
@@ -160,11 +161,23 @@ function installStyles() {
 function installTemplateHub() {
   installStyles();
   clearLegacyTemplateState();
-  hideLegacyTemplateUI();
+  removeLegacyBedroomTemplateUI();
   buildHub();
+}
+
+function finalizeBedroomV2() {
+  clearLegacyTemplateState();
+  removeLegacyBedroomTemplateUI();
+  if (!document.querySelector("#templateHub")) buildHub();
+  import("./bedroomTemplateV2Runtime.js").then(() => {
+    document.querySelector("#rebuildBtn")?.click();
+  });
 }
 
 if (typeof document !== "undefined") {
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", installTemplateHub, { once: true });
   else installTemplateHub();
+
+  if (document.readyState === "complete") finalizeBedroomV2();
+  else window.addEventListener("load", finalizeBedroomV2, { once: true });
 }
