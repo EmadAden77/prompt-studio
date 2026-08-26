@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/responsive.css">
 </head>
-<body>
+<body data-page="home">
   <a class="skip-link" href="#workspace">انتقل إلى مساحة العمل</a>
 
   <header class="topbar">
@@ -26,6 +26,7 @@
         <span><strong>AI Selfie</strong><small>Smart Quad Studio</small></span>
       </a>
       <div class="topbar__actions">
+        <a class="ghost-button" href="car.html" style="text-decoration:none;white-space:nowrap">🚙 قوالب السيارة</a>
         <span class="save-status" id="saveStatus" aria-live="polite"><span class="save-status__dot"></span> محفوظ محليًا</span>
         <button class="icon-button" id="helpBtn" type="button" aria-label="فتح دليل الاستخدام" title="دليل الاستخدام">؟</button>
         <button class="icon-button" id="themeBtn" type="button" aria-label="تبديل المظهر" title="تبديل المظهر"><span id="themeIcon" aria-hidden="true">◐</span></button>
@@ -219,6 +220,5 @@
   <script type="module" src="js/roomScenarioRuntime.js"></script>
   <script type="module" src="js/roomScenarioHub.js"></script>
   <script type="module" src="js/xiaomiFrontCaptureModes.js"></script>
-  <script type="module" src="js/carTemplateHub.js"></script>
 </body>
 </html>
