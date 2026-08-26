@@ -1,3 +1,4 @@
+import "./carCloseupRuntime.js";
 import { PromptEngine } from "./engines/promptEngine.js";
 import { getActiveCarTemplate } from "./carTemplates.js";
 
