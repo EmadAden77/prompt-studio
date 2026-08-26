@@ -138,6 +138,57 @@ export const SCENES = Object.freeze([
     visible_features: ["full_room_overview", "floor", "ceiling_light", "ceiling_spots", "daylight_access"],
     surfaces: ["floor"],
     priority: 94
+  },
+  {
+    id: "user_room_1000204882",
+    name_ar: "مرجع الغرفة — الأريكة والسرير",
+    image_url: "scenes/user_room_1000204882.svg",
+    image_filename: "1000204882.png",
+    region: "sofa_bed_overview",
+    supported_poses: ["standing_sofa", "sitting_sofa", "standing_bedside", "standing_center", "sitting_floor"],
+    supported_directions: ["toward_sofa", "toward_bed", "facing_room", "any"],
+    camera_angles: ["eye_level", "high_angle", "low_angle"],
+    camera_distances: ["medium", "wide"],
+    base_camera_angle: "eye_level",
+    base_camera_distance: "wide",
+    default_for_poses: ["standing_sofa", "sitting_sofa", "standing_bedside"],
+    visible_features: ["bed", "mattress", "mattress_edge", "pillow", "blanket", "headboard", "nightstand", "lamp", "sofa", "sofa_cushion", "sofa_back", "sofa_armrest", "floor", "ceiling_light", "ceiling_spots", "full_room_overview"],
+    surfaces: ["floor", "mattress_edge", "sofa_cushion", "sofa_back", "sofa_armrest"],
+    priority: 97
+  },
+  {
+    id: "user_room_1000204898",
+    name_ar: "مرجع الغرفة — زاوية الباب والأريكة",
+    image_url: "scenes/user_room_1000204898.svg",
+    image_filename: "1000204898.jpg",
+    region: "door_sofa_overview",
+    supported_poses: ["standing_sofa", "sitting_sofa", "sitting_chair", "standing_center", "sitting_floor"],
+    supported_directions: ["toward_sofa", "facing_room", "facing_right", "any"],
+    camera_angles: ["eye_level", "high_angle", "low_angle"],
+    camera_distances: ["close", "medium", "wide"],
+    base_camera_angle: "eye_level",
+    base_camera_distance: "medium",
+    default_for_poses: ["standing_sofa", "sitting_sofa", "sitting_chair"],
+    visible_features: ["sofa", "sofa_cushion", "sofa_back", "sofa_armrest", "chair", "chair_seat", "chair_back", "bed", "mattress", "lamp", "floor", "ceiling_light", "ceiling_spots"],
+    surfaces: ["floor", "sofa_cushion", "sofa_back", "sofa_armrest", "chair_seat", "chair_back"],
+    priority: 97
+  },
+  {
+    id: "user_room_1000204796",
+    name_ar: "مرجع الغرفة — النظرة الكاملة",
+    image_url: "scenes/user_room_1000204796.svg",
+    image_filename: "1000204796.png",
+    region: "full_room_user_overview",
+    supported_poses: ["standing_center", "sitting_floor", "standing_wardrobe", "standing_vanity", "standing_sofa", "sitting_chair", "standing_bedside"],
+    supported_directions: ["facing_room", "facing_wardrobe", "toward_vanity", "toward_sofa", "toward_bed", "any"],
+    camera_angles: ["eye_level", "low_angle", "high_angle"],
+    camera_distances: ["medium", "wide"],
+    base_camera_angle: "eye_level",
+    base_camera_distance: "wide",
+    default_for_poses: ["standing_center", "sitting_floor", "standing_wardrobe", "standing_vanity"],
+    visible_features: ["full_room_overview", "floor", "ceiling_light", "ceiling_spots", "bed", "mattress", "mattress_edge", "pillow", "blanket", "headboard", "sofa", "sofa_back", "chair", "chair_seat", "chair_back", "wardrobe", "wardrobe_doors", "vanity_table", "vanity_direction"],
+    surfaces: ["floor", "mattress_edge", "sofa_back", "chair_seat", "chair_back", "wardrobe", "vanity"],
+    priority: 99
   }
 ]);
 
