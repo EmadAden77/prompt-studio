@@ -141,4 +141,5 @@ patchEngines();
 if (typeof document !== "undefined") {
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", installControl, { once:true });
   else installControl();
+  import("./carTemplateHub.js");
 }
