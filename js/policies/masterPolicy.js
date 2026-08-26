@@ -1,3 +1,5 @@
+import { REALISM_CORE, buildRealismCore } from "./realismCore.js";
+
 const IMMUTABLE_PHOTOGRAPHIC_REALISM_LOCK = `GLOBAL PHOTOGRAPHIC IMPERFECTION & CONSISTENCY LOCK — IMMUTABLE, ALWAYS ACTIVE
 This rule applies to EVERY template, pose, room scenario, camera path, clothing state, lighting preset, and future template. It is not a style option, cannot be disabled, and cannot be weakened by any lower-priority instruction.
 - SKIN: Never over-smooth, homogenize, airbrush, beautify, or wax-polish the face, neck, torso, chest, abdomen, shoulders, or arms. Preserve natural pores, small tonal variation, faint redness or unevenness, subtle texture changes, shaving traces where appropriate, tiny blemish-level variation, and realistic highlight breakup. Do not add artificial defects; preserve ordinary human variation instead of cosmetic perfection.
@@ -23,10 +25,13 @@ This rule becomes mandatory whenever a car-interior template or car reference is
 - FINAL VEHICLE GATE: if the car appears to be moving, the outside context reads as active roadway travel, or any interior component changes identity or geometry relative to the reference, the result is invalid and must be corrected before output.`;
 
 export const MASTER_POLICY = Object.freeze({
+  realismCore: REALISM_CORE,
+  roomRealismCore: buildRealismCore({ context: "room" }),
+  carRealismCore: buildRealismCore({ context: "car" }),
   immutablePhotographicRealismLock: IMMUTABLE_PHOTOGRAPHIC_REALISM_LOCK,
   carInteriorSaudiParkingLock: CAR_INTERIOR_SAUDI_PARKING_LOCK,
   globalSelfieArmRule: "The camera-holding arm and phone are always physically solved outside the crop and must never appear in the finished image. Any visible-arm or arm-extension instruction is invalid.",
-  eventRule: `Interpret every selected value as one physically coherent photographic event.\n\n${IMMUTABLE_PHOTOGRAPHIC_REALISM_LOCK}\n\n${CAR_INTERIOR_SAUDI_PARKING_LOCK}`,
+  eventRule: `${buildRealismCore({ context: "room" })}\n\n${IMMUTABLE_PHOTOGRAPHIC_REALISM_LOCK}\n\n${CAR_INTERIOR_SAUDI_PARKING_LOCK}`,
   conflictDomains: [
     "identity",
     "place and room continuity",
