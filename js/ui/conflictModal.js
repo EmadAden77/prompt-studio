@@ -14,11 +14,9 @@ export function renderValidation({ statusElement, summaryElement, listElement, a
   summaryElement.className = `validation-summary ${result.valid ? "is-valid" : "is-invalid"}`;
   summaryElement.textContent = result.valid
     ? warningCount
-      ? `لا توجد تعارضات مانعة. يوجد ${warningCount} ${warningCount === 1 ? "تنبيه" : "تنبيهات"} يحتاج انتباهك قبل الاستخدام، مثل رفع الصور المرجعية.`
-      : "التحقق ناجح: لا توجد تعارضات مانعة أو تنبيهات معلّقة."
-    : result.autoFixes.length
-      ? "توجد تعارضات مانعة قابلة للإصلاح. في الوضع الذكي سيحاول التطبيق إصلاحها تلقائيًا؛ وفي الوضع اليدوي يمكنك تطبيق الإصلاحات المقترحة."
-      : "توجد تعارضات مانعة لا يمكن حلها تلقائيًا. غيّر الاختيارات الموضحة باللون الأحمر قبل الاستخدام.";
+      ? `لا توجد تعارضات مانعة. يوجد ${warningCount} ${warningCount === 1 ? "تنبيه" : "تنبيهات"} يحتاج انتباهك قبل الاستخدام.`
+      : "التحقق ناجح: اجتازت التركيبة البوابة الصارمة ولا توجد تعارضات مانعة."
+    : "توجد تعارضات مانعة. النسخ يبقى مقفولًا حتى تُحل، والحل المقترح يظهر داخل كل بطاقة تعارض أدناه.";
 
   const fragment = document.createDocumentFragment();
   result.issues.forEach((issue) => {
@@ -48,6 +46,19 @@ export function renderValidation({ statusElement, summaryElement, listElement, a
       body.append(suggestion);
     }
 
+    if (issue.solution?.text) {
+      const solution = document.createElement("div");
+      solution.className = "validation-summary is-valid";
+      solution.style.marginTop = "10px";
+
+      const title = document.createElement("strong");
+      title.textContent = `${issue.solution.title ?? "الحل المقترح"}: `;
+      const text = document.createElement("span");
+      text.textContent = issue.solution.text;
+      solution.append(title, text);
+      body.append(solution);
+    }
+
     article.append(marker, body);
     fragment.append(article);
   });
@@ -55,6 +66,6 @@ export function renderValidation({ statusElement, summaryElement, listElement, a
   listElement.replaceChildren(fragment);
   autoFixButton.hidden = result.autoFixes.length === 0;
   if (!autoFixButton.hidden) {
-    autoFixButton.textContent = "إصلاح التعارضات القابلة للإصلاح";
+    autoFixButton.textContent = "تطبيق الإصلاحات الآمنة تلقائيًا";
   }
 }
