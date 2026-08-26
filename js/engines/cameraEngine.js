@@ -1,9 +1,73 @@
 export const ARM_PERSPECTIVE_LEVELS = Object.freeze(["natural", "enhanced", "extreme"]);
 
+const ARM_PERSPECTIVE_STORAGE_KEY = "ai-selfie-prompt-studio:arm-perspective";
+
+function readStoredArmPerspective() {
+  if (typeof localStorage === "undefined") return "enhanced";
+  try {
+    const value = localStorage.getItem(ARM_PERSPECTIVE_STORAGE_KEY);
+    return ARM_PERSPECTIVE_LEVELS.includes(value) ? value : "enhanced";
+  } catch {
+    return "enhanced";
+  }
+}
+
 function readArmPerspectiveSelection() {
   if (typeof document === "undefined") return "enhanced";
   const value = document.querySelector("#armPerspectiveSelect")?.value;
-  return ARM_PERSPECTIVE_LEVELS.includes(value) ? value : "enhanced";
+  return ARM_PERSPECTIVE_LEVELS.includes(value) ? value : readStoredArmPerspective();
+}
+
+function installArmPerspectiveControl() {
+  if (typeof document === "undefined") return;
+  const form = document.querySelector("#optionsForm");
+  if (!form || document.querySelector("#armPerspectiveSelect")) return;
+
+  const field = document.createElement("div");
+  field.className = "field field--wide";
+  field.dataset.armPerspectiveControl = "true";
+
+  const label = document.createElement("label");
+  label.htmlFor = "armPerspectiveSelect";
+  label.textContent = "تأثير ذراع السيلفي";
+
+  const select = document.createElement("select");
+  select.id = "armPerspectiveSelect";
+  select.name = "armPerspective";
+  [
+    ["natural", "طبيعي — منظور هاتف عادي"],
+    ["enhanced", "منظور معزّز — الذراع أوضح وأطول بصريًا"],
+    ["extreme", "ممدود جدًا — 0.5x / منظور قسري شديد"]
+  ].forEach(([value, text]) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = text;
+    select.appendChild(option);
+  });
+  select.value = readStoredArmPerspective();
+
+  const help = document.createElement("small");
+  help.textContent = "إعداد تصوير عام مستقل عن القالب. الافتراضي منظور معزّز؛ المرآة تُثبت على طبيعي، والاستلقاء يقيّد Extreme إلى Enhanced لحماية التشريح والدعم.";
+
+  field.append(label, select, help);
+  form.appendChild(field);
+
+  select.addEventListener("change", () => {
+    try {
+      localStorage.setItem(ARM_PERSPECTIVE_STORAGE_KEY, select.value);
+    } catch {
+      // Local storage is optional; the current DOM selection still applies.
+    }
+    document.querySelector("#rebuildBtn")?.click();
+  });
+}
+
+if (typeof document !== "undefined") {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", installArmPerspectiveControl, { once: true });
+  } else {
+    installArmPerspectiveControl();
+  }
 }
 
 export function selfieCameraEmulator(armPerspective = "enhanced") {
