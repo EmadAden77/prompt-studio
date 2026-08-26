@@ -101,17 +101,15 @@ function clearUnderlyingTemplates(kind) {
 function applyStandard(template, scene) {
   const lightingId = bestLightingFor(template, scene);
   clearUnderlyingTemplates("standard");
-  setSelect("lightingSelect", lightingId, true);
-  if (!setSelect("templateSelect", template.id, true)) return false;
-  return true;
+  if (lightingId) setSelect("lightingSelect", lightingId, true);
+  return setSelect("templateSelect", template.id, true);
 }
 
 function applyHidden(template, scene) {
   const lightingId = bestLightingFor(template, scene);
   clearUnderlyingTemplates("hidden");
   if (lightingId) setSelect("lightingSelect", lightingId, true);
-  if (!setSelect("hiddenArmTemplateSelect", template.id, true)) return false;
-  return true;
+  return setSelect("hiddenArmTemplateSelect", template.id, true);
 }
 
 function applyTimed(template, kind) {
@@ -180,12 +178,12 @@ function buildHub() {
   const titleWrap = document.createElement("div");
   const eyebrow = document.createElement("p");
   eyebrow.className = "eyebrow";
-  eyebrow.textContent = "TEMPLATE FIRST";
+  eyebrow.textContent = "TEMPLATES";
   const title = document.createElement("h2");
   title.id = "templateHubTitle";
-  title.textContent = "اختر نوع القالب أولًا";
+  title.textContent = "القوالب";
   const note = document.createElement("p");
-  note.textContent = "القالب يضبط المرجع والوضعية والإضاءة والكاميرا تلقائيًا. يبقى لك فقط الشعر وتعبير الوجه والملابس.";
+  note.textContent = "كل فئة في خانة مستقلة. اختيار القالب يضبط المرجع والوضعية والإضاءة تلقائيًا، مع بقاء أدوات Smart Quad الأصلية ظاهرة للمراجعة والتعديل.";
   titleWrap.append(eyebrow, title, note);
   header.appendChild(titleWrap);
 
@@ -236,29 +234,37 @@ function buildHub() {
   intro.after(section);
 }
 
-function simplifyManualControls() {
+function restoreOriginalControls() {
   const templateField = document.querySelector("#templateSelect")?.closest(".field");
   const poseField = document.querySelector("#poseSelect")?.closest(".field");
   const lightingField = document.querySelector("#lightingSelect")?.closest(".field");
   const aspectField = document.querySelector("#aspectSelect")?.closest(".field");
   [templateField, poseField, lightingField, aspectField].forEach((field) => {
-    if (field) {
-      field.hidden = true;
-      field.dataset.templateControlled = "true";
-    }
+    if (!field) return;
+    field.hidden = false;
+    field.removeAttribute("hidden");
+    delete field.dataset.templateControlled;
   });
 
   const optionsTitle = document.querySelector("#optionsTitle");
-  if (optionsTitle) optionsTitle.textContent = "اختياراتك الشخصية";
+  if (optionsTitle) optionsTitle.textContent = "Smart Quad";
+  const badge = optionsTitle?.closest(".panel__header")?.querySelector(".context-badge");
+  if (badge) badge.textContent = "Deterministic";
+
   const form = document.querySelector("#optionsForm");
+  if (form) delete form.dataset.personalOnly;
+
   const hair = document.querySelector("#hairSelect")?.closest(".field");
   const expression = document.querySelector("#expressionSelect")?.closest(".field");
   const clothing = document.querySelector("#clothingSelect")?.closest(".field");
-  [hair, expression, clothing].forEach((field) => field?.classList.add("field--wide"));
-  if (form) form.dataset.personalOnly = "true";
+  hair?.classList.remove("field--wide");
+  expression?.classList.add("field--wide");
+  clothing?.classList.add("field--wide");
 
-  document.querySelectorAll('[data-hidden-arm-templates="true"]').forEach((field) => { field.hidden = true; });
-  document.querySelectorAll('[data-indoor-time-templates]').forEach((panel) => { panel.hidden = true; });
+  document.querySelectorAll('[data-indoor-time-templates]').forEach((panel) => {
+    panel.hidden = false;
+    panel.removeAttribute("hidden");
+  });
 }
 
 function installStyles() {
@@ -269,7 +275,6 @@ function installStyles() {
 .template-hub{max-width:1180px;margin:0 auto 24px;padding:22px;border:1px solid var(--border-color,rgba(127,127,127,.18));border-radius:24px;background:var(--panel-bg,rgba(20,24,32,.72))}
 .template-hub__header{display:flex;justify-content:space-between;gap:16px;margin-bottom:18px}.template-hub__header h2{margin:2px 0 6px;font-size:clamp(1.35rem,4vw,2rem)}.template-hub__header p:last-child{margin:0;opacity:.72;line-height:1.8}
 .template-hub__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.template-hub__card{padding:14px;border:1px solid var(--border-color,rgba(127,127,127,.18));border-radius:16px;background:rgba(127,127,127,.035)}.template-hub__card label{display:flex;align-items:center;gap:9px;margin-bottom:9px}.template-hub__icon{font-size:1.2rem}.template-hub__card select{width:100%}
-#optionsForm[data-personal-only="true"]{grid-template-columns:1fr}
 @media(max-width:700px){.template-hub{margin:0 16px 20px;padding:16px}.template-hub__grid{grid-template-columns:1fr}.template-hub__header{display:block}}
 `;
   document.head.appendChild(style);
@@ -278,7 +283,7 @@ function installStyles() {
 function installTemplateHub() {
   installStyles();
   buildHub();
-  requestAnimationFrame(() => requestAnimationFrame(simplifyManualControls));
+  requestAnimationFrame(() => requestAnimationFrame(restoreOriginalControls));
 }
 
 if (typeof document !== "undefined") {
