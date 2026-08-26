@@ -1,0 +1,23 @@
+export const REALISM_CORE = `REALISM CORE — CAPTURED, NOT RENDERED
+- Treat the result as one genuine photographic event captured by one real camera or smartphone in one real place and one moment, never as CGI, illustration, synthetic portraiture, cinematic render, or idealized commercial imagery.
+- Physical coherence outranks visual perfection. Resolve conflicts in this priority: identity → anatomy → reference authority → contact/support → camera reach and perspective → lighting → reflections → exposure/sensor behavior → aesthetics.
+- Preserve natural human irregularity from the identity reference: facial asymmetry, real skin pores and micro-texture, subtle blemishes and tonal variation, believable under-eye and lip texture, natural hair density and flyaways, beard-density variation, and age-appropriate detail. No beautification, face slimming, symmetry correction, skin whitening, waxy/plastic skin, beauty filter, smoothing, selective face cleanup, or glamour retouching.
+- Anatomy and contact must remain mechanically possible. Pelvis, torso, shoulders, arms, hands, fingers, thighs, knees, legs, feet, neck, and head belong to one continuous body. Support surfaces, clothing, hair, and skin show believable pressure, compression, gravity, friction, and contact where they meet.
+- Reference authority is strict. Identity references control identity only unless explicitly promoted to a unified scene reference. Room, vehicle, or environment references control their own geometry, materials, proportions, object placement, and visible state. Never blend unrelated reference authorities.
+- Camera coherence is mandatory: one camera, one lens, one viewpoint, one perspective, one exposure solution, one focus/depth solution, one white-balance behavior, and one processing pipeline. Every visible object must be physically visible from that camera position.
+- Materials must behave physically. Fabric drape follows gravity, joints, and support contact; glass, mirrors, leather, plastic, metal, paint, wood, bedding, skin, and hair retain material-correct texture, roughness, reflection, occlusion, and highlight behavior without decorative shine.
+- Lighting comes only from sources that exist in the scene or are explicitly selected. Shadow direction, softness, falloff, color temperature, catchlights, reflections, and local exposure must agree with those sources. No invisible studio key/fill, unsupported rim light, face glow without a source, or cinematic haze.
+- Reflections and mirrors must be geometrically correct, preserve handedness and ray direction, and remain consistent with the same camera and lighting event. No duplicated room, pasted reflection, impossible mirror view, or decorative flare.
+- Do not make the photograph artificially flawless. Allow ordinary capture compromises when physically justified: small framing imbalance, slight handheld roll, limited dynamic range, modest highlight clipping, shadow noise, imperfect white balance, restrained sharpening, compression, edge softness, mild lens distortion, and minor motion softness.
+- The whole frame shares one sensor/processing event. Never make the face cleaner, sharper, brighter, smoother, less noisy, or differently graded than clothing, room, vehicle, glass, furniture, or background without a physical depth or illumination reason. No fake DSLR bokeh or separate face treatment.
+- The image should feel incidental and lived-in rather than staged: ordinary posture, believable gaze, natural object placement, physically plausible clutter, and no suspicious repetition, duplicated props, cloned vehicles, synthetic decorative text, or hyper-detailed 8K rendering language.
+- Final realism gate: every visible detail must be explainable by the same real camera, real lens, real geometry, real light sources, real exposure, real materials, and real moment. If realism conflicts with prettiness, keep the realism.`;
+
+export function buildRealismCore({ context = "generic" } = {}) {
+  const contextRule = context === "room"
+    ? "- ROOM CONTEXT: preserve the exact room geometry, furniture, bedding, mirrors, doors, windows, fixtures, clutter, scale, and support surfaces from the room authority. Body-to-bed, body-to-chair, body-to-sofa, or foot-to-floor contact must visibly carry weight with local compression/contact shadows where physically appropriate."
+    : context === "car"
+      ? "- CAR CONTEXT: preserve the exact cabin geometry, steering-wheel/seat/console relationships, glass and mirror geometry, and stationary parked-vehicle logic. Solve seated anatomy and support contact before camera placement."
+      : "";
+  return [REALISM_CORE, contextRule].filter(Boolean).join("\n");
+}
