@@ -68,17 +68,17 @@
 
             <article class="upload-card upload-card--automatic" data-auto-reference>
               <div class="upload-card__heading">
-                <div><strong>IMAGE B</strong><span>مرجع الغرفة الذي تختاره</span></div>
-                <span class="auto-reference-badge">اختيارك</span>
+                <div><strong>IMAGE B</strong><span>مرجع الغرفة الذي تختاره أو يختاره القالب تلقائيًا</span></div>
+                <span class="auto-reference-badge">تلقائي مع القالب</span>
               </div>
               <button id="selectSceneBtn" class="auto-reference-card auto-reference-card--button" type="button" aria-haspopup="dialog">
                 <span class="dropzone__icon" aria-hidden="true">B</span>
                 <span class="dropzone__empty">
-                  <strong id="autoReferenceTitle">اختر صورة مرجع الغرفة</strong>
-                  <small id="autoReferenceMeta">بعد اختيارها، يعرض لك التطبيق الوضعيات المناسبة تلقائيًا.</small>
+                  <strong id="autoReferenceTitle">اختر قالبًا أو مرجع الغرفة</strong>
+                  <small id="autoReferenceMeta">القوالب النهارية والليلية تختار المرجع الأنسب تلقائيًا.</small>
                 </span>
               </button>
-              <p class="upload-card__hint">لا تحتاج إلى رفع IMAGE B؛ اختر مرجعك من صور الغرفة المدمجة في التطبيق.</p>
+              <p class="upload-card__hint">القالب هو الأساس في أقسام النهار والليل؛ عند اختياره ينتقي التطبيق IMAGE B الذي يجتاز شروط الوضعية والإضاءة تلقائيًا.</p>
             </article>
           </div>
         </section>
@@ -124,7 +124,7 @@
 
         <section class="panel scene-panel" aria-labelledby="sceneTitle">
           <div class="panel__header">
-            <div><span class="step-number">03</span><h2 id="sceneTitle">مرجع الغرفة الذي اخترته</h2></div>
+            <div><span class="step-number">03</span><h2 id="sceneTitle">مرجع الغرفة المختار تلقائيًا أو يدويًا</h2></div>
             <span class="confidence-badge" id="sceneConfidence">—</span>
           </div>
           <div class="scene-card" id="sceneCard">
@@ -137,7 +137,7 @@
               <h3 id="sceneName">بانتظار الهندسة</h3>
               <p id="sceneFilename" class="scene-card__filename">—</p>
               <ul id="sceneReasons" class="reason-list"></ul>
-              <p class="scene-card__automatic-note">الوضعيات والقوالب في القوائم متوافقة مع هذا المرجع.</p>
+              <p class="scene-card__automatic-note">عند اختيار قالب نهاري أو ليلي، المرجع يتبع القالب تلقائيًا.</p>
             </div>
           </div>
         </section>
@@ -193,7 +193,7 @@
       <div><p class="eyebrow">ROOM REFERENCE</p><h2>اختر صورة مرجع الغرفة</h2></div>
       <button class="icon-button" data-close-dialog="sceneDialog" type="button" aria-label="إغلاق">×</button>
     </div>
-    <p class="modal__intro">اختر المرجع أولًا؛ سيضبط التطبيق الوضعية المقترحة ويعرض لك الوضعيات والقوالب المتوافقة فقط.</p>
+    <p class="modal__intro">يمكنك اختيار المرجع يدويًا، لكن القوالب النهارية والليلية تختار المرجع الأنسب تلقائيًا حسب الوضعية والإضاءة.</p>
     <div id="scenePickerGrid" class="scene-picker-grid"></div>
   </dialog>
 
@@ -203,10 +203,10 @@
       <button class="icon-button" data-close-dialog="helpDialog" type="button" aria-label="إغلاق">×</button>
     </div>
     <ol class="help-steps">
-      <li><strong>اختر مرجع الغرفة وارفع IMAGE A</strong><span>اختر المرجع من المكتبة أولًا؛ IMAGE A للهوية فقط.</span></li>
-      <li><strong>استخدم قالبًا أو خصص يدويًا</strong><span>القوالب لا تظهر إلا عندما تكون الوضعية والإضاءة قابلة للتنفيذ مع المرجع الحالي.</span></li>
-      <li><strong>عدّل أي اختيار بعد القالب</strong><span>الوضعية والشعر والإضاءة والتعبير والملابس تبقى قابلة للتغيير، ويستخدم الأمر النهائي اختيارًا واحدًا فقط من كل نوع.</span></li>
-      <li><strong>راجع الفحص ثم انسخ</strong><span>لا تحتاج إلى رفع IMAGE B؛ المرجع المختار مدمج في التطبيق.</span></li>
+      <li><strong>ارفع IMAGE A ثم اختر قالبًا</strong><span>في قوالب النهار والليل، القالب هو الأساس ويختار IMAGE B الأنسب تلقائيًا.</span></li>
+      <li><strong>القالب يحدد الوضعية والإضاءة والمرجع</strong><span>يختار التطبيق أعلى مرجع يمر بالشروط الصارمة للوضعية ومصدر الضوء.</span></li>
+      <li><strong>اختياراتك الشخصية تبقى مستقلة</strong><span>الشعر والتعبير والملابس تبقى قابلة للتغيير بعد القالب.</span></li>
+      <li><strong>راجع الفحص ثم انسخ</strong><span>إذا لم يوجد مرجع صالح، يمنع التطبيق تطبيق القالب ويعرض المشكلة بدل إنشاء تركيبة متعارضة.</span></li>
     </ol>
   </dialog>
 
@@ -214,5 +214,6 @@
   <script type="module" src="js/app.js"></script>
   <script type="module" src="js/templates.js"></script>
   <script type="module" src="js/indoorTimeTemplates.js"></script>
+  <script type="module" src="js/indoorTemplateAuthority.js"></script>
 </body>
 </html>
