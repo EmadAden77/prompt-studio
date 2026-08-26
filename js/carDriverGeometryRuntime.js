@@ -19,6 +19,68 @@ function list(value) {
   return Array.isArray(value) && value.length ? value.join(", ") : "none beyond the general physical rules";
 }
 
+function buildDriverSeatSolver(pose) {
+  if (!pose || pose.category !== "car") return "";
+
+  return `DRIVER SEAT ANATOMY LOCK — HIGHEST PRIORITY
+Solve the driver's body in this exact order. Seat and vehicle geometry are solved BEFORE pose styling and BEFORE camera placement.
+
+DRIVER SEAT SOLVER — CAMERA LAST
+1. SEAT–WHEEL AXIS FIRST
+- Define the driver seat from the real steering-wheel centerline in IMAGE B.
+- Hips remain centered on the real driver-seat cushion so pelvis, sternum, and chest stay broadly aligned with the steering-wheel axis.
+- The steering wheel must read physically in front of the driver's lower chest/upper abdomen region according to the reference perspective, never displaced beside the torso as if it belonged to another seat.
+- Never move the seat, steering wheel, steering column, dashboard, or camera viewpoint to fake this alignment.
+
+2. LEGS BEFORE TORSO
+- Solve pelvis, thighs, knees, and footwell direction before rotating the upper body.
+- Thighs project forward/downward toward the real pedal area beneath the steering wheel.
+- Knees remain directionally consistent with the hips and vehicle centerline; they must not stretch sideways toward the passenger seat or door.
+- If legs are partially cropped, their hidden continuation must still point toward the real footwell.
+
+3. TORSO ROTATION LIMIT
+- Torso rotation toward the selfie camera is limited to a natural approximately 20–30 degrees at the waist/ribcage, with additional small neck/eye turn as needed.
+- A 90-degree chest rotation while the pelvis and legs remain driving-forward is forbidden.
+- Preserve seated spinal support, natural ribcage orientation, and plausible shoulder asymmetry.
+
+4. HEAD & HEADREST
+- The real headrest stays centered behind the subject's head/upper neck on the seat centerline.
+- Maintain a plausible small gap or light contact, roughly 2–5cm when geometry permits.
+- The head may tilt or turn toward the camera, but it must not drift laterally so far that the headrest appears attached to another seat.
+- Never move, widen, narrow, rotate, or reposition the headrest.
+
+5. ARMS FROM SHOULDER
+- Every arm originates anatomically from the shoulder joint with a continuous shoulder→upper-arm→elbow→forearm→wrist path.
+- The camera-holding arm remains physically solvable from the holding-side shoulder to the phone position, but stays completely outside the final crop under the global no-arm rule.
+- Do not let the camera arm appear to grow from the chest, ribs, abdomen, or mid-torso.
+- The non-camera arm may rest naturally on the real center console, thigh, door armrest, or steering wheel only where a real contact surface exists.
+
+6. CLOTHING CONSISTENCY & CONTACT
+- Both sleeves must remain in the identical intentional state: same roll height, cuff state, button state, and garment construction. Natural fold shapes may differ only because the arms bend differently.
+- No sleeve may randomly become shorter, tighter, rolled higher, or buttoned differently from the other unless the selected clothing itself is intentionally asymmetric.
+- Preserve seated shirt bunching at the waist/abdomen, fabric tension at bent elbows, and compression/contact folds where clothing meets the seat or console.
+- Seat cushion and seatback show only subtle physically plausible body-weight compression; never reshape the seat.
+
+7. KSA LEFT-HAND-DRIVE GEOMETRY
+- Treat this reference as left-hand drive: driver seat on the vehicle's left side, steering wheel in front of the driver, center console to the driver's right.
+- Keep door, console, wheel, seat, pedals, mirrors, and dashboard mutually consistent with that left-hand-drive layout.
+
+FORBIDDEN — REJECT AND CORRECT
+- steering wheel visibly off-axis beside the driver's body;
+- pelvis centered in one seat while chest aligns to another seat's wheel;
+- knees or thighs pointing in a direction inconsistent with the hips/footwell;
+- 90-degree torso twist;
+- headrest offset sideways behind the wrong shoulder;
+- mismatched sleeve roll/cuff/button state;
+- arm emerging from mid-torso;
+- floating pelvis, back, thigh, elbow, or forearm contact;
+- any seat, wheel, console, headrest, door, or window state changed to accommodate the pose;
+- camera geometry that can only work by breaking the solved seated anatomy.
+
+PRIORITY RULE
+If the selected car pose or camera angle conflicts with this solver, preserve DRIVER SEAT ANATOMY LOCK and reduce/modify the pose or camera angle. Never sacrifice seat-wheel-body anatomy to preserve a more dramatic selfie angle.`;
+}
+
 function buildDriverSelfieGeometry(pose) {
   if (!pose || pose.category !== "car" || !pose.camera_geometry || !pose.arm_strategy) return "";
 
@@ -32,6 +94,7 @@ function buildDriverSelfieGeometry(pose) {
     : "may be unsupported only where the pose explicitly requires an upward reachable arm extension";
 
   return `DRIVER SELFIE GEOMETRY — XIAOMI 15 ULTRA FRONT CAMERA
+IMPORTANT: apply this camera geometry only AFTER the DRIVER SEAT ANATOMY LOCK has been solved. Camera placement must adapt to the solved body, not the reverse.
 - Template: ${pose.name_en ?? pose.name_ar}.
 - Camera: Xiaomi 15 Ultra front-facing camera only; app optical model ${camera.focal_length ?? "22-24mm equivalent"}, ${camera.aperture ?? "approximately f/2.0"}.
 - Selfie distance: ${camera.distance ?? "35-55cm"}.
@@ -73,9 +136,11 @@ function patchPromptEngine() {
   proto.generate = function generateWithDriverGeometry(config = {}) {
     const result = originalGenerate.call(this, config);
     const pose = getActiveCarTemplate();
-    if (!pose || pose.category !== "car" || !pose.camera_geometry || typeof result !== "string") return result;
+    if (!pose || pose.category !== "car" || typeof result !== "string") return result;
 
-    return `${result}\n\n${buildDriverSelfieGeometry(pose)}\n\n${NATURAL_PHOTOGRAPHIC_REALISM}`.trim();
+    const seatSolver = buildDriverSeatSolver(pose);
+    const cameraGeometry = buildDriverSelfieGeometry(pose);
+    return `${result}\n\n${seatSolver}${cameraGeometry ? `\n\n${cameraGeometry}` : ""}\n\n${NATURAL_PHOTOGRAPHIC_REALISM}`.trim();
   };
 
   proto[patchFlag] = true;
