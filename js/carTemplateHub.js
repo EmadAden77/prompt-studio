@@ -5,6 +5,8 @@ import { showToast } from "./ui/dom.js";
 
 const TEMPLATE_STORAGE = "ai-selfie-prompt-studio:car-template";
 const TIME_STORAGE = "ai-selfie-prompt-studio:car-time";
+const CURRENT_CAR_REFERENCE_FILENAME = "1000206961.png";
+const CURRENT_CAR_REFERENCE_URL = `${CAR_REFERENCE.image_url}?v=1000206961`;
 let originalSendInstruction = null;
 
 function readStored(key, fallback) {
@@ -58,7 +60,7 @@ function renderCarReference() {
   const image = document.querySelector("#sceneImage");
   if (image) {
     image.onerror = null;
-    image.src = CAR_REFERENCE.image_url;
+    image.src = CURRENT_CAR_REFERENCE_URL;
     image.alt = "معاينة مرجع السيارة";
     image.classList.remove("is-placeholder");
   }
@@ -70,7 +72,7 @@ function renderCarReference() {
   const name = document.querySelector("#sceneName");
   if (name) name.textContent = CAR_REFERENCE.name_ar;
   const filename = document.querySelector("#sceneFilename");
-  if (filename) filename.textContent = CAR_REFERENCE.image_filename;
+  if (filename) filename.textContent = CURRENT_CAR_REFERENCE_FILENAME;
   const reasons = document.querySelector("#sceneReasons");
   if (reasons) reasons.replaceChildren(
     makeReason("المقصورة نفسها ثابتة بالكامل من المرجع؛ الشخص والملابس والشعر والتعبير فقط قابلة للتغيير."),
@@ -81,13 +83,13 @@ function renderCarReference() {
   const autoTitle = document.querySelector("#autoReferenceTitle");
   if (autoTitle) autoTitle.textContent = CAR_REFERENCE.name_ar;
   const autoMeta = document.querySelector("#autoReferenceMeta");
-  if (autoMeta) autoMeta.textContent = `${CAR_REFERENCE.image_filename} · مرجع ثابت مع قالب السيارة`;
+  if (autoMeta) autoMeta.textContent = `${CURRENT_CAR_REFERENCE_FILENAME} · مرجع ثابت مع قالب السيارة`;
 
   const summary = document.querySelector("#promptSummary");
   if (summary) summary.textContent = `🚙 ${template.name_ar} · ${time.name_ar} · Xiaomi 15 Ultra Front Camera · السيارة متوقفة في السعودية`;
 
   const send = document.querySelector("#sendInstruction");
-  if (send) send.innerHTML = "أرفق IMAGE A ومرجع السيارة <strong>1000206938.jpg</strong> باعتباره IMAGE B مع الأمر، واطلب توليد صورة واحدة فقط داخل نفس السيارة المتوقفة في السعودية.";
+  if (send) send.innerHTML = `أرفق IMAGE A ومرجع السيارة <strong>${CURRENT_CAR_REFERENCE_FILENAME}</strong> باعتباره IMAGE B مع الأمر، واطلب توليد صورة واحدة فقط داخل نفس السيارة المتوقفة في السعودية.`;
 }
 
 function scheduleRender() {
@@ -190,7 +192,7 @@ function buildCarCard() {
   const preview = document.createElement("div");
   preview.className = "car-template-card__preview";
   const image = document.createElement("img");
-  image.src = CAR_REFERENCE.image_url;
+  image.src = CURRENT_CAR_REFERENCE_URL;
   image.alt = "مرجع السيارة الثابت";
   const meta = document.createElement("div");
   const metaTitle = document.createElement("strong");
