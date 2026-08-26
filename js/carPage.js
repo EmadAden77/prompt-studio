@@ -23,6 +23,17 @@ const CAR_CORE = `CAR CORE — v1.17
 - If no cabin reference is supplied, use the project default vehicle: a coherent white 2022 Range Rover Sport, Saudi left-hand drive, with realistic light-beige cabin materials and authentic continuous front/rear cabin architecture. Do not mix generations or invent decorative controls.
 - Vehicle remains parked and stationary for the complete photographic event. No driving, road motion, steering effort, acceleration or braking.`;
 
+const REALISM_CORE = `REALISM CORE — CAPTURED, NOT RENDERED
+- Treat the result as one genuine photographic event captured by a real smartphone in a real place, never as CGI, illustration, synthetic portraiture, a cinematic render, or an idealized commercial image.
+- Physical coherence outranks visual perfection. Resolve in this priority: identity → anatomy → reference geometry → body/object contact → camera reach and perspective → motivated lighting → reflections → exposure/sensor behavior → aesthetics.
+- Preserve natural human irregularity from IMAGE A: facial asymmetry, real skin pores and micro-texture, subtle blemishes and tonal variation, believable under-eye and lip texture, natural hair density and flyaways, and age-appropriate detail. No beautification, face slimming, symmetry correction, waxy/plastic skin, beauty filter, smoothing, selective face cleanup, or glamour retouching.
+- Anatomy and contact must remain mechanically possible: pelvis, torso, shoulders, arms, hands, fingers, thighs and legs belong to one continuous body; seat, clothing and skin show believable pressure, compression, gravity and contact where they meet.
+- Materials must behave physically: fabric drape follows gravity and joint bending; glass, leather, plastic, metal, paint and skin retain material-correct texture, roughness, reflection and highlight behavior without decorative shine.
+- Do not make the photograph artificially flawless. Allow ordinary capture compromises when physically justified: small framing imbalance, slight handheld roll, limited dynamic range, modest highlight clipping, shadow noise, imperfect white balance, restrained sharpening, compression, edge softness and minor motion softness.
+- Never use unsupported photographic cheats: no invisible studio key/fill, no face glow without a source, no impossible camera placement, no floating viewpoint, no fake DSLR depth of field, no cinematic haze, no anamorphic streaks, no hyper-detailed 8K rendering language, and no separate visual treatment for the face.
+- The image must feel incidental and lived-in rather than staged: ordinary posture, believable gaze, non-performative background activity, natural object placement, and no suspicious repetition, duplicated props, cloned vehicles or synthetic decorative text.
+- Final test: every visible detail must be explainable by the same real camera, real lens, real exposure, real lighting sources, real geometry and real moment. If realism conflicts with prettiness, keep the realism.`;
+
 const CABIN_SELFIE_CAMERA_LOCK = `CABIN SELFIE CAMERA LOCK — SUBJECT-HELD FRONT CAMERA
 - Use one physically reachable subject-held smartphone front-camera viewpoint only; no third-person photographer, dashboard camera, passenger-held camera, tripod, outside-car camera or rear-camera portrait.
 - Use ordinary 22–24 mm equivalent front-wide perspective at approximately f/2.0, with natural near-field face geometry and restrained edge distortion.
@@ -94,6 +105,7 @@ function buildCarPrompt(tpl, cfg) {
   const anatomyKey = catAnatomy(tpl);
   return [
     CAR_CORE,
+    REALISM_CORE,
     CABIN_SELFIE_CAMERA_LOCK,
     ARM_FREE_FRAMING_LOCK,
     `DRIVER SEAT ANATOMY SOLVER — solve the seated body BEFORE the camera:\n${DRIVER_SEAT_SOLVER}\nANGLE-SPECIFIC: ${ANGLE_ANATOMY[anatomyKey]}`,
