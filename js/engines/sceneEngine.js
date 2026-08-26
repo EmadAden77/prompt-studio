@@ -164,6 +164,16 @@ export class SceneEngine {
     };
   }
 
+  formatGateSummary(gate) {
+    const coreScenes = this.scenes.filter((scene) => !scene.id.startsWith("user_room_"));
+    if (coreScenes.length === this.scenes.length) {
+      return `مرشح صارم v1.3: اجتاز ${gate.passedCount} من ${gate.totalCount} مرجعًا`;
+    }
+    const coreIds = new Set(coreScenes.map((scene) => scene.id));
+    const corePassed = gate.passed.filter((item) => coreIds.has(item.scene.id)).length;
+    return `مرشح صارم v1.3: اجتاز ${corePassed} من ${coreScenes.length} مرجعًا أساسيًا؛ المكتبة الكاملة: اجتاز ${gate.passedCount} من ${gate.totalCount} مرجعًا`;
+  }
+
   getCompatibleScenes(poseId, bodyDirection, requiredFeatures = [], context = {}) {
     return this.hardGate(poseId, requiredFeatures, context).passed.map((item) => item.scene);
   }
@@ -246,7 +256,7 @@ export class SceneEngine {
         preferredRegion: gate.requirement.preferred_region,
         passedCount: 0,
         totalCount: gate.totalCount,
-        gateSummary: `مرشح صارم v1.3: اجتاز 0 من ${gate.totalCount} مرجعًا`,
+        gateSummary: this.formatGateSummary(gate),
         alternatives: [],
         reasons: [],
         mode: "تلقائي صارم"
@@ -287,7 +297,7 @@ export class SceneEngine {
       preferredRegion: gate.requirement.preferred_region,
       passedCount: gate.passedCount,
       totalCount: gate.totalCount,
-      gateSummary: `مرشح صارم v1.3: اجتاز ${gate.passedCount} من ${gate.totalCount} مرجعًا`,
+      gateSummary: this.formatGateSummary(gate),
       mode: "تلقائي صارم"
     };
   }
