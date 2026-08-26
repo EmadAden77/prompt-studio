@@ -12,15 +12,20 @@ export const XIAOMI_FRONT_CAPTURE_MODES = Object.freeze([
   { id:"hdr", name_ar:"HDR تلقائي", prompt:"AUTO HDR SELFIE: front camera only. Use modest smartphone multi-frame dynamic-range balancing while keeping highlight roll-off, shadow noise, skin texture, and room contrast believable. Never locally relight or beautify the subject separately from the room." },
   { id:"auto_exposure", name_ar:"تعريض تلقائي واقعي", prompt:"REALISTIC AUTO EXPOSURE: allow ordinary phone metering tradeoffs. Depending on the room brightness, the face may be slightly under- or over-exposed rather than perfectly balanced. Keep one exposure logic and one white-balance solution across subject and room." },
   { id:"mixed_light", name_ar:"إضاءة داخلية مختلطة", prompt:"MIXED-LIGHT SELFIE: front camera only. Preserve physically plausible imperfect white balance between warm and cool room sources, with coherent shadow directions and reflections. Do not neutralize every surface or make the face cleaner than the room." },
-  { id:"close", name_ar:"سيلفي قريب — وجه وكتفان", prompt:"CLOSE SELFIE FRAMING: phone remains at a physically reachable front-camera distance. Frame mainly face and shoulders with mild near-field wide-angle perspective. The camera-holding arm and phone remain completely outside crop." },
-  { id:"medium", name_ar:"سيلفي متوسط — من الصدر للأعلى", prompt:"MEDIUM SELFIE FRAMING: front camera at natural reach, framing from roughly chest upward with enough room context to preserve place continuity. No observer-camera distance and no visible camera-holding arm." },
-  { id:"high_angle", name_ar:"زاوية سيلفي عالية", prompt:"HIGH-ANGLE SELFIE: Xiaomi 15 Ultra front camera held slightly above eye level within natural reach, optical axis angled down modestly. Keep anatomy and room perspective physically reachable; camera-holding arm stays outside crop." },
-  { id:"low_angle", name_ar:"زاوية سيلفي منخفضة", prompt:"LOW-ANGLE SELFIE: Xiaomi 15 Ultra front camera held modestly below eye level within natural reach, optical axis angled up slightly. Avoid extreme distortion; camera-holding arm stays outside crop." },
+  { id:"close", name_ar:"سيلفي قريب — وجه وكتفان", prompt:"CLOSE SELFIE FRAMING: phone remains at a physically reachable front-camera distance. Frame mainly face and shoulders with mild near-field wide-angle perspective. Camera-side arm visibility follows the active template policy; the phone itself must never appear directly." },
+  { id:"medium", name_ar:"سيلفي متوسط — من الصدر للأعلى", prompt:"MEDIUM SELFIE FRAMING: front camera at natural reach, framing from roughly chest upward with enough room context to preserve place continuity. No observer-camera distance. Camera-side arm visibility follows the active template policy." },
+  { id:"high_angle", name_ar:"زاوية سيلفي عالية", prompt:"HIGH-ANGLE SELFIE: Xiaomi 15 Ultra front camera held slightly above eye level within natural reach, optical axis angled down modestly. Keep anatomy and room perspective physically reachable; camera-side arm visibility follows the active template policy." },
+  { id:"low_angle", name_ar:"زاوية سيلفي منخفضة", prompt:"LOW-ANGLE SELFIE: Xiaomi 15 Ultra front camera held modestly below eye level within natural reach, optical axis angled up slightly. Avoid extreme distortion; camera-side arm visibility follows the active template policy." },
   { id:"warm_indoor", name_ar:"داخلي دافئ", prompt:"WARM INDOOR SELFIE: same front camera and lens. Preserve warm practical-light white balance with realistic sensor response, shadow noise, and highlight behavior. No cinematic orange grading and no separate face relighting." },
   { id:"daylight", name_ar:"نهاري طبيعي", prompt:"DAYLIGHT SELFIE: same Xiaomi 15 Ultra front camera. Use lower sensor gain, cleaner but still ordinary phone detail, restrained HDR, realistic window/highlight roll-off, and natural skin micro-contrast without beauty smoothing." }
 ]);
 
 const MODE_BY_ID = Object.freeze(Object.fromEntries(XIAOMI_FRONT_CAPTURE_MODES.map((item) => [item.id, item])));
+
+function isCarTemplateActive() {
+  if (typeof document === "undefined") return false;
+  return Boolean(document.documentElement.dataset.activeCarTemplate);
+}
 
 function readModeId() {
   if (typeof document !== "undefined") {
@@ -34,6 +39,13 @@ function readModeId() {
   return "natural";
 }
 
+function armVisibilityRule() {
+  if (isCarTemplateActive()) {
+    return `- CAR CABIN ARM POLICY: for active car templates, a small physically continuous camera-side shoulder/forearm/hand segment MAY enter an extreme frame edge when required by the selected car pose and true near-field geometry. The phone itself remains directly invisible. Never lengthen bones, add joints, or use global fisheye distortion.`;
+  }
+  return `- CAMERA-HOLDING ARM EXCLUSION: physically solve the complete holding arm outside the crop. No holding-side upper arm, elbow, forearm, wrist, hand, fingertips, or phone may appear anywhere inside the finished frame. Never erase or deform the arm; hide it by reachable composition only.`;
+}
+
 function fixedCameraLock() {
   const mode = MODE_BY_ID[readModeId()] ?? MODE_BY_ID.natural;
   return `XIAOMI 15 ULTRA FRONT SELFIE CAMERA LOCK — IMMUTABLE, ALWAYS ACTIVE
@@ -42,8 +54,8 @@ function fixedCameraLock() {
 - This must read as a genuine subject-held smartphone selfie from a physically reachable phone position, never a rear-camera photograph, third-person photograph, tripod view, doorway observer view, or camera placed across the room.
 - Preserve mild near-field wide-angle perspective, ordinary small-front-sensor limits, natural phone depth of field, realistic auto exposure/white balance, restrained sharpening, compression, and illumination-dependent noise.
 - The selected capture mode may change exposure behavior, computational processing, motion softness, framing, or reachable angle, but it MUST NOT change the camera identity to a rear camera, DSLR, telephoto camera, or external photographer.
-- CAMERA-HOLDING ARM EXCLUSION: physically solve the complete holding arm outside the crop. No holding-side upper arm, elbow, forearm, wrist, hand, fingertips, or phone may appear anywhere inside the finished frame. Never erase or deform the arm; hide it by reachable composition only.
-- A selfie must still be evident through gaze toward the real phone position, subtle shoulder asymmetry, near-field face perspective, and room perspective from the subject's actual location.
+${armVisibilityRule()}
+- A selfie must still be evident through gaze toward the real phone position, subtle shoulder asymmetry, near-field face perspective, and room/cabin perspective from the subject's actual location.
 
 SELECTED FRONT-CAMERA CAPTURE MODE — ${mode.name_ar}
 ${mode.prompt}`;
@@ -74,7 +86,10 @@ function patchEngines() {
     if (typeof originalViewpoint === "function") {
       cameraProto.selfieViewpointLock = function fixedFrontViewpoint(args = {}) {
         const forced = { ...args, camera: this.getCamera("front") };
-        return `${fixedCameraLock()}\n\n${originalViewpoint.call(this, forced)}\n\nFINAL CAMERA GATE: if the result reads as rear-camera, third-person, tripod, distant observer, or shows any part of the camera-holding arm/hand/phone, reframe it as a reachable Xiaomi 15 Ultra front-camera selfie before output.`.trim();
+        const finalGate = isCarTemplateActive()
+          ? "FINAL CAMERA GATE — CAR: if the result reads as rear-camera, third-person, tripod, distant observer, mounted-phone, outside-camera, or shows the phone directly, reframe it as a reachable Xiaomi 15 Ultra front-camera cabin selfie. A small physically continuous camera-side arm segment may remain at an extreme edge only under the car cabin lock."
+          : "FINAL CAMERA GATE: if the result reads as rear-camera, third-person, tripod, distant observer, or shows any part of the camera-holding arm/hand/phone, reframe it as a reachable Xiaomi 15 Ultra front-camera selfie before output.";
+        return `${fixedCameraLock()}\n\n${originalViewpoint.call(this, forced)}\n\n${finalGate}`.trim();
       };
     }
     cameraProto[cameraPatchFlag] = true;
@@ -106,7 +121,10 @@ function installControl() {
   label.textContent = "📱 نمط كاميرا السيلفي — Xiaomi 15 Ultra";
 
   const fixed = document.createElement("small");
-  fixed.textContent = "الكاميرا ثابتة دائمًا: أمامية · 22–24mm تقريبًا · f/2.0 · ذراع التصوير والهاتف خارج الإطار.";
+  fixed.textContent = isCarTemplateActive()
+    ? "الكاميرا ثابتة: أمامية · 22–24mm تقريبًا · f/2.0 · في السيارة قد يظهر جزء طبيعي صغير من الساعد/الكتف عند الحافة، والجوال نفسه غير ظاهر."
+    : "الكاميرا ثابتة دائمًا: أمامية · 22–24mm تقريبًا · f/2.0 · ذراع التصوير والهاتف خارج الإطار.";
+  fixed.dataset.cameraPolicyHint = "true";
 
   const select = document.createElement("select");
   select.id = "xiaomiCaptureModeSelect";
@@ -125,11 +143,20 @@ function installControl() {
   field.append(label, fixed, select, help);
   form.appendChild(field);
 
+  const refreshHint = () => {
+    fixed.textContent = isCarTemplateActive()
+      ? "الكاميرا ثابتة: أمامية · 22–24mm تقريبًا · f/2.0 · في السيارة قد يظهر جزء طبيعي صغير من الساعد/الكتف عند الحافة، والجوال نفسه غير ظاهر."
+      : "الكاميرا ثابتة دائمًا: أمامية · 22–24mm تقريبًا · f/2.0 · ذراع التصوير والهاتف خارج الإطار.";
+  };
+
   select.addEventListener("change", () => {
     try { localStorage.setItem(STORAGE_KEY, select.value); } catch {}
     document.documentElement.dataset.xiaomiFrontCaptureMode = select.value;
+    refreshHint();
     document.querySelector("#rebuildBtn")?.click();
   });
+
+  document.addEventListener("change", () => requestAnimationFrame(refreshHint), true);
 
   document.documentElement.dataset.xiaomiFrontCamera = "locked";
   document.documentElement.dataset.xiaomiFrontCaptureMode = select.value;
@@ -141,6 +168,6 @@ patchEngines();
 if (typeof document !== "undefined") {
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", installControl, { once:true });
   else installControl();
-  import("./carTemplateHub.js");
+  import("./carTemplateHub.js").then(() => import("./carPromptConflictNormalizer.js"));
   import("./hairRealismRuntime.js");
 }
