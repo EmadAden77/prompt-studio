@@ -2,6 +2,8 @@ import { PromptEngine } from "./engines/promptEngine.js";
 import { getActiveCarTemplate } from "./carTemplates.js";
 
 const patchFlag = Symbol.for("promptStudio.carDriverGeometryRuntime.patched");
+const CURRENT_CAR_REFERENCE_FILENAME = "1000206961.png";
+const LEGACY_CAR_REFERENCE_FILENAME = "1000206938.jpg";
 
 const NATURAL_PHOTOGRAPHIC_REALISM = `NATURAL PHOTOGRAPHIC REALISM — ORDINARY PHONE CAPTURE
 - Preserve small, physically justified imperfections instead of forcing decorative defects: slight exposure imbalance, mild white-balance error, restrained shadow noise, natural skin micro-texture, a few irregular hair strands, non-uniform fabric folds, and ordinary phone sharpening/compression.
@@ -138,9 +140,10 @@ function patchPromptEngine() {
     const pose = getActiveCarTemplate();
     if (!pose || pose.category !== "car" || typeof result !== "string") return result;
 
+    const normalizedResult = result.replaceAll(LEGACY_CAR_REFERENCE_FILENAME, CURRENT_CAR_REFERENCE_FILENAME);
     const seatSolver = buildDriverSeatSolver(pose);
     const cameraGeometry = buildDriverSelfieGeometry(pose);
-    return `${result}\n\n${seatSolver}${cameraGeometry ? `\n\n${cameraGeometry}` : ""}\n\n${NATURAL_PHOTOGRAPHIC_REALISM}`.trim();
+    return `${normalizedResult}\n\n${seatSolver}${cameraGeometry ? `\n\n${cameraGeometry}` : ""}\n\n${NATURAL_PHOTOGRAPHIC_REALISM}`.trim();
   };
 
   proto[patchFlag] = true;
