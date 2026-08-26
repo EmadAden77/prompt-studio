@@ -1,3 +1,4 @@
+import "./freeHandActions.js";
 import { PromptEngine } from "./engines/promptEngine.js";
 import { HAIR_ANGLE_OPTIONS, HAIR_ANGLE_BY_ID, HAIR_REALISM_LOCK } from "./data/hairData.js";
 
