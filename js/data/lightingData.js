@@ -10,7 +10,7 @@ export const LIGHTING_OPTIONS = Object.freeze([
     iso: "ISO 1600–3200 equivalent low-light phone exposure",
     physics: "The phone screen is the only light in the room. The same phone is also the front-camera capture device, so the screen-to-face distance stays physically consistent with arm's-length selfie reach at about 45–70 cm. The screen produces cool-to-neutral close frontal light near the optical axis. Face is readable; neck, shoulders and bedding darken quickly; the room beyond roughly 1 m approaches near black. NO ceiling, bedside-lamp, window, hidden fill, studio source or synthetic ambient glow. Any visible lamp remains fully unlit and emits zero warm spill.",
     shadows: "subtle upward-biased under-brow and under-chin shadow; deep room shadows",
-    catchlights: "small rectangular screen reflection, orientation matching the phone",
+    catchlights: "rectangular screen glow in both eyes when geometry permits, orientation matching the phone",
     room_effect: "near-black bedroom; only nearby shapes survive exposure; realistic shadow noise",
     required_features: [],
     portable_sources: ["phone_screen"],
@@ -304,7 +304,7 @@ export const LIGHTING_OPTIONS = Object.freeze([
 
 export const LIGHTING_BY_ID = Object.freeze(Object.fromEntries(LIGHTING_OPTIONS.map((item) => [item.id, item])));
 
-export const LIGHTING_REALISM_BLOCK = `LIGHTING REALISM (anti-synthetic):
+export const LIGHTING_REALISM_BLOCK = `LIGHTING REALISM (anti-AI) — anti-synthetic capture discipline:
 - Every shadow, catchlight, highlight, and gradient traces to a declared physical source; no hidden fill, no softbox, no ring light, no cinematic grading.
 - Inverse-square falloff for close sources; with the screen as the only direct source the room becomes genuinely dark beyond the near field.
 - Catchlight shape matches the source: rectangular screen, round practical bulb, large soft window rectangle.
