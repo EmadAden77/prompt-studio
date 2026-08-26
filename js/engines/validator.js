@@ -1,4 +1,5 @@
 import { SCENES } from "../data/scenesData.js";
+import { POSES } from "../data/posesData.js";
 import { SceneEngine } from "./sceneEngine.js";
 
 const BED_SELFIE_POSE_IDS = new Set([
@@ -16,8 +17,8 @@ export class Validator {
     this.sceneEngine = sceneEngine ?? new SceneEngine(SCENES);
   }
 
-  createIssue(severity, type, message, suggestion = "", autoFix = null) {
-    return { severity, type, message, suggestion, autoFix };
+  createIssue(severity, type, message, suggestion = "", autoFix = null, solution = null) {
+    return { severity, type, message, suggestion, autoFix, solution };
   }
 
   getStrictReferenceMismatch(config) {
@@ -36,6 +37,86 @@ export class Validator {
     );
 
     return gate.pass ? null : gate;
+  }
+
+  poseName(poseId) {
+    return POSES.find((pose) => pose.id === poseId)?.name_ar ?? poseId;
+  }
+
+  getCompatibleLightingForScene(scene, cameraType = "front") {
+    if (!scene) return [];
+    return this.lightingEngine.options.filter((option) => {
+      if (cameraType === "rear" && option.id === "phone_screen_only") return false;
+      return this.lightingEngine.getMissingFeatures(option, scene).length === 0;
+    });
+  }
+
+  buildStrictSolution(config, gate) {
+    const { pose, scene, lighting, camera, autoEngineering } = config;
+    const solutionParts = [];
+    const actions = [];
+
+    if (!gate.poseMatch || gate.missingFeatures?.length || !gate.selfieCameraFeasible) {
+      const compatiblePoseIds = this.sceneEngine.getCompatiblePoseIds(scene, POSES.map((item) => item.id));
+      const physicallyCompatiblePoseIds = compatiblePoseIds.filter((poseId) => {
+        const candidate = POSES.find((item) => item.id === poseId);
+        if (!candidate) return false;
+        const candidateGate = this.sceneEngine.evaluateHardGate(
+          scene,
+          poseId,
+          candidate.requires ?? [],
+          {
+            lightingRequiredFeatures: lighting?.required_features ?? [],
+            cameraType: camera?.type ?? null,
+            bedRealismProfile: null
+          }
+        );
+        return candidateGate.poseMatch && candidateGate.featureMatch && candidateGate.lightingMatch;
+      });
+      if (physicallyCompatiblePoseIds.length) {
+        const names = physicallyCompatiblePoseIds.slice(0, 6).map((id) => this.poseName(id));
+        solutionParts.push(`الوضعيات الصالحة مع هذا المرجع: ${names.join("، ")}`);
+        actions.push({ kind: "pose", values: physicallyCompatiblePoseIds });
+      }
+    }
+
+    if (gate.missingLightingFeatures?.length) {
+      const compatibleLights = this.getCompatibleLightingForScene(scene, camera?.type ?? "front");
+      if (compatibleLights.length) {
+        solutionParts.push(`الإضاءات الصالحة مع المرجع: ${compatibleLights.slice(0, 6).map((item) => item.name_ar).join("، ")}`);
+        actions.push({ kind: "lighting", values: compatibleLights.map((item) => item.id) });
+      }
+    }
+
+    const candidateScenes = this.sceneEngine.scenes.filter((candidateScene) => {
+      if (!pose) return false;
+      const candidateGate = this.sceneEngine.evaluateHardGate(
+        candidateScene,
+        pose.id,
+        pose.requires ?? [],
+        {
+          lightingRequiredFeatures: lighting?.required_features ?? [],
+          cameraType: camera?.type ?? null,
+          bedRealismProfile: autoEngineering?.bedRealismProfile ?? null
+        }
+      );
+      return candidateGate.pass;
+    });
+
+    if (candidateScenes.length && !candidateScenes.some((item) => item.id === scene?.id)) {
+      solutionParts.push(`مراجع تجتاز نفس الوضعية والإضاءة: ${candidateScenes.slice(0, 5).map((item) => item.name_ar).join("، ")}`);
+      actions.push({ kind: "scene", values: candidateScenes.map((item) => item.id) });
+    }
+
+    if (!solutionParts.length) {
+      solutionParts.push("غيّر المرجع أو الوضعية أو الإضاءة حتى تجتاز التركيبة بوابة التوافق كاملة. التطبيق لن يسمح بنسخ الأمر قبل ذلك.");
+    }
+
+    return {
+      title: "الحل المقترح",
+      text: solutionParts.join(". "),
+      actions
+    };
   }
 
   validate(config) {
@@ -95,11 +176,14 @@ export class Validator {
         if (strictMismatch.missingLightingFeatures?.length) {
           details.push(`مصادر الإضاءة الناقصة: ${strictMismatch.missingLightingFeatures.join("، ")}`);
         }
+        const solution = this.buildStrictSolution(config, strictMismatch);
         conflicts.push(this.createIssue(
           "error",
           "reference_pose_mismatch",
-          `المرجع فشل بوابة v1.3: ${details.join("؛ ")}.`,
-          "اختر إحدى الوضعيات المعروضة لهذا المرجع، أو غيّر الإضاءة إلى خيار متوافق."
+          `المرجع فشل البوابة الصارمة: ${details.join("؛ ")}.`,
+          "هذه مشكلة مانعة وليست تنبيهًا. طبّق أحد الحلول المعروضة أدناه قبل نسخ الأمر.",
+          null,
+          solution
         ));
       }
 
@@ -160,11 +244,18 @@ export class Validator {
       const missingLightFeatures = this.lightingEngine.getMissingFeatures(lighting, scene);
       const lightingAlreadyBlockedByGate = Boolean(strictMismatch?.missingLightingFeatures?.length);
       if (missingLightFeatures.length && !lightingAlreadyBlockedByGate) {
+        const compatibleLights = this.getCompatibleLightingForScene(scene, camera?.type ?? "front");
         conflicts.push(this.createIssue(
           "error",
           "light_source_missing",
           `مصدر الإضاءة المختار غير مثبت في المرجع: ${missingLightFeatures.join("، ")}.`,
-          "غيّر المرجع أو الإضاءة؛ شاشة الهاتف فقط تُعامل كمصدر محمول ولا تحتاج أن تظهر في IMAGE B."
+          "غيّر المرجع أو الإضاءة؛ شاشة الهاتف فقط تُعامل كمصدر محمول ولا تحتاج أن تظهر في IMAGE B.",
+          null,
+          compatibleLights.length ? {
+            title: "الحل المقترح",
+            text: `اختر إحدى الإضاءات المدعومة في هذا المرجع: ${compatibleLights.slice(0, 6).map((item) => item.name_ar).join("، ")}.`,
+            actions: [{ kind: "lighting", values: compatibleLights.map((item) => item.id) }]
+          } : null
         ));
       }
     }
@@ -188,7 +279,6 @@ export class Validator {
     if (!config.uploads?.imageA) {
       warnings.push(this.createIssue("warning", "image_a_missing", "صورة الهوية غير مرفوعة داخل المعاينة.", "ارفع IMAGE A قبل استخدام الأمر مع ChatGPT."));
     }
-
 
     const issues = [...conflicts, ...warnings, ...notices];
     return {
