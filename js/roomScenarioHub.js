@@ -1,3 +1,4 @@
+import "./globalSelfieArmPolicy.js";
 import { SCENES } from "./data/scenesData.js";
 import { LIGHTING_BY_ID } from "./data/lightingData.js";
 import { CLOTHING_PREP_TEMPLATES, POST_SHOWER_TEMPLATES } from "./roomScenarioTemplates.js";
