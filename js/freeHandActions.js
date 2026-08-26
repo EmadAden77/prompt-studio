@@ -1,3 +1,4 @@
+import "./beddingPhysicsRuntime.js";
 import { PromptEngine } from "./engines/promptEngine.js";
 
 const STORAGE_KEY = "ai-selfie-prompt-studio:free-hand-action";
