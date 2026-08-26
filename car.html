@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="صفحة مستقلة لقوالب سيلفي السيارة باستخدام مرجع واحد للشخص والسيارة.">
+  <meta name="description" content="v1.17 — صفحة مستقلة لقوالب سيلفي السيارة مع فئات وزوايا وتشريح جلوس السائق.">
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#0d1117">
-  <title>قوالب السيارة — AI Selfie Prompt Studio</title>
+  <title>قوالب السيارة v1.17 — AI Selfie Prompt Studio</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,31 +16,17 @@
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/responsive.css">
   <style>
-    body[data-page="car"] .car-only-upload-grid{grid-template-columns:1fr}
-    body[data-page="car"] #templateHub{margin:0 0 18px}
-    body[data-page="car"] #templateHub .template-hub__grid{grid-template-columns:1fr}
-    body[data-page="car"] #templateHub .car-template-card{grid-column:1/-1}
-    body[data-page="car"] .car-tech-stubs{display:none!important}
-    body[data-page="car"] .car-nav-link{text-decoration:none;white-space:nowrap}
-    body[data-page="car"] .car-reference-note{margin-top:10px;line-height:1.8}
-    body[data-page="car"] .car-page-kicker{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-    @media(max-width:700px){body[data-page="car"] .topbar__actions .save-status{display:none}}
+    .car-page{padding-bottom:36px}.car-nav-link{text-decoration:none;white-space:nowrap}.car-category-shell{position:sticky;top:0;z-index:30;padding:10px 0;background:color-mix(in srgb,var(--surface,#0d1117) 92%,transparent);backdrop-filter:blur(14px)}.car-category-bar{display:flex;gap:8px;overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-width:none;padding:2px 1px 8px}.car-category-bar::-webkit-scrollbar{display:none}.car-chip{flex:0 0 auto;border:1px solid var(--border-color,rgba(127,127,127,.22));background:var(--surface-raised,rgba(127,127,127,.05));color:inherit;border-radius:999px;padding:9px 13px;font:inherit;font-weight:700;cursor:pointer}.car-chip.is-active{border-color:currentColor;background:rgba(127,127,127,.14)}.car-template-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.car-pose-card{text-align:right;display:grid;gap:6px;border:1px solid var(--border-color,rgba(127,127,127,.18));border-radius:16px;background:var(--surface-raised,rgba(127,127,127,.04));color:inherit;padding:14px;cursor:pointer;font:inherit}.car-pose-card:hover{transform:translateY(-1px)}.car-pose-card.is-active{outline:2px solid currentColor;outline-offset:1px}.car-pose-card strong{font-size:1.02rem}.car-pose-card span,.car-pose-card small{line-height:1.65;opacity:.84}.car-pose-card small{padding-top:7px;border-top:1px solid var(--border-color,rgba(127,127,127,.16))}.car-reference-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.car-reference-grid .upload-card{min-width:0}.car-reference-grid .dropzone{min-height:180px}.car-reference-grid img{max-height:220px;object-fit:cover}.car-status-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.car-output-actions{display:flex;gap:8px;flex-wrap:wrap}.car-output-actions a{text-decoration:none}.car-version{font-size:.8rem;opacity:.7}.car-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.car-form-grid .field--wide{grid-column:1/-1}.car-help{line-height:1.8;opacity:.82}.prompt-editor pre{white-space:pre-wrap;overflow-wrap:anywhere}.required-mark{font-weight:800}.optional-mark{opacity:.72}@media(max-width:760px){.car-template-grid,.car-reference-grid,.car-form-grid{grid-template-columns:1fr}.car-category-shell{top:0}.topbar__actions .save-status{display:none}}
   </style>
 </head>
-<body data-page="car">
+<body class="car-page" data-page="car">
   <a class="skip-link" href="#workspace">انتقل إلى مساحة العمل</a>
-
   <header class="topbar">
     <div class="topbar__inner">
-      <a class="brand" href="index.html" aria-label="العودة للرئيسية">
-        <span class="brand__mark" aria-hidden="true">S</span>
-        <span><strong>AI Selfie</strong><small>Car Templates</small></span>
-      </a>
+      <a class="brand" href="index.html" aria-label="العودة للرئيسية"><span class="brand__mark" aria-hidden="true">S</span><span><strong>AI Selfie</strong><small>Car Templates v1.17</small></span></a>
       <div class="topbar__actions">
-        <a class="ghost-button car-nav-link" href="index.html">🏠 القوالب الرئيسية</a>
-        <span class="save-status" id="saveStatus" aria-live="polite"><span class="save-status__dot"></span> محفوظ محليًا</span>
-        <button class="icon-button" id="helpBtn" type="button" aria-label="فتح دليل الاستخدام" title="دليل الاستخدام">؟</button>
-        <button class="icon-button" id="themeBtn" type="button" aria-label="تبديل المظهر" title="تبديل المظهر"><span id="themeIcon" aria-hidden="true">◐</span></button>
+        <a class="ghost-button car-nav-link" href="index.html">← عودة</a>
+        <span class="save-status"><span class="save-status__dot"></span> إعدادات الصفحة محفوظة محليًا</span>
       </div>
     </div>
   </header>
@@ -48,79 +34,75 @@
   <main id="workspace" class="page-shell">
     <section class="intro" aria-labelledby="pageTitle">
       <div>
-        <div class="car-page-kicker"><p class="eyebrow">CAR TEMPLATES · SINGLE REFERENCE</p><span class="context-badge">Range Rover Sport 2022</span></div>
-        <h1 id="pageTitle">قوالب السيارة في صفحة مستقلة</h1>
-        <p>ارفع صورة واحدة للشخص داخل السيارة، ثم اختر قالب السيارة. هندسة المقعد والمقود والذراع والمقصورة تُدار تلقائيًا، وتبقى لك اختيارات الشعر وتعبير الوجه والملابس ونمط كاميرا السيلفي.</p>
+        <p class="eyebrow">CAR SELFIE ENGINE · v1.17</p>
+        <h1 id="pageTitle">قوالب سيلفي السيارة</h1>
+        <p>اختر الفئة ثم القالب. هندسة الجلوس تُحل أولًا، والكاميرا تأتي بعدها، وذراع السيلفي واليد والجوال خارج الإطار بالكامل. شيء بسيط نظريًا، لأن البشر احتاجوا نسخة 1.17 حتى يقنعوا الذراع ألّا يظهر 😑.</p>
       </div>
-      <span class="context-badge" id="modeHint">مرجع واحد IMAGE A</span>
+      <span class="context-badge">صفحة مستقلة</span>
     </section>
 
-    <section id="templateHub" class="template-hub" aria-labelledby="templateHubTitle">
-      <div class="template-hub__header">
-        <div>
-          <p class="eyebrow">CAR TEMPLATES</p>
-          <h2 id="templateHubTitle">🚙 قوالب السيارة</h2>
-          <p>اختيار القالب يحدد وضعية السائق وهندسة السيلفي، واختيار الوقت يضبط البيئة والإضاءة الواقعية للمواقف داخل السعودية.</p>
-        </div>
+    <section class="car-category-shell" aria-label="فئات قوالب السيارة">
+      <div id="carCategoryBar" class="car-category-bar"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="templatesTitle">
+      <div class="panel__header">
+        <div><span class="step-number">01</span><h2 id="templatesTitle">قوالب الفئة</h2></div>
+        <span class="context-badge">اضغط البطاقة للاعتماد</span>
       </div>
-      <div class="template-hub__grid"></div>
+      <div id="carTemplateGrid" class="car-template-grid"></div>
     </section>
 
     <div class="workspace-grid">
       <div class="configuration-column">
-        <section class="panel" aria-labelledby="referencesTitle">
+        <section class="panel" aria-labelledby="refsTitle">
           <div class="panel__header">
-            <div><span class="step-number">01</span><h2 id="referencesTitle">مرجع واحد — الشخص + السيارة</h2></div>
-            <span class="privacy-badge">يبقى على جهازك</span>
+            <div><span class="step-number">02</span><h2 id="refsTitle">الصور المرجعية</h2></div>
+            <span class="privacy-badge">تبقى على جهازك</span>
           </div>
-          <div class="upload-grid car-only-upload-grid">
+          <div class="car-reference-grid">
             <article class="upload-card" data-upload="imageA">
-              <div class="upload-card__heading">
-                <div><strong>IMAGE A</strong><span>الهوية والسيارة معًا</span></div>
-                <button class="upload-remove" id="imageARemove" type="button" hidden>حذف</button>
-              </div>
-              <label class="dropzone" id="imageADropzone" for="imageAInput" tabindex="0">
+              <div class="upload-card__heading"><div><strong>IMAGE A <span class="required-mark">إلزامي</span></strong><span>هوية الشخص</span></div><button class="upload-remove" id="imageARemove" type="button" hidden>حذف</button></div>
+              <label class="dropzone" id="imageADropzone" for="imageAInput">
                 <input id="imageAInput" type="file" accept="image/jpeg,image/png,image/webp,image/avif" hidden>
                 <span class="dropzone__icon" aria-hidden="true">A</span>
-                <span class="dropzone__empty"><strong>ارفع صورة الشخص داخل السيارة</strong><small>JPG, PNG, WEBP أو AVIF — حتى 12MB</small></span>
-                <img id="imageAPreview" alt="معاينة المرجع الموحد للشخص والسيارة" hidden>
+                <span class="dropzone__empty"><strong>ارفع صورة الهوية</strong><small>JPG / PNG / WEBP / AVIF</small></span>
+                <img id="imageAPreview" alt="معاينة IMAGE A" hidden>
               </label>
-              <p class="upload-card__hint car-reference-note">هذه الصورة هي السلطة الوحيدة للهوية ولجميع أجزاء السيارة الظاهرة. السيارة المعتمدة Range Rover Sport 2022 بيضاء، وأي جزء خلفي غير ظاهر يُستكمل فقط عند الحاجة وبنفس تصميم وخامات السيارة.</p>
-              <p class="file-meta" id="imageAMeta" aria-live="polite"></p>
+              <p class="upload-card__hint">تُستخدم للهوية فقط: الوجه، البشرة، الشعر، اللحية، العمر والبنية.</p>
+              <p class="file-meta" id="imageAMeta"></p>
+            </article>
+
+            <article class="upload-card" data-upload="cabin">
+              <div class="upload-card__heading"><div><strong>صورة المقصورة <span class="optional-mark">اختيارية</span></strong><span>تصبح IMAGE B عند رفعها</span></div><button class="upload-remove" id="cabinRemove" type="button" hidden>حذف</button></div>
+              <label class="dropzone" id="cabinDropzone" for="cabinInput">
+                <input id="cabinInput" type="file" accept="image/jpeg,image/png,image/webp,image/avif" hidden>
+                <span class="dropzone__icon" aria-hidden="true">B</span>
+                <span class="dropzone__empty"><strong>ارفع مرجع المقصورة عند الحاجة</strong><small>إن لم ترفعه تُبنى المقصورة افتراضيًا</small></span>
+                <img id="cabinPreview" alt="معاينة مرجع المقصورة" hidden>
+              </label>
+              <p class="upload-card__hint">عند رفعها تصبح قفل البيئة والمقصورة. بدونها يستخدم المحرك Range Rover Sport 2022 أبيض بالمقصورة المتسقة.</p>
+              <p class="file-meta" id="cabinMeta"></p>
             </article>
           </div>
         </section>
 
-        <section class="panel" aria-labelledby="optionsTitle">
+        <section class="panel" aria-labelledby="choicesTitle">
           <div class="panel__header">
-            <div><span class="step-number">02</span><h2 id="optionsTitle">مظهرك والتقاط السيلفي</h2></div>
-            <span class="context-badge">اختيارات مناسبة للسيارة فقط</span>
+            <div><span class="step-number">03</span><h2 id="choicesTitle">اختيارات الصفحة</h2></div>
+            <span class="context-badge">للـ car.html فقط</span>
           </div>
-          <form id="optionsForm" class="form-grid" novalidate>
-            <div class="field">
-              <label for="hairSelect">الشعر</label>
-              <select id="hairSelect" name="hair"></select>
-            </div>
-            <div class="field">
-              <label for="expressionSelect">تعبير الوجه</label>
-              <select id="expressionSelect" name="expression"></select>
-            </div>
-            <div class="field field--wide">
-              <label for="clothingSelect">الملابس</label>
-              <select id="clothingSelect" name="clothing"></select>
-              <small>اختيار الملابس يغيّر اللبس فقط، ولا يغيّر هوية الشخص أو هندسة السيارة.</small>
-            </div>
+          <form class="car-form-grid" novalidate>
+            <div class="field field--wide"><label for="lightingSelect">الإضاءة</label><select id="lightingSelect"></select><small>N1/N2/N3/N4/N5/N6/D2 فقط.</small></div>
+            <div class="field"><label for="hairSelect">الشعر</label><select id="hairSelect"></select></div>
+            <div class="field"><label for="expressionSelect">تعبير الوجه</label><select id="expressionSelect"></select></div>
+            <div class="field field--wide"><label for="clothingSelect">الملابس</label><select id="clothingSelect"></select><small>تظهر الفئات المناسبة للسيارة فقط؛ ملابس النوم مستبعدة من هذه الصفحة.</small></div>
           </form>
         </section>
 
-        <section class="panel validation-panel" aria-labelledby="validationTitle">
-          <div class="panel__header">
-            <div><span class="step-number">03</span><h2 id="validationTitle">الفحص الفيزيائي للسيارة</h2></div>
-            <span class="validation-status" id="validationStatus">جارٍ الفحص</span>
-          </div>
-          <div id="validationSummary" class="validation-summary" aria-live="polite"></div>
-          <div id="conflictsList" class="issues-list"></div>
-          <button id="autoFixBtn" class="secondary-button" type="button" hidden>إصلاح التعارضات القابلة للإصلاح</button>
+        <section class="panel">
+          <div class="panel__header"><div><span class="step-number">04</span><h2>القواعد الثابتة</h2></div></div>
+          <p class="car-help"><strong>ARM-FREE:</strong> ذراع السيلفي واليد والجوال خارج الإطار نهائيًا. <strong>DRIVER ANATOMY:</strong> المقعد والحوض والرجلان ومحور المقود تُحل قبل الكاميرا، ثم تطبق تعديلات الزاوية الخاصة بالقالب. مقعد الراكب يستخدم تشريحه الخاص بلا قيد محور المقود.</p>
         </section>
       </div>
 
@@ -131,72 +113,20 @@
             <span id="promptWordCount" class="word-count">0 كلمة</span>
           </div>
           <div id="promptSummary" class="selection-summary"></div>
-          <div class="field">
-            <label for="aspectSelect">أبعاد الصورة</label>
-            <select id="aspectSelect" name="aspect">
-              <option value="9:16" selected>9:16 — رأسي</option>
-              <option value="1:1">1:1 — مربع</option>
-              <option value="16:9">16:9 — أفقي</option>
-            </select>
-          </div>
-          <div class="prompt-editor"><pre id="finalPrompt" tabindex="0" aria-label="أمر السيارة النهائي باللغة الإنجليزية"></pre></div>
-          <div id="sendInstruction" class="validation-summary">أرفق صورة واحدة فقط باعتبارها <strong>IMAGE A</strong>: الشخص داخل نفس السيارة. لا تحتاج IMAGE B في قوالب السيارة.</div>
-          <div class="prompt-actions">
-            <button id="validateBtn" class="ghost-button" type="button">🔍 فحص التعارضات</button>
-            <button id="copyBtn" class="primary-button" type="button">📋 نسخ الأمر</button>
-            <button id="rebuildBtn" class="ghost-button" type="button">🔄 إعادة بناء</button>
-            <button id="downloadBtn" type="button" hidden>تنزيل TXT</button>
+          <div class="car-status-row"><span id="carStatus" class="validation-status">IMAGE A إلزامي قبل النسخ أو التنزيل</span><span class="car-version">v1.17</span></div>
+          <div class="prompt-editor"><pre id="finalPrompt" tabindex="0" aria-label="الأمر النهائي لقالب السيارة"></pre></div>
+          <div class="validation-summary">ترتيب البناء ثابت: CAR CORE → CAMERA LOCK → ARM-FREE → DRIVER ANATOMY → TEMPLATE → LIGHTING → STREET/GLASS/PIPELINE/IMPERFECTIONS → CHOICES.</div>
+          <div class="car-output-actions">
+            <button id="copyBtn" class="primary-button" type="button" disabled>📋 نسخ</button>
+            <button id="downloadBtn" class="secondary-button" type="button" disabled>⬇️ تنزيل TXT</button>
+            <a class="ghost-button" href="index.html">← عودة</a>
           </div>
         </section>
       </aside>
     </div>
   </main>
 
-  <footer class="footer">
-    <p>Car Templates <span>•</span> Single IMAGE A</p>
-    <p>الشعر والتعبير والملابس بيدك؛ هندسة السيارة والسيلفي تتبع القالب.</p>
-  </footer>
-
-  <div class="car-tech-stubs" aria-hidden="true">
-    <select id="templateSelect" disabled><option value="custom">custom</option></select>
-    <select id="poseSelect"></select>
-    <select id="lightingSelect"></select>
-    <button id="autoEngineerBtn" type="button"></button>
-    <button id="selectSceneBtn" type="button"></button>
-    <button id="overrideSceneBtn" type="button"></button>
-    <span id="autoReferenceTitle"></span>
-    <span id="autoReferenceMeta"></span>
-    <section>
-      <h2 id="sceneTitle"></h2>
-      <span id="sceneConfidence"></span>
-      <img id="sceneImage" alt="">
-      <span id="sceneFallback"></span>
-      <span id="sceneRegion"></span>
-      <span id="sceneName"></span>
-      <span id="sceneFilename"></span>
-      <ul id="sceneReasons"></ul>
-    </section>
-  </div>
-
-  <dialog id="sceneDialog" class="modal">
-    <div id="scenePickerGrid" class="scene-picker-grid"></div>
-  </dialog>
-
-  <dialog id="helpDialog" class="modal modal--narrow">
-    <div class="modal__header">
-      <div><p class="eyebrow">CAR TEMPLATE GUIDE</p><h2>كيف تعمل صفحة السيارة؟</h2></div>
-      <button class="icon-button" data-close-dialog="helpDialog" type="button" aria-label="إغلاق">×</button>
-    </div>
-    <ol class="help-steps">
-      <li><strong>ارفع IMAGE A واحدة</strong><span>صورة الشخص داخل نفس السيارة؛ هي مرجع الهوية والسيارة معًا.</span></li>
-      <li><strong>اختر قالب السيارة والوقت</strong><span>القالب يضبط وضعية السائق وهندسة السيلفي، والوقت يحدد سلوك الإضاءة والمواقف.</span></li>
-      <li><strong>اختر مظهرك</strong><span>الشعر وتعبير الوجه والملابس ونمط كاميرا Xiaomi تبقى تحت تحكمك.</span></li>
-      <li><strong>انسخ الأمر النهائي</strong><span>لا ترفق IMAGE B لقوالب السيارة.</span></li>
-    </ol>
-  </dialog>
-
-  <div id="toastRegion" class="toast-region" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="js/app.js"></script>
-  <script type="module" src="js/xiaomiFrontCaptureModes.js"></script>
+  <footer class="footer"><p>Car Templates v1.17 <span>•</span> ARM-FREE + BODY-FIRST</p><p>IMAGE A إلزامي، ومرجع المقصورة اختياري.</p></footer>
+  <script type="module" src="js/carPage.js"></script>
 </body>
 </html>
