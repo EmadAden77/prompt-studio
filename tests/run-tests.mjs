@@ -61,13 +61,14 @@ assert.deepEqual(POSE_REQUIREMENTS.mirror_selfie.required_features_all, ["vanity
 assert.equal(POSE_REQUIREMENTS.mirror_selfie.preferred_region, "vanity_area");
 
 const expectedLightingIds = [
-  "phone_screen_only", "ceiling_white", "ceiling_warm", "all_spots",
-  "lamp_only", "lamp_and_phone",
+  "phone_screen_only", "phone_screen_faint_bounce",
+  "ceiling_white", "ceiling_warm", "all_spots", "ceiling_spots_dim",
+  "lamp_only", "lamp_and_phone", "lamp_and_phone_low",
   "window_daylight", "overcast_flat", "golden_hour",
   "ceiling_and_lamp", "ceiling_and_phone",
-  "night_city_window", "curtain_lamp"
+  "night_city_window", "curtain_lamp", "curtain_leak_screen", "night_ceiling_low"
 ];
-assert.deepEqual(LIGHTING_OPTIONS.map((item) => item.id), expectedLightingIds, "v1.6 lighting catalog must match the supplied preset order");
+assert.deepEqual(LIGHTING_OPTIONS.map((item) => item.id), expectedLightingIds, "expanded bedroom lighting catalog must match the supplied preset order");
 assert.deepEqual([...new Set(LIGHTING_OPTIONS.map((item) => item.category))], ["screen", "ceiling", "lamp", "daylight", "mixed", "night"]);
 assert.equal(APP_CONFIG.defaultState.lightingId, "lamp_and_phone", "The existing lighting default must remain unchanged");
 for (const lighting of LIGHTING_OPTIONS) {
@@ -491,7 +492,7 @@ while (sourceFiles.length) {
   }
 }
 
-console.log("✓ v1.6 lighting realism and Camera Emulator tests passed");
+console.log("✓ expanded lighting realism and Camera Emulator tests passed");
 console.log("✓ Smart Quad deterministic mapping tests passed");
 console.log("✓ v1.3 bedroom realism camera geometry tests passed");
 console.log("✓ v1.3 scene + selfie feasibility + lighting hard-gate tests passed");
