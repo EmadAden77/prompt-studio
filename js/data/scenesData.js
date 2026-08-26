@@ -174,6 +174,23 @@ export const SCENES = Object.freeze([
     priority: 60
   },
   {
+    id: "user_room_1000204918",
+    name_ar: "مرجع الغرفة — السرير والدولاب والكرسي",
+    image_url: "scenes/user_room_1000204918.svg",
+    image_filename: "1000204918.png",
+    region: "bed_wardrobe_chair_overview",
+    supported_poses: ["standing_center", "sitting_floor", "standing_wardrobe", "standing_vanity", "standing_sofa", "sitting_sofa", "sitting_chair", "standing_bedside", "sitting_bed_edge"],
+    supported_directions: ["facing_room", "facing_wardrobe", "toward_vanity", "toward_sofa", "toward_bed", "facing_left", "facing_right", "any"],
+    camera_angles: ["eye_level", "low_angle", "high_angle"],
+    camera_distances: ["close", "medium", "wide"],
+    base_camera_angle: "eye_level",
+    base_camera_distance: "wide",
+    default_for_poses: ["standing_center", "standing_wardrobe", "sitting_chair", "standing_bedside"],
+    visible_features: ["full_room_overview", "floor", "ceiling_light", "ceiling_spots", "bed", "mattress", "mattress_edge", "blanket", "sofa", "sofa_cushion", "sofa_back", "sofa_armrest", "chair", "chair_seat", "chair_back", "wardrobe", "wardrobe_doors", "vanity_table", "vanity_direction"],
+    surfaces: ["floor", "mattress", "mattress_edge", "sofa_cushion", "sofa_back", "sofa_armrest", "chair_seat", "chair_back", "wardrobe", "vanity"],
+    priority: 62
+  },
+  {
     id: "user_room_1000204796",
     name_ar: "مرجع الغرفة — النظرة الكاملة",
     image_url: "scenes/user_room_1000204796.svg",
