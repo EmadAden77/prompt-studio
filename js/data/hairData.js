@@ -11,6 +11,21 @@ export const HAIR_OPTIONS = Object.freeze([
     prompt: hairPrompt("Keep the reference hairstyle arrangement as closely as the new pose, gravity, contact, and humidity allow. Do not over-groom or regularize individual strands.")
   },
   {
+    id: "messy",
+    name_ar: "فوضوي قليلًا",
+    prompt: hairPrompt("Rearrange the existing hair into a mildly tousled state with uneven grouping and a few plausible stray strands. Keep the original silhouette, density, length, wave pattern, and hairline.")
+  },
+  {
+    id: "neat",
+    name_ar: "مرتب",
+    prompt: hairPrompt("Arrange the existing hair neatly but not perfectly, preserving small flyaways, minor asymmetry, the original density, wave pattern, base length, and hairline. Do not create a new haircut or extra fullness.")
+  },
+  {
+    id: "wet",
+    name_ar: "مبلل",
+    prompt: hairPrompt("Make the existing hair visibly damp with slightly darker irregular clumps and restrained wet sheen. Water may reduce apparent volume locally, but actual hair density, scalp coverage, hairline, and length remain unchanged.")
+  },
+  {
     id: "natural_tousled",
     name_ar: "مبعثر طبيعي خفيف",
     prompt: hairPrompt("Rearrange the existing hair into a mildly tousled everyday state with uneven small clumps and a few plausible stray strands. Keep the overall silhouette close to the original hairstyle.")
