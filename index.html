@@ -36,11 +36,11 @@
   <main id="workspace" class="page-shell">
     <section class="intro" aria-labelledby="pageTitle">
       <div>
-        <p class="eyebrow">SMART QUAD MODE · v1.11</p>
-        <h1 id="pageTitle">قالب جاهز أو تخصيص يدوي حسب مرجع الغرفة</h1>
-        <p>اختر مرجع الغرفة ثم استخدم قالبًا متوافقًا معه، أو عدّل الوضعية والشعر والإضاءة والتعبير والملابس بنفسك. الأمر النهائي يرسل وضعية واحدة فقط ولا يخلط بين القوالب.</p>
+        <p class="eyebrow">SMART QUAD MODE · TEMPLATE FIRST</p>
+        <h1 id="pageTitle">اختر القالب أولًا، والباقي يتضبط تلقائيًا</h1>
+        <p>كل فئة قوالب لها خانة مستقلة في الأعلى. عند اختيار قالب يحدد التطبيق المرجع والوضعية والإضاءة وهندسة التصوير تلقائيًا؛ ويبقى لك فقط الشعر وتعبير الوجه والملابس.</p>
       </div>
-      <span class="context-badge" id="modeHint">قالب جاهز أو 5 اختيارات</span>
+      <span class="context-badge" id="modeHint">القالب هو الأساس</span>
     </section>
 
     <div class="workspace-grid">
@@ -68,54 +68,54 @@
 
             <article class="upload-card upload-card--automatic" data-auto-reference>
               <div class="upload-card__heading">
-                <div><strong>IMAGE B</strong><span>مرجع الغرفة الذي تختاره أو يختاره القالب تلقائيًا</span></div>
+                <div><strong>IMAGE B</strong><span>مرجع الغرفة يتبع القالب تلقائيًا</span></div>
                 <span class="auto-reference-badge">تلقائي مع القالب</span>
               </div>
               <button id="selectSceneBtn" class="auto-reference-card auto-reference-card--button" type="button" aria-haspopup="dialog">
                 <span class="dropzone__icon" aria-hidden="true">B</span>
                 <span class="dropzone__empty">
-                  <strong id="autoReferenceTitle">اختر قالبًا أو مرجع الغرفة</strong>
-                  <small id="autoReferenceMeta">القوالب النهارية والليلية تختار المرجع الأنسب تلقائيًا.</small>
+                  <strong id="autoReferenceTitle">اختر قالبًا من الأعلى</strong>
+                  <small id="autoReferenceMeta">سيتم اختيار أفضل مرجع متوافق تلقائيًا.</small>
                 </span>
               </button>
-              <p class="upload-card__hint">القالب هو الأساس في أقسام النهار والليل؛ عند اختياره ينتقي التطبيق IMAGE B الذي يجتاز شروط الوضعية والإضاءة تلقائيًا.</p>
+              <p class="upload-card__hint">يمكنك مراجعة المرجع أو تغييره يدويًا عند الحاجة، لكن الاختيار الافتراضي تابع للقالب وشروطه الصارمة.</p>
             </article>
           </div>
         </section>
 
         <section class="panel" aria-labelledby="optionsTitle">
           <div class="panel__header">
-            <div><span class="step-number">02</span><h2 id="optionsTitle">Smart Quad</h2></div>
-            <span class="context-badge">Deterministic</span>
+            <div><span class="step-number">02</span><h2 id="optionsTitle">اختياراتك الشخصية</h2></div>
+            <span class="context-badge">3 اختيارات فقط</span>
           </div>
           <form id="optionsForm" class="form-grid" novalidate>
             <div class="field field--wide">
-              <label for="templateSelect">قالب جاهز (اختياري)</label>
+              <label for="templateSelect">قالب جاهز (محرك داخلي)</label>
               <select id="templateSelect" name="template" disabled>
-                <option value="custom">اختر مرجع الغرفة أولًا</option>
+                <option value="custom">يُدار من القوالب بالأعلى</option>
               </select>
-              <small>تظهر فقط القوالب المتوافقة فعليًا مع IMAGE B الحالي. القالب يضبط اختيارًا واحدًا متماسكًا للوضعية والشعر والإضاءة والتعبير والملابس والأبعاد، ويمكنك تعديل أي خانة بعده.</small>
+              <small>هذا التحكم داخلي ويُدار تلقائيًا من خانة القالب المختارة بالأعلى.</small>
             </div>
             <div class="field field--wide">
-              <label for="poseSelect">1. الوضعية المناسبة</label>
+              <label for="poseSelect">الوضعية (تلقائي)</label>
               <select id="poseSelect" name="pose"></select>
-              <small>يُقترح أولًا حسب المرجع الذي اخترته، وتظهر هنا الوضعيات المتوافقة فقط.</small>
+              <small>تتغير تلقائيًا حسب القالب.</small>
             </div>
             <div class="field">
-              <label for="hairSelect">2. الشعر</label>
+              <label for="hairSelect">الشعر</label>
               <select id="hairSelect" name="hair"></select>
             </div>
             <div class="field">
-              <label for="lightingSelect">3. الإضاءة والإنارة</label>
+              <label for="lightingSelect">الإضاءة (تلقائي)</label>
               <select id="lightingSelect" name="lighting"></select>
-              <small>كل خيارات الإضاءة تبقى ظاهرة ولا يبدّل التطبيق اختيارك تلقائيًا. الفحص الفيزيائي ينبهك فقط إذا كان المصدر المختار غير مدعوم في المرجع.</small>
+              <small>تتغير تلقائيًا حسب القالب والمرجع.</small>
             </div>
             <div class="field field--wide">
-              <label for="expressionSelect">4. تعبير الوجه</label>
+              <label for="expressionSelect">تعبير الوجه</label>
               <select id="expressionSelect" name="expression"></select>
             </div>
             <div class="field field--wide">
-              <label for="clothingSelect">5. الملابس</label>
+              <label for="clothingSelect">الملابس</label>
               <select id="clothingSelect" name="clothing"></select>
               <small>مصنفة إلى ملابس نوم، كاجوال، رياضي، شتوي وتقليدي. القماش والطيّات واللمعان تُحقن تلقائيًا في الأمر.</small>
             </div>
@@ -124,7 +124,7 @@
 
         <section class="panel scene-panel" aria-labelledby="sceneTitle">
           <div class="panel__header">
-            <div><span class="step-number">03</span><h2 id="sceneTitle">مرجع الغرفة المختار تلقائيًا أو يدويًا</h2></div>
+            <div><span class="step-number">03</span><h2 id="sceneTitle">مرجع الغرفة الذي اختاره القالب</h2></div>
             <span class="confidence-badge" id="sceneConfidence">—</span>
           </div>
           <div class="scene-card" id="sceneCard">
@@ -134,10 +134,10 @@
             </div>
             <div class="scene-card__body">
               <p class="scene-card__region" id="sceneRegion">—</p>
-              <h3 id="sceneName">بانتظار الهندسة</h3>
+              <h3 id="sceneName">بانتظار اختيار قالب</h3>
               <p id="sceneFilename" class="scene-card__filename">—</p>
               <ul id="sceneReasons" class="reason-list"></ul>
-              <p class="scene-card__automatic-note">عند اختيار قالب نهاري أو ليلي، المرجع يتبع القالب تلقائيًا.</p>
+              <p class="scene-card__automatic-note">القالب هو الأساس؛ المرجع والوضعية والإضاءة وهندسة التصوير تتبعه تلقائيًا.</p>
             </div>
           </div>
         </section>
@@ -161,16 +161,16 @@
           </div>
           <div id="promptSummary" class="selection-summary"></div>
           <div class="field">
-            <label for="aspectSelect">أبعاد الصورة</label>
+            <label for="aspectSelect">أبعاد الصورة (تلقائي مع القالب)</label>
             <select id="aspectSelect" name="aspect">
               <option value="9:16" selected>9:16 — رأسي</option>
               <option value="1:1">1:1 — مربع</option>
               <option value="16:9">16:9 — أفقي</option>
             </select>
-            <small>إعداد إخراج صغير؛ لا يغيّر هندسة الوضعية أو المرجع.</small>
+            <small>يُدار تلقائيًا من القالب.</small>
           </div>
           <div class="prompt-editor"><pre id="finalPrompt" tabindex="0" aria-label="الأمر النهائي باللغة الإنجليزية"></pre></div>
-          <div id="sendInstruction" class="validation-summary">أرفق IMAGE A ومرجع الغرفة المختار باعتباره IMAGE B مع الأمر، وقل:<br>«سأرفق IMAGE A (هويتي) وIMAGE B (غرفتي) مع أمر هندسي كامل. ولّد صورة واحدة فقط: ابدأ بقراءة فقرة PHOTOGRAPHIC BRIEF الطبيعية (الموضوع، البيئة، الحركة، الأسلوب، الإضاءة والكاميرا)، ثم نفّذ جميع الأقسام الصارمة بعدها حرفيًا وبالترتيب. أعد الصورة النهائية فقط دون شرح.»</div>
+          <div id="sendInstruction" class="validation-summary">أرفق IMAGE A ومرجع الغرفة الذي اختاره القالب باعتباره IMAGE B مع الأمر، وقل:<br>«سأرفق IMAGE A (هويتي) وIMAGE B (غرفتي) مع أمر هندسي كامل. ولّد صورة واحدة فقط: ابدأ بقراءة فقرة PHOTOGRAPHIC BRIEF الطبيعية، ثم نفّذ جميع الأقسام الصارمة بعدها حرفيًا وبالترتيب. أعد الصورة النهائية فقط دون شرح.»</div>
           <div class="prompt-actions">
             <button id="autoEngineerBtn" class="secondary-button" type="button">🎲 اقتراح وضعية</button>
             <button id="validateBtn" class="ghost-button" type="button">🔍 فحص التعارضات</button>
@@ -184,29 +184,29 @@
   </main>
 
   <footer class="footer">
-    <p>Smart Quad Mode v1.11 <span>•</span> واقعية مبنية على الفيزياء</p>
-    <p>لا تزوير EXIF، لا إزالة C2PA، ولا محاكاة PRNU.</p>
+    <p>Smart Quad Mode <span>•</span> Template First</p>
+    <p>الملابس والتعبير والشعر بيدك؛ بقية الهندسة تتبع القالب.</p>
   </footer>
 
   <dialog id="sceneDialog" class="modal">
     <div class="modal__header">
-      <div><p class="eyebrow">ROOM REFERENCE</p><h2>اختر صورة مرجع الغرفة</h2></div>
+      <div><p class="eyebrow">ROOM REFERENCE</p><h2>مرجع الغرفة</h2></div>
       <button class="icon-button" data-close-dialog="sceneDialog" type="button" aria-label="إغلاق">×</button>
     </div>
-    <p class="modal__intro">يمكنك اختيار المرجع يدويًا، لكن القوالب النهارية والليلية تختار المرجع الأنسب تلقائيًا حسب الوضعية والإضاءة.</p>
+    <p class="modal__intro">القالب يختار المرجع الأنسب تلقائيًا. يمكنك التدخل يدويًا فقط للمراجعة أو الاستثناء.</p>
     <div id="scenePickerGrid" class="scene-picker-grid"></div>
   </dialog>
 
   <dialog id="helpDialog" class="modal modal--narrow">
     <div class="modal__header">
-      <div><p class="eyebrow">SMART QUAD GUIDE</p><h2>كيف يعمل؟</h2></div>
+      <div><p class="eyebrow">TEMPLATE FIRST GUIDE</p><h2>كيف يعمل؟</h2></div>
       <button class="icon-button" data-close-dialog="helpDialog" type="button" aria-label="إغلاق">×</button>
     </div>
     <ol class="help-steps">
-      <li><strong>ارفع IMAGE A ثم اختر قالبًا</strong><span>في قوالب النهار والليل، القالب هو الأساس ويختار IMAGE B الأنسب تلقائيًا.</span></li>
-      <li><strong>القالب يحدد الوضعية والإضاءة والمرجع</strong><span>يختار التطبيق أعلى مرجع يمر بالشروط الصارمة للوضعية ومصدر الضوء.</span></li>
-      <li><strong>اختياراتك الشخصية تبقى مستقلة</strong><span>الشعر والتعبير والملابس تبقى قابلة للتغيير بعد القالب.</span></li>
-      <li><strong>راجع الفحص ثم انسخ</strong><span>إذا لم يوجد مرجع صالح، يمنع التطبيق تطبيق القالب ويعرض المشكلة بدل إنشاء تركيبة متعارضة.</span></li>
+      <li><strong>ارفع IMAGE A</strong><span>تُستخدم للهوية فقط.</span></li>
+      <li><strong>اختر فئة القالب ثم القالب</strong><span>كل فئة موجودة في خانة مستقلة أعلى الصفحة.</span></li>
+      <li><strong>التطبيق يضبط الباقي</strong><span>المرجع والوضعية والإضاءة والكاميرا والأبعاد تتبع القالب تلقائيًا.</span></li>
+      <li><strong>اختر مظهرك فقط</strong><span>الشعر وتعبير الوجه والملابس تظل اختياراتك اليدوية.</span></li>
     </ol>
   </dialog>
 
@@ -215,5 +215,6 @@
   <script type="module" src="js/templates.js"></script>
   <script type="module" src="js/indoorTimeTemplates.js"></script>
   <script type="module" src="js/indoorTemplateAuthority.js"></script>
+  <script type="module" src="js/templateHub.js"></script>
 </body>
 </html>
