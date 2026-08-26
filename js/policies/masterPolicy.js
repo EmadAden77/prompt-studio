@@ -12,13 +12,25 @@ This rule applies to EVERY template, pose, room scenario, camera path, clothing 
 - NO SELECTIVE BEAUTIFICATION: Do not make the subject visually more polished than the room. Skin, teeth, hair, body hair, towel/clothing, and visible non-camera-holding limbs must never receive a separate beauty, denoise, relight, HDR, clarity, or cleanup treatment.
 - FINAL CONSISTENCY GATE: Before output, reject any solution in which the camera-holding arm or phone is visible anywhere in the frame, any limb is elongated toward the lens, the person looks more polished than IMAGE B, body-hair distribution looks patterned, skin looks unusually smooth, dental appearance looks commercially perfect, or subject lighting/shadows disagree with the room. Correct the local realism while preserving identity, pose, room geometry, selected expression, selected hair arrangement, and permitted clothing state.`;
 
+const CAR_INTERIOR_SAUDI_PARKING_LOCK = `CAR INTERIOR — SAUDI PARKING LOCK
+This rule becomes mandatory whenever a car-interior template or car reference is active.
+- The vehicle is stationary and parked in Saudi Arabia for the entire photographic event. Never depict the car as moving, driving, merging, turning, accelerating, braking in traffic, or traveling on a road while the selfie is being made.
+- Any exterior context visible through the windshield, side windows, mirrors, or sunroof must read as a plausible Saudi parking environment appropriate to the selected time of day, such as an outdoor parking lot, covered parking, mall parking, hotel parking, office parking, restaurant parking, or indoor garage.
+- The vehicle interior itself is immutable reference geometry: preserve the exact seats, upholstery, stitching, steering wheel, dashboard, displays, center console, gear selector, trim, doors, mirrors, roof, sunroof, pillars, window shapes, colors, materials, proportions, wear, and visible small details from the car reference. Do not redesign, replace, recolor, clean, move, mirror, simplify, or invent interior parts.
+- Time-of-day or lighting changes may alter illumination, reflections, exposure, white balance, window brightness, and physically plausible exterior light only. They must not alter the interior design or create new fixtures, screens, controls, ambient-light strips, accessories, or trim.
+- The person, clothing, hairstyle arrangement, facial expression, pose, time of day, and physically valid lighting may vary according to the selected template. The car remains the same car.
+- Keep the Saudi parking background secondary and believable. Do not invent prominent readable license plates, brand signage, road signs, or location text unless they are explicitly present in the reference or separately requested.
+- FINAL VEHICLE GATE: if the car appears to be moving, the outside context reads as active roadway travel, or any interior component changes identity or geometry relative to the reference, the result is invalid and must be corrected before output.`;
+
 export const MASTER_POLICY = Object.freeze({
   immutablePhotographicRealismLock: IMMUTABLE_PHOTOGRAPHIC_REALISM_LOCK,
+  carInteriorSaudiParkingLock: CAR_INTERIOR_SAUDI_PARKING_LOCK,
   globalSelfieArmRule: "The camera-holding arm and phone are always physically solved outside the crop and must never appear in the finished image. Any visible-arm or arm-extension instruction is invalid.",
-  eventRule: `Interpret every selected value as one physically coherent photographic event.\n\n${IMMUTABLE_PHOTOGRAPHIC_REALISM_LOCK}`,
+  eventRule: `Interpret every selected value as one physically coherent photographic event.\n\n${IMMUTABLE_PHOTOGRAPHIC_REALISM_LOCK}\n\n${CAR_INTERIOR_SAUDI_PARKING_LOCK}`,
   conflictDomains: [
     "identity",
     "place and room continuity",
+    "vehicle-interior continuity and stationary Saudi parking context when a car template is active",
     "anatomy and support surfaces",
     "camera-holding arm exclusion and reachable phone position",
     "camera and lens geometry",
@@ -36,6 +48,9 @@ export const MASTER_POLICY = Object.freeze({
     "foreground selfie-arm elongation",
     "0.5x or fisheye arm exaggeration",
     "forced-perspective limb stretching",
+    "moving-car selfie capture",
+    "active-roadway car-interior selfie context",
+    "vehicle-interior redesign or substitution",
     "skin over-smoothing or airbrushing",
     "selective subject beautification",
     "advertisement-perfect teeth",
