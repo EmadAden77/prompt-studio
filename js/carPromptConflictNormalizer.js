@@ -155,10 +155,11 @@ function syncUnifiedCarUI() {
   captureUiDefaults();
 
   const template = activeCarTemplate();
+  const dedicatedCarPage = document.body?.dataset.page === "car";
   const imageACard = document.querySelector('[data-upload="imageA"]');
   const autoReferenceCard = document.querySelector("[data-auto-reference]");
 
-  if (!template) {
+  if (!template && !dedicatedCarPage) {
     if (autoReferenceCard) autoReferenceCard.hidden = false;
     const referencesTitle = document.querySelector("#referencesTitle");
     if (referencesTitle && uiDefaults) referencesTitle.textContent = uiDefaults.referencesTitle;
@@ -219,7 +220,10 @@ function syncUnifiedCarUI() {
 
   const timeName = document.querySelector("#carTimeSelect option:checked")?.textContent?.trim() ?? "";
   const summary = document.querySelector("#promptSummary");
-  if (summary) summary.textContent = `🚙 ${template.name_ar}${timeName ? ` · ${timeName}` : ""} · مرجع واحد IMAGE A · Range Rover Sport 2022 أبيض · Xiaomi 15 Ultra Front Camera · متوقفة في السعودية`;
+  if (summary) {
+    const templateName = template?.name_ar ?? "اختر قالب السيارة";
+    summary.textContent = `🚙 ${templateName}${timeName ? ` · ${timeName}` : ""} · مرجع واحد IMAGE A · Range Rover Sport 2022 أبيض · Xiaomi 15 Ultra Front Camera · متوقفة في السعودية`;
+  }
 
   const hubPreview = document.querySelector(".car-template-card__preview img");
   if (hubPreview) {
@@ -277,5 +281,3 @@ if (typeof document !== "undefined") {
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", installUnifiedCarUI, { once: true });
   else installUnifiedCarUI();
 }
-
-export { normalizeCarPrompt, normalizeUnifiedCarReference };
