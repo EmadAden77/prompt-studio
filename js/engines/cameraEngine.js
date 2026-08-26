@@ -1,3 +1,5 @@
+import { getActiveHiddenArmTemplate } from "../hiddenArmTemplates.js";
+
 export const ARM_PERSPECTIVE_LEVELS = Object.freeze(["natural", "enhanced", "extreme"]);
 
 const ARM_PERSPECTIVE_STORAGE_KEY = "ai-selfie-prompt-studio:arm-perspective";
@@ -70,12 +72,14 @@ if (typeof document !== "undefined") {
   }
 }
 
-export function selfieCameraEmulator(armPerspective = "enhanced") {
-  const perspectiveText = armPerspective === "extreme"
-    ? "The selfie arm may use a deliberately severe 0.5x/fisheye-like foreground stretch and forced perspective, while the face, torso, bed, furniture, and room geometry remain coherent and are not globally warped."
-    : armPerspective === "natural"
-      ? "Keep the selfie arm within ordinary natural wide-angle proportions, with only normal near-field enlargement."
-      : "Use noticeable but coherent near-field forced perspective on the selfie arm so it reads longer and more foreground-dominant than normal, while the face, torso, bed, furniture, and room remain physically coherent.";
+export function selfieCameraEmulator(armPerspective = "enhanced", { hiddenArm = false } = {}) {
+  const perspectiveText = hiddenArm
+    ? "The phone remains at genuine handheld selfie distance, but the crop keeps the entire camera-holding arm and phone outside the image. Preserve close personal smartphone perspective without inventing a visible elongated foreground arm."
+    : armPerspective === "extreme"
+      ? "The selfie arm may use a deliberately severe 0.5x/fisheye-like foreground stretch and forced perspective, while the face, torso, bed, furniture, and room geometry remain coherent and are not globally warped."
+      : armPerspective === "natural"
+        ? "Keep the selfie arm within ordinary natural wide-angle proportions, with only normal near-field enlargement."
+        : "Use noticeable but coherent near-field forced perspective on the selfie arm so it reads longer and more foreground-dominant than normal, while the face, torso, bed, furniture, and room remain physically coherent.";
 
   return `[Camera Emulator]: Xiaomi 15 Ultra - Front-Facing Camera (Selfie Mode)
 
@@ -169,6 +173,16 @@ ANATOMY SAFETY LOCK: show exactly one continuous selfie arm with one shoulder, o
 The selected arm-perspective effect applies to the phone-holding arm only. Do not globally stretch the face, skull, torso, furniture, doors, walls, bed, sofa, or room geometry.`;
   }
 
+  buildHiddenArmLock(template, holdingHand) {
+    return `ARM-HIDDEN SELFIE LOCK — HIGHEST PRIORITY WITHIN ARM VISIBILITY
+This is still a real handheld front-camera selfie taken by the subject himself. The ${holdingHand} hand physically holds the phone at the mapped reachable distance, but the crop is intentionally placed so the entire ${holdingHand} upper arm, elbow, forearm, wrist, hand, fingertips, and phone remain OUTSIDE the finished image area.
+Do not erase, shorten, amputate, detach, or anatomically distort the arm to hide it. Solve the complete arm physically outside the crop first, then frame the image inside the arm boundary.
+The absence of the arm must come from composition only. Preserve close personal selfie perspective, subtle shoulder asymmetry, lens proximity, gaze toward the phone, and room perspective from the subject's actual position.
+FORBIDDEN: visible selfie arm, visible phone hand, fingertips entering the edge, phone edge, third-person observer, tripod look, another photographer, remote camera, studio portrait distance, or telephoto-like compression.
+
+${template.promptBlock}`;
+  }
+
   selfieViewpointLock({ camera, pose, autoEngineering = null, armPerspectiveLevel = null } = {}) {
     if (!camera?.selfie || camera.type !== "front" || !pose) return "";
 
@@ -181,7 +195,11 @@ The selected arm-perspective effect applies to the phone-holding arm only. Do no
     const armVisual = profile.armVisual ?? `The ${holdingHand} selfie arm must originate from the matching shoulder and follow a physically reachable path toward the camera.`;
     const family = pose.id.startsWith("sitting") ? "sitting"
       : pose.id.startsWith("standing") ? "standing" : "bed";
-    const armPerspectiveLock = this.buildArmPerspectiveLock(pose, armPerspectiveLevel);
+    const hiddenArmTemplate = getActiveHiddenArmTemplate(pose);
+    const hiddenArmMode = Boolean(hiddenArmTemplate);
+    const armPerspectiveLock = hiddenArmMode
+      ? this.buildHiddenArmLock(hiddenArmTemplate, holdingHand)
+      : this.buildArmPerspectiveLock(pose, armPerspectiveLevel);
 
     const forbiddenFamily = family === "sitting"
       ? `- standing-height observer viewpoint for a seated subject
@@ -192,35 +210,43 @@ The selected arm-perspective effect applies to the phone-holding arm only. Do no
         : `- camera at the foot of the bed
 - wide room shot, full-body distant shot, or composition showing the whole bed as the subject`;
 
+    const hiddenArmRule = hiddenArmMode
+      ? `- The complete ${holdingHand} selfie arm is solved outside the crop. No upper arm, elbow, forearm, wrist, hand, fingertips, or phone may enter any edge of the final image.
+- The holding-side shoulder may remain partially visible only when anatomically natural, but the crop must end before the upper arm begins.
+- The opposite ${otherHand} arm may remain visible only as the pose naturally allows and must not be mistaken for the selfie arm.`
+      : `- ${armVisual}
+- The ${holdingHand} hand's ONLY job is holding the phone near face level with a relaxed elbow.`;
+
     const framing = family === "sitting"
       ? `- The frame must immediately read as a real arm's-length seated phone selfie.
 - Show head + torso + enough support geometry to prove sitting. For sofa/chair, part of the seat plus armrest/backrest must remain visible; for floor sitting, enough pelvis/leg/floor support must remain visible.
 - Camera remains at the subject's real seated eye height: about 1.1–1.2 m for chair/sofa, lower for floor sitting. The background must read from seated height, never standing height.
-- ${armVisual}
-- The ${holdingHand} hand's ONLY job is holding the phone near face level with a relaxed elbow.
+${hiddenArmRule}
 - The opposite ${otherHand} arm rests on a real armrest, thigh, knee, mattress edge, or floor support as the pose permits; no floating forearm and no extra shoulder.
 - The seat/support, subject, and background share one coherent near-field perspective. Do not hide the support with an impossible crop.`
       : family === "standing"
         ? `- The frame must immediately read as a real arm's-length standing phone selfie.
 - Use upper-body framing with the room readable behind. Solve the full standing body and floor contacts before crop even when the feet fall outside frame.
-- Camera remains around the subject's standing eye height (~1.5 m). Doors, wardrobe edges, wall corners, and mirror frames stay nearly vertical except for perspective convergence physically justified by the selected arm-perspective level.
-- ${armVisual}
-- The ${holdingHand} hand's ONLY job is holding the phone near face level with a relaxed elbow.
+- Camera remains around the subject's standing eye height (~1.5 m), unless the selected template explicitly maps a reachable high/low selfie angle. Doors, wardrobe edges, wall corners, and mirror frames stay nearly vertical except for physically justified perspective convergence.
+${hiddenArmRule}
 - The opposite ${otherHand} arm rests naturally by the thigh, in a pocket, on the hip, or on a real nearby support surface. No floating arm and no extra shoulder.
 - Background equals the fixed bedroom as seen from the subject's true standing location at arm's length, never an across-the-room observer view.`
         : `- The frame must immediately read as a real arm's-length phone selfie.
 - Face occupies approximately 40–60% of frame height. Show head and upper torso only; chest and one or both shoulders may appear as anatomy requires, but never the full body or whole bed.
-- ${armVisual}
-- The ${holdingHand} hand's ONLY job is holding the phone. It must not prop the head, rest under the cheek, or become a posing hand.
+${hiddenArmRule}
 - The lower/opposite ${otherHand} arm rests naturally according to the pose and must never cross through, merge into, or penetrate the torso.
 - Background equals the bedroom as seen FROM the subject's actual position on the bed at arm's length. The bed, pillow, headboard, lamp, and nearby room details are only near background, never an across-the-room composition.
-- Near-field stretch may emphasize the closest visible part of the selfie arm according to the selected arm-perspective level; do not enlarge the head, torso, bed, or room unnaturally.`;
+- In hidden-arm mode, preserve normal near-field face perspective without creating visible foreground-arm stretch.`;
 
     const invalidCheck = family === "sitting"
       ? "If the camera reads as standing-height, the seat/support is hidden, the subject appears to float above the support, or the camera is farther away than the mapped arm reach, the render is INVALID."
       : family === "standing"
         ? "If the camera reads as a room observer, the upper-body framing becomes a distant full-body shot, room geometry bends without a selected-lens reason, or the camera is farther away than the mapped arm reach, the render is INVALID."
         : "If the frame reads as though the camera is farther away than the mapped arm reach, shows the whole bed, shows most of the body, or looks like another person took the picture, the render is INVALID.";
+
+    const phoneVisibility = hiddenArmMode
+      ? "- The phone, phone edge, selfie hand, and fingertips are completely outside the finished image. Their absence is achieved only by crop, never by deleting anatomy."
+      : "- The phone is behind the camera plane and therefore is NOT visible in the finished image; at most, a few fingertips or a tiny edge-contact cue may appear at the extreme frame boundary if physically unavoidable.";
 
     return `SELFIE VIEWPOINT LOCK — HIGHEST PRIORITY FOR CAMERA GEOMETRY
 This image IS a handheld front-camera selfie taken BY THE SUBJECT HIMSELF.
@@ -242,10 +268,10 @@ ${forbiddenFamily}
 
 SELFIE FRAMING LOCK
 ${framing}
-- The phone is behind the camera plane and therefore is NOT visible in the finished image; at most, a few fingertips or a tiny edge-contact cue may appear at the extreme frame boundary if physically unavoidable.
+${phoneVisibility}
 
 SELFIE DISTANCE CHECK
-${invalidCheck} Re-render from the subject's mapped front-camera phone-in-hand viewpoint without moving the body off its real support surfaces.`;
+${invalidCheck}${hiddenArmMode ? " If any part of the selfie arm or phone enters the final frame, the hidden-arm template also FAILS." : ""} Re-render from the subject's mapped front-camera phone-in-hand viewpoint without moving the body off its real support surfaces.`;
   }
 
   buildMirrorSelfiePrompt({ camera, lens, cameraAngle, cameraDistance }) {
@@ -264,8 +290,9 @@ This is a real mirror selfie taken by the subject himself. The subject holds the
 
   buildPrompt({ camera, lens, pose, cameraAngle, cameraDistance, armPerspectiveLevel = null }) {
     if (camera?.selfie && camera.type === "front") {
-      const effective = this.resolveArmPerspective(pose, armPerspectiveLevel).effective;
-      return selfieCameraEmulator(effective);
+      const hiddenArmMode = Boolean(getActiveHiddenArmTemplate(pose));
+      const effective = hiddenArmMode ? "natural" : this.resolveArmPerspective(pose, armPerspectiveLevel).effective;
+      return selfieCameraEmulator(effective, { hiddenArm: hiddenArmMode });
     }
 
     if (camera?.type === "rear" && pose?.id === "mirror_selfie") {
