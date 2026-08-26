@@ -168,6 +168,10 @@ patchEngines();
 if (typeof document !== "undefined") {
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", installControl, { once:true });
   else installControl();
-  import("./carTemplateHub.js").then(() => import("./carPromptConflictNormalizer.js"));
+
+  const dedicatedCarPage = document.body?.dataset.page === "car";
+  if (dedicatedCarPage) {
+    import("./carTemplateHub.js").then(() => import("./carPromptConflictNormalizer.js"));
+  }
   import("./hairRealismRuntime.js");
 }
