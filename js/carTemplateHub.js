@@ -1,4 +1,5 @@
 import "./carTemplateRuntime.js";
+import "./carDriverGeometryRuntime.js";
 import { CAR_REFERENCE, CAR_TEMPLATE_PRESETS, CAR_TEMPLATE_BY_ID, CAR_TIME_OPTIONS, CAR_TIME_BY_ID } from "./carTemplates.js";
 import { showToast } from "./ui/dom.js";
 
