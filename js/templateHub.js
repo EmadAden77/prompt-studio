@@ -1,80 +1,7 @@
-import { SCENES } from "./data/scenesData.js";
-import { LIGHTING_BY_ID } from "./data/lightingData.js";
-import { TEMPLATE_PRESETS, sceneSupportsTemplateRequirements } from "./templates.js";
-import { HIDDEN_ARM_TEMPLATE_PRESETS } from "./hiddenArmTemplates.js";
-import { INDOOR_DAY_TEMPLATES, INDOOR_NIGHT_TEMPLATES } from "./indoorTimeTemplates.js";
+import { BEDROOM_TEMPLATES_V2, BEDROOM_TEMPLATE_GROUPS } from "./bedroomTemplatesV2.js";
 import { showToast } from "./ui/dom.js";
 
-const STANDARD_GROUPS = Object.freeze({
-  bed: { id: "hubBedTemplate", icon: "🛏️", title: "قوالب الاستلقاء والسرير" },
-  sitting: { id: "hubSittingTemplate", icon: "🪑", title: "قوالب الجلوس" },
-  standing: { id: "hubStandingTemplate", icon: "🧍", title: "قوالب الوقوف" },
-  mirror: { id: "hubMirrorTemplate", icon: "🪞", title: "قوالب المرآة" }
-});
-
-const SELECT_DEFS = Object.freeze([
-  { id: "hubStandardTemplate", icon: "📸", title: "قوالب سيلفي عادية", kind: "standard", templates: TEMPLATE_PRESETS },
-  { id: "hubHiddenTemplate", icon: "🙈", title: "قوالب سيلفي بدون ظهور الذراع", kind: "hidden", templates: HIDDEN_ARM_TEMPLATE_PRESETS },
-  { id: "hubDayTemplate", icon: "☀️", title: "قوالب نهارية داخل الغرفة", kind: "day", templates: INDOOR_DAY_TEMPLATES },
-  { id: "hubNightTemplate", icon: "🌙", title: "قوالب ليلية داخل الغرفة", kind: "night", templates: INDOOR_NIGHT_TEMPLATES },
-  ...Object.entries(STANDARD_GROUPS).map(([group, meta]) => ({ ...meta, kind: "standard", templates: TEMPLATE_PRESETS.filter((item) => item.group === group) }))
-]);
-
-function lightingSupported(scene, lightingId) {
-  const lighting = LIGHTING_BY_ID[lightingId];
-  if (!scene || !lighting) return false;
-  return (lighting.required_features ?? []).every((feature) => (scene.visible_features ?? []).includes(feature));
-}
-
-function templateLightingIds(template) {
-  if (template.lightingId) return [template.lightingId];
-  if (Array.isArray(template.lightingIds)) return template.lightingIds;
-  return ["window_daylight", "ceiling_white", "lamp_and_phone", "phone_screen_only"];
-}
-
-function scenePasses(template, scene, kind) {
-  if (!template || !scene || !scene.supported_poses?.includes(template.poseId)) return false;
-  const features = new Set(scene.visible_features ?? []);
-  if ((template.requiresAll ?? []).some((feature) => !features.has(feature))) return false;
-  if ((template.requiresAny ?? []).length && !(template.requiresAny ?? []).some((feature) => features.has(feature))) return false;
-  if (kind === "standard" && !sceneSupportsTemplateRequirements(template, scene)) return false;
-  return templateLightingIds(template).some((id) => lightingSupported(scene, id));
-}
-
-function bestSceneFor(template, kind) {
-  return SCENES
-    .filter((scene) => scenePasses(template, scene, kind))
-    .sort((a, b) => {
-      const aDefault = (a.default_for_poses ?? []).includes(template.poseId) ? 1 : 0;
-      const bDefault = (b.default_for_poses ?? []).includes(template.poseId) ? 1 : 0;
-      if (aDefault !== bDefault) return bDefault - aDefault;
-      return (b.priority ?? 0) - (a.priority ?? 0);
-    })[0] ?? null;
-}
-
-function bestLightingFor(template, scene) {
-  return templateLightingIds(template).find((id) => lightingSupported(scene, id)) ?? null;
-}
-
-function currentSceneFilename() {
-  return document.querySelector("#sceneFilename")?.textContent?.trim() ?? "";
-}
-
-function selectScene(scene) {
-  if (!scene) return false;
-  if (currentSceneFilename() === scene.image_filename) return true;
-  const opener = document.querySelector("#selectSceneBtn");
-  const grid = document.querySelector("#scenePickerGrid");
-  if (!opener || !grid) return false;
-  opener.click();
-  const button = grid.querySelector(`[data-scene-id="${CSS.escape(scene.id)}"]`);
-  if (!button) {
-    document.querySelector("#sceneDialog")?.close?.();
-    return false;
-  }
-  button.click();
-  return true;
-}
+const GROUP_ORDER = ["bed", "sitting", "standing"];
 
 function setSelect(id, value, dispatch = true) {
   const select = document.querySelector(`#${id}`);
@@ -86,144 +13,127 @@ function setSelect(id, value, dispatch = true) {
   return true;
 }
 
-function afterReferenceSwitch(callback) {
-  requestAnimationFrame(() => requestAnimationFrame(callback));
+function currentSceneId() {
+  return document.querySelector("#scenePickerGrid [aria-pressed='true']")?.dataset?.sceneId ?? null;
 }
 
-function clearUnderlyingTemplates(kind) {
-  if (kind !== "standard") setSelect("templateSelect", "custom", true);
-  if (kind !== "hidden") setSelect("hiddenArmTemplateSelect", "custom", true);
-  if (kind !== "day") setSelect("indoorDayTemplateSelect", "custom", false);
-  if (kind !== "night") setSelect("indoorNightTemplateSelect", "custom", false);
+function selectInternalScene(sceneId) {
+  if (!sceneId) return true;
+  const opener = document.querySelector("#selectSceneBtn");
+  const grid = document.querySelector("#scenePickerGrid");
+  if (!opener || !grid) return false;
+  opener.click();
+  const button = grid.querySelector(`[data-scene-id="${CSS.escape(sceneId)}"]`);
+  if (!button) {
+    document.querySelector("#sceneDialog")?.close?.();
+    return false;
+  }
+  button.click();
+  return true;
+}
+
+function clearLegacyTemplateState() {
+  setSelect("templateSelect", "custom", true);
+  setSelect("hiddenArmTemplateSelect", "custom", false);
+  setSelect("indoorDayTemplateSelect", "custom", false);
+  setSelect("indoorNightTemplateSelect", "custom", false);
+  delete document.documentElement.dataset.activeTemplate;
+  delete document.documentElement.dataset.activeTemplateHub;
   delete document.documentElement.dataset.activeIndoorTimeTemplate;
 }
 
-function applyStandard(template, scene) {
-  const lightingId = bestLightingFor(template, scene);
-  clearUnderlyingTemplates("standard");
-  if (lightingId) setSelect("lightingSelect", lightingId, true);
-  return setSelect("templateSelect", template.id, true);
-}
+function applyTemplate(template, select) {
+  clearLegacyTemplateState();
 
-function applyHidden(template, scene) {
-  const lightingId = bestLightingFor(template, scene);
-  clearUnderlyingTemplates("hidden");
-  if (lightingId) setSelect("lightingSelect", lightingId, true);
-  return setSelect("hiddenArmTemplateSelect", template.id, true);
-}
-
-function applyTimed(template, kind) {
-  clearUnderlyingTemplates(kind);
-  const id = kind === "day" ? "indoorDayTemplateSelect" : "indoorNightTemplateSelect";
-  return setSelect(id, template.id, true);
-}
-
-function resetHubSelections(activeId) {
-  SELECT_DEFS.forEach(({ id }) => {
-    if (id === activeId) return;
-    const select = document.querySelector(`#${id}`);
-    if (select) select.value = "custom";
-  });
-}
-
-function applyHubTemplate(def, template, hubSelect) {
-  const scene = bestSceneFor(template, def.kind);
-  if (!scene) {
-    hubSelect.value = "custom";
-    showToast("لا يوجد مرجع غرفة يجتاز الشروط الصارمة لهذا القالب", "error", 4600);
-    return;
-  }
-
-  resetHubSelections(hubSelect.id);
-  const sceneChanged = currentSceneFilename() !== scene.image_filename;
-  if (!selectScene(scene)) {
-    hubSelect.value = "custom";
-    showToast("تعذر اختيار المرجع المناسب للقالب تلقائيًا", "error", 4600);
+  if (!selectInternalScene(template.sceneId)) {
+    select.value = "custom";
+    showToast("تعذر تجهيز خريطة التفاعل الداخلية للقالب", "error", 4200);
     return;
   }
 
   const run = () => {
-    let applied = false;
-    if (def.kind === "standard") applied = applyStandard(template, scene);
-    else if (def.kind === "hidden") applied = applyHidden(template, scene);
-    else applied = applyTimed(template, def.kind);
+    const poseOk = setSelect("poseSelect", template.poseId, true);
+    setSelect("expressionSelect", template.expressionId, true);
+    setSelect("hairSelect", template.hairId, true);
+    setSelect("clothingSelect", template.clothingId, true);
+    setSelect("lightingSelect", template.lightingId, true);
+    setSelect("aspectSelect", template.aspect, true);
 
-    if (!applied) {
-      hubSelect.value = "custom";
-      showToast("تعذر تطبيق القالب بعد تبديل المرجع", "error", 4600);
+    if (!poseOk) {
+      select.value = "custom";
+      showToast("القالب لا يطابق منطقة التفاعل الحالية", "error", 4200);
       return;
     }
 
-    hubSelect.value = template.id;
-    document.documentElement.dataset.activeTemplateHub = template.id;
+    document.documentElement.dataset.activeBedroomTemplate = template.id;
+    document.querySelectorAll("[data-bedroom-template-select]").forEach((other) => {
+      if (other !== select) other.value = "custom";
+    });
     document.querySelector("#rebuildBtn")?.click();
-    showToast(`تم تطبيق القالب واختيار المرجع تلقائيًا: ${template.name_ar}`, "success", 4200);
+    showToast(`تم تطبيق قالب غرفة النوم: ${template.name_ar}`, "success", 3600);
   };
 
-  if (sceneChanged) afterReferenceSwitch(run);
-  else run();
+  requestAnimationFrame(() => requestAnimationFrame(run));
+}
+
+function hideLegacyTemplateUI() {
+  const legacyTemplateField = document.querySelector("#templateSelect")?.closest(".field");
+  if (legacyTemplateField) legacyTemplateField.hidden = true;
+
+  document.querySelectorAll('[data-indoor-time-templates]').forEach((panel) => {
+    panel.hidden = true;
+  });
+
+  ["hiddenArmTemplateSelect", "indoorDayTemplateSelect", "indoorNightTemplateSelect"].forEach((id) => {
+    const field = document.querySelector(`#${id}`)?.closest(".field, section, article");
+    if (field) field.hidden = true;
+  });
+
+  const optionsTitle = document.querySelector("#optionsTitle");
+  if (optionsTitle) optionsTitle.textContent = "خيارات القالب";
+  const badge = optionsTitle?.closest(".panel__header")?.querySelector(".context-badge");
+  if (badge) badge.textContent = "Bedroom V2";
 }
 
 function buildHub() {
+  const old = document.querySelector("#templateHub");
+  old?.remove();
+
   const intro = document.querySelector(".intro");
-  if (!intro || document.querySelector("#templateHub")) return;
+  if (!intro) return;
 
   const section = document.createElement("section");
   section.id = "templateHub";
   section.className = "template-hub";
-  section.setAttribute("aria-labelledby", "templateHubTitle");
 
   const header = document.createElement("div");
   header.className = "template-hub__header";
-  const titleWrap = document.createElement("div");
-  const eyebrow = document.createElement("p");
-  eyebrow.className = "eyebrow";
-  eyebrow.textContent = "TEMPLATES";
-  const title = document.createElement("h2");
-  title.id = "templateHubTitle";
-  title.textContent = "القوالب";
-  const note = document.createElement("p");
-  note.textContent = "كل فئة في خانة مستقلة. اختيار القالب يضبط المرجع والوضعية والإضاءة تلقائيًا، مع بقاء أدوات Smart Quad الأصلية ظاهرة للمراجعة والتعديل.";
-  titleWrap.append(eyebrow, title, note);
-  header.appendChild(titleWrap);
+  header.innerHTML = `<div><p class="eyebrow">BEDROOM V2</p><h2>قوالب غرفة النوم الجديدة</h2><p>قوالب محدودة ومقيدة بالمرجع الواحد. كل قالب يغيّر الوضعية والكادر فقط، ويمنع إعادة تصميم الغرفة أو اختراع خلفية جديدة.</p></div>`;
 
   const grid = document.createElement("div");
   grid.className = "template-hub__grid";
 
-  SELECT_DEFS.forEach((def) => {
+  GROUP_ORDER.forEach((group) => {
+    const meta = BEDROOM_TEMPLATE_GROUPS[group];
+    const templates = BEDROOM_TEMPLATES_V2.filter((item) => item.group === group);
+    if (!meta || !templates.length) return;
+
     const card = document.createElement("article");
     card.className = "template-hub__card";
+
     const label = document.createElement("label");
-    label.htmlFor = def.id;
-    const icon = document.createElement("span");
-    icon.className = "template-hub__icon";
-    icon.textContent = def.icon;
-    const text = document.createElement("strong");
-    text.textContent = def.title;
-    label.append(icon, text);
+    label.htmlFor = `bedroomV2_${group}`;
+    label.innerHTML = `<span class="template-hub__icon">${meta.icon}</span><strong>${meta.title}</strong>`;
 
     const select = document.createElement("select");
-    select.id = def.id;
-    select.dataset.templateKind = def.kind;
-    const off = document.createElement("option");
-    off.value = "custom";
-    off.textContent = "اختر قالبًا";
-    select.appendChild(off);
-
-    def.templates.forEach((template) => {
-      const scene = bestSceneFor(template, def.kind);
-      if (!scene) return;
-      const option = document.createElement("option");
-      option.value = template.id;
-      option.textContent = template.name_ar;
-      select.appendChild(option);
-    });
-
-    select.disabled = select.options.length <= 1;
+    select.id = `bedroomV2_${group}`;
+    select.dataset.bedroomTemplateSelect = "true";
+    select.appendChild(new Option("اختر قالبًا", "custom"));
+    templates.forEach((template) => select.appendChild(new Option(template.name_ar, template.id)));
     select.addEventListener("change", () => {
       if (select.value === "custom") return;
-      const template = def.templates.find((item) => item.id === select.value);
-      if (template) applyHubTemplate(def, template, select);
+      const selected = templates.find((item) => item.id === select.value);
+      if (selected) applyTemplate(selected, select);
     });
 
     card.append(label, select);
@@ -234,56 +144,24 @@ function buildHub() {
   intro.after(section);
 }
 
-function restoreOriginalControls() {
-  const templateField = document.querySelector("#templateSelect")?.closest(".field");
-  const poseField = document.querySelector("#poseSelect")?.closest(".field");
-  const lightingField = document.querySelector("#lightingSelect")?.closest(".field");
-  const aspectField = document.querySelector("#aspectSelect")?.closest(".field");
-  [templateField, poseField, lightingField, aspectField].forEach((field) => {
-    if (!field) return;
-    field.hidden = false;
-    field.removeAttribute("hidden");
-    delete field.dataset.templateControlled;
-  });
-
-  const optionsTitle = document.querySelector("#optionsTitle");
-  if (optionsTitle) optionsTitle.textContent = "Smart Quad";
-  const badge = optionsTitle?.closest(".panel__header")?.querySelector(".context-badge");
-  if (badge) badge.textContent = "Deterministic";
-
-  const form = document.querySelector("#optionsForm");
-  if (form) delete form.dataset.personalOnly;
-
-  const hair = document.querySelector("#hairSelect")?.closest(".field");
-  const expression = document.querySelector("#expressionSelect")?.closest(".field");
-  const clothing = document.querySelector("#clothingSelect")?.closest(".field");
-  hair?.classList.remove("field--wide");
-  expression?.classList.add("field--wide");
-  clothing?.classList.add("field--wide");
-
-  document.querySelectorAll('[data-indoor-time-templates]').forEach((panel) => {
-    panel.hidden = false;
-    panel.removeAttribute("hidden");
-  });
-}
-
 function installStyles() {
   if (document.querySelector("#templateHubStyles")) return;
   const style = document.createElement("style");
   style.id = "templateHubStyles";
   style.textContent = `
 .template-hub{max-width:1180px;margin:0 auto 24px;padding:22px;border:1px solid var(--border-color,rgba(127,127,127,.18));border-radius:24px;background:var(--panel-bg,rgba(20,24,32,.72))}
-.template-hub__header{display:flex;justify-content:space-between;gap:16px;margin-bottom:18px}.template-hub__header h2{margin:2px 0 6px;font-size:clamp(1.35rem,4vw,2rem)}.template-hub__header p:last-child{margin:0;opacity:.72;line-height:1.8}
-.template-hub__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.template-hub__card{padding:14px;border:1px solid var(--border-color,rgba(127,127,127,.18));border-radius:16px;background:rgba(127,127,127,.035)}.template-hub__card label{display:flex;align-items:center;gap:9px;margin-bottom:9px}.template-hub__icon{font-size:1.2rem}.template-hub__card select{width:100%}
-@media(max-width:700px){.template-hub{margin:0 16px 20px;padding:16px}.template-hub__grid{grid-template-columns:1fr}.template-hub__header{display:block}}
+.template-hub__header{margin-bottom:18px}.template-hub__header h2{margin:2px 0 6px;font-size:clamp(1.35rem,4vw,2rem)}.template-hub__header p:last-child{margin:0;opacity:.72;line-height:1.8}
+.template-hub__grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.template-hub__card{padding:14px;border:1px solid var(--border-color,rgba(127,127,127,.18));border-radius:16px;background:rgba(127,127,127,.035)}.template-hub__card label{display:flex;align-items:center;gap:9px;margin-bottom:9px}.template-hub__icon{font-size:1.2rem}.template-hub__card select{width:100%}
+@media(max-width:800px){.template-hub{margin:0 16px 20px;padding:16px}.template-hub__grid{grid-template-columns:1fr}}
 `;
   document.head.appendChild(style);
 }
 
 function installTemplateHub() {
   installStyles();
+  clearLegacyTemplateState();
+  hideLegacyTemplateUI();
   buildHub();
-  requestAnimationFrame(() => requestAnimationFrame(restoreOriginalControls));
 }
 
 if (typeof document !== "undefined") {
