@@ -154,7 +154,7 @@ export const SCENES = Object.freeze([
     default_for_poses: ["standing_sofa", "sitting_sofa", "standing_bedside"],
     visible_features: ["bed", "mattress", "mattress_edge", "pillow", "blanket", "headboard", "nightstand", "lamp", "sofa", "sofa_cushion", "sofa_back", "sofa_armrest", "floor", "ceiling_light", "ceiling_spots", "full_room_overview"],
     surfaces: ["floor", "mattress_edge", "sofa_cushion", "sofa_back", "sofa_armrest"],
-    priority: 97
+    priority: 60
   },
   {
     id: "user_room_1000204898",
@@ -171,7 +171,7 @@ export const SCENES = Object.freeze([
     default_for_poses: ["standing_sofa", "sitting_sofa", "sitting_chair"],
     visible_features: ["sofa", "sofa_cushion", "sofa_back", "sofa_armrest", "chair", "chair_seat", "chair_back", "bed", "mattress", "lamp", "floor", "ceiling_light", "ceiling_spots"],
     surfaces: ["floor", "sofa_cushion", "sofa_back", "sofa_armrest", "chair_seat", "chair_back"],
-    priority: 97
+    priority: 60
   },
   {
     id: "user_room_1000204796",
@@ -188,7 +188,7 @@ export const SCENES = Object.freeze([
     default_for_poses: ["standing_center", "sitting_floor", "standing_wardrobe", "standing_vanity"],
     visible_features: ["full_room_overview", "floor", "ceiling_light", "ceiling_spots", "bed", "mattress", "mattress_edge", "pillow", "blanket", "headboard", "sofa", "sofa_back", "chair", "chair_seat", "chair_back", "wardrobe", "wardrobe_doors", "vanity_table", "vanity_direction"],
     surfaces: ["floor", "mattress_edge", "sofa_back", "chair_seat", "chair_back", "wardrobe", "vanity"],
-    priority: 99
+    priority: 60
   }
 ]);
 
