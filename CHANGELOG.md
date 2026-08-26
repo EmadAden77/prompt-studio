@@ -1,5 +1,32 @@
 # Changelog
 
+## v1.17 — 2026-08-26
+
+### Added
+
+- Rebuilt `car.html` as a fully independent car-selfie workspace; no frozen `index.html` item was modified in this release.
+- Added a sticky horizontally scrollable category bar with eight car-selfie groups: front close-up, side, high, low, Dutch/candid, mirror check, wheel, and passenger seat.
+- Added `js/carPosesData.js` containing the supplied `CAR_CATEGORIES`, `CAR_TEMPLATES`, and `ANGLE_ANATOMY` map.
+- Each template card now shows name, camera angle, distance, face/framing share, gaze direction, and a short seated-anatomy line; clicking a card immediately selects it and rebuilds the prompt.
+- Added mandatory `ARM-FREE FRAMING LOCK`: the phone, hand, and complete selfie arm stay outside the final frame; authenticity comes from shoulder mechanics, near-field face geometry, off-center framing, restrained roll, and physically supported catchlights instead of a visible arm.
+- Added mandatory `DRIVER SEAT ANATOMY SOLVER`, executed before camera placement, with seat-wheel axis, legs-first solving, angle-specific torso/head behavior, headrest alignment, sleeve consistency, seat compression, and Saudi left-hand-drive geometry.
+- Added angle-specific anatomy injection through `ANGLE_ANATOMY` for frontal, side, high, low, Dutch, mirror, wheel, and passenger templates.
+- Added required `IMAGE A` identity upload plus an optional cabin-reference upload. When the cabin reference is supplied it becomes IMAGE B and locks the environment; without it the car page builds the default coherent white 2022 Range Rover Sport cabin.
+- Added the reduced car-only lighting selector: N1 sodium+LED, N2 shop-sign spill, N3 gas station, N4 midday, N5 dusk, N6 underground parking, and D2 shaded daylight.
+- Kept only car-relevant appearance controls on this page: hair, facial expression, and clothing; sleepwear is filtered out from the car clothing selector.
+- Added direct Copy, Download TXT, and Back actions.
+
+### Prompt order
+
+1. CAR CORE
+2. CABIN SELFIE CAMERA LOCK
+3. ARM-FREE FRAMING LOCK
+4. DRIVER SEAT ANATOMY SOLVER + angle-specific anatomy
+5. Selected template line
+6. Selected lighting
+7. STREET LIFE + GLASS & REFLECTION + SINGLE PIPELINE + IMPERFECTION MANIFEST
+8. CHOICES
+
 ## v1.11 — 2026-08-26
 
 ### Added
@@ -103,7 +130,7 @@
 
 ### Changed
 - Switched Smart Quad to **reference-first selection**: the user now chooses the built-in room reference first, then the app proposes the suitable pose.
-- The pose selector is filtered to the poses supported by the chosen reference; unsupported room references are not offered in Smart Quad.
+- The pose selector is filtered to the poses supported by that reference; unsupported room references are not offered in Smart Quad.
 - The selected reference remains built-in, so IMAGE B still never requires an upload.
 - Updated prompt wording, validation guidance, the reference picker, and the help flow to reflect user-selected room references.
 
