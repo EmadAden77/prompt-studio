@@ -1,7 +1,6 @@
 import { CLOTHING_OPTIONS } from "./data/clothingData.js";
 
 const PATCH = Symbol.for("promptStudio.globalFabricPhysicsRuntime.applied");
-const NAME_MARKER = " [GLOBAL FABRIC PHYSICS:";
 
 function compact(value, fallback) {
   const text = String(value ?? "").trim();
@@ -54,7 +53,7 @@ function decorate(item) {
   const base = String(item.name_en || item.name_ar || "selected clothing").replace(/ \[GLOBAL FABRIC PHYSICS:[\s\S]*$/u, "");
   const directive = buildGlobalFabricPhysicsDirective(item);
   try {
-    item.name_en = `${base}${NAME_MARKER} ${directive}]`;
+    item.name_en = `${base} [${directive}]`;
     item.fabric_physics = directive;
     Object.defineProperty(item, PATCH, { value:true, configurable:false, enumerable:false });
   } catch {
