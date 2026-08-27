@@ -4,7 +4,7 @@ import { EXPRESSION_OPTIONS } from "./data/expressionsData.js";
 import { CLOTHING_OPTIONS } from "./data/clothingData.js";
 import { buildCarUniversalPhysicalReality } from "./carPhysicalRealityShared.js";
 
-const VERSION = "v1.30";
+const VERSION = "v1.33";
 const OUTPUT_ID = "finalPrompt";
 const patchFlag = Symbol.for("promptStudio.carCompactPromptRuntime.installed");
 
@@ -52,7 +52,7 @@ function cabinSentence(hasCabin) {
 }
 
 function sceneSentence(tpl) {
-  return tpl.scene ? `TEMPLATE SCENE AUTHORITY\n${tpl.scene}. Keep this scene ordinary, parked and physically consistent with the selected crop; do not expand framing merely to prove the location.` : "";
+  return tpl.scene ? `TEMPLATE SCENE AUTHORITY\n${tpl.scene}. Keep this scene ordinary, parked and physically consistent with the selected crop; do not expand framing merely to prove the location. TIME / LIGHTING AUTHORITY: the user's current lighting selection overrides any historical template lighting metadata.` : "";
 }
 
 function cropSentence(tpl) {
@@ -75,13 +75,13 @@ function poseSpecificMechanics(tpl) {
     seatbelt_pause: "POSE CONTACT: the free hand may meet the real seatbelt near the upper chest only if that hand lies inside the selected crop. Belt tension must follow its anchor path and create small clothing indentation/contact shadows; never invent a floating belt segment or widen the frame to show the hand.",
     door_armrest_rest: "POSE CONTACT: the free forearm may rest on the real door armrest if visible. The supported shoulder lowers naturally, elbow/wrist alignment stays mechanically possible, and contact pressure subtly affects sleeve folds and armrest shadowing.",
     console_lean: "POSE BALANCE: torso leans about 10–15° toward the center console from pelvis/seat support, creating naturally unequal shoulders. Do not fake the lean by bending only the neck or shifting the head independently of the torso.",
-    night_window_sidekey: "POSE/LIGHT COUPLING: head remains only 20–30° toward the side window while gaze returns to the lens. A real window-side source may dominate the near side of the face; the far side stays naturally darker without hidden fill or theatrical rim light.",
+    night_window_sidekey: "POSE GEOMETRY: head remains only 20–30° toward the side window while gaze returns to the lens. Lighting must come from the user's current selection; do not force a window-side key merely because this pose historically used one.",
     rear_seat_selfie: "POSE DEPTH: camera remains physically reachable from the rear-seat subject. Front seatbacks, B/C pillars and center tunnel may appear only as perspective-consistent depth cues; do not place the camera in the front row or outside the vehicle.",
     ac_steering_breeze: "POSE/CONTACT: one free hand may rest lightly on the upper steering-wheel rim with realistic finger wrap and knuckle flex while the other arm holds the phone. Shoulder elevation and clavicle tension must match the selfie hold; AC airflow affects only light hair strands, not the head or heavy hair mass.",
-    food_wait_night: "POSE/WAITING STATE: relaxed driver posture with small natural asymmetry and a patient micro-expression. Keep steering wheel/seat support ordinary and avoid staged restaurant-ad posing.",
-    golden_window_breeze: "OPEN-WINDOW COUPLING: the driver window is genuinely open. Breeze enters from that side only, moving a limited set of side strands while the torso, clothing and heavier hair remain gravity-dominant.",
-    tree_dappled_driver: "DAPPLED-LIGHT COUPLING: leaf-shadow patterns must cross face, shirt, wheel and cabin surfaces according to one outdoor light field; patterns cannot stop at facial boundaries or become decorative camouflage.",
-    streetlight_cockpit: "TOP-LIGHT COUPLING: the real street-light direction controls forehead, nose, hair and steering-wheel highlights; weaker instrument illumination may lift lower cabin values but cannot become a hidden beauty source."
+    food_wait_night: "POSE/WAITING STATE: relaxed driver posture with small natural asymmetry and a patient micro-expression. Keep steering wheel/seat support ordinary and avoid staged restaurant-ad posing. Lighting remains user-selected.",
+    golden_window_breeze: "OPEN-WINDOW COUPLING: the driver window is genuinely open. Breeze enters from that side only, moving a limited set of side strands while the torso, clothing and heavier hair remain gravity-dominant. Lighting remains user-selected.",
+    tree_dappled_driver: "SCENE COUPLING: preserve the leafy-tree location context without forcing dappled sunlight. If the user selects a lighting mode that does not support leaf-shadow patterns, omit them.",
+    streetlight_cockpit: "SCENE COUPLING: preserve the street-light location context without forcing top-light behavior. The user's selected lighting preset is the sole lighting authority."
   };
   return rules[tpl.id] ? `POSE-SPECIFIC MECHANICS\n${rules[tpl.id]}` : "";
 }
@@ -189,12 +189,12 @@ function onePipeline() {
 Face, eyes, skin, beard, hair, clothing, seat, headrest, dashboard, glass, reflections and exterior background belong to one single smartphone capture event with one lens model, one focus state, one exposure decision, one white balance, one HDR/computational merge behavior, one denoise pass, one sharpening behavior and one compression path. Darker areas may be noisier and softer; brighter areas cleaner. Never make the face cleaner, sharper, brighter or less noisy than the cabin without a physical lighting reason.`;
 }
 
-function lightingSentence(lightingId, tpl) {
-  const base = tpl.lightingOverride ? `Template-specific lighting: ${tpl.lightingOverride}.` : (LIGHTING[lightingId] || LIGHTING.N1);
+function lightingSentence(lightingId) {
+  const base = LIGHTING[lightingId] || LIGHTING.N1;
   const phoneBounce = ["N1", "N2", "N3", "N5", "N6"].includes(lightingId)
     ? " A weak near-axis phone-screen contribution is allowed only if physically plausible at the selected distance; it must remain subordinate to the declared cabin/exterior sources and must not become a hidden beauty fill."
     : " Do not invent phone-screen fill in daylight unless the selected scene geometry would make a visible contribution plausible.";
-  return `LIGHTING PHYSICS: ${base}${phoneBounce} Every shadow, catchlight, skin highlight and glass reflection must trace back to those real sources and real cabin surfaces. No invisible softbox, cinematic rim light or face-only exposure correction.`;
+  return `USER-SELECTED LIGHTING AUTHORITY — NON-NEGOTIABLE: ${base}${phoneBounce} The selected lighting control is the sole authority for time-of-day lighting and source behavior. Ignore tpl.preferredLighting, tpl.lightingOverride and any historical template-specific light suggestion. Every shadow, catchlight, skin highlight and glass reflection must trace back to the user's selected lighting preset and real scene surfaces.`;
 }
 
 function skinSentence() {
@@ -203,7 +203,7 @@ function skinSentence() {
 
 function buildPrompt() {
   const tpl = activeTemplate();
-  const lightingId = tpl.preferredLighting || selectedValue("lightingSelect") || "N1";
+  const lightingId = selectedValue("lightingSelect") || "N1";
   const hair = byId(HAIR_OPTIONS, selectedValue("hairSelect"));
   const expression = byId(EXPRESSION_OPTIONS, selectedValue("expressionSelect"));
   const clothing = byId(CLOTHING_OPTIONS, selectedValue("clothingSelect"));
@@ -231,7 +231,7 @@ ${hairPhysics(tpl)}
 
 ${expressionPhysics(expression, tpl)}
 
-${lightingSentence(lightingId, tpl)}
+${lightingSentence(lightingId)}
 
 ${colorContamination(lightingId)}
 
@@ -251,24 +251,18 @@ ${buildCarUniversalPhysicalReality({ mode:"interior", poseId:tpl.id, stateId:lig
 ${onePipeline()}
 
 FINAL CAPTURE GATE
-Reject any result with altered identity geometry, warped facial proportions, over-smoothed skin, perfectly uniform pores, over-resolved hair, impossible arm mechanics, floating body/seat contact, impossible headrest intersection, floating or broken seatbelt geometry, unsupported armrest contact, torso/head pose mismatch, conflicting shadow directions, inconsistent mixed-light color propagation, decorative or pasted reflections, broken mirror parallax, flat exterior depth, uniform synthetic cabin materials, equal hyper-detail across all depths, artificial DSLR bokeh, selective face cleanup, synthetic cabin geometry or a medium portrait substituted for a selected close-up. Keep ordinary imperfections when physically justified. CAPTURED, NOT RENDERED.`;
+Reject any result with altered identity geometry, warped facial proportions, over-smoothed skin, perfectly uniform pores, over-resolved hair, impossible arm mechanics, floating body/seat contact, impossible headrest intersection, floating or broken seatbelt geometry, unsupported armrest contact, torso/head pose mismatch, conflicting shadow directions, inconsistent mixed-light color propagation, decorative or pasted reflections, broken mirror parallax, flat exterior depth, uniform synthetic cabin materials, equal hyper-detail across all depths, artificial DSLR bokeh, selective face cleanup, synthetic cabin geometry or a medium portrait substituted for a selected close-up. Reject any result whose lighting does not match the user's currently selected lighting preset. Keep ordinary imperfections when physically justified. CAPTURED, NOT RENDERED.`;
 }
 
 function syncPrompt() {
   const output = document.querySelector(`#${OUTPUT_ID}`);
   if (!output) return false;
-  const tpl = activeTemplate();
-  if (tpl.preferredLighting) {
-    const lighting = document.querySelector("#lightingSelect");
-    if (lighting && lighting.value !== tpl.preferredLighting) lighting.value = tpl.preferredLighting;
-  }
   const prompt = buildPrompt();
   if (output.textContent !== prompt) output.textContent = prompt;
 
   const count = document.querySelector("#promptWordCount");
   if (count) count.textContent = `${prompt.trim().split(/\s+/u).length} كلمة`;
-  const version = document.querySelector(".car-version");
-  if (version) version.textContent = VERSION;
+  document.querySelectorAll(".car-version").forEach((node) => { node.textContent = VERSION; });
   return true;
 }
 
