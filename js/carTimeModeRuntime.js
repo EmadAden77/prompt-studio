@@ -1,4 +1,4 @@
-const VERSION = "v1.31";
+const VERSION = "v1.33";
 const STORAGE_KEY = "prompt-studio:car-time:v1";
 const DAY_LIGHTS = new Set(["N4", "D2"]);
 const NIGHT_LIGHTS = new Set(["N1", "N2", "N3", "N5", "N6"]);
@@ -69,7 +69,7 @@ function updateButtons() {
     button.setAttribute("aria-pressed", active ? "true" : "false");
   });
   const badge = document.querySelector("#carTimeBadge");
-  if (badge) badge.textContent = activeTime === "day" ? "القوالب والإضاءات النهارية فقط" : "القوالب والإضاءات الليلية فقط";
+  if (badge) badge.textContent = activeTime === "day" ? "نهاري · اختر الإضاءة بنفسك" : "ليلي · اختر الإضاءة بنفسك";
   document.documentElement.dataset.carTime = activeTime;
   document.body.dataset.carTime = activeTime;
 }
@@ -81,7 +81,7 @@ function updateVersionLabels() {
   const eyebrow = document.querySelector(".intro .eyebrow");
   if (eyebrow) eyebrow.textContent = `CAR SELFIE ENGINE · ${VERSION}`;
   const footer = document.querySelector("footer p:first-child");
-  if (footer) footer.innerHTML = `Car Templates ${VERSION} <span>•</span> DAY/NIGHT ADAPTIVE PROMPT`;
+  if (footer) footer.innerHTML = `Car Templates ${VERSION} <span>•</span> USER-CONTROLLED LIGHTING`;
   document.title = `قوالب السيارة ${VERSION} — AI Selfie Prompt Studio`;
 }
 
