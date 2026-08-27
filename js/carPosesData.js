@@ -24,9 +24,14 @@ export const CAR_TEMPLATES = Object.freeze([
   { id:"cu_classic", cat:"front_cu", name_ar:"كلوز أب كلاسيكي", angle:"frontal eye level", distance:"30–40cm", framing:"face 70%", gaze:"into lens", mood:"واثق مرتاح" },
   { id:"cu_tight", cat:"front_cu", name_ar:"كلوز أب محكم", angle:"frontal", distance:"25–35cm", framing:"face 85%", gaze:"into lens", mood:"قريب حميمي", note:"nose mild protrusion; ears recede slightly; pores resolved" },
   { id:"cu_win_key", cat:"front_cu", name_ar:"كلوز أب بضوء النافذة", angle:"frontal", distance:"30–40cm", framing:"face 70%", gaze:"into lens", mood:"درامي طبيعي", note:"side-window key splits the face; cabin falls to shadow" },
+  { id:"headrest_relaxed", cat:"front_cu", name_ar:"متكئ على مسند الرأس", angle:"frontal eye level, slight recline", distance:"30–40cm", framing:"face 72%", gaze:"into lens", mood:"هادئ مرتاح", note:"head lightly supported by headrest; subtle hair/headrest contact only where physically visible" },
+  { id:"seatbelt_pause", cat:"front_cu", name_ar:"لحظة ربط الحزام", angle:"frontal eye level with slight torso turn", distance:"35–45cm", framing:"face 65% + upper chest", gaze:"into lens", mood:"عفوي", note:"free hand may interact with seatbelt only if naturally inside crop; belt tension and clothing contact must be coherent" },
+  { id:"console_lean", cat:"front_cu", name_ar:"ميل خفيف نحو الكونسول", angle:"frontal with 10–15° torso lean toward console", distance:"35–45cm", framing:"face 68%", gaze:"into lens", mood:"مرتاح غير متناظر", note:"shoulders remain naturally unequal; torso lean comes from pelvis/seat support, not neck bend alone" },
   { id:"side_34", cat:"side", name_ar:"ثلاثة أرباع جانبي", angle:"45° side", distance:"35–50cm", framing:"face 65%", gaze:"into lens", mood:"عفوي" },
   { id:"side_win", cat:"side", name_ar:"متكئ على النافذة", angle:"side toward window", distance:"35–50cm", framing:"face 65%", gaze:"into lens", mood:"كسول", note:"left forearm on window frame; outside slice visible" },
   { id:"side_shoulder", cat:"side", name_ar:"نظرة عبر الكتف", angle:"body frontal, head turned 60°", distance:"35–50cm", framing:"face 60%", gaze:"into lens over shoulder", mood:"سينمائي عفوي" },
+  { id:"door_armrest_rest", cat:"side", name_ar:"ارتكاز على مسند الباب", angle:"30–40° side toward door", distance:"35–50cm", framing:"face 65% + near shoulder", gaze:"into lens", mood:"مرتاح", note:"free forearm rests naturally on door armrest only when visible; shoulder lowers and fabric/contact shadows follow the support" },
+  { id:"night_window_sidekey", cat:"side", name_ar:"كلوز أب ليلي بضوء جانبي", angle:"20–30° toward side window", distance:"30–40cm", framing:"face 68%", gaze:"into lens", mood:"ليلي طبيعي", note:"single real window-side source dominates one side of face; opposite side remains naturally darker without hidden fill" },
   { id:"high_slim", cat:"high", name_ar:"أعلى نحيف", angle:"10–15° above", distance:"30–45cm", framing:"face 70%", gaze:"up into lens", mood:"مرتب" },
   { id:"high_dash", cat:"high", name_ar:"أعلى مع التابلوه", angle:"20° above", distance:"45–60cm", framing:"face 55% + dash/wheel below", gaze:"up into lens", mood:"سياقي" },
   { id:"low_jaw", cat:"low", name_ar:"أسفل فك بارز", angle:"10–20° up", distance:"30–45cm", framing:"face 70%", gaze:"down into lens", mood:"واثق" },
@@ -40,7 +45,8 @@ export const CAR_TEMPLATES = Object.freeze([
   { id:"whl_console", cat:"wheel", name_ar:"مرفق على الكونسول", angle:"frontal", distance:"35–45cm", framing:"face 65%", gaze:"into lens", mood:"هادئ" },
   { id:"pass_classic", cat:"passenger", name_ar:"راكب كلاسيكي", angle:"frontal", distance:"35–50cm", framing:"face 65%", gaze:"into lens", mood:"مرتخي", note:"one leg crossed allowed" },
   { id:"pass_win", cat:"passenger", name_ar:"راكب نحو النافذة", angle:"side toward window", distance:"35–50cm", framing:"face 65%", gaze:"into lens", mood:"تأملي" },
-  { id:"pass_recl", cat:"passenger", name_ar:"راكب مقعد مرجع", angle:"looking down 15–20°", distance:"40–55cm", framing:"face 65%", gaze:"up into lens", mood:"كسول ليلي" }
+  { id:"pass_recl", cat:"passenger", name_ar:"راكب مقعد مرجع", angle:"looking down 15–20°", distance:"40–55cm", framing:"face 65%", gaze:"up into lens", mood:"كسول ليلي" },
+  { id:"rear_seat_selfie", cat:"passenger", name_ar:"سيلفي من المقعد الخلفي", angle:"rear-seat frontal eye level", distance:"35–50cm", framing:"face 62% + front-seat depth cues", gaze:"into lens", mood:"عفوي هادئ", note:"subject is seated in the rear row; front seatbacks/center tunnel may appear only as crop-supported depth cues; no driver-seat wheel-axis constraint" }
 ]);
 
 export const CAR_TEMPLATE_BY_ID = Object.freeze(Object.fromEntries(CAR_TEMPLATES.map((item) => [item.id, item])));
