@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/responsive.css">
   <style>
-    .pose-transformer{max-width:1120px;margin:0 auto;padding:24px 16px 48px}.pose-transformer__grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}.pose-transformer .panel{height:max-content}.pose-transformer__controls{display:grid;grid-template-columns:1fr 1fr;gap:12px}.pose-transformer__controls .field--wide{grid-column:1/-1}.pose-reference-preview{width:100%;max-height:440px;object-fit:contain;border-radius:16px}.preserve-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.preserve-option{display:block}.preserve-option input{position:absolute;opacity:0;pointer-events:none}.preserve-option span{display:block;padding:12px;border:1px solid var(--border-color,rgba(127,127,127,.22));border-radius:12px;text-align:center;cursor:pointer}.preserve-option input:checked+span{outline:2px solid currentColor;outline-offset:1px;background:rgba(127,127,127,.1)}.pose-output pre{white-space:pre-wrap;word-break:break-word;max-height:620px;overflow:auto}.pose-transformer__actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}@media(max-width:820px){.pose-transformer__grid{grid-template-columns:1fr}.pose-transformer__controls{grid-template-columns:1fr}.pose-transformer__controls .field--wide{grid-column:auto}.preserve-grid{grid-template-columns:1fr}}
+    .pose-transformer{max-width:1120px;margin:0 auto;padding:24px 16px 48px}.pose-transformer__grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}.pose-transformer .panel{height:max-content}.pose-transformer__controls{display:grid;grid-template-columns:1fr 1fr;gap:12px}.pose-transformer__controls .field--wide{grid-column:1/-1}.pose-reference-preview{width:100%;max-height:440px;object-fit:contain;border-radius:16px}.preserve-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.preserve-option{display:block}.preserve-option input{position:absolute;opacity:0;pointer-events:none}.preserve-option span{display:block;padding:12px;border:1px solid var(--border-color,rgba(127,127,127,.22));border-radius:12px;text-align:center;cursor:pointer}.preserve-option input:checked+span{outline:2px solid currentColor;outline-offset:1px;background:rgba(127,127,127,.1)}.pose-output pre{white-space:pre-wrap;word-break:break-word;max-height:620px;overflow:auto}.pose-transformer__actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.smart-pose-note{margin:8px 0 0;padding:10px 12px;border-radius:12px;background:rgba(127,127,127,.06);line-height:1.7;font-size:.9rem}@media(max-width:820px){.pose-transformer__grid{grid-template-columns:1fr}.pose-transformer__controls{grid-template-columns:1fr}.pose-transformer__controls .field--wide{grid-column:auto}.preserve-grid{grid-template-columns:1fr}}
   </style>
 </head>
 <body data-page="pose-transformer">
@@ -32,7 +32,7 @@
 
   <main class="pose-transformer">
     <section class="intro">
-      <div><p class="eyebrow">REFERENCE POSE TRANSFORMER · v1.0</p><h1>غيّر الوضعية من أي صورة مرجعية</h1><p>ارفع صورة واحدة، اختر الوضعية الجديدة وما الذي تريد الحفاظ عليه، وسيبني التطبيق Prompt لتغيير الوضعية فقط مع قفل الهوية والنسب والخصائص المميزة.</p></div>
+      <div><p class="eyebrow">REFERENCE POSE TRANSFORMER · v1.1</p><h1>غيّر الوضعية من أي صورة مرجعية</h1><p>ارفع صورة واحدة. الوضع الذكي يحلل الوضعية الحالية داخل الصورة عند استخدام الـPrompt ثم يختار وضعية جديدة مختلفة ومحافظة، أو يمكنك اختيار الوضعية يدويًا.</p></div>
       <span class="context-badge">Prompt فقط · لا توليد صور</span>
     </section>
 
@@ -51,6 +51,7 @@
           <div class="field field--wide">
             <label for="targetPoseSelect">الوضعية الجديدة</label>
             <select id="targetPoseSelect">
+              <option value="smart_auto" selected>🧠 اختيار ذكي حسب وضعية الشخص في الصورة</option>
               <option value="standing_relaxed">وقوف طبيعي مسترخٍ</option>
               <option value="standing_weight_shift">وقوف مع نقل وزن طبيعي على ساق واحدة</option>
               <option value="standing_pocket">وقوف ويد حرة في الجيب</option>
@@ -64,6 +65,7 @@
               <option value="walking_pause">توقف عفوي أثناء المشي</option>
               <option value="custom">وصف وضعية مخصصة</option>
             </select>
+            <p class="smart-pose-note" id="smartPoseNote">الوضع الذكي لا يدّعي تحليل الصورة محليًا داخل المتصفح. الـPrompt يطلب من النموذج الذي سيستقبل الصورة تحليل الوضعية الحالية أولًا ثم اختيار انتقال تشريحي مناسب ومختلف عنها.</p>
           </div>
           <div class="field field--wide" id="customPoseField" hidden>
             <label for="customPoseInput">صف الوضعية المطلوبة</label>
@@ -91,7 +93,7 @@
 
       <section class="panel pose-output">
         <div class="panel__header"><div><span class="step-number">02</span><h2>Prompt تغيير الوضعية</h2></div><span id="posePromptWordCount" class="word-count">0 كلمة</span></div>
-        <div class="validation-summary" id="posePromptStatus">ارفع صورة ثم اختر الوضعية. التطبيق لن يخمّن هوية أو تفاصيل غير ظاهرة خارج ما تسمح به الصورة.</div>
+        <div class="validation-summary" id="posePromptStatus">ارفع صورة. الوضع الذكي سيطلب تحليل الوضعية الحالية ثم اختيار وضعية جديدة مختلفة وآمنة تشريحيًا.</div>
         <div class="prompt-editor"><pre id="posePromptOutput" tabindex="0">REFERENCE IMAGE REQUIRED.</pre></div>
         <div class="pose-transformer__actions"><button id="copyPosePromptBtn" class="primary-button" type="button">📋 نسخ Prompt</button></div>
       </section>
