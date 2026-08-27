@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="v1.17 — صفحة مستقلة لقوالب سيلفي السيارة مع فئات وزوايا وتشريح جلوس السائق.">
+  <meta name="description" content="v1.19 — صفحة مستقلة لقوالب سيلفي السيارة بصياغة Prompt مختصرة وطبيعية.">
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#0d1117">
-  <title>قوالب السيارة v1.17 — AI Selfie Prompt Studio</title>
+  <title>قوالب السيارة v1.19 — AI Selfie Prompt Studio</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,7 +23,7 @@
   <a class="skip-link" href="#workspace">انتقل إلى مساحة العمل</a>
   <header class="topbar">
     <div class="topbar__inner">
-      <a class="brand" href="index.html" aria-label="العودة للرئيسية"><span class="brand__mark" aria-hidden="true">S</span><span><strong>AI Selfie</strong><small>Car Templates v1.17</small></span></a>
+      <a class="brand" href="index.html" aria-label="العودة للرئيسية"><span class="brand__mark" aria-hidden="true">S</span><span><strong>AI Selfie</strong><small>Car Templates v1.19</small></span></a>
       <div class="topbar__actions">
         <a class="ghost-button car-nav-link" href="index.html">← عودة</a>
         <span class="save-status"><span class="save-status__dot"></span> إعدادات الصفحة محفوظة محليًا</span>
@@ -34,9 +34,9 @@
   <main id="workspace" class="page-shell">
     <section class="intro" aria-labelledby="pageTitle">
       <div>
-        <p class="eyebrow">CAR SELFIE ENGINE · v1.17</p>
+        <p class="eyebrow">CAR SELFIE ENGINE · v1.19</p>
         <h1 id="pageTitle">قوالب سيلفي السيارة</h1>
-        <p>اختر الفئة ثم القالب. هندسة الجلوس تُحل أولًا، والكاميرا تأتي بعدها، وذراع السيلفي واليد والجوال خارج الإطار بالكامل. شيء بسيط نظريًا، لأن البشر احتاجوا نسخة 1.17 حتى يقنعوا الذراع ألّا يظهر 😑.</p>
+        <p>اختر الفئة ثم القالب. البرومبت النهائي أصبح مختصرًا ومباشرًا: الهوية، الكادر، التعبير، الإضاءة، الملابس، ثم جودة الهاتف الخام. القيود المخفية لا توسّع اللقطة ولا تحوّل السيلفي إلى كتيب هندسة سيارات.</p>
       </div>
       <span class="context-badge">صفحة مستقلة</span>
     </section>
@@ -102,7 +102,7 @@
 
         <section class="panel">
           <div class="panel__header"><div><span class="step-number">04</span><h2>القواعد الثابتة</h2></div></div>
-          <p class="car-help"><strong>ARM-FREE:</strong> ذراع السيلفي واليد والجوال خارج الإطار نهائيًا. <strong>DRIVER ANATOMY:</strong> المقعد والحوض والرجلان ومحور المقود تُحل قبل الكاميرا، ثم تطبق تعديلات الزاوية الخاصة بالقالب. مقعد الراكب يستخدم تشريحه الخاص بلا قيد محور المقود.</p>
+          <p class="car-help"><strong>COMPACT PROMPT:</strong> القالب يحدد المسافة والكادر أولًا. <strong>ARM-FREE:</strong> ذراع السيلفي واليد والجوال خارج الإطار. <strong>RAW PHONE:</strong> نفس التعريض والضوضاء والمعالجة للوجه والمقصورة، بدون تجميل أو إضاءة خفية.</p>
         </section>
       </div>
 
@@ -113,9 +113,9 @@
             <span id="promptWordCount" class="word-count">0 كلمة</span>
           </div>
           <div id="promptSummary" class="selection-summary"></div>
-          <div class="car-status-row"><span id="carStatus" class="validation-status">IMAGE A إلزامي قبل النسخ أو التنزيل</span><span class="car-version">v1.17</span></div>
+          <div class="car-status-row"><span id="carStatus" class="validation-status">IMAGE A إلزامي قبل النسخ أو التنزيل</span><span class="car-version">v1.19</span></div>
           <div class="prompt-editor"><pre id="finalPrompt" tabindex="0" aria-label="الأمر النهائي لقالب السيارة"></pre></div>
-          <div class="validation-summary">ترتيب البناء ثابت: CAR CORE → CAMERA LOCK → ARM-FREE → DRIVER ANATOMY → TEMPLATE → LIGHTING → STREET/GLASS/PIPELINE/IMPERFECTIONS → CHOICES.</div>
+          <div class="validation-summary">الصياغة المختصرة: Identity → Car/Location → Framing → Expression/Gaze → Lighting → Clothing → Raw Smartphone Quality.</div>
           <div class="car-output-actions">
             <button id="copyBtn" class="primary-button" type="button" disabled>📋 نسخ</button>
             <button id="downloadBtn" class="secondary-button" type="button" disabled>⬇️ تنزيل TXT</button>
@@ -126,7 +126,8 @@
     </div>
   </main>
 
-  <footer class="footer"><p>Car Templates v1.17 <span>•</span> ARM-FREE + BODY-FIRST</p><p>IMAGE A إلزامي، ومرجع المقصورة اختياري.</p></footer>
+  <footer class="footer"><p>Car Templates v1.19 <span>•</span> COMPACT NATURAL PROMPT</p><p>IMAGE A إلزامي، ومرجع المقصورة اختياري.</p></footer>
   <script type="module" src="js/carPage.js"></script>
+  <script type="module" src="js/carCompactPromptRuntime.js"></script>
 </body>
 </html>
