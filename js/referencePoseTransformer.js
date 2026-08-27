@@ -1,4 +1,4 @@
-const VERSION = "v1.4";
+const VERSION = "v1.5";
 
 const SMART_AUTO_POSE = `SMART POSE SELECTION — ANALYZE REFERENCE FIRST
 - Before choosing the new pose, inspect the attached reference image and classify the CURRENT visible body state conservatively: standing / sitting / reclining / lying / walking-pause / partial-body / ambiguous.
@@ -48,6 +48,36 @@ const FRAMING = Object.freeze({
   half: "Use a natural half-body front-camera selfie crop, keeping limb origins and torso mechanics anatomically continuous.",
   three_quarter: "Use a three-quarter front-camera selfie crop only when a realistic arm-length camera distance and available reference anatomy support it.",
   full: "Use full-body framing only if it remains physically plausible for a subject-held front-camera selfie; otherwise loosen the interpretation rather than inventing impossible camera distance or arm length."
+});
+
+const EXPRESSIONS = Object.freeze({
+  preserve_reference: `ANATOMICAL FACIAL EXPRESSION — PRESERVE REFERENCE
+- Preserve the reference facial muscle state as closely as the new head angle, gravity and selfie perspective allow.
+- Do not freeze skin mechanically. Allow only the minimum soft-tissue response required by the new pose and viewpoint.`,
+  subtle_authentic_smile: `ANATOMICAL FACIAL EXPRESSION — AUTHENTIC DUCHENNE SMILE
+- Natural zygomaticus major activation lifts the mouth corners subtly while orbicularis oculi engagement creates delicate lower-lid response and small crow's-feet only where age, skin and camera resolution support them.
+- Cheeks elevate naturally, nasolabial depth responds without changing cheekbone geometry, and the jaw remains relaxed.`,
+  serene_relaxed_gaze: `ANATOMICAL FACIAL EXPRESSION — SERENE RELAXED GAZE
+- Resting facial tonus is low; eyelids settle at their natural relaxed aperture with only mild gravity-led droop.
+- Corrugator tension releases, masseter stays neutral, lips may part by about 1–2 mm without changing lip volume, and gaze remains calm and coherent with the front-camera lens.`,
+  playful_smirk: `ANATOMICAL FACIAL EXPRESSION — SUBTLE PLAYFUL SMIRK
+- Small unilateral risorius/zygomatic contribution lifts one mouth corner while the other stays near baseline.
+- A shallow dimple may appear only if consistent with the reference face; one brow may rise by only a few millimeters. Asymmetry is muscular, never skeletal.`,
+  cozy_sleepy_warmth: `ANATOMICAL FACIAL EXPRESSION — COZY SLEEPY WARMTH
+- Upper eyelids rest noticeably lower from fatigue while eye size and canthus geometry stay fixed.
+- Frontalis, temporalis and masseter remain relaxed; lips rest softly with quiet-breathing posture. Any cheek warmth must come from plausible physiology/lighting, never invented blush.`,
+  subtle_thoughtful_pout: `ANATOMICAL FACIAL EXPRESSION — SUBTLE THOUGHTFUL LIP COMPRESSION
+- Gentle orbicularis oris contraction creates slight lip compression without protrusion or duck-face distortion.
+- Mentalis tension stays minimal, jaw remains relaxed, and the gaze is contemplative and directed toward the actual front-camera position.`,
+  gentle_laughter_breath: `ANATOMICAL FACIAL EXPRESSION — GENTLE MID-BREATH LAUGH
+- A soft mid-breath laugh parts the lips naturally; a small irregular glimpse of upper incisors is allowed with non-perfect enamel response.
+- Cheeks lift and lower lids form natural crescent folds without shrinking eye geometry; jaw opening remains modest.`,
+  curious_quizzical_gaze: `ANATOMICAL FACIAL EXPRESSION — CURIOUS QUIZZICAL GAZE
+- One brow rises subtly through unilateral frontalis activity while the opposite eye may narrow only minimally from conversational focus.
+- Any head micro-tilt stays within the selected pose mechanics and must not reshape the jaw or face outline.`,
+  intimate_pillow_rest: `ANATOMICAL FACIAL EXPRESSION — INTIMATE PILLOW REST
+- Facial muscles remain tranquil and unposed.
+- When the selected pose actually places a cheek on a pillow/support, local compressible soft tissue may displace with pressure and gravity while skull, jaw, nose, eye and lip geometry remain identity-locked. Outside a pillow-contact pose, omit pillow-specific deformation.`
 });
 
 const REFERENCE_CAPTURE_OVERRIDE = `REFERENCE CAPTURE OVERRIDE — DO NOT PRESERVE THE ORIGINAL PHONE/CAMERA LOGIC
@@ -155,7 +185,7 @@ let objectUrl = null;
 function $(id) { return document.getElementById(id); }
 
 function init() {
-  ["poseReferenceInput","poseReferenceDropzone","poseReferencePreview","poseReferenceEmpty","poseReferenceMeta","targetPoseSelect","customPoseField","customPoseInput","framingSelect","nightLightingSelect","buildPosePromptBtn","resetPoseTransformerBtn","posePromptOutput","posePromptWordCount","posePromptStatus","copyPosePromptBtn","smartPoseNote"].forEach((id) => { els[id] = $(id); });
+  ["poseReferenceInput","poseReferenceDropzone","poseReferencePreview","poseReferenceEmpty","poseReferenceMeta","targetPoseSelect","customPoseField","customPoseInput","framingSelect","expressionSelect","nightLightingSelect","buildPosePromptBtn","resetPoseTransformerBtn","posePromptOutput","posePromptWordCount","posePromptStatus","copyPosePromptBtn","smartPoseNote"].forEach((id) => { els[id] = $(id); });
   els.poseReferenceInput?.addEventListener("change", onFile);
   els.targetPoseSelect?.addEventListener("change", () => {
     const custom = els.targetPoseSelect.value === "custom";
@@ -164,7 +194,7 @@ function init() {
     buildPrompt();
   });
   document.querySelectorAll('input[name="preserveScope"]').forEach((node) => node.addEventListener("change", buildPrompt));
-  [els.customPoseInput, els.framingSelect, els.nightLightingSelect].forEach((node) => node?.addEventListener("input", buildPrompt));
+  [els.customPoseInput, els.framingSelect, els.expressionSelect, els.nightLightingSelect].forEach((node) => node?.addEventListener("input", buildPrompt));
   els.buildPosePromptBtn?.addEventListener("click", buildPrompt);
   els.resetPoseTransformerBtn?.addEventListener("click", reset);
   els.copyPosePromptBtn?.addEventListener("click", copyPrompt);
@@ -211,6 +241,12 @@ function poseInstruction() {
   return POSES[els.targetPoseSelect?.value] ?? SMART_AUTO_POSE;
 }
 
+function expressionInstruction() {
+  const id = els.expressionSelect?.value ?? "preserve_reference";
+  const selected = EXPRESSIONS[id] ?? EXPRESSIONS.preserve_reference;
+  return `${selected}\n\nFACIAL IDENTITY / MUSCLE-ONLY AUTHORITY — ABSOLUTE\n- The selected expression is a MUSCLE STATE ONLY. It may move brows, lids, cheeks and mouth through anatomically plausible facial action, but it may not redesign bone structure, slim/widen the face, sharpen the jaw, resize eyes, reshape the nose, alter lip volume or create a different person.\n- After compensating only for front-camera perspective, head pose, gravity/contact soft-tissue displacement and the selected muscle action, stable facial landmarks must remain consistent with the reference image.\n- Expression must follow the selected night lighting. Do not invent a private face light, fake catchlight or beauty relight to emphasize the expression.\n- Skin detail stays camera-resolvable and sensor-limited. No beauty smoothing, pore stamping, waxy skin or exaggerated microtexture.`;
+}
+
 function lightingInstruction() {
   const id = els.nightLightingSelect?.value ?? "";
   if (!id || !NIGHT_LIGHTING[id]) {
@@ -223,16 +259,16 @@ function buildPrompt() {
   const fileReady = Boolean(activeFile);
   const smartMode = els.targetPoseSelect?.value === "smart_auto";
   const lightingReady = Boolean(els.nightLightingSelect?.value);
-  const prompt = `REFERENCE POSE TRANSFORMER ${VERSION}\n\nREFERENCE IMAGE AUTHORITY — ABSOLUTE\n- Use the attached reference image as the visual authority for the same person's identity and every preservation category selected below.\n- Preserve stable facial identity 1:1: skull/face geometry, jaw/chin, eye shape and spacing, eyelids, nose structure, mouth/lip proportions, ears, hairline, facial hair boundaries, skin tone, apparent age, natural asymmetry and distinctive marks.\n- Expression, head angle, gravity, contact and perspective may change soft-tissue appearance only. They must not redesign stable facial landmarks or bone structure.\n- Preserve the visible body type and proportions. Do not make the subject taller, shorter, leaner, broader, more muscular or differently proportioned merely to satisfy the new pose.\n\nMANDATORY REFERENCE-CAPTURE OVERRIDE\n${REFERENCE_CAPTURE_OVERRIDE}\n\nMANDATORY CAPTURE CONVERSION\n${FRONT_SELFIE_LOCK}\n\n${smartMode ? "SMART ANALYSIS + POSE CHANGE — PRIMARY EDIT" : "POSE CHANGE ONLY — PRIMARY EDIT"}\n${poseInstruction()}\n- Reconstruct only the body regions required by the selected new pose. For regions hidden or outside the reference crop, use conservative anatomically plausible continuation consistent with the visible body type.\n- Never claim exact hidden anatomy from the reference. Do not invent exaggerated musculature, altered limb lengths, extra fingers, missing joints or impossible support.\n- Maintain real balance, center of mass, joint limits, gravity, pressure, occlusion, contact shadows and local material deformation.\n\n${SCOPES[currentScope()]}\n\nLIGHTING / ILLUMINATION — USER CONTROLLED\n${lightingInstruction()}\n\nFRAMING / FRONT-CAMERA PERSPECTIVE\n${FRAMING[els.framingSelect?.value] ?? FRAMING.auto}\n- All framing decisions remain subordinate to the Xiaomi 15 Ultra front-camera selfie lock.\n- Use one coherent optical model across face, body and environment. Perspective may change apparent scale with distance, but never actual anatomy.\n\nMATERIAL / SKIN / HAIR REALISM\n- Preserve camera-resolvable skin texture only. No decorative pore stamping, wax skin, beauty smoothing or synthetic hyper-detail.\n- Hair follows the reference hair type and hairline, then reorients only as gravity, movement, support and friction require for the new pose.\n- Clothing, if preserved, must re-drape from the new body mechanics instead of inheriting old folds.\n\nFINAL VALIDATION GATE\nReject and correct the result before output if any of the following occurs: identity drift; changed facial geometry; altered body type; repeated original pose when smart mode requested a genuinely different pose; impossible joints; unsupported pose; floating limbs; incorrect contact; invented support objects; duplicated fingers; clothing redesign when clothing preservation is selected; environment changes when scene preservation is selected; any lighting source other than the user-selected night preset; preserved visible phone from the reference; empty phone-gripping hand pose; replacement visible phone; mirror-selfie geometry; rear-camera or observer-camera viewpoint; visible Xiaomi phone; visible phone reflection; visible camera-holding hand, wrist, forearm, elbow or upper arm; impossible selfie reach; fisheye limb stretch; synthetic portrait blur; inconsistent face/background processing; or perspective that changes anatomy instead of apparent distance.\n\nOUTPUT INTENT\nProduce one physically plausible Xiaomi 15 Ultra FRONT-camera selfie of the same person in the selected new pose under the user's selected night lighting. Convert any reference capture type into this front-selfie viewpoint. Any phone visible in the source reference is removed and its holding limb is anatomically re-solved. The actual selfie phone and camera-holding limb remain outside the finished frame; identity remains the anchor; lighting follows the user's selection exactly.`;
+  const prompt = `REFERENCE POSE TRANSFORMER ${VERSION}\n\nREFERENCE IMAGE AUTHORITY — ABSOLUTE\n- Use the attached reference image as the visual authority for the same person's identity and every preservation category selected below.\n- Preserve stable facial identity 1:1: skull/face geometry, jaw/chin, eye shape and spacing, eyelids, nose structure, mouth/lip proportions, ears, hairline, facial hair boundaries, skin tone, apparent age, natural asymmetry and distinctive marks.\n- Expression, head angle, gravity, contact and perspective may change soft-tissue appearance only. They must not redesign stable facial landmarks or bone structure.\n- Preserve the visible body type and proportions. Do not make the subject taller, shorter, leaner, broader, more muscular or differently proportioned merely to satisfy the new pose.\n\nMANDATORY REFERENCE-CAPTURE OVERRIDE\n${REFERENCE_CAPTURE_OVERRIDE}\n\nMANDATORY CAPTURE CONVERSION\n${FRONT_SELFIE_LOCK}\n\n${smartMode ? "SMART ANALYSIS + POSE CHANGE — PRIMARY EDIT" : "POSE CHANGE ONLY — PRIMARY EDIT"}\n${poseInstruction()}\n- Reconstruct only the body regions required by the selected new pose. For regions hidden or outside the reference crop, use conservative anatomically plausible continuation consistent with the visible body type.\n- Never claim exact hidden anatomy from the reference. Do not invent exaggerated musculature, altered limb lengths, extra fingers, missing joints or impossible support.\n- Maintain real balance, center of mass, joint limits, gravity, pressure, occlusion, contact shadows and local material deformation.\n\n${SCOPES[currentScope()]}\n\nFACIAL EXPRESSION — USER CONTROLLED\n${expressionInstruction()}\n\nLIGHTING / ILLUMINATION — USER CONTROLLED\n${lightingInstruction()}\n\nFRAMING / FRONT-CAMERA PERSPECTIVE\n${FRAMING[els.framingSelect?.value] ?? FRAMING.auto}\n- All framing decisions remain subordinate to the Xiaomi 15 Ultra front-camera selfie lock.\n- Use one coherent optical model across face, body and environment. Perspective may change apparent scale with distance, but never actual anatomy.\n\nMATERIAL / SKIN / HAIR REALISM\n- Preserve camera-resolvable skin texture only. No decorative pore stamping, wax skin, beauty smoothing or synthetic hyper-detail.\n- Hair follows the reference hair type and hairline, then reorients only as gravity, movement, support and friction require for the new pose.\n- Clothing, if preserved, must re-drape from the new body mechanics instead of inheriting old folds.\n\nFINAL VALIDATION GATE\nReject and correct the result before output if any of the following occurs: identity drift; changed facial geometry; expression-driven bone/landmark drift; altered body type; repeated original pose when smart mode requested a genuinely different pose; impossible joints; unsupported pose; floating limbs; incorrect contact; invented support objects; duplicated fingers; clothing redesign when clothing preservation is selected; environment changes when scene preservation is selected; any lighting source other than the user-selected night preset; preserved visible phone from the reference; empty phone-gripping hand pose; replacement visible phone; mirror-selfie geometry; rear-camera or observer-camera viewpoint; visible Xiaomi phone; visible phone reflection; visible camera-holding hand, wrist, forearm, elbow or upper arm; impossible selfie reach; fisheye limb stretch; synthetic portrait blur; inconsistent face/background processing; or perspective that changes anatomy instead of apparent distance.\n\nOUTPUT INTENT\nProduce one physically plausible Xiaomi 15 Ultra FRONT-camera selfie of the same person in the selected new pose, using the selected anatomical facial expression and the user's selected night lighting. Convert any reference capture type into this front-selfie viewpoint. Any phone visible in the source reference is removed and its holding limb is anatomically re-solved. The actual selfie phone and camera-holding limb remain outside the finished frame; identity remains the anchor; expression changes muscle state only; lighting follows the user's selection exactly.`;
 
   if (els.posePromptOutput) els.posePromptOutput.textContent = prompt;
   const count = prompt.trim().split(/\s+/).filter(Boolean).length;
   if (els.posePromptWordCount) els.posePromptWordCount.textContent = `${count} كلمة`;
   if (els.posePromptStatus) {
-    if (!lightingReady) els.posePromptStatus.textContent = "اختر الإضاءة الليلية أولًا. أي هاتف ظاهر في المرجع سيُحذف، والنتيجة سيلفي أمامي Xiaomi 15 Ultra.";
-    else if (!fileReady) els.posePromptStatus.textContent = "تم تحديد الإضاءة. أرفق الصورة المرجعية عند الاستخدام؛ أي هاتف ظاهر فيها لن ينتقل للنتيجة النهائية.";
-    else if (smartMode) els.posePromptStatus.textContent = "جاهز: الوضعية تُختار بذكاء، الهاتف الظاهر في المرجع يُحذف، والتصوير سيلفي أمامي Xiaomi 15 Ultra بدون ظهور جهاز التصوير.";
-    else els.posePromptStatus.textContent = "جاهز: أي هاتف ظاهر في المرجع يُحذف ويُعاد حل اليد تشريحيًا، والتقاط Xiaomi 15 Ultra الأمامي إلزامي.";
+    if (!lightingReady) els.posePromptStatus.textContent = "اختر الإضاءة الليلية أولًا. تعبير الوجه تشريحي ويحافظ على هندسة الهوية.";
+    else if (!fileReady) els.posePromptStatus.textContent = "تم تحديد التعبير والإضاءة. أرفق الصورة المرجعية عند الاستخدام.";
+    else if (smartMode) els.posePromptStatus.textContent = "جاهز: الوضعية تُختار بذكاء، التعبير تشريحي حسب اختيارك، والتصوير سيلفي أمامي Xiaomi 15 Ultra.";
+    else els.posePromptStatus.textContent = "جاهز: الوضعية والتعبير والإضاءة حسب اختياراتك، والتقاط Xiaomi 15 Ultra الأمامي إلزامي.";
   }
   return prompt;
 }
@@ -246,7 +282,7 @@ async function copyPrompt() {
   const text = buildPrompt();
   try {
     await navigator.clipboard.writeText(text);
-    els.posePromptStatus.textContent = "تم نسخ الـPrompt مع إزالة هاتف المرجع وقفل سيلفي Xiaomi 15 Ultra الأمامي.";
+    els.posePromptStatus.textContent = "تم نسخ الـPrompt مع التعبير التشريحي وقفل سيلفي Xiaomi 15 Ultra الأمامي.";
   } catch {
     els.posePromptStatus.textContent = "تعذر النسخ التلقائي. حدّد النص وانسخه يدويًا.";
   }
@@ -262,6 +298,7 @@ function reset() {
   if (els.customPoseField) els.customPoseField.hidden = true;
   if (els.smartPoseNote) els.smartPoseNote.hidden = false;
   if (els.framingSelect) els.framingSelect.value = "auto";
+  if (els.expressionSelect) els.expressionSelect.value = "preserve_reference";
   if (els.nightLightingSelect) els.nightLightingSelect.value = "";
   const first = document.querySelector('input[name="preserveScope"][value="identity"]');
   if (first) first.checked = true;
