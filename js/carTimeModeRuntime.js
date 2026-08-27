@@ -1,4 +1,4 @@
-const VERSION = "v1.33";
+const VERSION = "v1.34";
 const STORAGE_KEY = "prompt-studio:car-time:v1";
 const DAY_LIGHTS = new Set(["N4", "D2"]);
 const NIGHT_LIGHTS = new Set(["N1", "N2", "N3", "N5", "N6"]);
