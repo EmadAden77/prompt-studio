@@ -4,7 +4,7 @@ import { EXPRESSION_OPTIONS } from "./data/expressionsData.js";
 import { CLOTHING_OPTIONS } from "./data/clothingData.js";
 import { buildCarUniversalPhysicalReality } from "./carPhysicalRealityShared.js";
 
-const VERSION = "v1.28";
+const VERSION = "v1.30";
 const OUTPUT_ID = "finalPrompt";
 const patchFlag = Symbol.for("promptStudio.carCompactPromptRuntime.installed");
 
@@ -51,6 +51,10 @@ function cabinSentence(hasCabin) {
     : "ENVIRONMENT LOCK: use one coherent 2022 Range Rover Sport parked in Saudi Arabia with a realistic light-beige interior. Preserve internally consistent seat, headrest, dashboard, trim, glass and control geometry; show only what the selected crop naturally includes.";
 }
 
+function sceneSentence(tpl) {
+  return tpl.scene ? `TEMPLATE SCENE AUTHORITY\n${tpl.scene}. Keep this scene ordinary, parked and physically consistent with the selected crop; do not expand framing merely to prove the location.` : "";
+}
+
 function cropSentence(tpl) {
   return `Use the selected ${tpl.name_ar} composition: ${tpl.angle}, ${tpl.framing}, at ${tpl.distance}. ${tpl.gaze}. Camera distance, face scale and crop are strict; never widen the frame merely to show more cabin, clothing, steering wheel or anatomy.`;
 }
@@ -72,13 +76,19 @@ function poseSpecificMechanics(tpl) {
     door_armrest_rest: "POSE CONTACT: the free forearm may rest on the real door armrest if visible. The supported shoulder lowers naturally, elbow/wrist alignment stays mechanically possible, and contact pressure subtly affects sleeve folds and armrest shadowing.",
     console_lean: "POSE BALANCE: torso leans about 10–15° toward the center console from pelvis/seat support, creating naturally unequal shoulders. Do not fake the lean by bending only the neck or shifting the head independently of the torso.",
     night_window_sidekey: "POSE/LIGHT COUPLING: head remains only 20–30° toward the side window while gaze returns to the lens. A real window-side source may dominate the near side of the face; the far side stays naturally darker without hidden fill or theatrical rim light.",
-    rear_seat_selfie: "POSE DEPTH: camera remains physically reachable from the rear-seat subject. Front seatbacks, B/C pillars and center tunnel may appear only as perspective-consistent depth cues; do not place the camera in the front row or outside the vehicle."
+    rear_seat_selfie: "POSE DEPTH: camera remains physically reachable from the rear-seat subject. Front seatbacks, B/C pillars and center tunnel may appear only as perspective-consistent depth cues; do not place the camera in the front row or outside the vehicle.",
+    ac_steering_breeze: "POSE/CONTACT: one free hand may rest lightly on the upper steering-wheel rim with realistic finger wrap and knuckle flex while the other arm holds the phone. Shoulder elevation and clavicle tension must match the selfie hold; AC airflow affects only light hair strands, not the head or heavy hair mass.",
+    food_wait_night: "POSE/WAITING STATE: relaxed driver posture with small natural asymmetry and a patient micro-expression. Keep steering wheel/seat support ordinary and avoid staged restaurant-ad posing.",
+    golden_window_breeze: "OPEN-WINDOW COUPLING: the driver window is genuinely open. Breeze enters from that side only, moving a limited set of side strands while the torso, clothing and heavier hair remain gravity-dominant.",
+    tree_dappled_driver: "DAPPLED-LIGHT COUPLING: leaf-shadow patterns must cross face, shirt, wheel and cabin surfaces according to one outdoor light field; patterns cannot stop at facial boundaries or become decorative camouflage.",
+    streetlight_cockpit: "TOP-LIGHT COUPLING: the real street-light direction controls forehead, nose, hair and steering-wheel highlights; weaker instrument illumination may lift lower cabin values but cannot become a hidden beauty source."
   };
   return rules[tpl.id] ? `POSE-SPECIFIC MECHANICS\n${rules[tpl.id]}` : "";
 }
 
 function seatBodyContactPressure(tpl) {
-  const close = /(70|80|85)%/u.test(String(tpl.framing || ""));
+  const match = String(tpl.framing || "").match(/(\d{2})%/u);
+  const close = match ? Number(match[1]) >= 68 : false;
   return `SEAT / BODY CONTACT PRESSURE LOCK
 - The subject must read as physically seated, not composited in front of the seat. Wherever the selected crop reveals contact, body weight creates local seat/cushion compression, small leather/fabric tension changes, attached contact shadows and clothing bunching consistent with pressure and friction.
 - Back/shoulder contact may flatten the shirt locally and slightly compress the seatback; pelvis/thigh load may depress the seat cushion only when those regions are actually visible.
@@ -87,7 +97,10 @@ function seatBodyContactPressure(tpl) {
 - ${close ? "This is a close selfie: prove seating only through visible shoulder/upper-back/headrest or adjacent seat response. Do not widen the crop to show pelvis, thighs or seat cushion." : "Use the additional visible torso/seat area to show a coherent load path, but never exaggerate pressure marks merely to demonstrate physics."}`;
 }
 
-function hairPhysics() {
+function hairPhysics(tpl) {
+  if (tpl.hairDynamics) {
+    return `HAIR PHYSICS — TEMPLATE COUPLED: preserve IMAGE A hairline, density, color, haircut and baseline volume. ${tpl.hairDynamics}. Hair motion must follow real airflow direction, strand mass, friction and gravity; do not animate every strand equally or alter identity.`;
+  }
   return "HAIR PHYSICS: preserve IMAGE A hairline, density, color and baseline volume. Hair may show small gravity-driven clumps, natural directional root flow, minor friction displacement where it touches a real headrest, and a few flyaways where lighting resolves them. Do not over-resolve every strand, invent extra volume, paint uniform glossy highlights or alter the haircut.";
 }
 
@@ -176,8 +189,8 @@ function onePipeline() {
 Face, eyes, skin, beard, hair, clothing, seat, headrest, dashboard, glass, reflections and exterior background belong to one single smartphone capture event with one lens model, one focus state, one exposure decision, one white balance, one HDR/computational merge behavior, one denoise pass, one sharpening behavior and one compression path. Darker areas may be noisier and softer; brighter areas cleaner. Never make the face cleaner, sharper, brighter or less noisy than the cabin without a physical lighting reason.`;
 }
 
-function lightingSentence(lightingId) {
-  const base = LIGHTING[lightingId] || LIGHTING.N1;
+function lightingSentence(lightingId, tpl) {
+  const base = tpl.lightingOverride ? `Template-specific lighting: ${tpl.lightingOverride}.` : (LIGHTING[lightingId] || LIGHTING.N1);
   const phoneBounce = ["N1", "N2", "N3", "N5", "N6"].includes(lightingId)
     ? " A weak near-axis phone-screen contribution is allowed only if physically plausible at the selected distance; it must remain subordinate to the declared cabin/exterior sources and must not become a hidden beauty fill."
     : " Do not invent phone-screen fill in daylight unless the selected scene geometry would make a visible contribution plausible.";
@@ -190,19 +203,20 @@ function skinSentence() {
 
 function buildPrompt() {
   const tpl = activeTemplate();
-  const lightingId = selectedValue("lightingSelect") || "N1";
+  const lightingId = tpl.preferredLighting || selectedValue("lightingSelect") || "N1";
   const hair = byId(HAIR_OPTIONS, selectedValue("hairSelect"));
   const expression = byId(EXPRESSION_OPTIONS, selectedValue("expressionSelect"));
   const clothing = byId(CLOTHING_OPTIONS, selectedValue("clothingSelect"));
   const hasCabin = !document.querySelector("#cabinPreview")?.hidden;
   const poseMechanics = poseSpecificMechanics(tpl);
+  const scene = sceneSentence(tpl);
 
   return `ROLE & TASK
 Create one physically coherent, raw-looking candid smartphone selfie of the exact man from IMAGE A inside a stationary 2022 Range Rover Sport parked in Saudi Arabia. The result should behave like an ordinary Xiaomi 15 Ultra front-camera capture, not a polished studio portrait or CGI render.
 
 ${skinSentence()} Preserve ${cleanHair(hair)}.
 
-${cabinSentence(hasCabin)}
+${cabinSentence(hasCabin)}${scene ? `\n\n${scene}` : ""}
 
 FRAMING & CAMERA AUTHORITY
 ${cropSentence(tpl)}
@@ -213,11 +227,11 @@ ${seatedBiomechanics(tpl)}${poseMechanics ? `\n\n${poseMechanics}` : ""}
 
 ${seatBodyContactPressure(tpl)}
 
-${hairPhysics()}
+${hairPhysics(tpl)}
 
 ${expressionPhysics(expression, tpl)}
 
-${lightingSentence(lightingId)}
+${lightingSentence(lightingId, tpl)}
 
 ${colorContamination(lightingId)}
 
@@ -243,6 +257,11 @@ Reject any result with altered identity geometry, warped facial proportions, ove
 function syncPrompt() {
   const output = document.querySelector(`#${OUTPUT_ID}`);
   if (!output) return false;
+  const tpl = activeTemplate();
+  if (tpl.preferredLighting) {
+    const lighting = document.querySelector("#lightingSelect");
+    if (lighting && lighting.value !== tpl.preferredLighting) lighting.value = tpl.preferredLighting;
+  }
   const prompt = buildPrompt();
   if (output.textContent !== prompt) output.textContent = prompt;
 
