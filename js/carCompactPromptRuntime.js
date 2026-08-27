@@ -3,7 +3,7 @@ import { HAIR_OPTIONS } from "./data/hairData.js";
 import { EXPRESSION_OPTIONS } from "./data/expressionsData.js";
 import { CLOTHING_OPTIONS } from "./data/clothingData.js";
 
-const VERSION = "v1.22";
+const VERSION = "v1.23";
 const OUTPUT_ID = "finalPrompt";
 const patchFlag = Symbol.for("promptStudio.carCompactPromptRuntime.installed");
 
@@ -55,10 +55,25 @@ function cropSentence(tpl) {
 }
 
 function seatedBiomechanics(tpl) {
+  if (tpl.id === "rear_seat_selfie") {
+    return "SEATED BIOMECHANICS: subject is physically seated in the rear row, with body weight supported by the rear seat cushion/backrest, natural shoulder asymmetry and no steering-wheel axis constraint. Front seatbacks and center tunnel are depth cues only when the selected crop naturally includes them.";
+  }
   const passenger = tpl.cat === "passenger";
   return passenger
     ? "SEATED BIOMECHANICS: subject weight is carried naturally by the passenger seat with believable pelvis/thigh support, subtle seat compression where visible, relaxed torso asymmetry, anatomically plausible neck rotation and no floating body contact."
     : "SEATED BIOMECHANICS: subject weight is carried naturally by the driver seat with believable pelvis/thigh support, subtle seat compression where visible, shoulders and neck mechanically consistent with the selected camera angle, and no floating or twisted anatomy. Hidden lower-body geometry remains solved off-frame and never forces a wider crop.";
+}
+
+function poseSpecificMechanics(tpl) {
+  const rules = {
+    headrest_relaxed: "POSE CONTACT: the upper back and head may rest lightly into the seat/headrest. Show only subtle hair flattening or silhouette compression where actual contact is visible; keep the neck relaxed and do not push the headrest sideways to frame the face.",
+    seatbelt_pause: "POSE CONTACT: the free hand may meet the real seatbelt near the upper chest only if that hand lies inside the selected crop. Belt tension must follow its anchor path and create small clothing indentation/contact shadows; never invent a floating belt segment or widen the frame to show the hand.",
+    door_armrest_rest: "POSE CONTACT: the free forearm may rest on the real door armrest if visible. The supported shoulder lowers naturally, elbow/wrist alignment stays mechanically possible, and contact pressure subtly affects sleeve folds and armrest shadowing.",
+    console_lean: "POSE BALANCE: torso leans about 10–15° toward the center console from pelvis/seat support, creating naturally unequal shoulders. Do not fake the lean by bending only the neck or shifting the head independently of the torso.",
+    night_window_sidekey: "POSE/LIGHT COUPLING: head remains only 20–30° toward the side window while gaze returns to the lens. A real window-side source may dominate the near side of the face; the far side stays naturally darker without hidden fill or theatrical rim light.",
+    rear_seat_selfie: "POSE DEPTH: camera remains physically reachable from the rear-seat subject. Front seatbacks, B/C pillars and center tunnel may appear only as perspective-consistent depth cues; do not place the camera in the front row or outside the vehicle."
+  };
+  return rules[tpl.id] ? `POSE-SPECIFIC MECHANICS\n${rules[tpl.id]}` : "";
 }
 
 function seatBodyContactPressure(tpl) {
@@ -179,6 +194,7 @@ function buildPrompt() {
   const expression = byId(EXPRESSION_OPTIONS, selectedValue("expressionSelect"));
   const clothing = byId(CLOTHING_OPTIONS, selectedValue("clothingSelect"));
   const hasCabin = !document.querySelector("#cabinPreview")?.hidden;
+  const poseMechanics = poseSpecificMechanics(tpl);
 
   return `ROLE & TASK
 Create one physically coherent, raw-looking candid smartphone selfie of the exact man from IMAGE A inside a stationary 2022 Range Rover Sport parked in Saudi Arabia. The result should behave like an ordinary Xiaomi 15 Ultra front-camera capture, not a polished studio portrait or CGI render.
@@ -192,7 +208,7 @@ ${cropSentence(tpl)}
 
 ${cropAwareDetailBudget(tpl)}
 
-${seatedBiomechanics(tpl)}
+${seatedBiomechanics(tpl)}${poseMechanics ? `\n\n${poseMechanics}` : ""}
 
 ${seatBodyContactPressure(tpl)}
 
@@ -218,7 +234,7 @@ ${opticsAndSensor()}
 ${onePipeline()}
 
 FINAL CAPTURE GATE
-Reject any result with altered identity geometry, warped facial proportions, over-smoothed skin, perfectly uniform pores, over-resolved hair, impossible arm mechanics, floating body/seat contact, impossible headrest intersection, conflicting shadow directions, inconsistent mixed-light color propagation, decorative or pasted reflections, broken mirror parallax, flat exterior depth, uniform synthetic cabin materials, equal hyper-detail across all depths, artificial DSLR bokeh, selective face cleanup, synthetic cabin geometry or a medium portrait substituted for a selected close-up. Keep ordinary imperfections when physically justified. CAPTURED, NOT RENDERED.`;
+Reject any result with altered identity geometry, warped facial proportions, over-smoothed skin, perfectly uniform pores, over-resolved hair, impossible arm mechanics, floating body/seat contact, impossible headrest intersection, floating or broken seatbelt geometry, unsupported armrest contact, torso/head pose mismatch, conflicting shadow directions, inconsistent mixed-light color propagation, decorative or pasted reflections, broken mirror parallax, flat exterior depth, uniform synthetic cabin materials, equal hyper-detail across all depths, artificial DSLR bokeh, selective face cleanup, synthetic cabin geometry or a medium portrait substituted for a selected close-up. Keep ordinary imperfections when physically justified. CAPTURED, NOT RENDERED.`;
 }
 
 function syncPrompt() {
