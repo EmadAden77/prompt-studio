@@ -32,7 +32,7 @@
 
   <main class="pose-transformer">
     <section class="intro">
-      <div><p class="eyebrow">REFERENCE POSE TRANSFORMER · v1.3</p><h1>حوّل أي صورة إلى لقطة سيلفي أمامية</h1><p>ارفع أي صورة للشخص. التطبيق يبني Prompt يحافظ على الهوية، يغيّر الوضعية حسب اختيارك، ويحوّل النتيجة دائمًا إلى سيلفي حقيقي بالكاميرا الأمامية لهاتف Xiaomi 15 Ultra دون إظهار الهاتف داخل الإطار.</p></div>
+      <div><p class="eyebrow">REFERENCE POSE TRANSFORMER · v1.4</p><h1>حوّل أي صورة إلى لقطة سيلفي أمامية</h1><p>ارفع أي صورة للشخص، حتى لو كان الهاتف ظاهرًا بيده أو كانت الصورة مأخوذة بواسطة شخص آخر. المحرك يزيل منطق الالتقاط الأصلي ويعيد بناء النتيجة كسيلفي حقيقي بالكاميرا الأمامية لهاتف Xiaomi 15 Ultra دون إظهار جهاز التصوير داخل الإطار.</p></div>
       <span class="context-badge">Xiaomi 15 Ultra Front Selfie · Prompt فقط</span>
     </section>
 
@@ -42,7 +42,7 @@
         <label class="dropzone" for="poseReferenceInput" id="poseReferenceDropzone">
           <input id="poseReferenceInput" type="file" accept="image/jpeg,image/png,image/webp,image/avif" hidden>
           <span class="dropzone__icon" aria-hidden="true">R</span>
-          <span class="dropzone__empty" id="poseReferenceEmpty"><strong>ارفع أي صورة للشخص</strong><small>JPG, PNG, WEBP أو AVIF</small></span>
+          <span class="dropzone__empty" id="poseReferenceEmpty"><strong>ارفع أي صورة للشخص</strong><small>حتى لو كان الهاتف ظاهرًا أو التصوير ليس سيلفي</small></span>
           <img id="poseReferencePreview" class="pose-reference-preview" alt="معاينة الصورة المرجعية" hidden>
         </label>
         <p class="file-meta" id="poseReferenceMeta"></p>
@@ -110,7 +110,7 @@
           </div>
           <div class="field field--wide">
             <label>نوع الالتقاط</label>
-            <p class="camera-lock-note"><strong>ثابت:</strong> سيلفي بالكاميرا الأمامية لهاتف Xiaomi 15 Ultra فقط. الهاتف نفسه ويد التصوير والذراع الحاملة للهاتف تبقى خارج الإطار النهائي، مع محاكاة منظور العدسة الأمامية ومسافة حمل واقعية.</p>
+            <p class="camera-lock-note"><strong>ثابت وإجباري:</strong> أي هاتف ظاهر في الصورة المرجعية يُحذف من النتيجة وتُعاد وضعية اليد والذراع تشريحيًا. التصوير النهائي سيلفي بالكاميرا الأمامية لهاتف Xiaomi 15 Ultra فقط، بينما جهاز التصوير وذراعه يبقيان خارج الإطار.</p>
           </div>
         </div>
         <div class="pose-transformer__actions"><button id="buildPosePromptBtn" class="primary-button" type="button">⚙️ إنشاء Prompt</button><button id="resetPoseTransformerBtn" class="ghost-button" type="button">↺ إعادة ضبط</button></div>
@@ -118,7 +118,7 @@
 
       <section class="panel pose-output">
         <div class="panel__header"><div><span class="step-number">02</span><h2>Prompt تغيير الوضعية</h2></div><span id="posePromptWordCount" class="word-count">0 كلمة</span></div>
-        <div class="validation-summary" id="posePromptStatus">ارفع صورة، اختر الإضاءة الليلية، ثم أنشئ الـPrompt. نوع الالتقاط ثابت كسيلفي أمامي Xiaomi 15 Ultra.</div>
+        <div class="validation-summary" id="posePromptStatus">ارفع صورة، اختر الإضاءة الليلية، ثم أنشئ الـPrompt. أي هاتف ظاهر في المرجع لن يظهر في النتيجة.</div>
         <div class="prompt-editor"><pre id="posePromptOutput" tabindex="0">REFERENCE IMAGE REQUIRED.</pre></div>
         <div class="pose-transformer__actions"><button id="copyPosePromptBtn" class="primary-button" type="button">📋 نسخ Prompt</button></div>
       </section>
