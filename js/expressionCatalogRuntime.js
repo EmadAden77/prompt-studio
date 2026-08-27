@@ -1,12 +1,14 @@
 import "./opticalBioRealismRuntime.js";
 import { EXPRESSION_OPTIONS } from "./data/expressionsData.js";
+import { ANATOMICAL_EXPRESSIONS } from "./anatomicalExpressionsRuntime.js";
 
 const STORAGE_KEY = "ai-selfie-prompt-studio:expanded-expression";
 const SELECT_ID = "expressionSelect";
 const installFlag = Symbol.for("promptStudio.expressionCatalogRuntime.installed");
+const ALL_EXPRESSIONS = Object.freeze([...EXPRESSION_OPTIONS, ...ANATOMICAL_EXPRESSIONS]);
 
 function validId(id) {
-  return EXPRESSION_OPTIONS.some((item) => item.id === id);
+  return ALL_EXPRESSIONS.some((item) => item.id === id);
 }
 
 function readStoredId() {
@@ -28,7 +30,7 @@ function buildOptions(select) {
   const desired = readStoredId() || (validId(previous) ? previous : "relaxed");
 
   const fragment = document.createDocumentFragment();
-  EXPRESSION_OPTIONS.forEach((item) => {
+  ALL_EXPRESSIONS.forEach((item) => {
     const option = document.createElement("option");
     option.value = item.id;
     option.textContent = item.name_ar;
@@ -52,15 +54,12 @@ function install() {
     if (validId(select.value)) writeStoredId(select.value);
   });
 
-  // App initialization currently whitelists only the original Smart Quad expression IDs.
-  // Restore the expanded catalog after init, then notify the existing App listener so
-  // prompt state, persistence and rebuild all follow the visible selected expression.
   if (desired !== previous) {
     queueMicrotask(() => select.dispatchEvent(new Event("change", { bubbles: true })));
   }
 
   const observer = new MutationObserver(() => {
-    if (select.options.length === EXPRESSION_OPTIONS.length) return;
+    if (select.options.length === ALL_EXPRESSIONS.length) return;
     const current = validId(select.value) ? select.value : readStoredId() || "relaxed";
     buildOptions(select);
     if (validId(current)) select.value = current;
