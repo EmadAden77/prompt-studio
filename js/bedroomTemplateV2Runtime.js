@@ -1,9 +1,14 @@
 import { PromptEngine } from "./engines/promptEngine.js";
 import { BEDROOM_TEMPLATE_BY_ID } from "./bedroomTemplatesV2.js";
 import { BEDROOM_CANDID_TEMPLATE_BY_ID } from "./bedroomCandidTemplates.js";
+import { BEDROOM_NIGHT_STANDING_TEMPLATE_BY_ID } from "./bedroomNightStandingTemplates.js";
 
 const previousGenerate = PromptEngine.prototype.generate;
-const ALL_BEDROOM_TEMPLATE_BY_ID = Object.freeze({ ...BEDROOM_TEMPLATE_BY_ID, ...BEDROOM_CANDID_TEMPLATE_BY_ID });
+const ALL_BEDROOM_TEMPLATE_BY_ID = Object.freeze({
+  ...BEDROOM_TEMPLATE_BY_ID,
+  ...BEDROOM_CANDID_TEMPLATE_BY_ID,
+  ...BEDROOM_NIGHT_STANDING_TEMPLATE_BY_ID
+});
 
 const V2_GLOBAL_LOCK = `BEDROOM V2 — DETERMINISTIC TEMPLATE AUTHORITY
 - Only the selected Bedroom V2 template below may define pose intent, interaction zone, framing target, and permitted background window.
