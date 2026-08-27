@@ -2,8 +2,9 @@ import { CAR_TEMPLATES } from "./carPosesData.js";
 import { HAIR_OPTIONS } from "./data/hairData.js";
 import { EXPRESSION_OPTIONS } from "./data/expressionsData.js";
 import { CLOTHING_OPTIONS } from "./data/clothingData.js";
+import { buildCarUniversalPhysicalReality } from "./carPhysicalRealityShared.js";
 
-const VERSION = "v1.23";
+const VERSION = "v1.28";
 const OUTPUT_ID = "finalPrompt";
 const patchFlag = Symbol.for("promptStudio.carCompactPromptRuntime.installed");
 
@@ -230,6 +231,8 @@ CLOTHING
 Wearing ${cleanClothing(clothing)}. Fabric must show ordinary real thickness, seams, material-correct sheen, gravity-driven folds and seat/contact response only where visible. Clothing never expands the selected crop.
 
 ${opticsAndSensor()}
+
+${buildCarUniversalPhysicalReality({ mode:"interior", poseId:tpl.id, stateId:lightingId })}
 
 ${onePipeline()}
 
