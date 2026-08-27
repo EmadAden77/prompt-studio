@@ -1,9 +1,20 @@
-import { CAR_TEMPLATES } from "./carPosesData.js";
-
 const VERSION = "v1.31";
 const STORAGE_KEY = "prompt-studio:car-time:v1";
 const DAY_LIGHTS = new Set(["N4", "D2"]);
 const NIGHT_LIGHTS = new Set(["N1", "N2", "N3", "N5", "N6"]);
+
+const INTERIOR_DAY_NAMES = new Set([
+  "المقود + هواء المكيّف",
+  "نافذة مفتوحة وقت الغروب",
+  "تحت ظل شجرة سكنية"
+]);
+const INTERIOR_NIGHT_NAMES = new Set([
+  "كلوز أب ليلي بضوء جانبي",
+  "ميلان كسول",
+  "راكب مقعد مرجع",
+  "انتظار الطلب ليلاً",
+  "إضاءة عمود شارع ليلي"
+]);
 
 const EXTERIOR_DAY_NAMES = new Set([
   "شارع سكني بجانب فيلا",
@@ -29,15 +40,6 @@ const NIGHT_PARKING = new Set([
   "gas_station_night"
 ]);
 
-function templateTime(tpl) {
-  if (!tpl) return "both";
-  if (["ac_steering_breeze", "golden_window_breeze", "tree_dappled_driver"].includes(tpl.id)) return "day";
-  if (["night_window_sidekey", "dutch_lazy", "pass_recl", "food_wait_night", "streetlight_cockpit"].includes(tpl.id)) return "night";
-  if (DAY_LIGHTS.has(tpl.preferredLighting)) return "day";
-  if (NIGHT_LIGHTS.has(tpl.preferredLighting)) return "night";
-  return "both";
-}
-
 function savedTime() {
   try {
     const value = localStorage.getItem(STORAGE_KEY);
@@ -50,6 +52,12 @@ function savedTime() {
 let activeTime = "night";
 let applying = false;
 
+function kindFromLabel(label, daySet, nightSet) {
+  if (daySet.has(label)) return "day";
+  if (nightSet.has(label)) return "night";
+  return "both";
+}
+
 function allowedTime(kind) {
   return kind === "both" || kind === activeTime;
 }
@@ -61,7 +69,7 @@ function updateButtons() {
     button.setAttribute("aria-pressed", active ? "true" : "false");
   });
   const badge = document.querySelector("#carTimeBadge");
-  if (badge) badge.textContent = activeTime === "day" ? "القوالب النهارية فقط" : "القوالب الليلية فقط";
+  if (badge) badge.textContent = activeTime === "day" ? "القوالب والإضاءات النهارية فقط" : "القوالب والإضاءات الليلية فقط";
   document.documentElement.dataset.carTime = activeTime;
   document.body.dataset.carTime = activeTime;
 }
@@ -76,11 +84,7 @@ function filterLighting() {
     option.disabled = !show;
   });
   if (!allowed.has(select.value)) {
-    const activeLabel = document.querySelector(".car-pose-card.is-active strong")?.textContent?.trim();
-    const tpl = CAR_TEMPLATES.find((item) => item.name_ar === activeLabel);
-    const preferred = tpl?.preferredLighting;
-    const next = preferred && allowed.has(preferred) ? preferred : (activeTime === "day" ? "N4" : "N1");
-    select.value = next;
+    select.value = activeTime === "day" ? "N4" : "N1";
     select.dispatchEvent(new Event("change", { bubbles:true }));
   }
 }
@@ -90,9 +94,8 @@ function filterInteriorTemplates() {
   if (!grid) return;
   const cards = [...grid.querySelectorAll(".car-pose-card")];
   cards.forEach((card) => {
-    const label = card.querySelector("strong")?.textContent?.trim();
-    const tpl = CAR_TEMPLATES.find((item) => item.name_ar === label);
-    const show = allowedTime(templateTime(tpl));
+    const label = card.querySelector("strong")?.textContent?.trim() || "";
+    const show = allowedTime(kindFromLabel(label, INTERIOR_DAY_NAMES, INTERIOR_NIGHT_NAMES));
     card.hidden = !show;
     card.dataset.timeMatch = show ? "true" : "false";
   });
@@ -100,19 +103,13 @@ function filterInteriorTemplates() {
   if (active?.hidden) cards.find((card) => !card.hidden)?.click();
 }
 
-function exteriorCardTime(card) {
-  const label = card.querySelector("strong")?.textContent?.trim() || "";
-  if (EXTERIOR_DAY_NAMES.has(label)) return "day";
-  if (EXTERIOR_NIGHT_NAMES.has(label)) return "night";
-  return "both";
-}
-
 function filterExteriorTemplates() {
   const grid = document.querySelector("#exteriorPoseGrid");
   if (!grid) return;
   const cards = [...grid.querySelectorAll(".car-exterior-card")];
   cards.forEach((card) => {
-    const show = allowedTime(exteriorCardTime(card));
+    const label = card.querySelector("strong")?.textContent?.trim() || "";
+    const show = allowedTime(kindFromLabel(label, EXTERIOR_DAY_NAMES, EXTERIOR_NIGHT_NAMES));
     card.hidden = !show;
     card.dataset.timeMatch = show ? "true" : "false";
   });
