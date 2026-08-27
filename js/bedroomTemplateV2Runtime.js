@@ -1,7 +1,9 @@
 import { PromptEngine } from "./engines/promptEngine.js";
 import { BEDROOM_TEMPLATE_BY_ID } from "./bedroomTemplatesV2.js";
+import { BEDROOM_CANDID_TEMPLATE_BY_ID } from "./bedroomCandidTemplates.js";
 
 const previousGenerate = PromptEngine.prototype.generate;
+const ALL_BEDROOM_TEMPLATE_BY_ID = Object.freeze({ ...BEDROOM_TEMPLATE_BY_ID, ...BEDROOM_CANDID_TEMPLATE_BY_ID });
 
 const V2_GLOBAL_LOCK = `BEDROOM V2 — DETERMINISTIC TEMPLATE AUTHORITY
 - Only the selected Bedroom V2 template below may define pose intent, interaction zone, framing target, and permitted background window.
@@ -16,7 +18,7 @@ const V2_GLOBAL_LOCK = `BEDROOM V2 — DETERMINISTIC TEMPLATE AUTHORITY
 PromptEngine.prototype.generate = function generateBedroomV2(config) {
   let prompt = previousGenerate.call(this, config);
   const templateId = typeof document !== "undefined" ? document.documentElement.dataset.activeBedroomTemplate : null;
-  const template = BEDROOM_TEMPLATE_BY_ID[templateId];
+  const template = ALL_BEDROOM_TEMPLATE_BY_ID[templateId];
   if (!template) return prompt;
 
   const selected = `SELECTED BEDROOM V2 TEMPLATE — HIGH PRIORITY
