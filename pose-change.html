@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="Reference Pose Transformer لبناء Prompt يغيّر وضعية الشخص من أي صورة مرجعية مع الحفاظ على الهوية.">
+  <meta name="description" content="Reference Pose Transformer لبناء Prompt يحوّل أي صورة مرجعية إلى لقطة سيلفي أمامية واقعية بهاتف Xiaomi 15 Ultra مع الحفاظ على الهوية.">
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#0d1117">
   <title>Reference Pose Transformer — Prompt Studio</title>
@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/responsive.css">
   <style>
-    .pose-transformer{max-width:1120px;margin:0 auto;padding:24px 16px 48px}.pose-transformer__grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}.pose-transformer .panel{height:max-content}.pose-transformer__controls{display:grid;grid-template-columns:1fr 1fr;gap:12px}.pose-transformer__controls .field--wide{grid-column:1/-1}.pose-reference-preview{width:100%;max-height:440px;object-fit:contain;border-radius:16px}.preserve-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.preserve-option{display:block}.preserve-option input{position:absolute;opacity:0;pointer-events:none}.preserve-option span{display:block;padding:12px;border:1px solid var(--border-color,rgba(127,127,127,.22));border-radius:12px;text-align:center;cursor:pointer}.preserve-option input:checked+span{outline:2px solid currentColor;outline-offset:1px;background:rgba(127,127,127,.1)}.pose-output pre{white-space:pre-wrap;word-break:break-word;max-height:620px;overflow:auto}.pose-transformer__actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.smart-pose-note,.lighting-note{margin:8px 0 0;padding:10px 12px;border-radius:12px;background:rgba(127,127,127,.06);line-height:1.7;font-size:.9rem}@media(max-width:820px){.pose-transformer__grid{grid-template-columns:1fr}.pose-transformer__controls{grid-template-columns:1fr}.pose-transformer__controls .field--wide{grid-column:auto}.preserve-grid{grid-template-columns:1fr}}
+    .pose-transformer{max-width:1120px;margin:0 auto;padding:24px 16px 48px}.pose-transformer__grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}.pose-transformer .panel{height:max-content}.pose-transformer__controls{display:grid;grid-template-columns:1fr 1fr;gap:12px}.pose-transformer__controls .field--wide{grid-column:1/-1}.pose-reference-preview{width:100%;max-height:440px;object-fit:contain;border-radius:16px}.preserve-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.preserve-option{display:block}.preserve-option input{position:absolute;opacity:0;pointer-events:none}.preserve-option span{display:block;padding:12px;border:1px solid var(--border-color,rgba(127,127,127,.22));border-radius:12px;text-align:center;cursor:pointer}.preserve-option input:checked+span{outline:2px solid currentColor;outline-offset:1px;background:rgba(127,127,127,.1)}.pose-output pre{white-space:pre-wrap;word-break:break-word;max-height:620px;overflow:auto}.pose-transformer__actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.smart-pose-note,.lighting-note,.camera-lock-note{margin:8px 0 0;padding:10px 12px;border-radius:12px;background:rgba(127,127,127,.06);line-height:1.7;font-size:.9rem}@media(max-width:820px){.pose-transformer__grid{grid-template-columns:1fr}.pose-transformer__controls{grid-template-columns:1fr}.pose-transformer__controls .field--wide{grid-column:auto}.preserve-grid{grid-template-columns:1fr}}
   </style>
 </head>
 <body data-page="pose-transformer">
@@ -32,8 +32,8 @@
 
   <main class="pose-transformer">
     <section class="intro">
-      <div><p class="eyebrow">REFERENCE POSE TRANSFORMER · v1.2</p><h1>غيّر الوضعية من أي صورة مرجعية</h1><p>ارفع صورة واحدة. الوضع الذكي يطلب تحليل الوضعية الحالية ثم يختار وضعية جديدة محافظة، وأنت تختار الإضاءة الليلية بنفسك من قائمة واقعية محددة.</p></div>
-      <span class="context-badge">Prompt فقط · لا توليد صور</span>
+      <div><p class="eyebrow">REFERENCE POSE TRANSFORMER · v1.3</p><h1>حوّل أي صورة إلى لقطة سيلفي أمامية</h1><p>ارفع أي صورة للشخص. التطبيق يبني Prompt يحافظ على الهوية، يغيّر الوضعية حسب اختيارك، ويحوّل النتيجة دائمًا إلى سيلفي حقيقي بالكاميرا الأمامية لهاتف Xiaomi 15 Ultra دون إظهار الهاتف داخل الإطار.</p></div>
+      <span class="context-badge">Xiaomi 15 Ultra Front Selfie · Prompt فقط</span>
     </section>
 
     <div class="pose-transformer__grid">
@@ -65,7 +65,7 @@
               <option value="walking_pause">توقف عفوي أثناء المشي</option>
               <option value="custom">وصف وضعية مخصصة</option>
             </select>
-            <p class="smart-pose-note" id="smartPoseNote">الوضع الذكي لا يدّعي تحليل الصورة محليًا داخل المتصفح. الـPrompt يطلب من النموذج الذي سيستقبل الصورة تحليل الوضعية الحالية أولًا ثم اختيار انتقال تشريحي مناسب ومختلف عنها.</p>
+            <p class="smart-pose-note" id="smartPoseNote">الوضع الذكي يطلب من النموذج الذي يستقبل الصورة تحليل وضعية الشخص الحالية أولًا ثم اختيار انتقال تشريحي مناسب ومختلف عنها.</p>
           </div>
           <div class="field field--wide" id="customPoseField" hidden>
             <label for="customPoseInput">صف الوضعية المطلوبة</label>
@@ -102,15 +102,15 @@
               <option value="soft_ceiling_bounce">17. انعكاس دافئ غير مباشر من السقف</option>
               <option value="star_nebula_projector">18. جهاز إسقاط ليلي للنجوم والغيوم الخافتة</option>
             </select>
-            <p class="lighting-note">هذا الاختيار هو سلطة الإضاءة الوحيدة. لا يضيف المحرك مصادر ضوء أخرى ولا يحوّلها إلى إضاءة سينمائية أو تجميلية.</p>
+            <p class="lighting-note">هذا الاختيار هو سلطة الإضاءة الوحيدة. لا يضيف المحرك مصادر ضوء أخرى.</p>
           </div>
           <div class="field">
             <label for="framingSelect">الكادر</label>
             <select id="framingSelect"><option value="auto">تلقائي محافظ</option><option value="close">قريب</option><option value="half">نصف جسم</option><option value="three_quarter">ثلاثة أرباع</option><option value="full">كامل الجسم</option></select>
           </div>
-          <div class="field">
-            <label for="cameraModeSelect">نوع الالتقاط</label>
-            <select id="cameraModeSelect"><option value="preserve">حافظ على منطق الكاميرا الأصلي</option><option value="front_selfie">سيلفي أمامي هاتف</option><option value="mirror_selfie">سيلفي مرآة</option><option value="observer">صورة هاتف عادية بواسطة شخص آخر</option></select>
+          <div class="field field--wide">
+            <label>نوع الالتقاط</label>
+            <p class="camera-lock-note"><strong>ثابت:</strong> سيلفي بالكاميرا الأمامية لهاتف Xiaomi 15 Ultra فقط. الهاتف نفسه ويد التصوير والذراع الحاملة للهاتف تبقى خارج الإطار النهائي، مع محاكاة منظور العدسة الأمامية ومسافة حمل واقعية.</p>
           </div>
         </div>
         <div class="pose-transformer__actions"><button id="buildPosePromptBtn" class="primary-button" type="button">⚙️ إنشاء Prompt</button><button id="resetPoseTransformerBtn" class="ghost-button" type="button">↺ إعادة ضبط</button></div>
@@ -118,7 +118,7 @@
 
       <section class="panel pose-output">
         <div class="panel__header"><div><span class="step-number">02</span><h2>Prompt تغيير الوضعية</h2></div><span id="posePromptWordCount" class="word-count">0 كلمة</span></div>
-        <div class="validation-summary" id="posePromptStatus">ارفع صورة، اختر الإضاءة الليلية، ثم أنشئ الـPrompt.</div>
+        <div class="validation-summary" id="posePromptStatus">ارفع صورة، اختر الإضاءة الليلية، ثم أنشئ الـPrompt. نوع الالتقاط ثابت كسيلفي أمامي Xiaomi 15 Ultra.</div>
         <div class="prompt-editor"><pre id="posePromptOutput" tabindex="0">REFERENCE IMAGE REQUIRED.</pre></div>
         <div class="pose-transformer__actions"><button id="copyPosePromptBtn" class="primary-button" type="button">📋 نسخ Prompt</button></div>
       </section>
