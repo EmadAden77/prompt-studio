@@ -1,10 +1,15 @@
 import { BEDROOM_TEMPLATES_V2, BEDROOM_TEMPLATE_GROUPS } from "./bedroomTemplatesV2.js";
 import { BEDROOM_CANDID_TEMPLATES } from "./bedroomCandidTemplates.js";
+import { BEDROOM_NIGHT_STANDING_TEMPLATES } from "./bedroomNightStandingTemplates.js";
 import { showToast } from "./ui/dom.js";
 
-const ALL_BEDROOM_TEMPLATES = Object.freeze([...BEDROOM_TEMPLATES_V2, ...BEDROOM_CANDID_TEMPLATES]);
+const ALL_BEDROOM_TEMPLATES = Object.freeze([
+  ...BEDROOM_TEMPLATES_V2,
+  ...BEDROOM_CANDID_TEMPLATES,
+  ...BEDROOM_NIGHT_STANDING_TEMPLATES
+]);
 const GROUP_ORDER = ["bed", "sitting", "standing"];
-const BEDROOM_HUB_VERSION = "v2.1";
+const BEDROOM_HUB_VERSION = "v2.2";
 const TIME_STORAGE_KEY = "prompt-studio:bedroom-template-time:v1";
 
 const DAY_TEMPLATE_IDS = new Set([
@@ -26,7 +31,12 @@ const NIGHT_TEMPLATE_IDS = new Set([
   "bed_candid_elbow_prop",
   "bed_candid_duvet_tucked",
   "bed_candid_stomach_chin_palm",
-  "bed_candid_deep_side_sleepy"
+  "bed_candid_deep_side_sleepy",
+  "bed_night_stand_bedside_lamp",
+  "bed_night_stand_wardrobe_dimspots",
+  "bed_night_stand_vanity_warm",
+  "bed_night_stand_center_dim",
+  "bed_night_stand_bedfront_mixed"
 ]);
 
 let activeTime = readSavedTime();
