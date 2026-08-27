@@ -8,101 +8,47 @@ function buildExpressionPrompt(exp) {
 ${exp.muscle}.
 ${exp.forbidden ? `FORBIDDEN with this expression: ${exp.forbidden}.` : ""}
 ${EXPRESSION_GEOMETRY_FREEZE}
-SUPERIMPOSITION TEST: overlaying the result on IMAGE A must align ALL facial landmarks except mouth curvature and minor eyelid/brow muscle state. If the face reads as a different person, the render is INVALID — re-render.
-NEGATIVE: expression altering face shape, thinner face, sharper jawline, hollow cheeks, narrower eyes, changed beard density, different identity, meme face, cartoon acting, exaggerated brow lift, exaggerated cheek inflation.`;
+SUPERIMPOSITION TEST: overlaying the result on IMAGE A must align ALL stable facial landmarks except mouth curvature and minor eyelid/brow muscle state. If the face reads as a different person, the render is INVALID — re-render.
+EXPRESSION INTENSITY: keep the visible muscle change between level 1 and 3 on a 0–3 natural-expression scale. Never exceed ordinary candid human facial motion.
+ASYMMETRY ALLOWANCE: slight real left/right differences in brow height, eyelid aperture, cheek response or mouth-corner height are allowed only when caused by the selected muscle state; keep them subtle and anatomically plausible.
+NEGATIVE: expression altering face shape, thinner face, sharper jawline, hollow cheeks, enlarged or narrowed eye geometry, changed beard density, different identity, meme face, cartoon acting, exaggerated brow lift, exaggerated cheek inflation.`;
 }
 
 const EXPRESSIONS = [
-  {
-    id: "neutral",
-    name_ar: "محايد",
-    name_en: "NEUTRAL",
-    muscle: "eyelids at natural aperture; lips closed at rest; brows neutral; zero smile muscle"
-  },
-  {
-    id: "smile",
-    name_ar: "ابتسامة خفيفة",
-    name_en: "SOFT SMILE",
-    muscle: "zygomaticus raises mouth corners gently; cheeks lift naturally; lower eyelids respond slightly; teeth optional; jaw shape unchanged",
-    forbidden: "face slimming, cheek hollowing, jaw sharpening, eye narrowing beyond the natural smile action, changed beard or identity"
-  },
-  {
-    id: "serious",
-    name_ar: "جاد",
-    name_en: "SERIOUS",
-    muscle: "lips gently pressed without thinning beyond natural volume; brows slightly lowered/adducted; no furrows beyond natural",
-    forbidden: "sharper jaw, hollow cheeks, narrower eyes, added ruggedness, aged skin, changed beard or identity"
-  },
-  {
-    id: "relaxed",
-    name_ar: "هادئ ومرتخي",
-    name_en: "RELAXED",
-    muscle: "masseter relaxed; lips softly closed or slightly parted; eyelids soft at their natural resting aperture; gaze rested",
-    forbidden: "drooping or reshaping eyelids, longer or thinner face, reduced cheek fullness, altered jaw, aged appearance, changed beard or identity"
-  },
-  {
-    id: "confident",
-    name_ar: "واثق",
-    name_en: "CONFIDENT",
-    muscle: "subtle asymmetric mouth-corner lift at 5–10% of a full smile; brows neutral, at most very slightly lowered; eyelids at NATURAL aperture with a steady gaze, not narrowed and not tired; chin level or tilted down 2–3°; masseter relaxed",
-    forbidden: "thinner or longer face, hollowed cheeks, sharper or wider jaw, narrower eyes, added ruggedness, changed beard, different sharper-guy vibe"
-  },
-  {
-    id: "tired",
-    name_ar: "متعب قليلًا",
-    name_en: "MILDLY TIRED",
-    muscle: "upper eyelids sit slightly lower from fatigue while eye geometry remains unchanged; brows relaxed; mouth at rest; jaw relaxed; gaze still alert",
-    forbidden: "aging the face, deepening eye sockets, hollow cheeks, narrowing eye geometry, changing jawline, beard, skin tone or identity"
-  },
-  {
-    id: "amused",
-    name_ar: "مستمتع بخفة",
-    name_en: "MILDLY AMUSED",
-    muscle: "one or both mouth corners lift subtly; cheeks engage mildly; lower eyelids respond only a little; brows remain near neutral; gaze reads lightly entertained",
-    forbidden: "broad grin, cheek inflation, squinting, eyebrow acting, face widening, jaw sharpening"
-  },
-  {
-    id: "playful",
-    name_ar: "مرح خفيف",
-    name_en: "SUBTLY PLAYFUL",
-    muscle: "small asymmetric smile; one mouth corner sits slightly higher; minimal cheek lift; one brow may respond by only a few millimeters while the other stays near neutral",
-    forbidden: "meme expression, exaggerated eyebrow arch, puckering, cartoon smirk, eye reshaping, cheek hollowing"
-  },
-  {
-    id: "teasing",
-    name_ar: "مزحة خفيفة",
-    name_en: "GENTLY TEASING",
-    muscle: "crooked smirk around 8–12% of a full smile; one mouth corner rises modestly; lips keep their baseline volume; gaze steady and lightly playful; brows minimally responsive",
-    forbidden: "duck face, exaggerated lip curl, asymmetric jaw, narrowed eye geometry, enlarged cheek on one side"
-  },
-  {
-    id: "dry_humor",
-    name_ar: "دعابة باردة",
-    name_en: "DRY HUMOR",
-    muscle: "restrained half-smile; one brow may rise very slightly; lips remain controlled; eyelids at natural aperture; masseter relaxed",
-    forbidden: "sarcastic caricature, large brow lift, exaggerated smirk, face tilt used to reshape jaw, pursed lips"
-  },
-  {
-    id: "amused_disbelief",
-    name_ar: "استغراب ممتع",
-    name_en: "AMUSED DISBELIEF",
-    muscle: "one brow rises slightly while the other stays near baseline; mouth forms a tiny crooked smile; eyes remain naturally open and alert; forehead movement stays modest",
-    forbidden: "wide shocked eyes, deep forehead furrows, open-mouth surprise, enlarged eye geometry, cartoon disbelief"
-  },
-  {
-    id: "sleepy_amused",
-    name_ar: "نعسان مبتسم",
-    name_en: "SLEEPY AMUSED",
-    muscle: "eyelids soften slightly from fatigue; jaw stays relaxed; mouth corners lift only a little; cheeks respond minimally; gaze remains coherent",
-    forbidden: "drooping eyelid geometry, aged face, hollow eye sockets, face lengthening, slack-jaw distortion"
-  },
-  {
-    id: "restrained_grin",
-    name_ar: "ابتسامة أوضح طبيعية",
-    name_en: "RESTRAINED GRIN",
-    muscle: "moderate zygomatic lift; cheeks rise naturally; lower eyelids engage slightly; lips part naturally if needed; teeth may show imperfectly and briefly",
-    forbidden: "advertisement smile, porcelain teeth, extreme cheek lift, eye squeezing, face widening, beauty-retouched grin"
-  }
+  { id:"neutral", name_ar:"محايد", name_en:"NEUTRAL", muscle:"eyelids at natural aperture; lips closed at rest; brows neutral; zero smile muscle" },
+  { id:"smile", name_ar:"ابتسامة خفيفة", name_en:"SOFT SMILE", muscle:"zygomaticus raises mouth corners gently; cheeks lift naturally; lower eyelids respond slightly; teeth optional; jaw shape unchanged", forbidden:"face slimming, cheek hollowing, jaw sharpening, eye narrowing beyond the natural smile action, changed beard or identity" },
+  { id:"serious", name_ar:"جاد", name_en:"SERIOUS", muscle:"lips gently pressed without thinning beyond natural volume; brows slightly lowered/adducted; no furrows beyond natural", forbidden:"sharper jaw, hollow cheeks, narrower eyes, added ruggedness, aged skin, changed beard or identity" },
+  { id:"relaxed", name_ar:"هادئ ومرتخي", name_en:"RELAXED", muscle:"masseter relaxed; lips softly closed or slightly parted; eyelids soft at their natural resting aperture; gaze rested", forbidden:"drooping or reshaping eyelids, longer or thinner face, reduced cheek fullness, altered jaw, aged appearance, changed beard or identity" },
+  { id:"confident", name_ar:"واثق", name_en:"CONFIDENT", muscle:"subtle asymmetric mouth-corner lift at 5–10% of a full smile; brows neutral, at most very slightly lowered; eyelids at NATURAL aperture with a steady gaze; chin level or tilted down 2–3°; masseter relaxed", forbidden:"thinner or longer face, hollowed cheeks, sharper or wider jaw, narrower eyes, added ruggedness, changed beard, different sharper-guy vibe" },
+  { id:"tired", name_ar:"متعب قليلًا", name_en:"MILDLY TIRED", muscle:"upper eyelids sit slightly lower from fatigue while eye geometry remains unchanged; brows relaxed; mouth at rest; jaw relaxed; gaze still alert", forbidden:"aging the face, deepening eye sockets, hollow cheeks, narrowing eye geometry, changing jawline, beard, skin tone or identity" },
+  { id:"amused", name_ar:"مستمتع بخفة", name_en:"MILDLY AMUSED", muscle:"one or both mouth corners lift subtly; cheeks engage mildly; lower eyelids respond only a little; brows remain near neutral; gaze reads lightly entertained", forbidden:"broad grin, cheek inflation, squinting, eyebrow acting, face widening, jaw sharpening" },
+  { id:"playful", name_ar:"مرح خفيف", name_en:"SUBTLY PLAYFUL", muscle:"small asymmetric smile; one mouth corner sits slightly higher; minimal cheek lift; one brow may respond by only a few millimeters while the other stays near neutral", forbidden:"meme expression, exaggerated eyebrow arch, puckering, cartoon smirk, eye reshaping, cheek hollowing" },
+  { id:"teasing", name_ar:"مزحة خفيفة", name_en:"GENTLY TEASING", muscle:"crooked smirk around 8–12% of a full smile; one mouth corner rises modestly; lips keep their baseline volume; gaze steady and lightly playful; brows minimally responsive", forbidden:"duck face, exaggerated lip curl, asymmetric jaw, narrowed eye geometry, enlarged cheek on one side" },
+  { id:"dry_humor", name_ar:"دعابة باردة", name_en:"DRY HUMOR", muscle:"restrained half-smile; one brow may rise very slightly; lips remain controlled; eyelids at natural aperture; masseter relaxed", forbidden:"sarcastic caricature, large brow lift, exaggerated smirk, face tilt used to reshape jaw, pursed lips" },
+  { id:"amused_disbelief", name_ar:"استغراب ممتع", name_en:"AMUSED DISBELIEF", muscle:"one brow rises slightly while the other stays near baseline; mouth forms a tiny crooked smile; eyes remain naturally open and alert; forehead movement stays modest", forbidden:"wide shocked eyes, deep forehead furrows, open-mouth surprise, enlarged eye geometry, cartoon disbelief" },
+  { id:"sleepy_amused", name_ar:"نعسان مبتسم", name_en:"SLEEPY AMUSED", muscle:"eyelids soften slightly from fatigue; jaw stays relaxed; mouth corners lift only a little; cheeks respond minimally; gaze remains coherent", forbidden:"drooping eyelid geometry, aged face, hollow eye sockets, face lengthening, slack-jaw distortion" },
+  { id:"restrained_grin", name_ar:"ابتسامة أوضح طبيعية", name_en:"RESTRAINED GRIN", muscle:"moderate zygomatic lift; cheeks rise naturally; lower eyelids engage slightly; lips part naturally if needed; teeth may show imperfectly and briefly", forbidden:"advertisement smile, porcelain teeth, extreme cheek lift, eye squeezing, face widening, beauty-retouched grin" },
+
+  { id:"sleepy", name_ar:"نعسان", name_en:"SLEEPY", muscle:"upper eyelids lower mildly and not perfectly symmetrically; lower eyelids stay relaxed; brows remain neutral and heavy rather than raised; masseter releases; lips rest softly closed or part by about 1–2 mm; gaze remains present but less sharply focused", forbidden:"closed-eye collapse, deep eye sockets, sick appearance, aged appearance, slack jaw, altered eye size, face thinning" },
+  { id:"just_woke_up", name_ar:"استيقاظ للتو", name_en:"JUST WOKE UP", muscle:"one upper eyelid may open a few millimeters more than the other; brows stay low-energy and near neutral; lips are softly closed or slightly parted; jaw remains loose; gaze is coherent but still settling; tiny natural asymmetry is allowed between eyelids and mouth corners", forbidden:"extreme eye asymmetry, swollen facial geometry, puffy reshaped cheeks, sickly redness, aged skin, open-mouth caricature, different identity" },
+  { id:"relief_after_fatigue", name_ar:"ارتياح بعد تعب", name_en:"RELIEF AFTER FATIGUE", muscle:"eyelids soften; brows release any tension; masseter relaxes; lips form a barely perceptible closed-mouth smile; exhaled-rest quality without changing facial structure", forbidden:"drooping face, hollow eyes, enlarged smile, cheek reshaping, aged or ill appearance" },
+  { id:"suppressed_smile", name_ar:"ابتسامة مكتومة", name_en:"SUPPRESSED SMILE", muscle:"both mouth corners rise slightly while the lips remain gently pressed together; cheek lift is small; lower eyelids respond subtly; brows stay neutral as if holding back laughter", forbidden:"pursed lips, cheek ballooning, broad grin, eye squeezing, facial-width change" },
+  { id:"quiet_laugh", name_ar:"ضحكة هادئة", name_en:"QUIET LAUGH", muscle:"zygomatic lift becomes moderate; lips part naturally with a small irregular glimpse of teeth; lower eyelids engage slightly; cheeks rise without changing face width; jaw opens only minimally", forbidden:"wide open mouth, perfect commercial teeth, extreme squint, face widening, stretched lips" },
+  { id:"skeptical", name_ar:"شك خفيف", name_en:"MILD SKEPTICISM", muscle:"one brow rises by only a few millimeters while the other remains near neutral; lips stay closed with very slight unilateral tension; gaze remains steady", forbidden:"large eyebrow arch, forehead caricature, narrowed eye geometry, aggressive sneer, jaw shift" },
+  { id:"mild_surprise", name_ar:"استغراب خفيف", name_en:"MILD SURPRISE", muscle:"both brows rise subtly; upper eyelids open only a little beyond resting aperture; mouth stays relaxed and mostly closed; forehead movement is shallow", forbidden:"wide eyes, dropped jaw, open-mouth surprise, enlarged eye geometry, deep forehead lines" },
+  { id:"unconvinced", name_ar:"عدم اقتناع هادئ", name_en:"CALMLY UNCONVINCED", muscle:"one mouth corner drops by a few millimeters while the opposite corner remains near baseline; brows remain mostly neutral with slight central tension; gaze steady", forbidden:"sneer, lip curling, asymmetric jaw, aggressive scowl, cheek hollowing" },
+  { id:"thinking", name_ar:"تفكير بسيط", name_en:"LIGHT THOUGHTFULNESS", muscle:"brows draw together only slightly; eyelids remain near natural aperture; lips close softly; jaw remains relaxed; gaze focuses without hard staring", forbidden:"deep frown lines, compressed lips, squinting, forehead exaggeration, sharpened jaw" },
+  { id:"side_smile", name_ar:"ابتسامة جانبية طبيعية", name_en:"NATURAL SIDE SMILE", muscle:"one mouth corner rises about 5–8% of a full smile while the other remains near baseline; same-side cheek lifts faintly; eyes remain naturally open", forbidden:"large smirk, asymmetric jaw, cheek swelling, narrowed eyes, cartoon expression" },
+  { id:"almost_laughing", name_ar:"ضحكة على وشك الظهور", name_en:"ABOUT TO LAUGH", muscle:"mouth corners rise moderately; lips begin to part slightly; cheeks lift; lower eyelids respond naturally; brows remain relaxed as the expression sits just before a laugh", forbidden:"full open-mouth laugh, eye squeeze, theatrical grin, stretched cheeks, perfect teeth" },
+  { id:"wry", name_ar:"نظرة ساخرة خفيفة", name_en:"MILD WRY LOOK", muscle:"one brow rises slightly; one mouth corner lifts into a very small half-smile; eyelids remain at natural aperture; jaw fully relaxed", forbidden:"meme sarcasm, exaggerated eyebrow, pursed lips, aggressive sneer, face tilt used to reshape geometry" },
+  { id:"resigned_humor", name_ar:"دعابة مستسلمة", name_en:"RESIGNED HUMOR", muscle:"eyelids soften; jaw and lips relax; mouth corners lift faintly in a tired half-smile; brows remain neutral or drop by a fraction as if accepting an absurd situation", forbidden:"sad-face caricature, heavy frown, drooping geometry, exaggerated smirk, aged appearance" },
+  { id:"pleasantly_surprised", name_ar:"مندهش لكن مستمتع", name_en:"PLEASANTLY SURPRISED", muscle:"brows lift slightly; upper eyelids open a touch; one or both mouth corners rise into a small smile; cheeks respond mildly", forbidden:"wide shocked eyes, open mouth, eyebrow arch exaggeration, face widening, cartoon delight" },
+  { id:"hesitant", name_ar:"متردد", name_en:"HESITANT", muscle:"lips press together very lightly with slight uneven corner tension; one brow may lift subtly while the other stays near baseline; gaze remains coherent rather than fearful", forbidden:"lip thinning, anxious caricature, widened eyes, deep brow furrows, jaw clench" },
+  { id:"mild_embarrassment", name_ar:"إحراج خفيف", name_en:"MILD EMBARRASSMENT", muscle:"small asymmetric closed-mouth smile; cheeks lift faintly; eyelids soften; gaze may shift a little away from the optical axis while facial geometry remains fixed", forbidden:"artificial blushing, face reddening, head shrink, large smile, eye closing, exaggerated coyness" },
+  { id:"curious", name_ar:"فضول", name_en:"CURIOUS", muscle:"brows rise slightly and evenly; eyes remain at natural size with a modestly attentive aperture; lips neutral or softly parted; jaw relaxed", forbidden:"wide eyes, raised-brow caricature, open mouth, stretched forehead, changed eye size" },
+  { id:"light_focus", name_ar:"تركيز خفيف", name_en:"LIGHT FOCUS", muscle:"brows lower only slightly; eyelids narrow by a minimal functional amount without changing eye geometry; lips remain neutral; jaw relaxed", forbidden:"hard squint, angry brow, compressed mouth, sharper jaw, aggressive stare" },
+  { id:"smiling_eyes", name_ar:"ابتسامة بالعينين تقريبًا", name_en:"EYE SMILE", muscle:"mouth stays close to neutral with only a tiny corner lift; cheeks rise subtly and create a mild lower-eyelid response; brows remain relaxed", forbidden:"eye squeezing, face widening, broad mouth smile, cheek inflation, beauty-retouched look" },
+  { id:"natural_parted_lips", name_ar:"فم نصف مفتوح طبيعي", name_en:"NATURALLY PARTED LIPS", muscle:"lips separate naturally by about 1–2 mm with no protrusion; jaw hangs neutrally; cheeks and brows remain relaxed; expression reads as quiet breathing rather than posing", forbidden:"pout, duck face, lip enlargement, open-mouth glamour pose, jaw dropping, altered lip volume" }
 ];
 
 export const EXPRESSION_OPTIONS = Object.freeze(
