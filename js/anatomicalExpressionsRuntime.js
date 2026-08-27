@@ -13,6 +13,7 @@ const BY_ID = Object.freeze(Object.fromEntries(ANATOMICAL_EXPRESSIONS.map((item)
 const MARKER_START = "ANATOMICAL EXPRESSION & COMPUTATIONAL CAPTURE AUTHORITY — SHARED";
 const MARKER_END = "END ANATOMICAL EXPRESSION & COMPUTATIONAL CAPTURE AUTHORITY";
 const STORAGE_KEY = "prompt-studio:anatomical-expression";
+const observedOutputs = new WeakSet();
 let writing = false;
 
 export function getAnatomicalExpression(id) {
@@ -74,6 +75,18 @@ function applyAll() {
   applyToOutput(document.querySelector("#exteriorPrompt"));
 }
 
+function observeOutput(output) {
+  if (!output || observedOutputs.has(output)) return;
+  observedOutputs.add(output);
+  new MutationObserver(() => queueMicrotask(applyAll)).observe(output, { childList:true, characterData:true, subtree:true });
+}
+
+function discoverOutputs() {
+  observeOutput(document.querySelector("#finalPrompt"));
+  observeOutput(document.querySelector("#exteriorPrompt"));
+  applyAll();
+}
+
 function injectOptions() {
   const select = document.querySelector("#expressionSelect");
   if (!select) return false;
@@ -98,12 +111,12 @@ function injectOptions() {
 
 function install() {
   injectOptions();
-  applyAll();
-  [document.querySelector("#finalPrompt"), document.querySelector("#exteriorPrompt")].filter(Boolean).forEach((output) => {
-    new MutationObserver(() => queueMicrotask(applyAll)).observe(output, { childList:true, characterData:true, subtree:true });
-  });
+  discoverOutputs();
   const select = document.querySelector("#expressionSelect");
   if (select) new MutationObserver(() => queueMicrotask(injectOptions)).observe(select, { childList:true });
+  if (document.body) {
+    new MutationObserver(() => queueMicrotask(discoverOutputs)).observe(document.body, { childList:true, subtree:true });
+  }
 }
 
 if (typeof document !== "undefined") {
