@@ -3,7 +3,7 @@ import { HAIR_OPTIONS } from "./data/hairData.js";
 import { EXPRESSION_OPTIONS } from "./data/expressionsData.js";
 import { CLOTHING_OPTIONS } from "./data/clothingData.js";
 
-const VERSION = "v1.20";
+const VERSION = "v1.21";
 const OUTPUT_ID = "finalPrompt";
 const patchFlag = Symbol.for("promptStudio.carCompactPromptRuntime.installed");
 
@@ -47,7 +47,7 @@ function cleanClothing(clothing) {
 function cabinSentence(hasCabin) {
   return hasCabin
     ? "ENVIRONMENT LOCK (IMAGE B): use IMAGE B as the exact authority for every visible cabin detail. Preserve seat shape, stitching, headrest, dashboard, trim, glass, controls, colors, materials and geometry without redesigning, cleaning, mirroring, replacing or beautifying anything."
-    : "ENVIRONMENT LOCK: use one coherent 2022 Range Rover Sport parked in Saudi Arabia with a realistic light-beige interior. Preserve internally consistent seat, headrest, dashboard, trim, glass and control geometry; show only what the selected crop naturally includes."
+    : "ENVIRONMENT LOCK: use one coherent 2022 Range Rover Sport parked in Saudi Arabia with a realistic light-beige interior. Preserve internally consistent seat, headrest, dashboard, trim, glass and control geometry; show only what the selected crop naturally includes.";
 }
 
 function cropSentence(tpl) {
@@ -67,6 +67,50 @@ function hairPhysics() {
 
 function expressionPhysics(expression, tpl) {
   return `ANATOMICAL EXPRESSION: ${cleanExpression(expression)}, with the exact identity geometry from IMAGE A unchanged. Expression changes facial muscle state only; preserve eye size/spacing, jaw/chin bones, nose, lip volume, beard pattern and stable asymmetry. Eyelid aperture, cheek response and mouth-corner motion remain subtle and anatomically plausible. Follow the selected gaze exactly: ${tpl.gaze}. Corneal and tear-line reflections must correspond to the actual cabin/exterior light sources.`;
+}
+
+function glassMirrorParallax(tpl) {
+  const mirrorSpecific = tpl.cat === "mirror"
+    ? "Because this is a mirror-oriented template, the reflected view must be derived from the actual camera-to-mirror ray path and preserve correct handedness, occlusion and reflected viewing angle."
+    : "Mirrors may appear only where naturally included by the selected crop; never enlarge or reposition them to showcase a reflection.";
+  return `GLASS / MIRROR PARALLAX LOCK
+- Windshield, side windows, mirrors and glossy trim are view-dependent optical surfaces, not decorative overlays. Reflections must shift with the selected camera angle and near-field phone position instead of staying pasted to the glass.
+- Near glass may carry faint cabin/source reflections while still transmitting the exterior. Reflection strength, blur and contrast depend on real incidence angle, ambient brightness and glass orientation.
+- A-pillar, door frame, mirror housing and window edges must occlude both transmitted and reflected content consistently. Exterior objects cannot pass through pillars, duplicate across panes or jump discontinuously between surfaces.
+- Distant lights reflected in glass may stretch or soften only as physically supported by focus, motion and surface curvature. No giant flare, repeated light dots, mirrored duplicate vehicles, duplicated face, or impossible second cabin.
+- ${mirrorSpecific}`;
+}
+
+function cabinMaterialResponse() {
+  return `CABIN MATERIAL RESPONSE LOCK
+- Different cabin materials must remain optically distinct under the SAME selected lighting and exposure. Do not render the interior as one uniformly glossy synthetic material.
+- Light-beige leather or leather-like upholstery: broad soft highlights, visible grain only at supported distance, gentle compression and crease response at loaded seat/contact zones; never plastic shine or perfectly uniform pores.
+- Matte dashboard and soft-touch plastics: low specular response with broad weak reflections and restrained texture; no wet gloss unless the actual reference material is glossy.
+- Piano-black or other high-gloss trim, when actually present: sharper view-dependent reflections with rapid falloff away from the reflection angle, but never mirror-perfect unless the real surface behaves that way.
+- Metal/chrome details: localized brighter specular highlights tied to source position, without glowing edges or painted white streaks.
+- Glass: transparent/transmissive with view-dependent reflections and realistic tint; it must not behave like opaque black plastic.
+- Material roughness, texture scale and highlight width must stay consistent across perspective and distance. Lighting changes illumination only, never material identity.`;
+}
+
+function cropAwareDetailBudget(tpl) {
+  const match = String(tpl.framing || "").match(/(\d{2})%/u);
+  const facePercent = match ? Number(match[1]) : 65;
+  if (facePercent >= 80) {
+    return `CROP-AWARE DETAIL BUDGET — FACE-DOMINANT
+- Selected face scale is about ${facePercent}%. Spend the camera's resolving budget primarily on identity-critical facial structure, eyes, skin, beard and nearby hair.
+- Cabin detail is subordinate and may be softer, darker, partially occluded or outside frame. Do not over-resolve stitching, controls, dashboard microtexture, exterior cars or distant signage simply because they exist conceptually.
+- Only immediately adjacent shoulder, seat/headrest or glass details need coherent local texture. Hidden anatomy and cabin geometry stay solved off-frame without demanding visibility.`;
+  }
+  if (facePercent >= 65) {
+    return `CROP-AWARE DETAIL BUDGET — BALANCED CLOSE SELFIE
+- Selected face scale is about ${facePercent}%. Keep identity and facial texture as the primary detail target while allowing moderate readable cabin structure around the subject.
+- Seat, glass, trim and nearby controls may resolve to ordinary phone-camera detail, but must remain less micro-detailed than the near face unless physically closer to the lens.
+- Distant exterior elements remain lower-detail and must not compete with the subject.`;
+  }
+  return `CROP-AWARE DETAIL BUDGET — WIDER CABIN CONTEXT
+- Selected face scale is about ${facePercent}%. Preserve facial identity while allocating more detail to visible seat, dashboard, wheel, glass and cabin geometry because the framing naturally includes more environment.
+- Detail still falls with distance and illumination: near cabin surfaces may be readable, medium-distance surfaces softer, and exterior background lower-detail. Never make every plane equally sharp or equally textured.
+- Do not compensate for the wider crop by sharpening the face or cabin beyond ordinary front-camera resolution.`;
 }
 
 function opticsAndSensor() {
@@ -114,6 +158,8 @@ ${cabinSentence(hasCabin)}
 FRAMING & CAMERA AUTHORITY
 ${cropSentence(tpl)}
 
+${cropAwareDetailBudget(tpl)}
+
 ${seatedBiomechanics(tpl)}
 
 ${hairPhysics()}
@@ -121,6 +167,10 @@ ${hairPhysics()}
 ${expressionPhysics(expression, tpl)}
 
 ${lightingSentence(lightingId)}
+
+${glassMirrorParallax(tpl)}
+
+${cabinMaterialResponse()}
 
 CLOTHING
 Wearing ${cleanClothing(clothing)}. Fabric must show ordinary real thickness, seams, material-correct sheen, gravity-driven folds and seat/contact response only where visible. Clothing never expands the selected crop.
@@ -130,7 +180,7 @@ ${opticsAndSensor()}
 ${onePipeline()}
 
 FINAL CAPTURE GATE
-Reject any result with altered identity geometry, warped facial proportions, over-smoothed skin, perfectly uniform pores, over-resolved hair, impossible arm mechanics, conflicting shadow directions, decorative reflections, artificial DSLR bokeh, selective face cleanup, synthetic cabin geometry or a medium portrait substituted for a selected close-up. Keep ordinary imperfections when physically justified. CAPTURED, NOT RENDERED.`;
+Reject any result with altered identity geometry, warped facial proportions, over-smoothed skin, perfectly uniform pores, over-resolved hair, impossible arm mechanics, conflicting shadow directions, decorative or pasted reflections, broken mirror parallax, uniform synthetic cabin materials, equal hyper-detail across all depths, artificial DSLR bokeh, selective face cleanup, synthetic cabin geometry or a medium portrait substituted for a selected close-up. Keep ordinary imperfections when physically justified. CAPTURED, NOT RENDERED.`;
 }
 
 function syncPrompt() {
