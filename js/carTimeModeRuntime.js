@@ -74,6 +74,17 @@ function updateButtons() {
   document.body.dataset.carTime = activeTime;
 }
 
+function updateVersionLabels() {
+  document.querySelectorAll(".car-version").forEach((node) => { node.textContent = VERSION; });
+  const brand = document.querySelector(".brand small");
+  if (brand) brand.textContent = `Car Templates ${VERSION}`;
+  const eyebrow = document.querySelector(".intro .eyebrow");
+  if (eyebrow) eyebrow.textContent = `CAR SELFIE ENGINE · ${VERSION}`;
+  const footer = document.querySelector("footer p:first-child");
+  if (footer) footer.innerHTML = `Car Templates ${VERSION} <span>•</span> DAY/NIGHT ADAPTIVE PROMPT`;
+  document.title = `قوالب السيارة ${VERSION} — AI Selfie Prompt Studio`;
+}
+
 function filterLighting() {
   const select = document.querySelector("#lightingSelect");
   if (!select) return;
@@ -139,11 +150,11 @@ function applyTime() {
   if (applying) return;
   applying = true;
   updateButtons();
+  updateVersionLabels();
   filterLighting();
   filterInteriorTemplates();
   filterExteriorTemplates();
   filterParking();
-  document.querySelectorAll(".car-version").forEach((node) => { node.textContent = VERSION; });
   window.dispatchEvent(new CustomEvent("car-time-change", { detail:{ time:activeTime } }));
   queueMicrotask(() => { applying = false; });
 }
