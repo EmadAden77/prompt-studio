@@ -1,4 +1,5 @@
 import { CLOTHING_OPTIONS } from "./data/clothingData.js";
+import "./anatomicalExpressionsRuntime.js";
 
 const PATCH = Symbol.for("promptStudio.globalFabricPhysicsRuntime.applied");
 
@@ -75,7 +76,5 @@ function apply() {
 apply();
 
 if (typeof document !== "undefined" && document.body?.dataset.page === "car") {
-  import("./carTimeModeRuntime.js")
-    .then(() => import("./carPlaceTemplatesRuntime.js"))
-    .then(() => import("./carModeSeparationRuntime.js"));
+  import("./carTimeModeRuntime.js").then(() => import("./carPlaceTemplatesRuntime.js")).then(() => import("./carModeSeparationRuntime.js"));
 }
