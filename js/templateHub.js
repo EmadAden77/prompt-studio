@@ -9,7 +9,7 @@ const ALL_BEDROOM_TEMPLATES = Object.freeze([
   ...BEDROOM_NIGHT_STANDING_TEMPLATES
 ]);
 const GROUP_ORDER = ["bed", "sitting", "standing"];
-const BEDROOM_HUB_VERSION = "v2.3";
+const BEDROOM_HUB_VERSION = "v2.4";
 const TIME_STORAGE_KEY = "prompt-studio:bedroom-template-time:v1";
 
 const DAY_TEMPLATE_IDS = new Set([
@@ -141,17 +141,12 @@ function removeLegacyBedroomTemplateUI() {
   if (legacyTemplateField) legacyTemplateField.hidden = true;
 
   document.querySelectorAll('[data-indoor-time-templates]').forEach((panel) => panel.remove());
-  document.querySelectorAll('[data-room-scenario-group]').forEach((card) => card.remove());
 
-  ["hiddenArmTemplateSelect", "indoorDayTemplateSelect", "indoorNightTemplateSelect", "hubClothingPrepTemplate", "hubPostShowerTemplate"].forEach((id) => {
+  ["hiddenArmTemplateSelect", "indoorDayTemplateSelect", "indoorNightTemplateSelect"].forEach((id) => {
     const node = document.querySelector(`#${id}`);
     const holder = node?.closest(".template-hub__card, .field, section, article");
     holder?.remove();
   });
-
-  const clothing = document.querySelector("#clothingSelect");
-  if (clothing) clothing.disabled = false;
-  document.querySelectorAll("[data-scenario-clothing-note]").forEach((note) => note.remove());
 
   const optionsTitle = document.querySelector("#optionsTitle");
   if (optionsTitle) optionsTitle.textContent = "خيارات القالب";
@@ -206,7 +201,7 @@ function buildHub() {
 
   const header = document.createElement("div");
   header.className = "template-hub__header";
-  header.innerHTML = `<div><p class="eyebrow">BEDROOM ${BEDROOM_HUB_VERSION}</p><h2>قوالب غرفة النوم</h2><p>اختر أولًا نهاري أو ليلي، ثم اختر القالب. لن تختلط القوالب الليلية والنهارية في القائمة نفسها.</p></div>`;
+  header.innerHTML = `<div><p class="eyebrow">BEDROOM ${BEDROOM_HUB_VERSION}</p><h2>قوالب غرفة النوم</h2><p>اختر أولًا نهاري أو ليلي، ثم اختر القالب. قسم ما بعد الاستحمام يبقى مدمجًا وثابتًا داخل نفس الواجهة.</p></div>`;
 
   const timeSwitcher = buildTimeSwitcher();
   const grid = document.createElement("div");
@@ -243,6 +238,7 @@ function buildHub() {
   section.append(header, timeSwitcher, grid);
   intro.after(section);
   updateTimeSwitcher(section);
+  document.dispatchEvent(new CustomEvent("bedroom-template-hub-built", { detail:{ time:activeTime, version:BEDROOM_HUB_VERSION } }));
 }
 
 function installStyles() {
