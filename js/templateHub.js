@@ -1,6 +1,8 @@
 import { BEDROOM_TEMPLATES_V2, BEDROOM_TEMPLATE_GROUPS } from "./bedroomTemplatesV2.js";
+import { BEDROOM_CANDID_TEMPLATES } from "./bedroomCandidTemplates.js";
 import { showToast } from "./ui/dom.js";
 
+const ALL_BEDROOM_TEMPLATES = Object.freeze([...BEDROOM_TEMPLATES_V2, ...BEDROOM_CANDID_TEMPLATES]);
 const GROUP_ORDER = ["bed", "sitting", "standing"];
 
 function setSelect(id, value, dispatch = true) {
@@ -116,7 +118,7 @@ function buildHub() {
 
   GROUP_ORDER.forEach((group) => {
     const meta = BEDROOM_TEMPLATE_GROUPS[group];
-    const templates = BEDROOM_TEMPLATES_V2.filter((item) => item.group === group);
+    const templates = ALL_BEDROOM_TEMPLATES.filter((item) => item.group === group);
     if (!meta || !templates.length) return;
 
     const card = document.createElement("article");
