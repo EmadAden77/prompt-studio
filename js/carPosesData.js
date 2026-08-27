@@ -1,3 +1,5 @@
+import "./carExteriorRuntime.js";
+
 export const ANGLE_ANATOMY = Object.freeze({
   frontal:"torso 20–30° waist turn max; knees stay to pedals; head on centerline",
   side:"torso 30–45° hip pivot; far shoulder rolled forward; near hip loaded",
