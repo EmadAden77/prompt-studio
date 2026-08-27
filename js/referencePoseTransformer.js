@@ -1,4 +1,4 @@
-const VERSION = "v1.2";
+const VERSION = "v1.3";
 
 const SMART_AUTO_POSE = `SMART POSE SELECTION — ANALYZE REFERENCE FIRST
 - Before choosing the new pose, inspect the attached reference image and classify the CURRENT visible body state conservatively: standing / sitting / reclining / lying / walking-pause / partial-body / ambiguous.
@@ -12,7 +12,7 @@ const SMART_AUTO_POSE = `SMART POSE SELECTION — ANALYZE REFERENCE FIRST
 - If the scene is being preserved, the chosen pose MUST fit existing floor, furniture, walls, seats, bed or support geometry. Never move or invent support objects.
 - If several poses are plausible, choose the one with the lowest identity risk, lowest hidden-anatomy burden, strongest physical support, and clearest visual difference from the original.
 - Never repeat the original pose with only cosmetic arm movement and call it a new pose.
-- State the chosen pose internally and then execute it consistently through body mechanics, contact, framing and camera perspective.`;
+- State the chosen pose internally and then execute it consistently through body mechanics, contact, framing and the mandatory front-camera selfie perspective.`;
 
 const POSES = Object.freeze({
   smart_auto: SMART_AUTO_POSE,
@@ -43,33 +43,39 @@ const SCOPES = Object.freeze({
 });
 
 const FRAMING = Object.freeze({
-  auto: "Choose the tightest framing that fully supports the selected new pose without inventing unseen anatomy or unnecessary environment.",
-  close: "Use a close portrait crop; include only the anatomy needed to prove the requested pose. Do not imply full-body information that the crop cannot show.",
-  half: "Use a natural half-body crop, keeping limb origins and torso mechanics anatomically continuous.",
-  three_quarter: "Use a three-quarter crop only when the reference provides enough body information or conservative anatomical continuation can be made without changing body type.",
-  full: "Use full-body framing only with conservative anatomical continuation for regions absent from the reference; preserve inferred body type and proportions without exaggerated musculature or altered limb lengths."
+  auto: "Choose the tightest framing that fully supports the selected new pose while remaining physically reachable as a hand-held front-camera selfie and without inventing unseen anatomy or unnecessary environment.",
+  close: "Use a close front-camera selfie crop; include only the anatomy needed to prove the requested pose and preserve natural near-field perspective.",
+  half: "Use a natural half-body front-camera selfie crop, keeping limb origins and torso mechanics anatomically continuous.",
+  three_quarter: "Use a three-quarter front-camera selfie crop only when a realistic arm-length camera distance and available reference anatomy support it.",
+  full: "Use full-body framing only if it remains physically plausible for a subject-held front-camera selfie; otherwise loosen the interpretation rather than inventing impossible camera distance or arm length."
 });
 
-const CAMERA = Object.freeze({
-  preserve: "Preserve the reference image's physically plausible camera logic, perspective class and viewing height unless that would make the selected pose impossible.",
-  front_selfie: "Use a genuine subject-held smartphone front-camera selfie at reachable arm length, approximately 22–24mm full-frame-equivalent around f/2.0. Keep the camera-holding arm outside crop unless unavoidable; no fisheye limb stretching.",
-  mirror_selfie: "Use one physically valid mirror ray path: subject → mirror → camera. Preserve mirror handedness, phone/reflection geometry and reflected background consistency; do not mix direct-selfie perspective with mirror perspective.",
-  observer: "Use an ordinary handheld smartphone photograph from another person's plausible position, with natural phone perspective and no studio-camera look."
-});
+const FRONT_SELFIE_LOCK = `XIAOMI 15 ULTRA FRONT-CAMERA SELFIE LOCK — ABSOLUTE
+- Convert the final result into a genuine subject-held selfie captured ONLY with the Xiaomi 15 Ultra front-facing camera, regardless of whether the reference image was originally a mirror selfie, rear-camera photograph, tripod image, screenshot, or photograph taken by another person.
+- Treat approximately 22–24mm full-frame-equivalent and around f/2.0 as the front-camera optical perspective assumption. Do not import rear-camera Leica lens behavior or main-camera focal lengths into this mode.
+- The phone is physically present outside the finished crop at a reachable hand-held distance. Preserve believable near-field perspective, mild wide-angle facial/body scale change with depth, and ordinary front-camera small-sensor depth behavior.
+- The camera-holding arm must be anatomically solved from shoulder to hand, but the phone, hand, wrist, forearm, elbow and upper arm used to hold the phone must remain COMPLETELY OUTSIDE the final image crop.
+- Never reveal the Xiaomi 15 Ultra body, screen, camera cutout, case, hand gripping it, reflection of the phone, or any edge of the device in the final image.
+- Do not use a mirror ray path. Do not show a reflected phone. Do not preserve observer-camera geometry from the reference. Do not frame the result as if another person took the photo.
+- Preserve a true selfie through reachable camera distance, gaze toward the actual front-camera optical position, natural shoulder asymmetry, near-field parallax and plausible subject-to-background perspective.
+- No fisheye stretching, 0.5x look, elongated forearm, oversized near-lens hand, impossible shoulder reach or floating camera viewpoint.
+- Use one coherent front-camera processing pipeline across the whole frame: finite HDR, realistic highlight headroom, illumination-dependent sensor noise, restrained denoise, modest sharpening/compression, natural skin rendering and no beauty smoothing.
+- If the requested crop cannot be achieved at a physically reachable selfie distance, loosen the crop or reduce the pose angle. Never lengthen the arm or move the virtual camera to an observer position.`;
 
 const NIGHT_LIGHTING = Object.freeze({
   phone_pure_dark: `SELECTED NIGHT LIGHTING — PHONE SCREEN GLOW / PURE DARK
-- The phone screen is the ONLY active light source.
+- The off-frame Xiaomi phone screen is the ONLY active light source.
 - Use very low scene illuminance, short-range inverse-square falloff, brightest exposure on the near face planes and rapid darkness beyond them.
-- Keep screen light soft but weak, with realistic underexposed background, visible sensor noise in shadows, restrained highlight rolloff and no hidden fill light.`,
+- Keep screen light soft but weak, with realistic underexposed background, visible sensor noise in shadows, restrained highlight rolloff and no hidden fill light.
+- The phone remains outside the crop even though its screen illuminates the subject.`,
   soft_screen_fill: `SELECTED NIGHT LIGHTING — SOFT SCREEN FILL LIGHT
-- Use a white smartphone screen as a small near-axis soft fill source for the face.
+- Use the off-frame Xiaomi phone screen as a small near-axis white fill source for the face.
 - Keep the effect gentle and localized, with subtle catchlights, soft facial shadow lift and fast falloff toward the torso/background.
-- Do not add a second key light, beauty light or cinematic rim.`,
-  direct_front_flash: `SELECTED NIGHT LIGHTING — DIRECT FRONT FLASH IN DARKNESS
-- Use one direct near-lens smartphone/front flash source in an otherwise dark room.
+- Do not add a second key light, beauty light or cinematic rim. The phone itself remains invisible.`,
+  direct_front_flash: `SELECTED NIGHT LIGHTING — DIRECT FRONT FLASH EFFECT IN DARKNESS
+- Use one direct near-axis front-camera flash/screen-flash effect from the off-frame Xiaomi device in an otherwise dark room.
 - Expect flatter frontal facial illumination, small hard-edged cast shadows behind nearby forms, stronger specular response on skin and reflective surfaces, fast background falloff, and ordinary phone auto-exposure behavior.
-- No studio bounce, no invisible softbox and no secondary fill.`,
+- No studio bounce, no invisible softbox and no secondary fill. The device remains outside the crop.`,
   cool_moonlight_window: `SELECTED NIGHT LIGHTING — COOL MOONLIGHT THROUGH WINDOW
 - Use one cool, low-intensity natural moonlit window source entering from the physically visible window direction.
 - Preserve broad directional softness, low luminance, cool-biased highlights, deep but not crushed shadows, and gradual falloff across the room.
@@ -139,7 +145,7 @@ let objectUrl = null;
 function $(id) { return document.getElementById(id); }
 
 function init() {
-  ["poseReferenceInput","poseReferenceDropzone","poseReferencePreview","poseReferenceEmpty","poseReferenceMeta","targetPoseSelect","customPoseField","customPoseInput","framingSelect","cameraModeSelect","nightLightingSelect","buildPosePromptBtn","resetPoseTransformerBtn","posePromptOutput","posePromptWordCount","posePromptStatus","copyPosePromptBtn","smartPoseNote"].forEach((id) => { els[id] = $(id); });
+  ["poseReferenceInput","poseReferenceDropzone","poseReferencePreview","poseReferenceEmpty","poseReferenceMeta","targetPoseSelect","customPoseField","customPoseInput","framingSelect","nightLightingSelect","buildPosePromptBtn","resetPoseTransformerBtn","posePromptOutput","posePromptWordCount","posePromptStatus","copyPosePromptBtn","smartPoseNote"].forEach((id) => { els[id] = $(id); });
   els.poseReferenceInput?.addEventListener("change", onFile);
   els.targetPoseSelect?.addEventListener("change", () => {
     const custom = els.targetPoseSelect.value === "custom";
@@ -148,7 +154,7 @@ function init() {
     buildPrompt();
   });
   document.querySelectorAll('input[name="preserveScope"]').forEach((node) => node.addEventListener("change", buildPrompt));
-  [els.customPoseInput, els.framingSelect, els.cameraModeSelect, els.nightLightingSelect].forEach((node) => node?.addEventListener("input", buildPrompt));
+  [els.customPoseInput, els.framingSelect, els.nightLightingSelect].forEach((node) => node?.addEventListener("input", buildPrompt));
   els.buildPosePromptBtn?.addEventListener("click", buildPrompt);
   els.resetPoseTransformerBtn?.addEventListener("click", reset);
   els.copyPosePromptBtn?.addEventListener("click", copyPrompt);
@@ -207,16 +213,16 @@ function buildPrompt() {
   const fileReady = Boolean(activeFile);
   const smartMode = els.targetPoseSelect?.value === "smart_auto";
   const lightingReady = Boolean(els.nightLightingSelect?.value);
-  const prompt = `REFERENCE POSE TRANSFORMER ${VERSION}\n\nREFERENCE IMAGE AUTHORITY — ABSOLUTE\n- Use the attached reference image as the visual authority for the same person's identity and every preservation category selected below.\n- Preserve stable facial identity 1:1: skull/face geometry, jaw/chin, eye shape and spacing, eyelids, nose structure, mouth/lip proportions, ears, hairline, facial hair boundaries, skin tone, apparent age, natural asymmetry and distinctive marks.\n- Expression, head angle, gravity, contact and perspective may change soft-tissue appearance only. They must not redesign stable facial landmarks or bone structure.\n- Preserve the visible body type and proportions. Do not make the subject taller, shorter, leaner, broader, more muscular or differently proportioned merely to satisfy the new pose.\n\n${smartMode ? "SMART ANALYSIS + POSE CHANGE — PRIMARY EDIT" : "POSE CHANGE ONLY — PRIMARY EDIT"}\n${poseInstruction()}\n- Reconstruct only the body regions required by the selected new pose. For regions hidden or outside the reference crop, use conservative anatomically plausible continuation consistent with the visible body type.\n- Never claim exact hidden anatomy from the reference. Do not invent exaggerated musculature, altered limb lengths, extra fingers, missing joints or impossible support.\n- Maintain real balance, center of mass, joint limits, gravity, pressure, occlusion, contact shadows and local material deformation.\n\n${SCOPES[currentScope()]}\n\nLIGHTING / ILLUMINATION — USER CONTROLLED\n${lightingInstruction()}\n\nCAMERA / PERSPECTIVE\n${CAMERA[els.cameraModeSelect?.value] ?? CAMERA.preserve}\n${FRAMING[els.framingSelect?.value] ?? FRAMING.auto}\n- Use one coherent optical model across face, body and environment. Perspective is allowed to change apparent scale with distance, but not actual anatomy.\n- Keep ordinary smartphone HDR, white balance, denoise, sharpening, compression and illumination-dependent sensor noise coherent across the entire frame. No face-only cleanup or selective relighting.\n\nMATERIAL / SKIN / HAIR REALISM\n- Preserve camera-resolvable skin texture only. No decorative pore stamping, wax skin, beauty smoothing or synthetic hyper-detail.\n- Hair follows the reference hair type and hairline, then reorients only as gravity, movement, support and friction require for the new pose.\n- Clothing, if preserved, must re-drape from the new body mechanics instead of inheriting old folds.\n\nFINAL VALIDATION GATE\nReject and correct the result before output if any of the following occurs: identity drift; changed facial geometry; altered body type; repeated original pose when smart mode requested a genuinely different pose; impossible joints; unsupported pose; floating limbs; incorrect contact; invented support objects; duplicated fingers; clothing redesign when clothing preservation is selected; environment changes when scene preservation is selected; any lighting source other than the user-selected night preset; synthetic portrait blur; inconsistent face/background processing; or perspective that changes anatomy instead of apparent distance.\n\nOUTPUT INTENT\nProduce one physically plausible photographic result of the same person in the selected new pose under the user's selected night lighting. The pose is the edit; identity remains the anchor; lighting follows the user's selection exactly.`;
+  const prompt = `REFERENCE POSE TRANSFORMER ${VERSION}\n\nREFERENCE IMAGE AUTHORITY — ABSOLUTE\n- Use the attached reference image as the visual authority for the same person's identity and every preservation category selected below.\n- Preserve stable facial identity 1:1: skull/face geometry, jaw/chin, eye shape and spacing, eyelids, nose structure, mouth/lip proportions, ears, hairline, facial hair boundaries, skin tone, apparent age, natural asymmetry and distinctive marks.\n- Expression, head angle, gravity, contact and perspective may change soft-tissue appearance only. They must not redesign stable facial landmarks or bone structure.\n- Preserve the visible body type and proportions. Do not make the subject taller, shorter, leaner, broader, more muscular or differently proportioned merely to satisfy the new pose.\n\nMANDATORY CAPTURE CONVERSION\n${FRONT_SELFIE_LOCK}\n\n${smartMode ? "SMART ANALYSIS + POSE CHANGE — PRIMARY EDIT" : "POSE CHANGE ONLY — PRIMARY EDIT"}\n${poseInstruction()}\n- Reconstruct only the body regions required by the selected new pose. For regions hidden or outside the reference crop, use conservative anatomically plausible continuation consistent with the visible body type.\n- Never claim exact hidden anatomy from the reference. Do not invent exaggerated musculature, altered limb lengths, extra fingers, missing joints or impossible support.\n- Maintain real balance, center of mass, joint limits, gravity, pressure, occlusion, contact shadows and local material deformation.\n\n${SCOPES[currentScope()]}\n\nLIGHTING / ILLUMINATION — USER CONTROLLED\n${lightingInstruction()}\n\nFRAMING / FRONT-CAMERA PERSPECTIVE\n${FRAMING[els.framingSelect?.value] ?? FRAMING.auto}\n- All framing decisions remain subordinate to the Xiaomi 15 Ultra front-camera selfie lock.\n- Use one coherent optical model across face, body and environment. Perspective may change apparent scale with distance, but never actual anatomy.\n\nMATERIAL / SKIN / HAIR REALISM\n- Preserve camera-resolvable skin texture only. No decorative pore stamping, wax skin, beauty smoothing or synthetic hyper-detail.\n- Hair follows the reference hair type and hairline, then reorients only as gravity, movement, support and friction require for the new pose.\n- Clothing, if preserved, must re-drape from the new body mechanics instead of inheriting old folds.\n\nFINAL VALIDATION GATE\nReject and correct the result before output if any of the following occurs: identity drift; changed facial geometry; altered body type; repeated original pose when smart mode requested a genuinely different pose; impossible joints; unsupported pose; floating limbs; incorrect contact; invented support objects; duplicated fingers; clothing redesign when clothing preservation is selected; environment changes when scene preservation is selected; any lighting source other than the user-selected night preset; mirror-selfie geometry; rear-camera or observer-camera viewpoint; visible phone; visible phone reflection; visible camera-holding hand, wrist, forearm, elbow or upper arm; impossible selfie reach; fisheye limb stretch; synthetic portrait blur; inconsistent face/background processing; or perspective that changes anatomy instead of apparent distance.\n\nOUTPUT INTENT\nProduce one physically plausible Xiaomi 15 Ultra FRONT-camera selfie of the same person in the selected new pose under the user's selected night lighting. Convert any reference capture type into this front-selfie viewpoint. The phone and camera-holding limb remain outside the finished frame; identity remains the anchor; lighting follows the user's selection exactly.`;
 
   if (els.posePromptOutput) els.posePromptOutput.textContent = prompt;
   const count = prompt.trim().split(/\s+/).filter(Boolean).length;
   if (els.posePromptWordCount) els.posePromptWordCount.textContent = `${count} كلمة`;
   if (els.posePromptStatus) {
-    if (!lightingReady) els.posePromptStatus.textContent = "اختر الإضاءة الليلية أولًا. لن يختار التطبيق الإضاءة بدلًا عنك.";
-    else if (!fileReady) els.posePromptStatus.textContent = "تم تحديد الإضاءة. يجب إرفاق الصورة المرجعية عند استخدام الـPrompt.";
-    else if (smartMode) els.posePromptStatus.textContent = "جاهز: الوضعية تُختار بذكاء من المرجع، والإضاءة مطبقة حصريًا حسب اختيارك.";
-    else els.posePromptStatus.textContent = "جاهز: الوضعية والإضاءة محددتان حسب اختياراتك.";
+    if (!lightingReady) els.posePromptStatus.textContent = "اختر الإضاءة الليلية أولًا. نوع الالتقاط ثابت: سيلفي أمامي Xiaomi 15 Ultra.";
+    else if (!fileReady) els.posePromptStatus.textContent = "تم تحديد الإضاءة. أرفق الصورة المرجعية عند الاستخدام؛ النتيجة ستتحول إلى سيلفي أمامي Xiaomi 15 Ultra.";
+    else if (smartMode) els.posePromptStatus.textContent = "جاهز: الوضعية تُختار بذكاء، والإضاءة حسب اختيارك، والتصوير سيلفي أمامي Xiaomi 15 Ultra بدون ظهور الهاتف.";
+    else els.posePromptStatus.textContent = "جاهز: الوضعية والإضاءة حسب اختيارك، والتقاط Xiaomi 15 Ultra الأمامي إلزامي.";
   }
   return prompt;
 }
@@ -230,7 +236,7 @@ async function copyPrompt() {
   const text = buildPrompt();
   try {
     await navigator.clipboard.writeText(text);
-    els.posePromptStatus.textContent = "تم نسخ الـPrompt مع الإضاءة التي اخترتها.";
+    els.posePromptStatus.textContent = "تم نسخ الـPrompt مع قفل سيلفي Xiaomi 15 Ultra الأمامي والإضاءة التي اخترتها.";
   } catch {
     els.posePromptStatus.textContent = "تعذر النسخ التلقائي. حدّد النص وانسخه يدويًا.";
   }
@@ -246,7 +252,6 @@ function reset() {
   if (els.customPoseField) els.customPoseField.hidden = true;
   if (els.smartPoseNote) els.smartPoseNote.hidden = false;
   if (els.framingSelect) els.framingSelect.value = "auto";
-  if (els.cameraModeSelect) els.cameraModeSelect.value = "preserve";
   if (els.nightLightingSelect) els.nightLightingSelect.value = "";
   const first = document.querySelector('input[name="preserveScope"][value="identity"]');
   if (first) first.checked = true;
