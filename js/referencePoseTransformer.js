@@ -1,6 +1,21 @@
-const VERSION = "v1.0";
+const VERSION = "v1.1";
+
+const SMART_AUTO_POSE = `SMART POSE SELECTION — ANALYZE REFERENCE FIRST
+- Before choosing the new pose, inspect the attached reference image and classify the CURRENT visible body state conservatively: standing / sitting / reclining / lying / walking-pause / partial-body / ambiguous.
+- Also inspect only what is visibly supportable: torso yaw, shoulder asymmetry, head orientation, weight distribution, visible support/contact, limb visibility, crop coverage, and whether the scene contains usable support surfaces.
+- Do NOT infer hidden limbs, exact height, unseen musculature, or unsupported environment geometry from the reference.
+- Select ONE new pose that is clearly different from the current pose but requires the smallest safe anatomical transition and the least unsupported reconstruction.
+- Prefer conservative transitions over dramatic ones. If the reference is partial-body, prefer standing micro-variation, mild torso yaw, shoulder asymmetry, or a subtle weight shift instead of full-body sitting/lying poses.
+- If the subject is already standing, prefer a different standing balance state, slight torso turn, grounded pocket-hand pose only when a real pocket exists, or a mild supported lean only when a real support exists.
+- If the subject is sitting, prefer a different seated balance/torso orientation or a conservative stand-up result only when enough lower-body information can be plausibly continued.
+- If the subject is reclining or lying, prefer a modest change of side/support orientation or semi-reclined transition rather than inventing a remote standing composition.
+- If the scene is being preserved, the chosen pose MUST fit existing floor, furniture, walls, seats, bed or support geometry. Never move or invent support objects.
+- If several poses are plausible, choose the one with the lowest identity risk, lowest hidden-anatomy burden, strongest physical support, and clearest visual difference from the original.
+- Never repeat the original pose with only cosmetic arm movement and call it a new pose.
+- State the chosen pose internally and then execute it consistently through body mechanics, contact, framing and camera perspective.`;
 
 const POSES = Object.freeze({
+  smart_auto: SMART_AUTO_POSE,
   standing_relaxed: "Stand naturally with both feet grounded, pelvis neutral, shoulders slightly asymmetric, arms relaxed without staged symmetry.",
   standing_weight_shift: "Stand with a mild natural weight shift onto one leg; the opposite knee relaxes slightly, pelvis and shoulders counterbalance subtly, both feet remain physically grounded.",
   standing_pocket: "Stand casually with one non-camera hand resting naturally in a real pocket if the preserved clothing contains one; otherwise keep that hand relaxed at the side rather than inventing a pocket.",
@@ -28,7 +43,7 @@ const SCOPES = Object.freeze({
 });
 
 const FRAMING = Object.freeze({
-  auto: "Choose the tightest framing that fully supports the new pose without inventing unseen anatomy or unnecessary environment.",
+  auto: "Choose the tightest framing that fully supports the selected new pose without inventing unseen anatomy or unnecessary environment.",
   close: "Use a close portrait crop; include only the anatomy needed to prove the requested pose. Do not imply full-body information that the crop cannot show.",
   half: "Use a natural half-body crop, keeping limb origins and torso mechanics anatomically continuous.",
   three_quarter: "Use a three-quarter crop only when the reference provides enough body information or conservative anatomical continuation can be made without changing body type.",
@@ -36,7 +51,7 @@ const FRAMING = Object.freeze({
 });
 
 const CAMERA = Object.freeze({
-  preserve: "Preserve the reference image's physically plausible camera logic, perspective class and viewing height unless that would make the requested pose impossible.",
+  preserve: "Preserve the reference image's physically plausible camera logic, perspective class and viewing height unless that would make the selected pose impossible.",
   front_selfie: "Use a genuine subject-held smartphone front-camera selfie at reachable arm length, approximately 22–24mm full-frame-equivalent around f/2.0. Keep the camera-holding arm outside crop unless unavoidable; no fisheye limb stretching.",
   mirror_selfie: "Use one physically valid mirror ray path: subject → mirror → camera. Preserve mirror handedness, phone/reflection geometry and reflected background consistency; do not mix direct-selfie perspective with mirror perspective.",
   observer: "Use an ordinary handheld smartphone photograph from another person's plausible position, with natural phone perspective and no studio-camera look."
@@ -49,14 +64,20 @@ let objectUrl = null;
 function $(id) { return document.getElementById(id); }
 
 function init() {
-  ["poseReferenceInput","poseReferenceDropzone","poseReferencePreview","poseReferenceEmpty","poseReferenceMeta","targetPoseSelect","customPoseField","customPoseInput","framingSelect","cameraModeSelect","buildPosePromptBtn","resetPoseTransformerBtn","posePromptOutput","posePromptWordCount","posePromptStatus","copyPosePromptBtn"].forEach((id) => { els[id] = $(id); });
+  ["poseReferenceInput","poseReferenceDropzone","poseReferencePreview","poseReferenceEmpty","poseReferenceMeta","targetPoseSelect","customPoseField","customPoseInput","framingSelect","cameraModeSelect","buildPosePromptBtn","resetPoseTransformerBtn","posePromptOutput","posePromptWordCount","posePromptStatus","copyPosePromptBtn","smartPoseNote"].forEach((id) => { els[id] = $(id); });
   els.poseReferenceInput?.addEventListener("change", onFile);
-  els.targetPoseSelect?.addEventListener("change", () => { if (els.customPoseField) els.customPoseField.hidden = els.targetPoseSelect.value !== "custom"; buildPrompt(); });
+  els.targetPoseSelect?.addEventListener("change", () => {
+    const custom = els.targetPoseSelect.value === "custom";
+    if (els.customPoseField) els.customPoseField.hidden = !custom;
+    if (els.smartPoseNote) els.smartPoseNote.hidden = els.targetPoseSelect.value !== "smart_auto";
+    buildPrompt();
+  });
   document.querySelectorAll('input[name="preserveScope"]').forEach((node) => node.addEventListener("change", buildPrompt));
   [els.customPoseInput, els.framingSelect, els.cameraModeSelect].forEach((node) => node?.addEventListener("input", buildPrompt));
   els.buildPosePromptBtn?.addEventListener("click", buildPrompt);
   els.resetPoseTransformerBtn?.addEventListener("click", reset);
   els.copyPosePromptBtn?.addEventListener("click", copyPrompt);
+  buildPrompt();
 }
 
 function onFile(event) {
@@ -96,17 +117,21 @@ function poseInstruction() {
     const text = els.customPoseInput?.value?.trim();
     return text ? `CUSTOM TARGET POSE: ${text}\nInterpret this conservatively through real joint limits, support, balance, gravity and contact.` : "CUSTOM TARGET POSE: not described yet.";
   }
-  return POSES[els.targetPoseSelect?.value] ?? POSES.standing_relaxed;
+  return POSES[els.targetPoseSelect?.value] ?? SMART_AUTO_POSE;
 }
 
 function buildPrompt() {
   const fileReady = Boolean(activeFile);
-  const prompt = `REFERENCE POSE TRANSFORMER ${VERSION}\n\nREFERENCE IMAGE AUTHORITY — ABSOLUTE\n- Use the attached reference image as the visual authority for the same person's identity and every preservation category selected below.\n- Preserve stable facial identity 1:1: skull/face geometry, jaw/chin, eye shape and spacing, eyelids, nose structure, mouth/lip proportions, ears, hairline, facial hair boundaries, skin tone, apparent age, natural asymmetry and distinctive marks.\n- Expression, head angle, gravity, contact and perspective may change soft-tissue appearance only. They must not redesign stable facial landmarks or bone structure.\n- Preserve the visible body type and proportions. Do not make the subject taller, shorter, leaner, broader, more muscular or differently proportioned merely to satisfy the new pose.\n\nPOSE CHANGE ONLY — PRIMARY EDIT\n${poseInstruction()}\n- Reconstruct only the body regions required by the new pose. For regions hidden or outside the reference crop, use conservative anatomically plausible continuation consistent with the visible body type.\n- Never claim exact hidden anatomy from the reference. Do not invent exaggerated musculature, altered limb lengths, extra fingers, missing joints or impossible support.\n- Maintain real balance, center of mass, joint limits, gravity, pressure, occlusion, contact shadows and local material deformation.\n\n${SCOPES[currentScope()]}\n\nCAMERA / PERSPECTIVE\n${CAMERA[els.cameraModeSelect?.value] ?? CAMERA.preserve}\n${FRAMING[els.framingSelect?.value] ?? FRAMING.auto}\n- Use one coherent optical model across face, body and environment. Perspective is allowed to change apparent scale with distance, but not actual anatomy.\n- Keep ordinary smartphone HDR, white balance, denoise, sharpening, compression and illumination-dependent sensor noise coherent across the entire frame. No face-only cleanup or selective relighting.\n\nMATERIAL / SKIN / HAIR REALISM\n- Preserve camera-resolvable skin texture only. No decorative pore stamping, wax skin, beauty smoothing or synthetic hyper-detail.\n- Hair follows the reference hair type and hairline, then reorients only as gravity, movement, support and friction require for the new pose.\n- Clothing, if preserved, must re-drape from the new body mechanics instead of inheriting old folds.\n\nFINAL VALIDATION GATE\nReject and correct the result before output if any of the following occurs: identity drift; changed facial geometry; altered body type; impossible joints; unsupported pose; floating limbs; incorrect contact; invented support objects; duplicated fingers; clothing redesign when clothing preservation is selected; environment changes when scene preservation is selected; synthetic portrait blur; inconsistent face/background processing; or perspective that changes anatomy instead of apparent distance.\n\nOUTPUT INTENT\nProduce one physically plausible photographic result of the same person in the requested new pose. The new pose is the edit; identity remains the anchor.`;
+  const smartMode = els.targetPoseSelect?.value === "smart_auto";
+  const prompt = `REFERENCE POSE TRANSFORMER ${VERSION}\n\nREFERENCE IMAGE AUTHORITY — ABSOLUTE\n- Use the attached reference image as the visual authority for the same person's identity and every preservation category selected below.\n- Preserve stable facial identity 1:1: skull/face geometry, jaw/chin, eye shape and spacing, eyelids, nose structure, mouth/lip proportions, ears, hairline, facial hair boundaries, skin tone, apparent age, natural asymmetry and distinctive marks.\n- Expression, head angle, gravity, contact and perspective may change soft-tissue appearance only. They must not redesign stable facial landmarks or bone structure.\n- Preserve the visible body type and proportions. Do not make the subject taller, shorter, leaner, broader, more muscular or differently proportioned merely to satisfy the new pose.\n\n${smartMode ? "SMART ANALYSIS + POSE CHANGE — PRIMARY EDIT" : "POSE CHANGE ONLY — PRIMARY EDIT"}\n${poseInstruction()}\n- Reconstruct only the body regions required by the selected new pose. For regions hidden or outside the reference crop, use conservative anatomically plausible continuation consistent with the visible body type.\n- Never claim exact hidden anatomy from the reference. Do not invent exaggerated musculature, altered limb lengths, extra fingers, missing joints or impossible support.\n- Maintain real balance, center of mass, joint limits, gravity, pressure, occlusion, contact shadows and local material deformation.\n\n${SCOPES[currentScope()]}\n\nCAMERA / PERSPECTIVE\n${CAMERA[els.cameraModeSelect?.value] ?? CAMERA.preserve}\n${FRAMING[els.framingSelect?.value] ?? FRAMING.auto}\n- Use one coherent optical model across face, body and environment. Perspective is allowed to change apparent scale with distance, but not actual anatomy.\n- Keep ordinary smartphone HDR, white balance, denoise, sharpening, compression and illumination-dependent sensor noise coherent across the entire frame. No face-only cleanup or selective relighting.\n\nMATERIAL / SKIN / HAIR REALISM\n- Preserve camera-resolvable skin texture only. No decorative pore stamping, wax skin, beauty smoothing or synthetic hyper-detail.\n- Hair follows the reference hair type and hairline, then reorients only as gravity, movement, support and friction require for the new pose.\n- Clothing, if preserved, must re-drape from the new body mechanics instead of inheriting old folds.\n\nFINAL VALIDATION GATE\nReject and correct the result before output if any of the following occurs: identity drift; changed facial geometry; altered body type; repeated original pose when smart mode requested a genuinely different pose; impossible joints; unsupported pose; floating limbs; incorrect contact; invented support objects; duplicated fingers; clothing redesign when clothing preservation is selected; environment changes when scene preservation is selected; synthetic portrait blur; inconsistent face/background processing; or perspective that changes anatomy instead of apparent distance.\n\nOUTPUT INTENT\nProduce one physically plausible photographic result of the same person in the selected new pose. The pose is the edit; identity remains the anchor.`;
 
   if (els.posePromptOutput) els.posePromptOutput.textContent = prompt;
   const count = prompt.trim().split(/\s+/).filter(Boolean).length;
   if (els.posePromptWordCount) els.posePromptWordCount.textContent = `${count} كلمة`;
-  if (els.posePromptStatus) els.posePromptStatus.textContent = fileReady ? "جاهز: أرفق نفس الصورة المرجعية مع هذا الـPrompt." : "يمكن معاينة الـPrompt الآن، لكن يجب إرفاق صورة مرجعية عند الاستخدام.";
+  if (els.posePromptStatus) {
+    if (!fileReady) els.posePromptStatus.textContent = smartMode ? "الوضع الذكي جاهز، لكن يجب إرفاق الصورة المرجعية عند استخدام الـPrompt." : "يمكن معاينة الـPrompt الآن، لكن يجب إرفاق صورة مرجعية عند الاستخدام.";
+    else els.posePromptStatus.textContent = smartMode ? "جاهز: سيحلل النموذج وضعية الشخص الحالية من الصورة ثم يختار انتقالًا جديدًا محافظًا ومختلفًا." : "جاهز: أرفق نفس الصورة المرجعية مع هذا الـPrompt.";
+  }
   return prompt;
 }
 
@@ -125,9 +150,10 @@ function reset() {
   objectUrl = null;
   activeFile = null;
   if (els.poseReferenceInput) els.poseReferenceInput.value = "";
-  if (els.targetPoseSelect) els.targetPoseSelect.value = "standing_relaxed";
+  if (els.targetPoseSelect) els.targetPoseSelect.value = "smart_auto";
   if (els.customPoseInput) els.customPoseInput.value = "";
   if (els.customPoseField) els.customPoseField.hidden = true;
+  if (els.smartPoseNote) els.smartPoseNote.hidden = false;
   if (els.framingSelect) els.framingSelect.value = "auto";
   if (els.cameraModeSelect) els.cameraModeSelect.value = "preserve";
   const first = document.querySelector('input[name="preserveScope"][value="identity"]');
