@@ -1,29 +1,7 @@
 import "./beddingPhysicsRuntime.js";
 import { PromptEngine } from "./engines/promptEngine.js";
 
-const STORAGE_KEY = "ai-selfie-prompt-studio:free-hand-action";
-const SELECT_ID = "freeHandActionSelect";
 const patchFlag = Symbol.for("promptStudio.freeHandActions.patched");
-
-const ACTIONS = Object.freeze([
-  Object.freeze({ id:"auto", name_ar:"تلقائي حسب الوضعية", families:["bed","sitting","standing"], prompt:"AUTO: choose the simplest anatomically natural free-hand action for the selected pose. Prefer resting contact over gesturing. Never invent an object." }),
-  Object.freeze({ id:"relaxed_side", name_ar:"مرتاحة بجانب الجسم", families:["standing","sitting"], prompt:"Let the non-camera hand hang or rest naturally beside the body with a relaxed wrist and slightly unequal finger curvature. No deliberate posing." }),
-  Object.freeze({ id:"thigh_rest", name_ar:"مرتاحة على الفخذ", families:["sitting"], prompt:"Rest the free hand naturally on the real thigh. Palm pressure is light; fingers curve independently and contact clothing with small local compression." }),
-  Object.freeze({ id:"mattress_rest", name_ar:"مرتاحة على المرتبة", families:["bed","sitting"], prompt:"Rest the free palm or ulnar edge lightly on the real mattress. Show local bedding compression, occlusion and a small attached contact shadow." }),
-  Object.freeze({ id:"pillow_edge", name_ar:"عند طرف الوسادة", families:["bed"], prompt:"Place the free hand partly beside or under the EDGE of the pillow, not under the head. Fingers remain simple and visible only where anatomy and crop permit." }),
-  Object.freeze({ id:"blanket_hold", name_ar:"تمسك طرف البطانية بخفة", families:["bed"], prompt:"Lightly pinch or hold the real blanket edge with thumb plus two or three fingers. Use minimal grip force; fabric gathers locally around the contact. No clenched fist." }),
-  Object.freeze({ id:"abdomen_rest", name_ar:"مرتاحة على أعلى البطن", families:["bed"], prompt:"Rest the free palm softly on the upper abdomen over clothing or bedding. The wrist stays neutral; fingers relax with slight spacing variation and create only mild fabric compression." }),
-  Object.freeze({ id:"forearm_abdomen", name_ar:"الساعد فوق البطن", families:["bed"], prompt:"Lay the free forearm naturally across the abdomen with the shoulder relaxed. The elbow and wrist follow one continuous chain; no torso penetration or rigid symmetry." }),
-  Object.freeze({ id:"beside_face_pillow", name_ar:"على الوسادة قرب الوجه", families:["bed"], prompt:"Rest the free hand on the pillow BESIDE the face without supporting, squeezing or reshaping the cheek. Keep fingers simple and partly occluded if needed." }),
-  Object.freeze({ id:"pocket_half", name_ar:"نصف اليد في الجيب", families:["standing","sitting"], prompt:"Place only part of the free hand casually in a real clothing pocket, with thumb outside or a few fingers outside. Do not force full-hand insertion or distort the garment." }),
-  Object.freeze({ id:"waistband_thumb", name_ar:"الإبهام عند حافة البنطال", families:["standing"], prompt:"Hook only the free thumb lightly at the waistband or pocket edge while the other fingers remain relaxed. Keep the wrist and elbow ordinary and close to the body." }),
-  Object.freeze({ id:"shirt_adjust", name_ar:"تعديل خفيف لطرف القميص", families:["standing","sitting"], prompt:"Use the free hand for a tiny natural adjustment of the shirt hem or collar using a simple pinch. No dramatic tug, no fabric stretching, no staged fashion gesture." }),
-  Object.freeze({ id:"beard_touch", name_ar:"لمسة خفيفة أسفل اللحية", families:["standing","sitting"], prompt:"Touch the lower beard/chin area lightly with two or three fingertips. Do not cover facial landmarks, push the jaw, reshape the beard or create a thinking-pose stereotype." }),
-  Object.freeze({ id:"hair_adjust", name_ar:"تعديل خصلة شعر", families:["standing","sitting"], prompt:"Use two or three fingertips to make a small adjustment near the temple or front hairline. Do not bury fingers deeply in hair, change hairstyle density, or create complex finger overlap." }),
-  Object.freeze({ id:"sofa_cushion_rest", name_ar:"مرتاحة على وسادة الأريكة", families:["sitting"], placements:["sofa"], prompt:"Rest the free hand on the real sofa cushion with mild pressure and a small local cushion/fabric response. Do not invent an armrest or cushion outside the room reference." })
-]);
-
-const ACTION_BY_ID = Object.freeze(Object.fromEntries(ACTIONS.map((item) => [item.id, item])));
 
 function familyFromPoseId(id = "") {
   if (id.startsWith("standing")) return "standing";
@@ -31,50 +9,153 @@ function familyFromPoseId(id = "") {
   return "bed";
 }
 
-function placementFromPose(pose = {}) {
-  return pose?.placement || "";
+function sceneAwareCandidates(config = {}) {
+  const pose = config.pose || {};
+  const poseId = pose.id || config.poseId || "";
+  const family = familyFromPoseId(poseId);
+  const placement = pose.placement || config.scene?.region || config.scene?.id || "";
+
+  if (family === "bed") {
+    if (poseId === "lying_right_side" || poseId === "lying_left_side") {
+      return [
+        "rest the free hand softly on the blanket near the abdomen or hip",
+        "rest the palm or ulnar edge on the mattress in front of the torso",
+        "place the hand on the pillow beside the face without supporting or reshaping the cheek",
+        "lightly hold a naturally reachable blanket edge with a simple relaxed grip",
+        "leave the hand partly occluded by bedding when that produces the cleanest anatomy"
+      ];
+    }
+    if (poseId === "lying_back") {
+      return [
+        "rest the palm on the upper abdomen or lower chest over clothing or bedding",
+        "lay the forearm loosely across the abdomen",
+        "rest the hand on the mattress beside the torso",
+        "lightly hold or touch the blanket edge when it already crosses the body",
+        "allow the hand to fall partly outside the crop if showing it would force awkward reach"
+      ];
+    }
+    if (poseId === "lying_stomach") {
+      return [
+        "rest the free forearm naturally on the mattress beside or below the chest",
+        "place the hand loosely near the pillow edge without propping the head unless the pose requires it",
+        "let the hand remain partly hidden by the torso, pillow or crop when anatomically cleaner"
+      ];
+    }
+    if (poseId === "semi_reclining") {
+      return [
+        "rest the free hand on the abdomen or thigh",
+        "rest the palm lightly on the mattress beside the hip",
+        "touch or loosely hold a blanket edge already pooled at the waist",
+        "let the forearm rest naturally across the lap"
+      ];
+    }
+    return [
+      "rest the free hand on a real nearby bedding surface",
+      "rest it on the abdomen or thigh when naturally reachable",
+      "leave it partly outside the crop when that is anatomically cleaner"
+    ];
+  }
+
+  if (family === "sitting") {
+    if (/sofa/u.test(placement) || poseId === "sitting_sofa") {
+      return [
+        "rest the free hand on the thigh",
+        "rest the palm lightly on the real sofa cushion or visible armrest",
+        "place part of the hand casually in a real clothing pocket",
+        "let the hand relax beside the hip if the seat geometry supports it"
+      ];
+    }
+    if (poseId === "sitting_bed_edge") {
+      return [
+        "rest the free hand on the thigh",
+        "place the palm lightly on the mattress beside the hip with local bedding compression",
+        "let the forearm rest loosely across the lap",
+        "use a half-pocket rest only when the selected clothing visibly has a reachable pocket"
+      ];
+    }
+    if (poseId === "sitting_floor") {
+      return [
+        "rest the hand on the thigh or knee",
+        "place fingertips or palm on the floor only if needed for believable support",
+        "let the forearm rest across the lap",
+        "keep the hand partly occluded when the leg arrangement makes that more natural"
+      ];
+    }
+    return [
+      "rest the hand naturally on the thigh",
+      "rest it on a real nearby support surface",
+      "use a casual half-pocket position only if the clothing supports it",
+      "leave it partly outside the crop rather than force a gesture"
+    ];
+  }
+
+  if (/wardrobe/u.test(placement) || poseId === "standing_wardrobe") {
+    return [
+      "let the free arm hang naturally beside the thigh",
+      "place part of the hand casually in a real pocket",
+      "make a tiny shirt-hem adjustment",
+      "touch a visible wardrobe edge or handle only when that exact reachable feature is supported by the active room reference"
+    ];
+  }
+  if (/vanity|dresser/u.test(placement)) {
+    return [
+      "let the hand relax beside the thigh",
+      "use a casual half-pocket rest",
+      "make a tiny shirt adjustment",
+      "rest fingertips lightly on a real dresser edge only if it is visibly reachable without leaning or stretching"
+    ];
+  }
+  if (/sofa/u.test(placement) || poseId === "standing_sofa") {
+    return [
+      "let the free hand hang naturally",
+      "rest the hand or forearm lightly on the real sofa support surface when reachable",
+      "use a casual half-pocket rest",
+      "keep the free arm simple and close to the body"
+    ];
+  }
+  if (/bed/u.test(placement) || poseId === "standing_bedside") {
+    return [
+      "let the free hand hang naturally beside the thigh",
+      "rest the palm lightly on the real mattress edge if it is within comfortable reach",
+      "use a casual half-pocket rest",
+      "make a tiny shirt-hem adjustment"
+    ];
+  }
+  return [
+    "let the free hand hang naturally beside the thigh",
+    "use a casual half-pocket rest when the clothing supports it",
+    "make a tiny shirt or waistband adjustment",
+    "keep the hand partly outside the crop if that produces the most natural anatomy"
+  ];
 }
 
-function actionCompatible(action, pose = {}) {
-  if (!action?.families?.includes(familyFromPoseId(pose?.id))) return false;
-  if (action.placements?.length && !action.placements.includes(placementFromPose(pose))) return false;
-  return true;
-}
+function freeHandBlock(config = {}) {
+  const candidates = sceneAwareCandidates(config);
+  return `AUTO SCENE-AWARE FREE HAND — NON-CAMERA HAND ONLY
+The application does NOT force one decorative hand pose. Choose the single most natural free-hand solution for the actual pose, room zone, support surfaces, crop and camera reach in this render.
 
-function automaticAction(pose = {}) {
-  const family = familyFromPoseId(pose?.id);
-  if (family === "bed") return ACTION_BY_ID.abdomen_rest;
-  if (family === "sitting") return ACTION_BY_ID.thigh_rest;
-  return ACTION_BY_ID.relaxed_side;
-}
+SAFE CANDIDATES FOR THIS SCENE:
+${candidates.map((item, index) => `${index + 1}) ${item}.`).join("\n")}
 
-function storedId() {
-  try { return localStorage.getItem(STORAGE_KEY) || "auto"; } catch { return "auto"; }
-}
+DECISION ORDER — HIGHEST PRIORITY FIRST
+1) Preserve identity and clean facial visibility.
+2) Preserve full-body support physics and the selected pose.
+3) Preserve one continuous shoulder → elbow → wrist → palm → fingers anatomy chain.
+4) Prefer resting/contact behavior over deliberate gesturing.
+5) Use only surfaces and objects visibly supported by the active room reference and physically reachable from the selected body position.
+6) If two actions are equally plausible, choose the simpler one with fewer visible fingers and less joint rotation.
+7) The free hand is OPTIONAL in frame. Crop or naturally occlude it when visibility would require awkward reach, duplicate anatomy, extreme perspective or a staged pose.
 
-function selectedAction(pose = {}) {
-  const domId = typeof document !== "undefined" ? document.querySelector(`#${SELECT_ID}`)?.value : null;
-  const requested = ACTION_BY_ID[domId || storedId()] || ACTION_BY_ID.auto;
-  if (requested.id === "auto") return automaticAction(pose);
-  return actionCompatible(requested, pose) ? requested : automaticAction(pose);
-}
-
-function freeHandBlock(pose = {}) {
-  const action = selectedAction(pose);
-  return `FREE-HAND ACTION — NON-CAMERA HAND ONLY
-Selected action: ${action.name_ar}.
-${action.prompt}
-
-FREE-HAND ANATOMY LOCK
-- This section controls ONLY the arm/hand that is NOT holding the phone. The camera-holding arm remains governed by the global selfie-arm policy and stays outside crop where required.
-- Shoulder, upper arm, elbow, forearm, wrist, palm, thumb and fingers form one continuous anatomically possible chain from the real torso.
-- Keep shoulder rotation, elbow flexion, forearm pronation/supination and wrist deviation inside ordinary comfortable ranges for the selected pose.
-- Fingers are NOT evenly spaced, mirrored or identically curved. Preserve small natural asymmetry in flexion, spacing and contact.
-- Contact with mattress, pillow, clothing, sofa, thigh or a real room object creates physically attached pressure, occlusion, fabric/cushion response and contact shadow.
-- Never add a prop merely to give the hand something to do. Existing objects may be touched only if the active room reference visibly supports that exact object and reachable location.
-- The hand must never penetrate the torso, pass through bedding, merge with fabric, grow extra fingers, duplicate a wrist, detach from the forearm, or arrive from the wrong side of the body.
-- If the selected action conflicts with framing, support physics, room continuity or clean anatomy, simplify it to a relaxed resting hand rather than forcing the gesture.
-- The free hand remains secondary. It must not cover identity-defining facial landmarks or become a foreground forced-perspective feature.`;
+FREE-HAND ANATOMY & CONTACT LOCK
+- This controls ONLY the arm/hand that is NOT holding the phone. The selfie arm remains governed by the camera/arm policy.
+- Shoulder rotation, elbow flexion, forearm pronation/supination and wrist deviation stay within ordinary comfortable human ranges for the selected pose.
+- Fingers are not evenly spaced, mirrored, perfectly fanned or identically curved. Keep small natural asymmetry and simple overlaps.
+- A hand touching mattress, pillow, blanket, clothing, sofa, thigh, floor or furniture creates attached contact shadow plus physically appropriate pressure response. Soft surfaces compress locally; rigid furniture does not visibly deform under light touch.
+- Bedding contact must agree with BEDDING PHYSICS LOCK: hand/forearm pressure produces a local depression and load-driven micro-wrinkles instead of floating above the fabric.
+- Never add a prop merely to occupy the hand. Never reach toward an object outside comfortable arm length.
+- Never let the hand penetrate the torso or bedding, merge with fabric, detach from the forearm, grow extra digits, duplicate a wrist, or emerge from the wrong side of the body.
+- Avoid fashion-model posing, symmetrical hand placement, rigid finger posing, dramatic beard-touch poses or any gesture that competes with the scene.
+- Final test: the hand action should look incidental, mechanically necessary or casually comfortable, as if the subject was not consciously arranging it for the photograph.`;
 }
 
 function xiaomiNightBlock() {
@@ -94,67 +175,24 @@ function patchPromptEngine() {
   const proto = PromptEngine?.prototype;
   if (!proto || proto[patchFlag] || typeof proto.generate !== "function") return;
   const originalGenerate = proto.generate;
-  proto.generate = function generateWithFreeHand(config = {}) {
+  proto.generate = function generateWithSceneAwareFreeHand(config = {}) {
     const raw = originalGenerate.call(this, config);
     if (typeof raw !== "string") return raw;
-    return `${raw}\n\n${freeHandBlock(config.pose)}${xiaomiNightBlock() ? `\n\n${xiaomiNightBlock()}` : ""}`.trim();
+    const night = xiaomiNightBlock();
+    return `${raw}\n\n${freeHandBlock(config)}${night ? `\n\n${night}` : ""}`.trim();
   };
   proto[patchFlag] = true;
 }
 
-function rebuildOptions() {
+function removeLegacyManualControl() {
   if (typeof document === "undefined") return;
-  const select = document.querySelector(`#${SELECT_ID}`);
-  if (!select) return;
-  const poseId = document.querySelector("#poseSelect")?.value || "";
-  const family = familyFromPoseId(poseId);
-  const current = select.value || storedId();
-  const available = ACTIONS.filter((action) => action.id === "auto" || action.families.includes(family));
-  select.replaceChildren(...available.map((action) => new Option(action.name_ar, action.id)));
-  select.value = available.some((action) => action.id === current) ? current : "auto";
-}
-
-function installControl() {
-  if (typeof document === "undefined" || document.querySelector(`#${SELECT_ID}`)) return;
-  const form = document.querySelector("#optionsForm");
-  if (!form) return;
-
-  const field = document.createElement("div");
-  field.className = "field field--wide";
-  field.dataset.freeHandActions = "true";
-
-  const label = document.createElement("label");
-  label.htmlFor = SELECT_ID;
-  label.textContent = "🤚 حركة اليد الأخرى";
-
-  const select = document.createElement("select");
-  select.id = SELECT_ID;
-  select.name = "freeHandAction";
-  field.append(label, select);
-
-  const hint = document.createElement("small");
-  hint.textContent = "تعرض فقط الحركات المناسبة لنوع الوضعية. عند أي تعارض تشريحي يعود المحرك تلقائيًا إلى يد مرتاحة.";
-  field.appendChild(hint);
-  form.appendChild(field);
-
-  rebuildOptions();
-  const initial = storedId();
-  if ([...select.options].some((option) => option.value === initial)) select.value = initial;
-
-  select.addEventListener("change", () => {
-    try { localStorage.setItem(STORAGE_KEY, select.value); } catch {}
-    document.querySelector("#rebuildBtn")?.click();
-  });
-
-  document.querySelector("#poseSelect")?.addEventListener("change", () => {
-    rebuildOptions();
-    document.querySelector("#rebuildBtn")?.click();
-  });
+  try { localStorage.removeItem("ai-selfie-prompt-studio:free-hand-action"); } catch {}
+  document.querySelector("#freeHandActionSelect")?.closest("[data-free-hand-actions], .field")?.remove();
 }
 
 patchPromptEngine();
 
 if (typeof document !== "undefined") {
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", installControl, { once:true });
-  else installControl();
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", removeLegacyManualControl, { once:true });
+  else removeLegacyManualControl();
 }
