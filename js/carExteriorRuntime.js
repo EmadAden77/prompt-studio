@@ -86,11 +86,33 @@ function install() {
   outputColumn.append(exteriorOutput);
 
   const parkingSelect = exteriorPanel.querySelector("#exteriorParkingSelect");
-  parkingOptions.forEach((p) => { const o=document.createElement("option"); o.value=p.id; o.textContent=p.name; parkingSelect.append(o); });
-  let activePose = exteriorPoses[0];
   const poseGrid = exteriorPanel.querySelector("#exteriorPoseGrid");
+  if (!parkingSelect || !poseGrid) return;
+
+  parkingSelect.innerHTML = "";
+  parkingOptions.forEach((p) => {
+    const o = document.createElement("option");
+    o.value = p.id;
+    o.textContent = p.name;
+    parkingSelect.appendChild(o);
+  });
+
+  let activePose = exteriorPoses[0];
   const renderPoses = () => {
-    poseGrid.replaceChildren(...exteriorPoses.map((p) => { const b=document.createElement("button"); b.type="button"; b.className=`car-exterior-card${p.id===activePose.id?" is-active":""}`; b.innerHTML=`<strong>${p.name_ar}</strong><small>${p.angle} · ${p.distance} · ${p.framing}</small>`; b.addEventListener("click",()=>{activePose=p; if (p.parkingId && parkingOptions.some((x)=>x.id===p.parkingId)) parkingSelect.value=p.parkingId; renderPoses(); sync();}); return b; }));
+    while (poseGrid.firstChild) poseGrid.removeChild(poseGrid.firstChild);
+    exteriorPoses.forEach((p) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = `car-exterior-card${p.id===activePose.id?" is-active":""}`;
+      b.innerHTML = `<strong>${p.name_ar}</strong><small>${p.angle} · ${p.distance} · ${p.framing}</small>`;
+      b.addEventListener("click",()=>{
+        activePose=p;
+        if (p.parkingId && parkingOptions.some((x)=>x.id===p.parkingId)) parkingSelect.value=p.parkingId;
+        renderPoses();
+        sync();
+      });
+      poseGrid.appendChild(b);
+    });
   };
   const sync = () => {
     const parking = byId(parkingOptions, parkingSelect.value);
