@@ -1,3 +1,4 @@
+import "./opticalBioRealismRuntime.js";
 import { EXPRESSION_OPTIONS } from "./data/expressionsData.js";
 
 const STORAGE_KEY = "ai-selfie-prompt-studio:expanded-expression";
