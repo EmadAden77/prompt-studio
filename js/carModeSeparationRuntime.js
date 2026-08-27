@@ -1,4 +1,4 @@
-const VERSION = "v1.35";
+const VERSION = "v1.36";
 const PATCH = Symbol.for("promptStudio.carModeSeparationRuntime.installed");
 const STORAGE = Object.freeze({
   mode:"prompt-studio:car-mode:v2",
