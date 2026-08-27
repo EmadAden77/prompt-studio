@@ -8,7 +8,11 @@ const CONTACT_POSES = new Set([
   "door_handle_pause",
   "shoulder_door_lean",
   "hip_fender_lean",
-  "open_door_pause"
+  "open_door_pause",
+  "mirror_reflection_selfie",
+  "doorframe_half_sit",
+  "fender_corner_lean",
+  "casual_key_interaction"
 ]);
 
 const NIGHT_STATES = new Set(["N1", "N2", "N3", "N5", "N6", "mall_night", "underground", "dusk_open"]);
@@ -35,15 +39,37 @@ function parallaxCalibration(mode) {
 - Moving the camera angle changes relative parallax between near anatomy, seat/headrest, cabin frames, glass reflections and exterior layers; all must update together under one perspective solution.`;
 }
 
+function selfieArmKinematics(mode) {
+  return mode === "exterior"
+    ? `SELFIE ARM KINEMATICS
+- The camera-holding shoulder, clavicle and upper torso subtly respond to arm elevation and forward reach even when the arm itself is cropped out. The reachable phone arc is solved from real shoulder position, not from an invisible floating camera.
+- High-angle or side-angle selfies may raise or protract the camera-side shoulder slightly; low-angle selfies may depress it. These changes remain small and anatomically continuous with neck and torso posture.
+- Framing asymmetry may arise naturally from one-handed capture, but never by breaking shoulder width, neck alignment or arm length.`
+    : `SELFIE ARM KINEMATICS
+- The camera-holding shoulder, clavicle and upper torso respond subtly to the reachable seated selfie arc even when the phone and arm are off-frame.
+- Camera height and lateral offset must remain compatible with seat position, torso rotation and cabin clearance. Never place the camera through glass, roof liner, seatback or another occupant position.`;
+}
+
+function contactBothSides() {
+  return `BILATERAL CONTACT RESPONSE — CONTACT CHANGES BOTH SIDES
+Whenever real contact exists, both participants in the contact must respond coherently. The body side shows joint load, local skin/clothing compression, wrinkle redirection and an attached contact shadow; the contacted surface side shows the physically appropriate occlusion, shadow interruption, reflection interruption or tiny soft-material deflection when that material can actually deform. Rigid painted metal does not dent from a casual lean, and glass does not deform. Contact may never be indicated on only one side.`;
+}
+
+function mirrorRayGeometry(poseId, mode) {
+  if (mode !== "exterior" || poseId !== "mirror_reflection_selfie") return "";
+  return `SIDE-MIRROR RAY GEOMETRY
+The selfie is composed through the real driver-side mirror. The visible reflection must come from one camera-to-mirror-to-subject/vehicle ray solution with correct handedness, crop, occlusion and mirror curvature. The mirror housing and glass edge occlude the reflected scene correctly. Background depth in the mirror differs from the direct scene according to reflection geometry. Dust specks, faint water marks or surface haze are optional and sparse only if physically plausible; they never replace correct reflection geometry.`;
+}
+
 function gripMechanics(poseId, mode) {
   if (!CONTACT_POSES.has(poseId)) {
     return `CONTACT MECHANICS — CONDITIONAL
 No extra hand contact is invented. If the selected crop contains a real support/contact point, fingers, wrist, elbow, fabric and surface occlusion must solve continuously with a small attached contact shadow and pressure response appropriate to the material.`;
   }
 
-  if (poseId === "door_handle_pause") {
-    return `GRIP MECHANICS — DOOR HANDLE
-The free hand forms a real grip around the actual driver-door handle: finger pads wrap the handle volume, proximal/intermediate finger joints flex in sequence, the thumb opposes the fingers, knuckles follow one anatomical arc, and the handle occludes the correct finger segments. Add only a small attached contact shadow and subtle local skin compression where pressure exists. The hand remains separate from paint and never melts into the handle or door skin.`;
+  if (poseId === "door_handle_pause" || poseId === "casual_key_interaction") {
+    return `GRIP MECHANICS — DOOR HANDLE / KEY INTERACTION
+When the free hand uses the actual driver-door handle, finger pads wrap its real volume, proximal/intermediate finger joints flex in sequence, the thumb opposes the fingers, knuckles follow one anatomical arc, and the handle occludes the correct finger segments. If a key/fob is present, it is held by a simple natural pinch or loose grip and never duplicates or floats. Add only a small attached contact shadow and subtle local skin compression where pressure exists. The hand remains separate from paint and never melts into the handle or door skin.`;
   }
 
   if (poseId === "seatbelt_pause") {
@@ -56,6 +82,16 @@ If visible, the free fingers pinch or guide the real belt with coherent finger f
 The free hand rests rather than clamps: palm/finger pads meet the roof edge at reachable angles, finger joints remain relaxed, the wrist follows forearm rotation, and a small contact shadow plus mild skin/fabric compression marks the support point.`;
   }
 
+  if (poseId === "doorframe_half_sit") {
+    return `HALF-SIT LOAD PATH
+Pelvis load is shared between the seat edge and the grounded foot. The seat cushion compresses locally under the supported hip/thigh, the grounded leg carries real partial weight, the second leg remains plausibly inside the cabin, and the open door/doorframe never intersects the body. Torso balance follows this split support rather than hovering between inside and outside.`;
+  }
+
+  if (poseId === "fender_corner_lean" || poseId === "hip_fender_lean") {
+    return `FENDER / CORNER LEAN LOAD PATH
+Use only a light hip/pelvis lean on a structurally plausible fender or body-edge zone, not full seated body weight on the hood. The supporting legs remain the primary load path; pelvis counter-shifts, torso angle follows, clothing compresses locally and the rigid body panel keeps its real shape.`;
+  }
+
   return `CONTACT / GRIP MECHANICS
 Any visible free-hand or forearm support uses continuous shoulder–elbow–wrist–finger anatomy. Finger curl, knuckle orientation, occlusion, pressure, local clothing deformation and attached contact shadow all follow the actual support geometry. Contact is load-driven rather than decorative.`;
 }
@@ -65,10 +101,12 @@ function mobileImperfections(stateId) {
   return `CONDITIONAL MOBILE SENSOR / LENS IMPERFECTIONS
 - Keep uncorrected-looking but plausible smartphone ISP character: finite dynamic range, restrained computational sharpening, mild edge softness, compression and illumination-dependent noise.
 - ${lowLight ? "This low-light state supports visible shadow luminance noise, restrained chroma noise, slightly softer fine detail, imperfect mixed white balance and occasional modest highlight clipping." : "This brighter state should remain comparatively clean; sensor noise and clipping stay subtle and proportional to actual exposure."}
-- A faint localized fingerprint/smudge haze or small source-shaped bloom is OPTIONAL only when a bright practical light, grazing incidence and plausible lens contamination support it. It must never be a mandatory global fog, repeated halo or decorative flare.
+- A faint localized fingerprint/smudge haze, source-shaped bloom or tiny lens flare is OPTIONAL only when a bright source, incidence angle and plausible lens contamination support it. It must never become mandatory global fog, repeated halo or decorative flare.
+- Small-sensor front-camera depth behavior remains mostly readable. Any background softness is optical/focus-driven and modest; never impose synthetic portrait-mask bokeh.
 - Imperfections affect the whole optical capture consistently. Do not place special noise, blur or haze only on the face or only in empty background regions.`;
 }
 
 export function buildCarUniversalPhysicalReality({ mode, poseId, stateId }) {
-  return `${physicalStateLanguage(mode)}\n\n${parallaxCalibration(mode)}\n\n${gripMechanics(poseId, mode)}\n\n${mobileImperfections(stateId)}`;
+  const mirror = mirrorRayGeometry(poseId, mode);
+  return `${physicalStateLanguage(mode)}\n\n${parallaxCalibration(mode)}\n\n${selfieArmKinematics(mode)}\n\n${gripMechanics(poseId, mode)}\n\n${contactBothSides()}${mirror ? `\n\n${mirror}` : ""}\n\n${mobileImperfections(stateId)}`;
 }
