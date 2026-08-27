@@ -52,8 +52,7 @@ function cabinSentence(hasCabin) {
 }
 
 function sceneSentence(tpl) {
-  return tpl.scene ? `TEMPLATE SCENE AUTHORITY\
-${tpl.scene}. Keep this scene ordinary, parked and physically consistent with the selected crop; do not expand framing merely to prove the location. TIME / LIGHTING AUTHORITY: the user's current lighting selection overrides any historical template lighting metadata.` : "";
+  return tpl.scene ? `TEMPLATE SCENE AUTHORITY\n${tpl.scene}. Keep this scene ordinary, parked and physically consistent with the selected crop; do not expand framing merely to prove the location. TIME / LIGHTING AUTHORITY: the user's current lighting selection overrides any historical template lighting metadata.` : "";
 }
 
 function cropSentence(tpl) {
@@ -84,8 +83,7 @@ function poseSpecificMechanics(tpl) {
     tree_dappled_driver: "SCENE COUPLING: preserve the leafy-tree location context without forcing dappled sunlight. If the user selects a lighting mode that does not support leaf-shadow patterns, omit them.",
     streetlight_cockpit: "SCENE COUPLING: preserve the street-light location context without forcing top-light behavior. The user's selected lighting preset is the sole lighting authority."
   };
-  return rules[tpl.id] ? `POSE-SPECIFIC MECHANICS\
-${rules[tpl.id]}` : "";
+  return rules[tpl.id] ? `POSE-SPECIFIC MECHANICS\n${rules[tpl.id]}` : "";
 }
 
 function seatBodyContactPressure(tpl) {
@@ -218,18 +216,14 @@ Create one physically coherent, raw-looking candid smartphone selfie of the exac
 
 ${skinSentence()} Preserve ${cleanHair(hair)}.
 
-${cabinSentence(hasCabin)}${scene ? `\
-\
-${scene}` : ""}
+${cabinSentence(hasCabin)}${scene ? `\n\n${scene}` : ""}
 
 FRAMING & CAMERA AUTHORITY
 ${cropSentence(tpl)}
 
 ${cropAwareDetailBudget(tpl)}
 
-${seatedBiomechanics(tpl)}${poseMechanics ? `\
-\
-${poseMechanics}` : ""}
+${seatedBiomechanics(tpl)}${poseMechanics ? `\n\n${poseMechanics}` : ""}
 
 ${seatBodyContactPressure(tpl)}
 
