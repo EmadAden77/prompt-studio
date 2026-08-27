@@ -1,4 +1,4 @@
-const VERSION = "v1.34";
+const VERSION = "v1.35";
 const STORAGE_KEY = "prompt-studio:car-time:v1";
 const DAY_LIGHTS = new Set(["N4", "D2"]);
 const NIGHT_LIGHTS = new Set(["N1", "N2", "N3", "N5", "N6"]);
@@ -81,7 +81,7 @@ function updateVersionLabels() {
   const eyebrow = document.querySelector(".intro .eyebrow");
   if (eyebrow) eyebrow.textContent = `CAR SELFIE ENGINE · ${VERSION}`;
   const footer = document.querySelector("footer p:first-child");
-  if (footer) footer.innerHTML = `Car Templates ${VERSION} <span>•</span> USER-CONTROLLED LIGHTING`;
+  if (footer) footer.innerHTML = `Car Templates ${VERSION} <span>•</span> USER-CONTROLLED LIGHTING · SEPARATE POSE MODES`;
   document.title = `قوالب السيارة ${VERSION} — AI Selfie Prompt Studio`;
 }
 
