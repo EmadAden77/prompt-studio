@@ -109,6 +109,10 @@ if (typeof document !== "undefined") {
   } else {
     installUiPolicy();
   }
+
+  if (document.body?.dataset.page === "home") {
+    import("./roomScenarioPersistenceRuntime.js");
+  }
 }
 
 export { GLOBAL_SELFIE_ARM_EXCLUSION, CAR_SELFIE_ARM_EXCEPTION };
