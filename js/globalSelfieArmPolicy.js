@@ -89,6 +89,20 @@ function hideLegacyArmControlsOnce() {
   document.documentElement.dataset.armPerspective = "disabled";
 }
 
+function installPoseTransformerNav() {
+  if (document.body?.dataset.page !== "home") return;
+  const actions = document.querySelector(".topbar__actions");
+  if (!actions || actions.querySelector('[data-pose-transformer-link="true"]')) return;
+  const link = document.createElement("a");
+  link.className = "ghost-button";
+  link.href = "pose-change.html";
+  link.dataset.poseTransformerLink = "true";
+  link.style.textDecoration = "none";
+  link.style.whiteSpace = "nowrap";
+  link.textContent = "🔄 تغيير الوضعية من صورة";
+  actions.prepend(link);
+}
+
 function installUiPolicy() {
   try {
     localStorage.removeItem("ai-selfie-prompt-studio:arm-perspective");
@@ -97,7 +111,11 @@ function installUiPolicy() {
   }
 
   hideLegacyArmControlsOnce();
-  requestAnimationFrame(() => requestAnimationFrame(hideLegacyArmControlsOnce));
+  installPoseTransformerNav();
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    hideLegacyArmControlsOnce();
+    installPoseTransformerNav();
+  }));
   document.addEventListener("change", () => requestAnimationFrame(hideLegacyArmControlsOnce), true);
 }
 
