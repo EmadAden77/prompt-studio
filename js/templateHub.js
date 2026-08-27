@@ -9,7 +9,7 @@ const ALL_BEDROOM_TEMPLATES = Object.freeze([
   ...BEDROOM_NIGHT_STANDING_TEMPLATES
 ]);
 const GROUP_ORDER = ["bed", "sitting", "standing"];
-const BEDROOM_HUB_VERSION = "v2.2";
+const BEDROOM_HUB_VERSION = "v2.3";
 const TIME_STORAGE_KEY = "prompt-studio:bedroom-template-time:v1";
 
 const DAY_TEMPLATE_IDS = new Set([
