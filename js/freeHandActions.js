@@ -1,4 +1,5 @@
 import "./beddingPhysicsRuntime.js";
+import "./expressionCatalogRuntime.js";
 import { PromptEngine } from "./engines/promptEngine.js";
 
 const patchFlag = Symbol.for("promptStudio.freeHandActions.patched");
