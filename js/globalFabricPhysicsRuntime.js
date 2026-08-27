@@ -75,5 +75,5 @@ function apply() {
 apply();
 
 if (typeof document !== "undefined" && document.body?.dataset.page === "car") {
-  import("./carTimeModeRuntime.js");
+  import("./carTimeModeRuntime.js").then(() => import("./carPlaceTemplatesRuntime.js"));
 }
