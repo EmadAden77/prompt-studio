@@ -3,7 +3,7 @@ import { HAIR_OPTIONS } from "./data/hairData.js";
 import { EXPRESSION_OPTIONS } from "./data/expressionsData.js";
 import { CLOTHING_OPTIONS } from "./data/clothingData.js";
 
-const VERSION = "v1.21";
+const VERSION = "v1.22";
 const OUTPUT_ID = "finalPrompt";
 const patchFlag = Symbol.for("promptStudio.carCompactPromptRuntime.installed");
 
@@ -61,6 +61,16 @@ function seatedBiomechanics(tpl) {
     : "SEATED BIOMECHANICS: subject weight is carried naturally by the driver seat with believable pelvis/thigh support, subtle seat compression where visible, shoulders and neck mechanically consistent with the selected camera angle, and no floating or twisted anatomy. Hidden lower-body geometry remains solved off-frame and never forces a wider crop.";
 }
 
+function seatBodyContactPressure(tpl) {
+  const close = /(70|80|85)%/u.test(String(tpl.framing || ""));
+  return `SEAT / BODY CONTACT PRESSURE LOCK
+- The subject must read as physically seated, not composited in front of the seat. Wherever the selected crop reveals contact, body weight creates local seat/cushion compression, small leather/fabric tension changes, attached contact shadows and clothing bunching consistent with pressure and friction.
+- Back/shoulder contact may flatten the shirt locally and slightly compress the seatback; pelvis/thigh load may depress the seat cushion only when those regions are actually visible.
+- Contact response fades progressively away from the load zone. Do not create deep dents, vacuum-sealed clothing, rubbery upholstery or identical wrinkle patterns on both sides.
+- The headrest affects hair or head silhouette only if real contact or near-contact is visible. No headrest may intersect the skull, disappear through hair or shift sideways to frame the face.
+- ${close ? "This is a close selfie: prove seating only through visible shoulder/upper-back/headrest or adjacent seat response. Do not widen the crop to show pelvis, thighs or seat cushion." : "Use the additional visible torso/seat area to show a coherent load path, but never exaggerate pressure marks merely to demonstrate physics."}`;
+}
+
 function hairPhysics() {
   return "HAIR PHYSICS: preserve IMAGE A hairline, density, color and baseline volume. Hair may show small gravity-driven clumps, natural directional root flow, minor friction displacement where it touches a real headrest, and a few flyaways where lighting resolves them. Do not over-resolve every strand, invent extra volume, paint uniform glossy highlights or alter the haircut.";
 }
@@ -79,6 +89,15 @@ function glassMirrorParallax(tpl) {
 - A-pillar, door frame, mirror housing and window edges must occlude both transmitted and reflected content consistently. Exterior objects cannot pass through pillars, duplicate across panes or jump discontinuously between surfaces.
 - Distant lights reflected in glass may stretch or soften only as physically supported by focus, motion and surface curvature. No giant flare, repeated light dots, mirrored duplicate vehicles, duplicated face, or impossible second cabin.
 - ${mirrorSpecific}`;
+}
+
+function exteriorDepthThroughGlass() {
+  return `EXTERIOR DEPTH THROUGH GLASS LOCK
+- Any exterior visible through windshield or side glass must occupy real depth layers rather than one flat backdrop: near glass/reflection layer, middle-distance parked cars/columns/curbs, and farther lights/buildings/sky when the crop actually includes them.
+- Apparent size, overlap, contrast, detail and sharpness must decrease with distance and atmospheric/light conditions. A distant lamp cannot have the same edge acuity and texture scale as a nearby pillar.
+- Glass reflections remain on the glass plane while transmitted exterior objects remain behind it; do not merge both into one painted surface or blur them with one uniform digital mask.
+- Near cabin frames and pillars occlude middle/far exterior geometry consistently. Moving the camera angle changes relative parallax between near frames, middle objects and distant lights.
+- Tight close-ups may show only small abstract exterior slices. Do not expand the framing to showcase scenery, readable signage or parked vehicles.`;
 }
 
 function cabinMaterialResponse() {
@@ -111,6 +130,19 @@ function cropAwareDetailBudget(tpl) {
 - Selected face scale is about ${facePercent}%. Preserve facial identity while allocating more detail to visible seat, dashboard, wheel, glass and cabin geometry because the framing naturally includes more environment.
 - Detail still falls with distance and illumination: near cabin surfaces may be readable, medium-distance surfaces softer, and exterior background lower-detail. Never make every plane equally sharp or equally textured.
 - Do not compensate for the wider crop by sharpening the face or cabin beyond ordinary front-camera resolution.`;
+}
+
+function colorContamination(lightingId) {
+  const mixed = ["N1", "N2", "N3", "N5", "N6"].includes(lightingId);
+  if (!mixed) {
+    return `COLOR CONTAMINATION LOCK
+- Daylight or shaded-daylight color must still propagate through real surfaces consistently: skin, clothing, seat, trim and glass receive the same global white-balance solution and any weak material-colored bounce. Do not neutralize the face separately from the cabin.`;
+  }
+  return `COLOR CONTAMINATION LOCK — MIXED LIGHT
+- Mixed sources must produce spatially different color contributions according to source direction and visibility. Warm sodium/storefront/practical spill and cooler LED/sky/canopy light may coexist on the same subject and cabin without being averaged into one clean studio white.
+- The same directional color contamination must continue coherently across skin, beard, hair, clothing, seat, dashboard, pillars and glass wherever those surfaces are reached by the source. It must not stop at the facial boundary.
+- Shadow-side color is governed by the actual weaker source and real cabin bounce, not by selective neutral fill. White balance is one camera decision for the full frame, so mixed light may remain imperfect.
+- Reflections inherit the color of the source being reflected. Do not tint unrelated surfaces for decoration or create symmetric orange/blue grading unrelated to geometry.`;
 }
 
 function opticsAndSensor() {
@@ -162,13 +194,19 @@ ${cropAwareDetailBudget(tpl)}
 
 ${seatedBiomechanics(tpl)}
 
+${seatBodyContactPressure(tpl)}
+
 ${hairPhysics()}
 
 ${expressionPhysics(expression, tpl)}
 
 ${lightingSentence(lightingId)}
 
+${colorContamination(lightingId)}
+
 ${glassMirrorParallax(tpl)}
+
+${exteriorDepthThroughGlass()}
 
 ${cabinMaterialResponse()}
 
@@ -180,7 +218,7 @@ ${opticsAndSensor()}
 ${onePipeline()}
 
 FINAL CAPTURE GATE
-Reject any result with altered identity geometry, warped facial proportions, over-smoothed skin, perfectly uniform pores, over-resolved hair, impossible arm mechanics, conflicting shadow directions, decorative or pasted reflections, broken mirror parallax, uniform synthetic cabin materials, equal hyper-detail across all depths, artificial DSLR bokeh, selective face cleanup, synthetic cabin geometry or a medium portrait substituted for a selected close-up. Keep ordinary imperfections when physically justified. CAPTURED, NOT RENDERED.`;
+Reject any result with altered identity geometry, warped facial proportions, over-smoothed skin, perfectly uniform pores, over-resolved hair, impossible arm mechanics, floating body/seat contact, impossible headrest intersection, conflicting shadow directions, inconsistent mixed-light color propagation, decorative or pasted reflections, broken mirror parallax, flat exterior depth, uniform synthetic cabin materials, equal hyper-detail across all depths, artificial DSLR bokeh, selective face cleanup, synthetic cabin geometry or a medium portrait substituted for a selected close-up. Keep ordinary imperfections when physically justified. CAPTURED, NOT RENDERED.`;
 }
 
 function syncPrompt() {
