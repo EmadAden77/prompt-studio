@@ -64,7 +64,10 @@ const expectedLightingIds = [
   "phone_screen_only", "phone_screen_faint_bounce",
   "ceiling_white", "ceiling_warm", "all_spots", "ceiling_spots_dim",
   "lamp_only", "lamp_and_phone", "lamp_and_phone_low",
-  "window_daylight", "overcast_flat", "golden_hour",
+  "window_daylight", "morning_cool_curtain", "morning_wall_bounce", "midday_sheer_curtain",
+  "bright_indirect_day", "heavy_overcast_day", "strong_side_window", "curtain_fold_sun",
+  "low_sun_curtain_filtered", "floor_wall_day_bounce", "window_backlight_phone_hdr", "soft_front_window",
+  "overcast_flat", "golden_hour",
   "ceiling_and_lamp", "ceiling_and_phone",
   "night_city_window", "curtain_lamp", "curtain_leak_screen", "night_ceiling_low"
 ];
@@ -492,7 +495,7 @@ while (sourceFiles.length) {
   }
 }
 
-console.log("✓ expanded lighting realism and Camera Emulator tests passed");
+console.log("✓ expanded daylight lighting realism and Camera Emulator tests passed");
 console.log("✓ Smart Quad deterministic mapping tests passed");
 console.log("✓ v1.3 bedroom realism camera geometry tests passed");
 console.log("✓ v1.3 scene + selfie feasibility + lighting hard-gate tests passed");
