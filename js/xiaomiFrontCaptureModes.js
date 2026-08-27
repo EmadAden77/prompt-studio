@@ -174,4 +174,5 @@ if (typeof document !== "undefined") {
     import("./carTemplateHub.js").then(() => import("./carPromptConflictNormalizer.js"));
   }
   import("./hairRealismRuntime.js");
+  import("./globalFabricPhysicsRuntime.js");
 }
