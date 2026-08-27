@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/responsive.css">
   <style>
-    .pose-transformer{max-width:1120px;margin:0 auto;padding:24px 16px 48px}.pose-transformer__grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}.pose-transformer .panel{height:max-content}.pose-transformer__controls{display:grid;grid-template-columns:1fr 1fr;gap:12px}.pose-transformer__controls .field--wide{grid-column:1/-1}.pose-reference-preview{width:100%;max-height:440px;object-fit:contain;border-radius:16px}.preserve-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.preserve-option{display:block}.preserve-option input{position:absolute;opacity:0;pointer-events:none}.preserve-option span{display:block;padding:12px;border:1px solid var(--border-color,rgba(127,127,127,.22));border-radius:12px;text-align:center;cursor:pointer}.preserve-option input:checked+span{outline:2px solid currentColor;outline-offset:1px;background:rgba(127,127,127,.1)}.pose-output pre{white-space:pre-wrap;word-break:break-word;max-height:620px;overflow:auto}.pose-transformer__actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.smart-pose-note{margin:8px 0 0;padding:10px 12px;border-radius:12px;background:rgba(127,127,127,.06);line-height:1.7;font-size:.9rem}@media(max-width:820px){.pose-transformer__grid{grid-template-columns:1fr}.pose-transformer__controls{grid-template-columns:1fr}.pose-transformer__controls .field--wide{grid-column:auto}.preserve-grid{grid-template-columns:1fr}}
+    .pose-transformer{max-width:1120px;margin:0 auto;padding:24px 16px 48px}.pose-transformer__grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}.pose-transformer .panel{height:max-content}.pose-transformer__controls{display:grid;grid-template-columns:1fr 1fr;gap:12px}.pose-transformer__controls .field--wide{grid-column:1/-1}.pose-reference-preview{width:100%;max-height:440px;object-fit:contain;border-radius:16px}.preserve-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.preserve-option{display:block}.preserve-option input{position:absolute;opacity:0;pointer-events:none}.preserve-option span{display:block;padding:12px;border:1px solid var(--border-color,rgba(127,127,127,.22));border-radius:12px;text-align:center;cursor:pointer}.preserve-option input:checked+span{outline:2px solid currentColor;outline-offset:1px;background:rgba(127,127,127,.1)}.pose-output pre{white-space:pre-wrap;word-break:break-word;max-height:620px;overflow:auto}.pose-transformer__actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.smart-pose-note,.lighting-note{margin:8px 0 0;padding:10px 12px;border-radius:12px;background:rgba(127,127,127,.06);line-height:1.7;font-size:.9rem}@media(max-width:820px){.pose-transformer__grid{grid-template-columns:1fr}.pose-transformer__controls{grid-template-columns:1fr}.pose-transformer__controls .field--wide{grid-column:auto}.preserve-grid{grid-template-columns:1fr}}
   </style>
 </head>
 <body data-page="pose-transformer">
@@ -32,7 +32,7 @@
 
   <main class="pose-transformer">
     <section class="intro">
-      <div><p class="eyebrow">REFERENCE POSE TRANSFORMER · v1.1</p><h1>غيّر الوضعية من أي صورة مرجعية</h1><p>ارفع صورة واحدة. الوضع الذكي يحلل الوضعية الحالية داخل الصورة عند استخدام الـPrompt ثم يختار وضعية جديدة مختلفة ومحافظة، أو يمكنك اختيار الوضعية يدويًا.</p></div>
+      <div><p class="eyebrow">REFERENCE POSE TRANSFORMER · v1.2</p><h1>غيّر الوضعية من أي صورة مرجعية</h1><p>ارفع صورة واحدة. الوضع الذكي يطلب تحليل الوضعية الحالية ثم يختار وضعية جديدة محافظة، وأنت تختار الإضاءة الليلية بنفسك من قائمة واقعية محددة.</p></div>
       <span class="context-badge">Prompt فقط · لا توليد صور</span>
     </section>
 
@@ -79,6 +79,31 @@
               <label class="preserve-option"><input type="radio" name="preserveScope" value="identity_clothes_scene"><span>الشخص + الملابس + المكان</span></label>
             </div>
           </div>
+          <div class="field field--wide">
+            <label for="nightLightingSelect">الإضاءة الليلية · اختيارك أنت</label>
+            <select id="nightLightingSelect">
+              <option value="" selected>اختر الإضاءة الليلية</option>
+              <option value="phone_pure_dark">1. وهج شاشة الهاتف فقط في ظلام دامس</option>
+              <option value="soft_screen_fill">2. شاشة الهاتف البيضاء الناعمة كعاكس للوجه</option>
+              <option value="direct_front_flash">3. فلاش الكاميرا الأمامي المباشر في الظلام</option>
+              <option value="cool_moonlight_window">4. ضوء القمر الطبيعي البارد عبر النافذة</option>
+              <option value="dim_warm_bedside">5. مصباح الطاولة الجانبي الدافئ والخافت</option>
+              <option value="focused_reading_beam">6. مصباح قراءة مركزي بحزمة ضيقة</option>
+              <option value="warm_indirect_led">7. أشرطة LED مخفية خلف السرير أو الحائط</option>
+              <option value="single_candle">8. شمعة واحدة متوهجة بظلال متحركة ناعمة</option>
+              <option value="multi_candle">9. عدة شموع منخفضة بدرجات برتقالية دافئة</option>
+              <option value="tv_monitor_glow">10. وهج شاشة التلفاز أو الحاسوب</option>
+              <option value="fairy_string_lights">11. حبال زينة صغيرة معلقة دافئة</option>
+              <option value="salt_lamp_glow">12. مصباح ملح برتقالي عميق وخافت</option>
+              <option value="subtle_neon">13. نيون جداري خافت بلون واحد</option>
+              <option value="streetlight_blinds">14. تسرب أعمدة إنارة الشارع عبر شقوق الستائر</option>
+              <option value="door_gap_hallway">15. تسرب إضاءة الممر من أسفل الباب</option>
+              <option value="subtle_rim_semidark">16. إضاءة حافة خافتة في شبه الظلام</option>
+              <option value="soft_ceiling_bounce">17. انعكاس دافئ غير مباشر من السقف</option>
+              <option value="star_nebula_projector">18. جهاز إسقاط ليلي للنجوم والغيوم الخافتة</option>
+            </select>
+            <p class="lighting-note">هذا الاختيار هو سلطة الإضاءة الوحيدة. لا يضيف المحرك مصادر ضوء أخرى ولا يحوّلها إلى إضاءة سينمائية أو تجميلية.</p>
+          </div>
           <div class="field">
             <label for="framingSelect">الكادر</label>
             <select id="framingSelect"><option value="auto">تلقائي محافظ</option><option value="close">قريب</option><option value="half">نصف جسم</option><option value="three_quarter">ثلاثة أرباع</option><option value="full">كامل الجسم</option></select>
@@ -93,7 +118,7 @@
 
       <section class="panel pose-output">
         <div class="panel__header"><div><span class="step-number">02</span><h2>Prompt تغيير الوضعية</h2></div><span id="posePromptWordCount" class="word-count">0 كلمة</span></div>
-        <div class="validation-summary" id="posePromptStatus">ارفع صورة. الوضع الذكي سيطلب تحليل الوضعية الحالية ثم اختيار وضعية جديدة مختلفة وآمنة تشريحيًا.</div>
+        <div class="validation-summary" id="posePromptStatus">ارفع صورة، اختر الإضاءة الليلية، ثم أنشئ الـPrompt.</div>
         <div class="prompt-editor"><pre id="posePromptOutput" tabindex="0">REFERENCE IMAGE REQUIRED.</pre></div>
         <div class="pose-transformer__actions"><button id="copyPosePromptBtn" class="primary-button" type="button">📋 نسخ Prompt</button></div>
       </section>
