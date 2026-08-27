@@ -64,6 +64,39 @@ const BASE_CLOTHING_OPTIONS = Object.freeze([
     fabric:{ type:"light poly-cotton blend", weight:"light", sheen:"matte", drape:"flowing, sways with body", folds:"long vertical folds from shoulders", texture:"fine smooth weave", wear:"optional soft pressed crease" } }
 ]);
 
+export const SLEEPWEAR_EXTRA_OPTIONS = Object.freeze([
+  { id:"combed_cotton_sleep_set", name_ar:"طقم نوم قطن ممشط", name_en:"combed cotton sleep set", category:"sleepwear",
+    pieces:"soft combed-cotton crew-neck sleep top with relaxed matching pants",
+    fabric:{ type:"combed cotton jersey", weight:"light-medium", sheen:"dry matte", drape:"soft body-following fall without clinging", folds:"load-driven folds at waist, elbows, hips and knees with irregular spacing", texture:"fine non-repeating jersey loops with tiny yarn-thickness variation", wear:"washed softness, faint cuff and collar relaxation, occasional tiny pilling at friction zones" } },
+  { id:"modal_sleep_set", name_ar:"طقم نوم مودال مطفي", name_en:"matte modal sleep set", category:"sleepwear",
+    pieces:"charcoal modal-blend sleep shirt with loose drawstring pants",
+    fabric:{ type:"modal-cotton jersey", weight:"light", sheen:"very low soft sheen", drape:"fluid and gravity-led with gentle pooling", folds:"long soft folds that compress naturally under the body and stack at ankles", texture:"fine smooth knit with subtle non-uniform fiber response, never plastic-smooth", wear:"light washed softness and mild waistband memory" } },
+  { id:"washed_jersey_tee_pants", name_ar:"تيشيرت نوم مغسول + بنطال جيرسي", name_en:"washed jersey sleep tee with soft pants", category:"sleepwear",
+    pieces:"slightly oversized washed cotton sleep t-shirt with soft jersey pants",
+    fabric:{ type:"washed cotton jersey", weight:"light-medium", sheen:"matte", drape:"relaxed lived-in fall with slight shoulder and hip cling", folds:"random soft compression folds with seam-led tension at shoulders, waistband and knees", texture:"visible fine knit, subtle slub variation, no repeated texture stamp", wear:"softened collar, faint hem waviness, tiny natural pilling in high-friction areas" } },
+  { id:"ribbed_cotton_sleep_set", name_ar:"طقم نوم قطن ريب", name_en:"ribbed cotton sleep set", category:"sleepwear",
+    pieces:"soft rib-knit long-sleeve sleep top with relaxed matching pants",
+    fabric:{ type:"ribbed cotton knit", weight:"medium-light", sheen:"matte", drape:"slightly elastic, follows form without vacuum-clinging", folds:"small stacked folds at wrists and ankles plus broader load folds at torso and knees", texture:"narrow rib channels with real stretch distortion across curved areas, non-uniform spacing under tension", wear:"soft cuff memory and slight rib flattening at pressure points" } },
+  { id:"bamboo_viscose_sleep_set", name_ar:"طقم نوم بامبو فيسكوز", name_en:"bamboo viscose sleep set", category:"sleepwear",
+    pieces:"dark olive bamboo-viscose sleep t-shirt with loose matching pants",
+    fabric:{ type:"bamboo viscose jersey", weight:"light", sheen:"soft low sheen", drape:"fluid with heavier vertical fall than cotton", folds:"narrow gravity folds, soft pooling at lap and ankles, local compression under hands or bedding", texture:"fine smooth knit with subtle irregular fiber reflection and no synthetic gloss", wear:"slight washed softness and gentle waistband creasing" } },
+  { id:"cotton_poplin_sleep_set", name_ar:"بيجاما نوم قطن بوبلين بأزرار", name_en:"cotton poplin button sleep set", category:"sleepwear",
+    pieces:"muted blue button-front cotton poplin pajama shirt with matching loose pants",
+    fabric:{ type:"cotton poplin", weight:"light-medium", sheen:"matte", drape:"crisper than jersey but softened by wear", folds:"angular but softened creases at elbows, side seams, lap and knees; button placket carries small tension lines", texture:"fine plain weave with subtle yarn irregularity, seam stitching and buttonhole structure visible", wear:"light sleep wrinkles, softened collar points, mild cuff creasing" } },
+  { id:"brushed_flannel_sleep_set", name_ar:"بيجاما فلانيل نوم ناعمة", name_en:"brushed flannel sleep set", category:"sleepwear",
+    pieces:"subtle small-check brushed flannel sleep shirt with matching pants",
+    fabric:{ type:"brushed cotton flannel", weight:"medium", sheen:"deep matte", drape:"soft but slightly body-holding from fabric thickness", folds:"broad rounded folds at elbows, waist, hips and knees with compression flattening where body meets bedding", texture:"short irregular brushed nap over a geometrically coherent woven check; no moiré or repeating AI patch", wear:"slight fuzzing at cuffs, collar and knee friction zones" } },
+  { id:"waffle_lounge_set", name_ar:"طقم نوم وافل خفيف", name_en:"light waffle-knit lounge sleep set", category:"sleepwear",
+    pieces:"cream waffle-knit long-sleeve sleep top with soft straight pants",
+    fabric:{ type:"cotton waffle knit", weight:"medium-light", sheen:"matte", drape:"soft structured knit that keeps small air volume", folds:"rounded folds with compressed waffle cells at elbows, waist and bedding contact", texture:"small waffle cells that distort continuously with stretch and compression, never a tiled repeating grid", wear:"slightly softened cuffs and locally flattened knit at pressure points" } },
+  { id:"cotton_shorts_drawstring_set", name_ar:"تيشيرت نوم قطني + شورت برباط", name_en:"cotton sleep tee with drawstring shorts", category:"sleepwear",
+    pieces:"soft plain cotton sleep t-shirt with relaxed drawstring shorts",
+    fabric:{ type:"cotton jersey / light cotton twill", weight:"light / light-medium", sheen:"matte", drape:"tee falls softly; shorts retain slight structure around waistband and hem", folds:"tee forms soft torso folds; shorts show radial waistband tension and natural lap creases", texture:"fine jersey knit plus subtle irregular twill; drawstring fibers and knot remain physically simple", wear:"washed tee softness, slight waistband creasing and softened short hems" } },
+  { id:"matte_satin_sleep_set", name_ar:"بيجاما ساتان مطفي واقعي", name_en:"low-sheen matte satin sleep set", category:"sleepwear",
+    pieces:"deep graphite low-sheen satin pajama shirt with matching pants",
+    fabric:{ type:"washed satin", weight:"light", sheen:"restrained directional sheen only where the real light hits at grazing angles", drape:"fluid with small gravity pools and sliding folds", folds:"smooth non-repeating folds with narrow specular bands that break across wrinkles and contact zones", texture:"fine woven surface with microscopic irregularity; never mirror-smooth, metallic or plastic", wear:"slight crease memory at placket, cuffs and lap; no showroom-perfect finish" } }
+]);
+
 export const EXTRA_CLOTHING_OPTIONS = Object.freeze([
   { id:"white_shirt_charcoal_trousers", name_ar:"قميص أبيض + بنطال فحمي", name_en:"white cotton shirt with charcoal trousers", category:"casual",
     pieces:"clean white long-sleeve cotton button-up shirt with charcoal tailored trousers",
@@ -109,10 +142,19 @@ export const EXTRA_CLOTHING_OPTIONS = Object.freeze([
     fabric:{ type:"piqué cotton / cotton twill", weight:"medium", sheen:"matte", drape:"semi-structured polo with relaxed chinos", folds:"soft waist folds and natural hip, knee and ankle creases", texture:"fine piqué knit and non-repeating twill", wear:"lightly softened collar and cuffs" } }
 ]);
 
-export const CLOTHING_CATALOG = Object.freeze([...BASE_CLOTHING_OPTIONS, ...EXTRA_CLOTHING_OPTIONS]);
+export const CLOTHING_REALISM_BLOCK = `CLOTHING MATERIAL REALISM — PHYSICAL FABRIC ONLY
+- Fabric texture must be non-repeating and scale-consistent across the garment; never tile, stamp, clone or mirror the weave/knit pattern.
+- Folds are load-driven by gravity, body contact, seam tension and pose. Do not add decorative folds where no force exists.
+- Compression points at mattress, pillow, sofa, thigh, elbow, waist, knee and hand contact create local flattening, bunching and short radiating wrinkles appropriate to the selected material.
+- Seams, hems, cuffs, waistbands, buttons and drawstrings constrain nearby fabric and produce small directional tension lines.
+- Matte fabrics remain matte. Satin or viscose may show restrained directional sheen only where the declared room light reaches at the correct grazing angle; never plastic gloss or metallic shine.
+- Real sleepwear may show subtle washed softness, tiny friction-zone pilling, softened collars/cuffs and mild crease memory. Keep these irregular and sparse, never artificially distressed.
+- The garment shares the same phone-camera exposure, sharpening, denoise, white balance and low-light noise as skin, bedding and room. No clothing-only cleanup, texture enhancement or synthetic microdetail.`;
+
+export const CLOTHING_CATALOG = Object.freeze([...BASE_CLOTHING_OPTIONS, ...SLEEPWEAR_EXTRA_OPTIONS, ...EXTRA_CLOTHING_OPTIONS]);
 
 // Keep the historical Node regression baseline stable while the browser UI receives the expanded catalog.
-// Extra options are tested separately through EXTRA_CLOTHING_OPTIONS and CLOTHING_CATALOG.
+// Extra options are tested separately through SLEEPWEAR_EXTRA_OPTIONS, EXTRA_CLOTHING_OPTIONS and CLOTHING_CATALOG.
 export const CLOTHING_OPTIONS = typeof window === "undefined" ? BASE_CLOTHING_OPTIONS : CLOTHING_CATALOG;
 
 export const CLOTHING_BY_ID = Object.freeze(Object.fromEntries(CLOTHING_CATALOG.map((item) => [item.id, item])));
