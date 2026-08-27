@@ -18,13 +18,18 @@ function labelOf(card) {
   return card?.querySelector("strong")?.textContent?.trim() || "";
 }
 
+function setText(node, value) {
+  if (node && node.textContent !== value) node.textContent = value;
+}
+
 function updateVersionLabels() {
-  document.querySelectorAll(".car-version").forEach((node) => { node.textContent = VERSION; });
+  document.querySelectorAll(".car-version").forEach((node) => setText(node, VERSION));
   const brand = document.querySelector(".brand small");
-  if (brand) brand.textContent = `Car Templates ${VERSION}`;
+  setText(brand, `Car Templates ${VERSION}`);
   const eyebrow = document.querySelector(".intro .eyebrow");
-  if (eyebrow) eyebrow.textContent = `CAR SELFIE ENGINE · ${VERSION}`;
-  document.title = `قوالب السيارة ${VERSION} — AI Selfie Prompt Studio`;
+  setText(eyebrow, `CAR SELFIE ENGINE · ${VERSION}`);
+  const title = `قوالب السيارة ${VERSION} — AI Selfie Prompt Studio`;
+  if (document.title !== title) document.title = title;
 }
 
 function decorateSections() {
@@ -33,9 +38,9 @@ function decorateSections() {
     interiorPanel.id = "interiorPosePanel";
     interiorPanel.dataset.poseMode = "interior";
     const title = interiorPanel.querySelector("#templatesTitle");
-    if (title) title.textContent = "وضعيات داخل السيارة";
+    setText(title, "وضعيات داخل السيارة");
     const badge = interiorPanel.querySelector(".context-badge");
-    if (badge) badge.textContent = "🚗 وضعيات المقصورة فقط";
+    setText(badge, "🚗 وضعيات المقصورة فقط");
   }
 
   const exteriorPanel = document.querySelector(".car-exterior-controls");
@@ -43,9 +48,9 @@ function decorateSections() {
     exteriorPanel.id = "exteriorPosePanel";
     exteriorPanel.dataset.poseMode = "exterior";
     const title = exteriorPanel.querySelector("h2");
-    if (title) title.textContent = "وضعيات خارج السيارة";
+    setText(title, "وضعيات خارج السيارة");
     const badge = exteriorPanel.querySelector(".context-badge");
-    if (badge) badge.textContent = "🅿️ وضعيات بجانب السيارة فقط";
+    setText(badge, "🅿️ وضعيات بجانب السيارة فقط");
   }
 
   const placePanel = document.querySelector("#carPlaceTemplates");
@@ -143,10 +148,16 @@ function install() {
     }
   });
 
-  const observer = new MutationObserver(() => queueMicrotask(() => {
-    decorateSections();
-    applyMode(document.body.dataset.carMode || "interior", { restore:false });
-  }));
+  let observerQueued = false;
+  const observer = new MutationObserver(() => {
+    if (observerQueued) return;
+    observerQueued = true;
+    queueMicrotask(() => {
+      observerQueued = false;
+      decorateSections();
+      applyMode(document.body.dataset.carMode || "interior", { restore:false });
+    });
+  });
   observer.observe(document.body, { childList:true, subtree:true });
 
   ready();
