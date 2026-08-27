@@ -17,6 +17,18 @@ const CONTACT_POSES = new Set([
 
 const NIGHT_STATES = new Set(["N1", "N2", "N3", "N5", "N6", "mall_night", "underground", "dusk_open"]);
 
+function absoluteReferenceIdentityLock() {
+  return `ABSOLUTE REFERENCE-FACE IDENTITY LOCK — PRIMARY RULE / IMAGE A
+- IMAGE A is the sole and highest authority for the subject's facial identity. The output must depict the exact same person, never a look-alike, averaged reconstruction, beautified interpretation or identity-adjacent face.
+- Preserve the invariant facial geometry from IMAGE A: cranial proportions; face width-to-length ratio; forehead/temple shape; zygomatic width and projection; cheek volume pattern; jaw angle, breadth and mandibular contour; chin width, height and projection; intercanthal distance; eye size, shape, tilt and canthus placement; upper/lower eyelid anatomy and fold; eyebrow position, thickness and arch; nose root, bridge, dorsum, tip, alar width and nostril geometry; philtrum length/depth; mouth width; upper/lower lip volume and contour; ear position, size and cartilage silhouette; hairline geometry; beard boundaries, density pattern and age-specific facial structure.
+- Preserve stable natural asymmetry exactly as identity evidence. Do not symmetrize the eyes, brows, cheeks, jaw, nostrils, lips or ears.
+- CAMERA / POSE COMPENSATION ONLY: viewpoint, head rotation, perspective and expression may change the projected appearance of landmarks, but they may not alter the underlying identity geometry. Wide-angle near-field perspective is allowed to project the same face differently; it is never permission to redesign the face.
+- EXPRESSION IS MUSCLE STATE ONLY: the selected expression may change eyelid aperture, brow tension, cheek lift, lip-corner position and jaw muscle state within anatomically plausible limits, but may not resize the eyes, change inter-eye distance, reshape the nose, narrow/widen the jaw, alter chin projection, change lip volume, move the ears or modify the hairline.
+- DERMAL APPEARANCE IS NOT GEOMETRY: lighting, exposure, skin sheen, pore visibility, shadow depth and color contamination may change naturally, but none may be used to disguise or reinterpret facial structure.
+- LANDMARK CONSISTENCY TEST: after compensating only for camera perspective, head pose and selected expression, the eyes, brows, nose, mouth, jaw, chin, ears and hairline must remain mutually consistent with IMAGE A. If normalized landmark alignment would fail, reject the result and restore IMAGE A facial geometry.
+- IDENTITY OVERRIDES EVERYTHING: if template framing, pose styling, lighting, aesthetics, vehicle visibility or scene composition conflicts with preserving the exact face from IMAGE A, preserve IMAGE A identity and sacrifice the conflicting aesthetic choice.`;
+}
+
 function physicalStateLanguage(mode) {
   if (mode === "exterior") {
     return `PHYSICAL STATE AUTHORITY — POSITIVE FIRST
@@ -108,5 +120,5 @@ function mobileImperfections(stateId) {
 
 export function buildCarUniversalPhysicalReality({ mode, poseId, stateId }) {
   const mirror = mirrorRayGeometry(poseId, mode);
-  return `${physicalStateLanguage(mode)}\n\n${parallaxCalibration(mode)}\n\n${selfieArmKinematics(mode)}\n\n${gripMechanics(poseId, mode)}\n\n${contactBothSides()}${mirror ? `\n\n${mirror}` : ""}\n\n${mobileImperfections(stateId)}`;
+  return `${absoluteReferenceIdentityLock()}\n\n${physicalStateLanguage(mode)}\n\n${parallaxCalibration(mode)}\n\n${selfieArmKinematics(mode)}\n\n${gripMechanics(poseId, mode)}\n\n${contactBothSides()}${mirror ? `\n\n${mirror}` : ""}\n\n${mobileImperfections(stateId)}`;
 }
