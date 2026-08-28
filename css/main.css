@@ -311,3 +311,68 @@ h3 {
   padding-inline: 5px;
   color: var(--accent);
 }
+
+/* v2.0-personal */
+.hidden { display: none !important; }
+.app-header {
+  position: sticky;
+  z-index: 50;
+  top: 0;
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+  backdrop-filter: blur(18px) saturate(140%);
+}
+.app-header h1 { margin: 0; font-size: 18px; white-space: nowrap; }
+.shortcuts-hint { color: var(--text-muted); font-size: 12px; text-align: center; }
+.shortcuts-hint kbd { padding: 2px 6px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface); font-family: var(--font-en); font-size: 11px; }
+.flow-toggle { display: inline-flex; direction: rtl; }
+.flow-toggle button { padding: 7px 12px; border: 1px solid var(--border); background: transparent; cursor: pointer; }
+.flow-toggle button:first-child { border-radius: 0 8px 8px 0; }
+.flow-toggle button:last-child { border-radius: 8px 0 0 8px; border-inline-start: 0; }
+.flow-toggle button.active { color: #fff; border-color: var(--accent-strong); background: var(--accent-strong); }
+.personal-shell { display: grid; gap: 18px; width: min(calc(100% - 32px), 1080px); margin: 22px auto 48px; }
+.card { width: 100%; }
+.upload-box { display: grid; gap: 10px; min-height: 130px; padding: 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-raised, var(--surface)); }
+.upload-box input[type="file"] { width: 100%; }
+.upload-box img { max-height: 260px; border-radius: 10px; object-fit: cover; }
+.upload-box.info { align-content: center; }
+.personal-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.personal-scene { display: grid; grid-template-columns: minmax(220px, 360px) 1fr; gap: 18px; align-items: start; }
+.personal-scene > img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-raised, var(--surface)); }
+.personal-scene__meta { min-width: 0; }
+.chip { margin-top: 10px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--success-soft, rgba(46,157,88,.08)); font-size: 12px; overflow-wrap: anywhere; }
+.chip code { direction: ltr; unicode-bidi: plaintext; padding: 1px 4px; border-radius: 4px; background: var(--bg); }
+.chip button { margin-inline-start: 8px; }
+.badge { display: inline-block; margin-top: 10px; padding: 3px 10px; border-radius: 999px; font-size: 12px; }
+.badge.green { color: #b7e4c7; background: #1b4332; }
+.badge.yellow { color: #ffe08a; background: #5c4a1a; }
+.badge.red { color: #ffa8a8; background: #4a1b1b; }
+.muted { margin-top: 4px; color: var(--text-muted); font-size: 12px; }
+.personal-prompt { max-height: 60vh; margin: 0; padding: 18px; overflow: auto; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); direction: ltr; text-align: left; white-space: pre-wrap; word-break: break-word; font-family: var(--font-en); font-size: 12px; line-height: 1.6; }
+.primary-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.status-line { min-height: 1.4em; margin: 8px 0 0; color: var(--success); font-size: 12px; }
+.status-line.is-error { color: var(--danger, #c44); }
+.quick-fixes, .session-tools { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
+.quick-fixes summary, .session-tools summary { color: var(--text-muted); cursor: pointer; font-size: 13px; }
+.fix-grid, .session-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-top: 10px; }
+.fix-grid button, .session-grid button { padding: 8px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface-raised, var(--surface)); cursor: pointer; font-size: 12px; }
+.fix-grid button:hover, .session-grid button:hover, .session-grid button.active { border-color: var(--accent); background: var(--accent-soft); }
+.last5 { display: flex; align-items: center; gap: 6px; }
+.last5 button { width: 30px; height: 30px; padding: 0; }
+.history-list { display: grid; gap: 8px; margin-top: 14px; }
+.history-item { display: grid; gap: 3px; width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); text-align: right; cursor: pointer; }
+.history-item span { color: var(--text-muted); font-size: 11px; }
+.personal-footer { display: block; text-align: center; }
+
+@media (max-width: 800px) {
+  .app-header { grid-template-columns: 1fr auto; }
+  .shortcuts-hint { grid-column: 1 / -1; order: 3; overflow-x: auto; white-space: nowrap; }
+  .app-header > .ghost-button { justify-self: end; }
+  .personal-scene { grid-template-columns: 1fr; }
+  .personal-options { grid-template-columns: 1fr; }
+}
