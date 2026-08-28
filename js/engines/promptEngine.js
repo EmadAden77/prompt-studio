@@ -6,6 +6,7 @@ import {
   NIGHT_REALISM_LOCK,
   CLUTTER_REALISM_LOCK,
   GROUP_SELFIE_REALISM_LOCK,
+  SOFA_GROUNDING_LOCK,
   SINGLE_PIPELINE,
   HAIR_REALISM_LOCK,
   CLOTHING_LOCK,
@@ -90,6 +91,12 @@ Do not move, clean, replace, mirror, resize or redesign room geometry, furniture
     return `NIGHT BEDROOM TEMPLATE: ${t.en} — camera ${t.angle}; ${t.dist}; framing ${t.frame}; gaze ${t.gaze}. Anatomy: ${t.anatomy}. Light source / physics: ${t.light}. ANTI-AI: ${t.anti}.`;
   }
 
+  sofaTemplateText(c) {
+    const t = c.sofaTemplate;
+    if (!t) return "";
+    return `SOFA TEMPLATE: ${t.en} — camera ${t.angle}; ${t.dist}; framing ${t.frame}; gaze ${t.gaze}. Anatomy: ${t.anatomy}. Light source / physics: ${t.light}. ANTI-AI: ${t.anti}.`;
+  }
+
   lightingText(c) {
     const l = c.lighting ?? {};
     const parts = [
@@ -151,7 +158,9 @@ cartoon, illustration, painting, CGI, 3D render, beauty filter, face smoothing, 
     s.push(this.posePhysics(c));
     s.push(this.bedroomTemplateText(c));
     s.push(this.nightTemplateText(c));
+    s.push(this.sofaTemplateText(c));
     if (c.nightTemplate) s.push(NIGHT_REALISM_LOCK);
+    if (c.sofaTemplate) s.push(SOFA_GROUNDING_LOCK);
     if (c.pose?.id?.startsWith("lying") || c.pose?.id === "semi_reclining") s.push(BEDDING_PHYSICS_LOCK);
     if (c.pose?.id?.startsWith("sitting")) s.push(GROUNDING.sitting);
     if (c.pose?.id?.startsWith("standing")) s.push(GROUNDING.standing);
