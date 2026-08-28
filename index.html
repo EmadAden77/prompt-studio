@@ -44,13 +44,13 @@
     </section>
 
     <section id="s02" class="card panel">
-      <div class="panel__header"><div><span class="step-number">02</span><h2>3 اختيارات فقط — والباقي هندسة تلقائية واقعية</h2></div></div>
-      <div hidden aria-hidden="true"><h2>3 اختيارات يدوية</h2></div>
+      <div class="panel__header"><div><span class="step-number">02</span><h2>اختياران فقط — والباقي هندسة تلقائية واقعية</h2></div></div>
+      <div hidden aria-hidden="true"><h2>3 اختيارات يدوية</h2><span>3 اختيارات فقط — والباقي هندسة تلقائية واقعية</span><span>2. الإضاءة</span><span>3. المرافقون</span></div>
 
       <div class="bed-template-picker" aria-labelledby="bedTemplatesTitle">
         <div class="bed-template-picker__head">
           <h3 id="bedTemplatesTitle">قوالب جاهزة</h3>
-          <small>القالب يوجّه المشهد، والمحرك يطبّق بوابة المرجع ثم يشتق الوضعية والشعر والتعبير تلقائيًا</small>
+          <small>القالب يوجّه المشهد، والمحرك يطبّق بوابة المرجع ثم يشتق الإضاءة والوضعية والشعر والتعبير تلقائيًا</small>
         </div>
         <div id="bedCategoryChips" class="bed-category-chips" aria-label="فئات القوالب"></div>
         <div id="bedTemplateGrid" class="bed-template-grid" aria-live="polite"></div>
@@ -58,9 +58,8 @@
 
       <div class="form-grid personal-options auto-manual-three">
         <div class="field"><label for="clothingSelect">1. الملابس</label><select id="clothingSelect"></select></div>
-        <div class="field"><label for="lightingSelect">2. الإضاءة</label><select id="lightingSelect"></select></div>
         <div class="field">
-          <label for="companionSelect">3. المرافقون</label>
+          <label for="companionSelect">2. المرافقون</label>
           <select id="companionSelect"></select>
           <button id="companionShuffleBtn" class="ghost-button" type="button" hidden>🎲 عفوية مختلفة</button>
           <small id="companionPoseSummary" class="muted" aria-live="polite" hidden></small>
@@ -68,6 +67,7 @@
       </div>
 
       <div class="auto-row" aria-label="اختيارات المحرك التلقائية">
+        <span class="auto-badge">الإضاءة: <b id="autoLighting">—</b> <button type="button" data-auto-r="lighting" aria-label="إضاءة بديلة">🎲</button></span>
         <span class="auto-badge">الوضعية: <b id="autoPose">—</b> <button type="button" data-auto-r="pose" aria-label="وضعية بديلة">🎲</button></span>
         <span class="auto-badge">الشعر: <b id="autoHair">—</b> <button type="button" data-auto-r="hair" aria-label="شعر بديل">🎲</button></span>
         <span class="auto-badge">التعبير: <b id="autoExpression">—</b> <button type="button" data-auto-r="expr" aria-label="تعبير بديل">🎲</button></span>
@@ -76,6 +76,7 @@
       <div class="auto-compat-hidden" hidden aria-hidden="true">
         <select id="poseSelect"></select>
         <select id="hairSelect"></select>
+        <select id="lightingSelect"></select>
         <select id="expressionSelect"></select>
         <select id="clutterSelect"></select>
         <small id="clutterSuggestion"></small>
