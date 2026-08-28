@@ -66,6 +66,12 @@ Do not move, clean, replace, mirror, resize or redesign room geometry, furniture
     return `${poseSections?.posePhysics ?? "POSE & PHYSICS: keep anatomy, gravity, support, pressure and contact mechanically possible."}${placement}`;
   }
 
+  bedroomTemplateText(c) {
+    const t = c.bedTemplate;
+    if (!t) return "";
+    return `BEDROOM TEMPLATE: ${t.en} — camera ${t.angle}; ${t.dist}; framing ${t.frame}; gaze ${t.gaze}. Anatomy: ${t.anatomy}. Light: ${t.light}. ANTI-AI: ${t.anti}.`;
+  }
+
   lightingText(c) {
     const l = c.lighting ?? {};
     const parts = [
@@ -107,6 +113,7 @@ cartoon, illustration, painting, CGI, 3D render, beauty filter, face smoothing, 
     s.push(this.identityLock());
     s.push(this.roomLock(c.roomMode || "GENERATE"));
     s.push(this.posePhysics(c));
+    s.push(this.bedroomTemplateText(c));
     if (c.pose?.id?.startsWith("lying") || c.pose?.id === "semi_reclining") s.push(BEDDING_PHYSICS_LOCK);
     if (c.pose?.id?.startsWith("sitting")) s.push(GROUNDING.sitting);
     if (c.pose?.id?.startsWith("standing")) s.push(GROUNDING.standing);
