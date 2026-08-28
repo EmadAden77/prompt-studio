@@ -52,6 +52,16 @@ export const SOFA_GROUNDING_LOCK = `SOFA GROUNDING (all sofa templates):
 - Clothing: shirt gathers at the waist and lower belly; trousers tension at the knees and relax at the hips.
 - Posture: natural slight slouch or lean; shoulders relaxed and asymmetric — no mannequin stiffness. Seated eye height ~1.1–1.2m (background reads from sofa height, not standing).`;
 
+export const SOFA_SPATIAL_MAP = `SOFA SPATIAL MAP: backrest = BACK; seat cushion between armrests = SIT ZONE; floor in front = FEET; the direction away from the backrest = FRONT. The sitter's LEFT/RIGHT follow his own body when seated facing FRONT.`;
+export const CHAIR_SPATIAL_MAP = `CHAIR SPATIAL MAP: backrest = BACK; seat = SIT ZONE; legs to floor; the sitter faces away from the backrest; knees ~90°, feet flat.`;
+
+export const FURNITURE_ANCHOR = Object.freeze({
+  lock: `FURNITURE ANCHOR LOCK — THE PERSON ADAPTS TO THE FURNITURE, NEVER THE REVERSE: furniture keeps EXACTLY its IMAGE B position, orientation, scale, size and design; solve in this order: furniture → body → contact proof → camera. The body occupies the REAL verified support surface. Compression, contact shadows and fabric displacement occur WHERE the furniture actually is in IMAGE B. If furniture is partially cropped or occluded, use only the verified visible region and never invent hidden parts. FORBIDDEN: backdrop-sitting, floating above the support, shifted/scaled/rotated/mirrored/redesigned furniture, body axis opposing the real furniture axis, or duplicated sofa/bed/chair.`,
+  sofa: `Sit on the actual seat cushion between the armrests; back toward the sofa's own backrest; feet on the floor in front; body axis aligned with the sofa's facing direction; cushion compresses 3–5cm under the sit bones at the sofa's locked position.`,
+  bed: `Sit/lie on the actual mattress; head toward the headboard/pillow zone; sides per the bed spatial map; mattress depresses under the body at the bed's locked position.`,
+  chair: `Sit on the actual seat; back toward its backrest; feet flat; knees ~90°; contact shadow under the seat at the chair's locked position.`
+});
+
 export const SINGLE_PIPELINE = `SINGLE PHONE PIPELINE: the background is NEVER sharper, cleaner or less noisy than the face; same exposure, HDR merge, noise, sharpening and compression everywhere.`;
 
 export const HAIR_REALISM_LOCK = `HAIR REALISM LOCK: density, volume, wave, length and hairline LOCKED to IMAGE A; hair forms soft natural clumps; individual strands resolved ONLY at the hairline edge, flyaways (5–12) and highlight glints; warm sun-lifted crests vs deeper valleys; matte sheen; NO wire strands, NO helmet, NO invented length/density.`;
@@ -104,6 +114,9 @@ if (typeof window !== "undefined") {
     CLUTTER_REALISM_LOCK,
     GROUP_SELFIE_REALISM_LOCK,
     SOFA_GROUNDING_LOCK,
+    SOFA_SPATIAL_MAP,
+    CHAIR_SPATIAL_MAP,
+    FURNITURE_ANCHOR,
     SINGLE_PIPELINE,
     HAIR_REALISM_LOCK,
     CLOTHING_LOCK,
