@@ -1,5 +1,22 @@
 # Changelog
 
+## v2.3-light — 2026-08-28
+
+### Added
+
+- Added 12 physically described lighting scenes to `js/data/lightingData.js`: four isolation presets, three spill presets, four dramatic daylight/pre-dawn presets, and one mixed lamp-rim + phone preset.
+- Added UI lighting groups `عزل ليلي 🌑`, `تسرب ضوء 🚪`, and `نهاري درامي ☀️` through `js/lightingV23Runtime.js`; `mood_ar` is shown only in the selector label and is not injected as cinematic English prompt language.
+- Every v2 lighting prompt now includes both `LIGHTING PHYSICS LOCK` and the existing `LIGHTING REALISM (anti-AI)` block.
+- Isolation presets inject declared ISO plus visible luminance noise and restrained chroma noise in shadow regions.
+- `ac_led_micro` explicitly enforces `emissive dots that cast NO light` so micro LEDs can glow without illuminating surrounding materials.
+- `phone_dark_closeup` automatically receives `PHONE_SCREEN_ONLY_STRICT`, keeping every other source off and any visible bedside lamp as an unlit decorative prop.
+- Added `tests/v2.3-light.mjs` and CI coverage for catalog presence, UI groups, strict phone-dark behavior, low-light noise, and micro-source constraints.
+
+### Preserved
+
+- `js/engines/realismLocks.js`, `car.html`, car template data, scene files, and the existing five-choice behavior remain unchanged.
+- `mood_ar` stays UI-only; prompt generation uses source geometry, physics, shadows, catchlights, room response and exposure data.
+
 ## v2.1-bed — 2026-08-28
 
 ### Added
