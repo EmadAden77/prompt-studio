@@ -21,6 +21,15 @@ export const NIGHT_REALISM_LOCK = `NIGHT REALISM LOCK (all night templates):
 - No cinematic grading, no teal-orange, no clean studio black, no even light.
 - Bedding physics unchanged from day: pillow compression, blanket tension, lying face ≠ standing face.`;
 
+export const CLUTTER_REALISM_LOCK = `CLUTTER REALISM LOCK (movable props only — fixed furniture NEVER moves):
+- Every item obeys gravity: rests on a surface with a soft contact shadow; NOTHING floats or hovers.
+- Items overlap and occlude naturally; some are partially cropped by the frame; some sit out of focus. No symmetric or "staged" arrangement; no product-placement spacing.
+- Density is coherent across the room (not one tidy corner beside a mess corner unless logical).
+- Every item casts/receives shadows consistent with the selected lighting and shares the same phone pipeline (clutter never sharper/cleaner than the face).
+- Generic items only: NO readable brand logos, NO legible text on papers/bottles.
+- Repeated items vary: of 3 bottles, one is half-full, one empty, one lying on its side with the cap off.
+- Clutter never intersects the body or support surfaces impossibly; a thrown garment drapes with real folds and a contact shadow.`;
+
 export const SINGLE_PIPELINE = `SINGLE PHONE PIPELINE: the background is NEVER sharper, cleaner or less noisy than the face; same exposure, HDR merge, noise, sharpening and compression everywhere.`;
 
 export const HAIR_REALISM_LOCK = `HAIR REALISM LOCK: density, volume, wave, length and hairline LOCKED to IMAGE A; hair forms soft natural clumps; individual strands resolved ONLY at the hairline edge, flyaways (5–12) and highlight glints; warm sun-lifted crests vs deeper valleys; matte sheen; NO wire strands, NO helmet, NO invented length/density.`;
@@ -70,6 +79,7 @@ if (typeof window !== "undefined") {
     LIGHTING_PHYSICS_LOCK,
     PHONE_SCREEN_ONLY_STRICT,
     NIGHT_REALISM_LOCK,
+    CLUTTER_REALISM_LOCK,
     SINGLE_PIPELINE,
     HAIR_REALISM_LOCK,
     CLOTHING_LOCK,
