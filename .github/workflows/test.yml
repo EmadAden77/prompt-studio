@@ -26,6 +26,8 @@ jobs:
           node-version: 22
       - name: Run v2 deployment regression tests
         run: node tests/v2-deployment.mjs
+      - name: Run v2.1 bedroom template tests
+        run: node tests/v2.1-bed.mjs
       - name: Run template preset tests
         run: node tests/templates.mjs
       - name: Run expanded clothing tests
