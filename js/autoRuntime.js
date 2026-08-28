@@ -29,6 +29,12 @@ function templatePose(app) {
   return byId(POSES, app.state.poseId) || null;
 }
 
+function nearestSupportedPose(cfg, proposed) {
+  if (poseAllowed(proposed, cfg.selectedScene)) return { pose:proposed, corrected:false };
+  const pose = autoPose(cfg, POSES);
+  return { pose, corrected:pose?.id !== proposed?.id };
+}
+
 function autoDecision(app) {
   const scene = activeScene(app);
   const lighting = app.lightingEngine.getById(app.state.lightingId);
@@ -36,19 +42,11 @@ function autoDecision(app) {
   const cfg = { selectedScene:scene, companionSet, lighting };
   const templated = templatePose(app);
 
-  // Templates remain a contextual hint only. The strict scene gate always wins.
   const basePose = templated && poseAllowed(templated, scene) ? templated : autoPose(cfg, POSES);
   const offset = app.state.autoPoseOffset || 0;
   const proposed = offset > 0 ? altPose(cfg, offset, POSES) : basePose;
-  let pose = proposed;
-  let corrected = false;
-  let rejectedPose = null;
-
-  if (!poseAllowed(pose, scene)) {
-    rejectedPose = pose;
-    pose = autoPose(cfg, POSES);
-    corrected = pose.id !== proposed?.id;
-  }
+  const resolved = nearestSupportedPose(cfg, proposed);
+  const pose = resolved.pose;
 
   const poseId = pose?.id || "sitting_bed_edge";
   const hairBase = autoHair(poseId);
@@ -65,8 +63,8 @@ function autoDecision(app) {
     companionSet,
     lighting,
     scene,
-    corrected,
-    rejectedPose
+    correction:{ poseId, corrected:resolved.corrected },
+    rejectedPose:resolved.corrected ? proposed : null
   };
 }
 
@@ -120,10 +118,10 @@ function install() {
     if (this.dom.hairSelect) this.dom.hairSelect.value = decision.hairId;
     if (this.dom.expressionSelect) this.dom.expressionSelect.value = decision.expressionId;
 
-    if (decision.corrected && announceCorrection) {
+    if (decision.correction.corrected && announceCorrection) {
       const rejected = decision.rejectedPose?.name_ar || decision.rejectedPose?.id || "الاقتراح الأول";
       const accepted = byId(POSES, decision.poseId)?.name_ar || decision.poseId;
-      showToast(`المرجع لا يدعم ${rejected}، فتم اختيار ${accepted} تلقائيًا.`);
+      showToast(`تم تصحيح الوضعية تلقائيًا لتوافق المرجع: ${accepted}. المرجع لا يدعم ${rejected}.`);
       this.setStatus?.("تم تطبيق بوابة المرجع الصارمة واختيار أقرب وضعية صالحة.");
     }
     return decision;
