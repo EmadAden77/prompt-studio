@@ -1,5 +1,26 @@
 # Changelog
 
+## v2.0-personal — 2026-08-28
+
+### Added
+
+- Replaced the home workspace with a compact personal-production interface and removed the Smart Quad guide, marketing-style brand strip, long welcome copy, and non-functional badges.
+- Added Pose-First / Reference-First workflow switching. Reference-First filters the pose selector against the chosen built-in scene while Pose-First restores automatic scene engineering.
+- Added five one-click quick-fix blocks: identity drift, selfie-arm leak, lighting leak, seat/anatomy error, and background-cleaner-than-face error.
+- Added a one-session export that creates three related prompts with the same appearance/lighting settings and family-compatible pose variants separated by `SESSION BREAK`.
+- Added local prompt history capped at 50 entries, local favorites, and five recent configuration slots.
+- Added keyboard shortcuts: N new, C copy, R rebuild, F favorite, H history, and 1–5 recent configurations.
+- Kept the section-03 attach chip, direct scene-reference download, colored confidence badge, and strict-filter transparency line.
+- `realismLocks.js` now exports `IMPERFECTIONS` and the five `QUICK_FIXES` blocks for the personal controller.
+- Updated the v2 deployment regression contract to cover the personal UI and productivity tools.
+
+### Preserved
+
+- `car.html`, `js/data/carTemplatesData.js`, all scene assets and `scenes/README.md` remain untouched.
+- `tests/run-tests.mjs` remains untouched by this deployment.
+- The v2 `generateV2()` prompt order remains TASK → SELFIE VIEWPOINT LOCK → natural five-part brief → IDENTITY LOCK → ROOM LOCK → POSE & PHYSICS + bedding/grounding → CAMERA EMULATOR → muscle-only EXPRESSION → HAIR → CLOTHING → LIGHTING PHYSICS (+ strict phone-screen-only block) → SINGLE PIPELINE → IMPERFECTION MANIFEST → FINAL CHECK + NEGATIVE.
+- Footer ethics rule remains explicit: no EXIF spoofing, no C2PA removal, and no PRNU simulation.
+
 ## v2.0 — 2026-08-28
 
 ### Added
