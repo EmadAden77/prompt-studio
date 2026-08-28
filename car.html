@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="v1.38 — صفحة مستقلة لقوالب سيلفي السيارة مع تحكم مستقل بزاوية تصوير السيلفي.">
+  <meta name="description" content="v1.40 — صفحة سيلفي السيارة بهندسة موقع، منظور، تلامس وتعارضات فيزيائية.">
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#0d1117">
-  <title>قوالب السيارة v1.38 — AI Selfie Prompt Studio</title>
+  <title>قوالب السيارة v1.40 — AI Selfie Prompt Studio</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,14 +16,14 @@
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/responsive.css">
   <style>
-    .car-page{padding-bottom:36px}.car-nav-link{text-decoration:none;white-space:nowrap}.car-category-shell{position:sticky;top:0;z-index:30;padding:10px 0;background:color-mix(in srgb,var(--surface,#0d1117) 92%,transparent);backdrop-filter:blur(14px)}.car-category-bar{display:flex;gap:8px;overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-width:none;padding:2px 1px 8px}.car-category-bar::-webkit-scrollbar{display:none}.car-chip{flex:0 0 auto;border:1px solid var(--border-color,rgba(127,127,127,.22));background:var(--surface-raised,rgba(127,127,127,.05));color:inherit;border-radius:999px;padding:9px 13px;font:inherit;font-weight:700;cursor:pointer}.car-chip.is-active{border-color:currentColor;background:rgba(127,127,127,.14)}.car-template-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.car-pose-card{text-align:right;display:grid;gap:6px;border:1px solid var(--border-color,rgba(127,127,127,.18));border-radius:16px;background:var(--surface-raised,rgba(127,127,127,.04));color:inherit;padding:14px;cursor:pointer;font:inherit}.car-pose-card:hover{transform:translateY(-1px)}.car-pose-card.is-active{outline:2px solid currentColor;outline-offset:1px}.car-pose-card strong{font-size:1.02rem}.car-pose-card span,.car-pose-card small{line-height:1.65;opacity:.84}.car-pose-card small{padding-top:7px;border-top:1px solid var(--border-color,rgba(127,127,127,.16))}.car-reference-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.car-reference-grid .upload-card{min-width:0}.car-reference-grid .dropzone{min-height:180px}.car-reference-grid img{max-height:220px;object-fit:cover}.car-status-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.car-output-actions{display:flex;gap:8px;flex-wrap:wrap}.car-output-actions a{text-decoration:none}.car-version{font-size:.8rem;opacity:.7}.car-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.car-form-grid .field--wide{grid-column:1/-1}.car-help{line-height:1.8;opacity:.82}.prompt-editor pre{white-space:pre-wrap;overflow-wrap:anywhere}.required-mark{font-weight:800}.optional-mark{opacity:.72}@media(max-width:760px){.car-template-grid,.car-reference-grid,.car-form-grid{grid-template-columns:1fr}.car-category-shell{top:0}.topbar__actions .save-status{display:none}}
+    .car-page{padding-bottom:36px}.car-nav-link{text-decoration:none;white-space:nowrap}.car-category-shell{position:sticky;top:0;z-index:30;padding:10px 0;background:color-mix(in srgb,var(--surface,#0d1117) 92%,transparent);backdrop-filter:blur(14px)}.car-category-bar{display:flex;gap:8px;overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-width:none;padding:2px 1px 8px}.car-category-bar::-webkit-scrollbar{display:none}.car-chip{flex:0 0 auto;border:1px solid var(--border-color,rgba(127,127,127,.22));background:var(--surface-raised,rgba(127,127,127,.05));color:inherit;border-radius:999px;padding:9px 13px;font:inherit;font-weight:700;cursor:pointer}.car-chip.is-active{border-color:currentColor;background:rgba(127,127,127,.14)}.car-template-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.car-pose-card{text-align:right;display:grid;gap:6px;border:1px solid var(--border-color,rgba(127,127,127,.18));border-radius:16px;background:var(--surface-raised,rgba(127,127,127,.04));color:inherit;padding:14px;cursor:pointer;font:inherit}.car-pose-card:hover{transform:translateY(-1px)}.car-pose-card.is-active{outline:2px solid currentColor;outline-offset:1px}.car-pose-card strong{font-size:1.02rem}.car-pose-card span,.car-pose-card small{line-height:1.65;opacity:.84}.car-pose-card small{padding-top:7px;border-top:1px solid var(--border-color,rgba(127,127,127,.16))}.car-reference-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.car-reference-grid .upload-card{min-width:0}.car-reference-grid .dropzone{min-height:180px}.car-reference-grid img{max-height:220px;object-fit:cover}.car-status-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.car-output-actions{display:flex;gap:8px;flex-wrap:wrap}.car-output-actions a{text-decoration:none}.car-version{font-size:.8rem;opacity:.7}.car-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.car-form-grid .field--wide{grid-column:1/-1}.car-help{line-height:1.8;opacity:.82}.prompt-editor pre{white-space:pre-wrap;overflow-wrap:anywhere}.required-mark{font-weight:800}.optional-mark{opacity:.72}#carSelfieArchitectureControls{display:grid;gap:8px;padding:14px;border:1px solid var(--border-color,rgba(127,127,127,.18));border-radius:16px;background:var(--surface-raised,rgba(127,127,127,.035))}#carSelfieArchitectureControls label{font-weight:800;margin-top:3px}#carSelfieArchitectureControls small{line-height:1.65;opacity:.78}@media(max-width:760px){.car-template-grid,.car-reference-grid,.car-form-grid{grid-template-columns:1fr}.car-category-shell{top:0}.topbar__actions .save-status{display:none}}
   </style>
 </head>
 <body class="car-page" data-page="car">
   <a class="skip-link" href="#workspace">انتقل إلى مساحة العمل</a>
   <header class="topbar">
     <div class="topbar__inner">
-      <a class="brand" href="index.html" aria-label="العودة للرئيسية"><span class="brand__mark" aria-hidden="true">S</span><span><strong>AI Selfie</strong><small>Car Templates v1.38</small></span></a>
+      <a class="brand" href="index.html" aria-label="العودة للرئيسية"><span class="brand__mark" aria-hidden="true">S</span><span><strong>AI Selfie</strong><small>Car Templates v1.40</small></span></a>
       <div class="topbar__actions">
         <a class="ghost-button car-nav-link" href="index.html">← عودة</a>
         <span class="save-status"><span class="save-status__dot"></span> إعدادات الصفحة محفوظة محليًا</span>
@@ -34,9 +34,9 @@
   <main id="workspace" class="page-shell">
     <section class="intro" aria-labelledby="pageTitle">
       <div>
-        <p class="eyebrow">CAR SELFIE ENGINE · v1.38</p>
+        <p class="eyebrow">CAR SELFIE ENGINE · v1.40</p>
         <h1 id="pageTitle">قوالب سيلفي السيارة</h1>
-        <p>اختر الفئة ثم القالب وزاوية السيلفي بشكل مستقل. الهوية تبقى مقفلة على IMAGE A، والزاوية تتحكم فقط بموضع الهاتف واتجاه المحور البصري ضمن مدى ذراع واقعي.</p>
+        <p>Captured, Not Rendered: موقع السيلفي، التلامس، زاوية الكاميرا، الكادر، الوقت والإضاءة تُحل كقيود فيزيائية مترابطة مع بقاء الهوية مقفلة على IMAGE A.</p>
       </div>
       <span class="context-badge">صفحة مستقلة</span>
     </section>
@@ -89,11 +89,11 @@
 
         <section class="panel" aria-labelledby="choicesTitle">
           <div class="panel__header">
-            <div><span class="step-number">03</span><h2 id="choicesTitle">اختيارات الصفحة</h2></div>
-            <span class="context-badge">للـ car.html فقط</span>
+            <div><span class="step-number">03</span><h2 id="choicesTitle">هندسة سيلفي السيارة</h2></div>
+            <span class="context-badge">Constraint-driven</span>
           </div>
           <form class="car-form-grid" novalidate>
-            <div class="field field--wide"><label for="lightingSelect">الإضاءة</label><select id="lightingSelect"></select><small>N1/N2/N3/N4/N5/N6/D2 فقط.</small></div>
+            <div class="field field--wide"><label for="lightingSelect">الإضاءة</label><select id="lightingSelect"></select><small>N1/N2/N3/N4/N5/N6/D2 فقط. الإضاءة يجب أن تبقى مبررة بمصدر حقيقي.</small></div>
             <div class="field"><label for="hairSelect">الشعر</label><select id="hairSelect"></select></div>
             <div class="field"><label for="expressionSelect">تعبير الوجه</label><select id="expressionSelect"></select></div>
             <div class="field field--wide"><label for="clothingSelect">الملابس</label><select id="clothingSelect"></select><small>تظهر الفئات المناسبة للسيارة فقط؛ ملابس النوم مستبعدة من هذه الصفحة.</small></div>
@@ -102,7 +102,7 @@
 
         <section class="panel">
           <div class="panel__header"><div><span class="step-number">04</span><h2>القواعد الثابتة</h2></div></div>
-          <p class="car-help"><strong>COMPACT PROMPT:</strong> القالب يحدد المشهد والكادر. <strong>SELFIE ANGLE:</strong> زاوية السيلفي اختيار مستقل ومتصلة بالـPrompt. <strong>ARM-FREE:</strong> ذراع السيلفي واليد والجوال خارج الإطار. <strong>RAW PHONE:</strong> نفس التعريض والضوضاء والمعالجة للوجه والمقصورة، بدون تجميل أو إضاءة خفية.</p>
+          <p class="car-help"><strong>IDENTITY:</strong> IMAGE A أعلى سلطة. <strong>LOCATION:</strong> الموقع يحدد المقعد/التلامس. <strong>CAMERA:</strong> سيلفي أمامي من مدى ذراع واقعي فقط. <strong>CONFLICTS:</strong> Full Body داخل المقصورة ممنوع، والإضاءة الاستوديوية المخفية ممنوعة. <strong>RAW PHONE:</strong> نفس المعالجة للوجه والسيارة.</p>
         </section>
       </div>
 
@@ -113,9 +113,9 @@
             <span id="promptWordCount" class="word-count">0 كلمة</span>
           </div>
           <div id="promptSummary" class="selection-summary"></div>
-          <div class="car-status-row"><span id="carStatus" class="validation-status">IMAGE A إلزامي قبل النسخ أو التنزيل</span><span class="car-version">v1.38</span></div>
+          <div class="car-status-row"><span id="carStatus" class="validation-status">IMAGE A إلزامي قبل النسخ أو التنزيل</span><span class="car-version">v1.40</span></div>
           <div class="prompt-editor"><pre id="finalPrompt" tabindex="0" aria-label="الأمر النهائي لقالب السيارة"></pre></div>
-          <div class="validation-summary">الصياغة: Identity → Car/Location → Selfie Angle → Framing → Expression/Gaze → Lighting → Clothing → Raw Smartphone Quality.</div>
+          <div class="validation-summary">Identity → Body Profile → Location → Contact → Selfie Angle → Framing → Time/Lighting → Reflections → Sensor/Exposure.</div>
           <div class="car-output-actions">
             <button id="copyBtn" class="primary-button" type="button" disabled>📋 نسخ</button>
             <button id="downloadBtn" class="secondary-button" type="button" disabled>⬇️ تنزيل TXT</button>
@@ -126,12 +126,13 @@
     </div>
   </main>
 
-  <footer class="footer"><p>Car Templates v1.38 <span>•</span> USER SELFIE ANGLE AUTHORITY</p><p>IMAGE A إلزامي، ومرجع المقصورة اختياري.</p></footer>
+  <footer class="footer"><p>Car Templates v1.40 <span>•</span> CONSTRAINT-DRIVEN CAR SELFIE ARCHITECTURE</p><p>IMAGE A إلزامي، ومرجع المقصورة اختياري.</p></footer>
   <script type="module" src="js/globalFabricPhysicsRuntime.js"></script>
   <script type="module" src="js/carPage.js"></script>
   <script type="module" src="js/carCompactPromptRuntime.js"></script>
   <script type="module" src="js/carExteriorRuntime.js"></script>
   <script type="module" src="js/carFacialIdentityLockRuntime.js"></script>
   <script type="module" src="js/carSelfieAngleRuntime.js"></script>
+  <script type="module" src="js/carSelfieArchitectureRuntime.js"></script>
 </body>
 </html>
