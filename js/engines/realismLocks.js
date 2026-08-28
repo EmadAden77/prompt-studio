@@ -25,7 +25,7 @@ export const GROUNDING = Object.freeze({
   standing: `STANDING GROUNDING: both feet flat with contact shadow hugging the sole line; weight on one leg (contrapposto); clothing hangs vertically; body casts a floor shadow matching the light source; vertical room lines nearly vertical.`
 });
 
-const IMPERFECTIONS = Object.freeze([
+export const IMPERFECTIONS = Object.freeze([
   "one highlight slightly too hot (lamp bulb / window edge)",
   "one shadow deeper than ideal (under pillow, seat gap, door pocket)",
   "one stray hair or slightly uneven beard edge",
@@ -44,6 +44,14 @@ export function imperfectionManifest(cfg) {
   return `IMPERFECTION MANIFEST (this render): ` + picks.join(" ; ") + `.`;
 }
 
+export const QUICK_FIXES = Object.freeze({
+  face_drift: `IDENTITY-DRIFT FIX: the face shape/width/length/jaw/eyes/beard changed. Re-render with LANDMARK FREEZE vs IMAGE A (interocular, nose, lip volume, jaw width, face ratio identical). ANTI-STEREOTYPE: ignore all mood-word visual stereotypes. SAME-PERSON TEST must pass.`,
+  arm_leak: `ARM LEAK FIX: a selfie arm/hand appeared in frame. ARM-FREE FRAMING: the phone, hand and entire selfie arm are strictly OUTSIDE the frame; crop begins beyond the phone-side shoulder. Only the resting OTHER arm is visible.`,
+  light_leak: `LIGHTING LEAK FIX: lighting did not match the selected source. Apply LIGHTING PHYSICS LOCK strictly; the bedside lamp visible in IMAGE B is an UNLIT decorative prop (if phone-screen-only); every shadow, catchlight and gradient traces to the selected source only.`,
+  seat_mess: `SEAT MESS FIX: driver seating is twisted (wheel off-axis, torso 90° twist, knees mismatching hips). Apply DRIVER SEAT ANATOMY SOLVER: solve seat–wheel axis FIRST, torso rotation ≤ 30°, knees point to pedals, both sleeves identical.`,
+  bg_cleaner: `BACKGROUND CLEANER FIX: background sharper/cleaner than the face. SINGLE PIPELINE: face, room and outside share identical exposure, HDR, noise, sharpening and compression. Background NEVER cleaner than face.`
+});
+
 if (typeof window !== "undefined") {
   Object.assign(window, {
     SELFIE_VIEWPOINT_LOCK,
@@ -56,6 +64,8 @@ if (typeof window !== "undefined") {
     EXPRESSION_LOCK,
     BEDDING_PHYSICS_LOCK,
     GROUNDING,
-    imperfectionManifest
+    IMPERFECTIONS,
+    imperfectionManifest,
+    QUICK_FIXES
   });
 }
