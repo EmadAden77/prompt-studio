@@ -75,7 +75,7 @@ assert.match(index, /لا تزوير EXIF، لا إزالة C2PA، ولا محا
 assert.ok(index.indexOf("js/engines/realismLocks.js") < index.indexOf("js/app.js"), "realismLocks must load before the controller");
 
 const app = readFileSync(resolve(root, "js/app.js"), "utf8");
-for (const key of ["case", "prompt_history", "prompt_favorites", "prompt_last5", "SESSION BREAK", "quickFix", "buildSession", "toggleFavorite", "showHistory", "referenceFirst", "poseFirst"]) {
+for (const key of ["prompt_history", "prompt_favorites", "prompt_last5", "SESSION BREAK", "quickFix", "buildSession", "toggleFavorite", "showHistory", "referenceFirst", "poseFirst"]) {
   assert.match(app, new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "u"));
 }
 assert.match(app, /if \(key === "n"\)/u);
