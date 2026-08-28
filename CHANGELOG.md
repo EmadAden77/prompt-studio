@@ -1,5 +1,21 @@
 # Changelog
 
+## v3.1-anchor — 2026-08-29
+
+### Added
+
+- Added `FURNITURE_ANCHOR` to `js/engines/realismLocks.js`, plus explicit sofa and chair spatial maps. Sofa/bed/chair geometry from IMAGE B is now immutable: the person adapts to the verified furniture position, orientation, scale, size and design, never the reverse.
+- `PoseEngine.engineer()` now resolves furniture support aliases (`sofa_cushion`, `chair_seat`, `mattress`, `mattress_edge`, pillow/headboard bed context) and emits a `FURNITURE ANCHOR` section for every sofa/bed/chair-supported pose.
+- `RoomLockEngine` now states fixed-furniture authority explicitly and exposes a surface-specific room/furniture authority line that forbids moving, mirroring, resizing, rotating, duplicating or inventing hidden furniture geometry.
+- `PromptEngine.generateV2()` now orders the support chain as `ROOM LOCK → FURNITURE ANCHOR → movable CLUTTER → POSE & PHYSICS → GROUNDING → CAMERA`, so furniture is solved before body placement and the camera is derived only after contact geometry is established.
+- Added blocking validator contract `furniture_anchor` through `validateGeneratedPrompt()`. Missing furniture-anchor text on any anchored sofa/bed/chair pose returns an automatic `regenerate_prompt` repair instruction.
+- Added `tests/v3.1-anchor.mjs` and CI coverage for sofa/bed/chair anchoring, spatial maps, prompt ordering, room authority and validator repair behavior.
+
+### Preserved
+
+- Automatic pose selection from v3.0/v3.1-light needs no user action: when it resolves to `sitting_sofa`, a bed pose or `sitting_chair`, the matching furniture anchor is injected automatically.
+- `car.html`, all `scenes/` files, furniture reference assets, footer ethics text and previous tests remain unchanged.
+
 ## v3.1-auto-light — 2026-08-28
 
 ### Changed
