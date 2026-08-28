@@ -1,8 +1,8 @@
-import { POSES, SELECTABLE_POSE_IDS } from "./data/posesData.js";
+import { POSES } from "./data/posesData.js";
 import { HAIR_OPTIONS } from "./data/hairData.js";
 import { EXPRESSIONS } from "./data/expressionsData.js";
 import { COMPANION_SETS } from "./data/companionsData.js";
-import { autoPose, autoHair, autoExpression } from "./engines/autoEngine.js";
+import { autoPose, altPose, autoHair, autoExpression, poseAllowed } from "./engines/autoEngine.js";
 
 const unique = (items) => [...new Set(items.filter(Boolean))];
 const byId = (items, id) => items.find((item) => item.id === id);
@@ -24,46 +24,34 @@ function rotate(base, pool, offset) {
   return choices[(start + (offset || 0)) % choices.length];
 }
 
-function compatiblePosePool(app, scene) {
-  if (!scene) return SELECTABLE_POSE_IDS.slice();
-  const supported = new Set(app.sceneEngine.getCompatiblePoseIds(scene, SELECTABLE_POSE_IDS));
-  return SELECTABLE_POSE_IDS.filter((id) => supported.has(id));
-}
-
-function nearestSupportedPose(app, proposed, scene) {
-  if (!scene) return { poseId:proposed, corrected:false };
-  const pool = compatiblePosePool(app, scene);
-  if (pool.includes(proposed)) return { poseId:proposed, corrected:false };
-  const preferred = [
-    proposed,
-    "sitting_sofa","sitting_bed_edge","standing_center","sitting_chair","sitting_floor",
-    "semi_reclining","lying_back","lying_right_side","lying_left_side","standing_sofa","standing_bedside"
-  ];
-  const poseId = preferred.find((id) => pool.includes(id)) || pool[0] || proposed;
-  return { poseId, corrected:poseId !== proposed };
-}
-
-function templateOwnsPose(app) {
-  return Boolean(app.state.selectedBedTemplateId || app.state.selectedNightTemplateId || app.state.selectedSofaTemplateId);
+function templatePose(app) {
+  if (!app.state.selectedBedTemplateId && !app.state.selectedNightTemplateId && !app.state.selectedSofaTemplateId) return null;
+  return byId(POSES, app.state.poseId) || null;
 }
 
 function autoDecision(app) {
   const scene = activeScene(app);
   const lighting = app.lightingEngine.getById(app.state.lightingId);
   const companionSet = selectedCompanions(app);
-  const basePose = templateOwnsPose(app)
-    ? app.state.poseId
-    : autoPose({ selectedScene:scene, companionSet, lighting });
+  const cfg = { selectedScene:scene, companionSet, lighting };
+  const templated = templatePose(app);
 
-  const posePool = compatiblePosePool(app, scene);
-  let proposedPose = rotate(basePose, posePool, app.state.autoPoseOffset);
-  let correction = { poseId:proposedPose, corrected:false };
-  if (app.state.flow === "referenceFirst" || app.state.sceneOverrideId) {
-    correction = nearestSupportedPose(app, proposedPose, scene);
-    proposedPose = correction.poseId;
+  // Templates remain a contextual hint only. The strict scene gate always wins.
+  const basePose = templated && poseAllowed(templated, scene) ? templated : autoPose(cfg, POSES);
+  const offset = app.state.autoPoseOffset || 0;
+  const proposed = offset > 0 ? altPose(cfg, offset, POSES) : basePose;
+  let pose = proposed;
+  let corrected = false;
+  let rejectedPose = null;
+
+  if (!poseAllowed(pose, scene)) {
+    rejectedPose = pose;
+    pose = autoPose(cfg, POSES);
+    corrected = pose.id !== proposed?.id;
   }
 
-  const hairBase = autoHair(proposedPose);
+  const poseId = pose?.id || "sitting_bed_edge";
+  const hairBase = autoHair(poseId);
   const hairPool = unique([hairBase, "same", "morning_messy", "neat", "natural_tousled"])
     .filter((id) => HAIR_OPTIONS.some((item) => item.id === id));
   const expressionBase = autoExpression({ companionSet, lighting });
@@ -71,13 +59,14 @@ function autoDecision(app) {
     .filter((id) => EXPRESSIONS.some((item) => item.id === id));
 
   return {
-    poseId:proposedPose,
+    poseId,
     hairId:rotate(hairBase, hairPool, app.state.autoHairOffset),
     expressionId:rotate(expressionBase, expressionPool, app.state.autoExpressionOffset),
-    correction,
-    scene,
     companionSet,
-    lighting
+    lighting,
+    scene,
+    corrected,
+    rejectedPose
   };
 }
 
@@ -94,13 +83,13 @@ function showToast(message) {
   toast.textContent = message;
   toast.classList.add("show");
   clearTimeout(showToast.timer);
-  showToast.timer = setTimeout(() => toast.classList.remove("show"), 3600);
+  showToast.timer = setTimeout(() => toast.classList.remove("show"), 3400);
 }
 
 function install() {
   const App = window.App;
-  if (!App || App.prototype.__autoV29) return;
-  App.prototype.__autoV29 = true;
+  if (!App || App.prototype.__autoV30) return;
+  App.prototype.__autoV30 = true;
 
   const originalCacheDOM = App.prototype.cacheDOM;
   App.prototype.cacheDOM = function(...args) {
@@ -120,23 +109,27 @@ function install() {
     return result;
   };
 
-  App.prototype.applyAutoSelectionV29 = function({ announceCorrection = true } = {}) {
+  App.prototype.runAuto = function({ announceCorrection = true } = {}) {
     const decision = autoDecision(this);
     this.state.poseId = decision.poseId;
     this.state.hairId = decision.hairId;
     this.state.expressionId = decision.expressionId;
+    this.state.companionSet = decision.companionSet;
+
     if (this.dom.poseSelect) this.dom.poseSelect.value = decision.poseId;
     if (this.dom.hairSelect) this.dom.hairSelect.value = decision.hairId;
     if (this.dom.expressionSelect) this.dom.expressionSelect.value = decision.expressionId;
-    if (decision.correction.corrected && announceCorrection) {
-      const from = byId(POSES, decision.correction.poseId)?.name_ar || decision.correction.poseId;
-      showToast(`تم تصحيح الوضعية تلقائيًا لتوافق المرجع: ${from}`);
-      this.setStatus?.(`الوضعية التلقائية صُححت لأن المرجع لا يدعم الاقتراح الأول.`);
+
+    if (decision.corrected && announceCorrection) {
+      const rejected = decision.rejectedPose?.name_ar || decision.rejectedPose?.id || "الاقتراح الأول";
+      const accepted = byId(POSES, decision.poseId)?.name_ar || decision.poseId;
+      showToast(`المرجع لا يدعم ${rejected}، فتم اختيار ${accepted} تلقائيًا.`);
+      this.setStatus?.("تم تطبيق بوابة المرجع الصارمة واختيار أقرب وضعية صالحة.");
     }
     return decision;
   };
 
-  App.prototype.renderAutoBadgesV29 = function() {
+  App.prototype.renderAutoBadgesV30 = function() {
     const pose = byId(POSES, this.state.poseId);
     const hair = byId(HAIR_OPTIONS, this.state.hairId);
     const expression = byId(EXPRESSIONS, this.state.expressionId);
@@ -148,15 +141,15 @@ function install() {
   const originalPopulate = App.prototype.populateSelects;
   App.prototype.populateSelects = function(...args) {
     const result = originalPopulate.apply(this, args);
-    this.renderAutoBadgesV29?.();
+    this.renderAutoBadgesV30?.();
     return result;
   };
 
   const originalEngineer = App.prototype.engineer;
   App.prototype.engineer = function(options = {}) {
-    this.applyAutoSelectionV29({ announceCorrection:true });
+    this.runAuto({ announceCorrection:true });
     const result = originalEngineer.call(this, options);
-    this.renderAutoBadgesV29();
+    this.renderAutoBadgesV30();
     this.renderCompanionSpontaneityV27?.();
     return result;
   };
@@ -181,14 +174,14 @@ function install() {
     this.state.autoHairOffset = 0;
     this.state.autoExpressionOffset = 0;
     const result = originalReset.apply(this, args);
-    this.renderAutoBadgesV29();
+    this.renderAutoBadgesV30();
     return result;
   };
 
   const originalLoadRecent = App.prototype.loadFromLast5;
   App.prototype.loadFromLast5 = function(...args) {
     const result = originalLoadRecent.apply(this, args);
-    this.renderAutoBadgesV29();
+    this.renderAutoBadgesV30();
     return result;
   };
 }
