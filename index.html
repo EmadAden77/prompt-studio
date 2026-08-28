@@ -61,7 +61,12 @@
         <div class="field"><label for="expressionSelect">4. التعبير</label><select id="expressionSelect"></select></div>
         <div class="field"><label for="clothingSelect">5. الملابس</label><select id="clothingSelect"></select></div>
         <div class="field"><label for="clutterSelect">6. الفوضى</label><select id="clutterSelect"></select><small id="clutterSuggestion" class="muted" aria-live="polite"></small></div>
-        <div class="field"><label for="companionSelect">7. المرافقون</label><select id="companionSelect"></select></div>
+        <div class="field">
+          <label for="companionSelect">7. المرافقون</label>
+          <select id="companionSelect"></select>
+          <button id="companionShuffleBtn" class="ghost-button" type="button" hidden>🎲 عفوية مختلفة</button>
+          <small id="companionPoseSummary" class="muted" aria-live="polite" hidden></small>
+        </div>
         <div class="field"><label for="aspectSelect">الأبعاد</label><select id="aspectSelect"><option value="9:16">9:16</option><option value="1:1">1:1</option><option value="16:9">16:9</option></select></div>
       </div>
     </section>
@@ -136,6 +141,7 @@
   <script type="module" src="js/data/nightTemplatesData.js"></script>
   <script type="module" src="js/data/clutterData.js"></script>
   <script type="module" src="js/data/companionsData.js"></script>
+  <script type="module" src="js/data/companionPosesData.js"></script>
   <script type="module" src="js/engines/realismLocks.js"></script>
   <script type="module" src="js/app.js"></script>
   <script type="module" src="js/lightingV23Runtime.js"></script>
