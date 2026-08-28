@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/responsive.css">
   <link rel="stylesheet" href="css/bedTemplates.css">
+  <link rel="stylesheet" href="css/autoV29.css">
 </head>
 <body data-page="home" class="personal-app">
   <header class="app-header">
@@ -43,31 +44,41 @@
     </section>
 
     <section id="s02" class="card panel">
-      <div class="panel__header"><div><span class="step-number">02</span><h2>الاختيارات السبعة</h2></div></div>
+      <div class="panel__header"><div><span class="step-number">02</span><h2>3 اختيارات يدوية</h2></div></div>
 
       <div class="bed-template-picker" aria-labelledby="bedTemplatesTitle">
         <div class="bed-template-picker__head">
-          <h3 id="bedTemplatesTitle">قوالب جاهزة لغرفة النوم</h3>
-          <small>تعبئة ذكية للوضعية + سطر هندسة إضافي</small>
+          <h3 id="bedTemplatesTitle">قوالب جاهزة</h3>
+          <small>القالب يوجّه المشهد، والوضعية والشعر والتعبير يحددها المحرك تلقائيًا</small>
         </div>
         <div id="bedCategoryChips" class="bed-category-chips" aria-label="فئات القوالب"></div>
         <div id="bedTemplateGrid" class="bed-template-grid" aria-live="polite"></div>
       </div>
 
-      <div class="form-grid personal-options">
-        <div class="field field--wide"><label for="poseSelect">1. الوضعية</label><select id="poseSelect"></select></div>
-        <div class="field"><label for="hairSelect">2. الشعر</label><select id="hairSelect"></select></div>
-        <div class="field"><label for="lightingSelect">3. الإضاءة</label><select id="lightingSelect"></select></div>
-        <div class="field"><label for="expressionSelect">4. التعبير</label><select id="expressionSelect"></select></div>
-        <div class="field"><label for="clothingSelect">5. الملابس</label><select id="clothingSelect"></select></div>
-        <div class="field"><label for="clutterSelect">6. الفوضى</label><select id="clutterSelect"></select><small id="clutterSuggestion" class="muted" aria-live="polite"></small></div>
+      <div class="form-grid personal-options auto-manual-three">
+        <div class="field"><label for="clothingSelect">1. الملابس</label><select id="clothingSelect"></select></div>
+        <div class="field"><label for="lightingSelect">2. الإضاءة</label><select id="lightingSelect"></select></div>
         <div class="field">
-          <label for="companionSelect">7. المرافقون</label>
+          <label for="companionSelect">3. المرافقون</label>
           <select id="companionSelect"></select>
           <button id="companionShuffleBtn" class="ghost-button" type="button" hidden>🎲 عفوية مختلفة</button>
           <small id="companionPoseSummary" class="muted" aria-live="polite" hidden></small>
         </div>
-        <div class="field"><label for="aspectSelect">الأبعاد</label><select id="aspectSelect"><option value="9:16">9:16</option><option value="1:1">1:1</option><option value="16:9">16:9</option></select></div>
+      </div>
+
+      <div class="auto-row" aria-label="اختيارات المحرك التلقائية">
+        <span class="auto-badge">الوضعية: <b id="autoPose">—</b> <button type="button" data-auto-r="pose" aria-label="وضعية بديلة">🎲</button></span>
+        <span class="auto-badge">الشعر: <b id="autoHair">—</b> <button type="button" data-auto-r="hair" aria-label="شعر بديل">🎲</button></span>
+        <span class="auto-badge">التعبير: <b id="autoExpression">—</b> <button type="button" data-auto-r="expr" aria-label="تعبير بديل">🎲</button></span>
+      </div>
+
+      <div class="auto-compat-hidden" hidden aria-hidden="true">
+        <select id="poseSelect"></select>
+        <select id="hairSelect"></select>
+        <select id="expressionSelect"></select>
+        <select id="clutterSelect"></select>
+        <small id="clutterSuggestion"></small>
+        <select id="aspectSelect"><option value="9:16">9:16</option><option value="1:1">1:1</option><option value="16:9">16:9</option></select>
       </div>
     </section>
 
@@ -144,10 +155,12 @@
   <script type="module" src="js/data/companionsData.js"></script>
   <script type="module" src="js/data/companionPosesData.js"></script>
   <script type="module" src="js/engines/realismLocks.js"></script>
+  <script type="module" src="js/engines/autoEngine.js"></script>
   <script type="module" src="js/app.js"></script>
   <script type="module" src="js/lightingV23Runtime.js"></script>
   <script type="module" src="js/bedTemplatesRuntime.js"></script>
   <script type="module" src="js/clutterRuntime.js"></script>
   <script type="module" src="js/companionsRuntime.js"></script>
+  <script type="module" src="js/autoRuntime.js"></script>
 </body>
 </html>
