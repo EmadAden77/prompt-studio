@@ -5,6 +5,7 @@ import {
   PHONE_SCREEN_ONLY_STRICT,
   NIGHT_REALISM_LOCK,
   CLUTTER_REALISM_LOCK,
+  GROUP_SELFIE_REALISM_LOCK,
   SINGLE_PIPELINE,
   HAIR_REALISM_LOCK,
   CLOTHING_LOCK,
@@ -14,6 +15,7 @@ import {
   imperfectionManifest
 } from "./realismLocks.js";
 import { LIGHTING_REALISM_BLOCK } from "../data/lightingData.js";
+import { buildCompanionsSection } from "../data/companionsData.js";
 
 export class PromptEngine {
   constructor({ identityEngine, roomLockEngine, poseEngine, cameraEngine, lightingEngine }) {
@@ -112,17 +114,25 @@ Do not move, clean, replace, mirror, resize or redesign room geometry, furniture
     return `Garment: ${clothing.pieces ?? clothing.name_en ?? clothing.name_ar ?? "the selected garment"}. Fabric: ${fabric.type ?? "material-correct"}, ${fabric.weight ?? "natural weight"}, sheen ${fabric.sheen ?? "material-correct"}; folds: ${fabric.folds ?? "gravity-, joint-, friction- and pressure-driven"}.`;
   }
 
-  finalCheckAndNegative() {
+  companionsText(c) {
+    return buildCompanionsSection(c.companionSet, c.clothing, GROUP_SELFIE_REALISM_LOCK);
+  }
+
+  finalCheckAndNegative(c = {}) {
+    const companionCount = c.companionSet?.members?.length ?? 0;
+    const peopleLine = companionCount
+      ? `- The result is one coherent physical event with one main subject plus ${companionCount} selected companion${companionCount === 1 ? "" : "s"}, one room, one reachable selfie camera, one lighting event and one phone-processing pipeline.`
+      : `- The result is one coherent physical event with one person, one room, one reachable selfie camera, one lighting event and one phone-processing pipeline.`;
     return `FINAL CHECK
-- The result is one coherent physical event with one person, one room, one reachable selfie camera, one lighting event and one phone-processing pipeline.
-- IMAGE A controls identity only; IMAGE B controls room only.
-- Facial landmarks remain the same person after perspective and expression compensation.
+${peopleLine}
+- IMAGE A controls the main subject identity only; companion identities come only from their fixed persona specifications; IMAGE B controls room only.
+- Facial landmarks remain the same main subject after perspective and expression compensation; companion faces stay mutually distinct and never inherit IMAGE A.
 - Support surfaces carry weight; contact shadows attach to real contact points; no floating body, impossible limbs or decorative pressure marks.
-- Lighting direction, shadows, catchlights, reflections, exposure, white balance and noise agree across face, hair, clothing, bedding/furniture and room.
+- Lighting direction, shadows, catchlights, reflections, exposure, white balance and noise agree across every visible face, hair, clothing, bedding/furniture and room.
 - The phone viewpoint remains subject-held at arm's length. No third-person observer, room camera, tripod or photographer.
 
 NEGATIVE PROMPT
-cartoon, illustration, painting, CGI, 3D render, beauty filter, face smoothing, facial reshaping, thinner face, sharper jaw, narrower eyes, changed beard, plastic skin, waxy skin, wire hair, helmet hair, extra fingers, extra arms, fused limbs, impossible joints, floating body, unsupported contact, broken reflection, third-person view, observer camera, wide room shot, camera at foot of bed, doorway camera, tripod, another photographer, full-body distant selfie, fake DSLR bokeh, cinematic grading, studio softbox, hidden fill, extreme HDR, artificial glow, fake 8K detail, destructive noise, unrequested text or logos.`;
+cartoon, illustration, painting, CGI, 3D render, beauty filter, face smoothing, facial reshaping, thinner face, sharper jaw, narrower eyes, changed beard, same-face companions, twin effect, adult facial features on children, childlike skin on adults, immodest family framing, incomplete child clothing, plastic skin, waxy skin, wire hair, helmet hair, extra fingers, extra arms, fused limbs, impossible joints, floating body, unsupported contact, broken reflection, third-person view, observer camera, wide room shot, camera at foot of bed, doorway camera, tripod, another photographer, full-body distant selfie, fake DSLR bokeh, cinematic grading, studio softbox, hidden fill, extreme HDR, artificial glow, fake 8K detail, destructive noise, unrequested text or logos.`;
   }
 
   generateV2(c) {
@@ -144,11 +154,12 @@ cartoon, illustration, painting, CGI, 3D render, beauty filter, face smoothing, 
     s.push(`${EXPRESSION_LOCK}\nSelected expression muscles: ${c.expression?.muscle ?? "eyelids, brows, cheeks, jaw and lips remain in the selected natural muscle state"}.${c.expression?.forbidden ? " FORBIDDEN with it: " + c.expression.forbidden + "." : ""}`);
     s.push(`${HAIR_REALISM_LOCK}\nArrangement: ${c.hair?.name_en ?? c.hair?.name_ar ?? "preserve IMAGE A arrangement"}.`);
     s.push(`${CLOTHING_LOCK}\n${this.clothingText(c)}`);
+    s.push(this.companionsText(c));
     s.push(`${LIGHTING_PHYSICS_LOCK}\n${this.lightingText(c)}\n\n${LIGHTING_REALISM_BLOCK}`);
     if (["phone_screen_only", "phone_dark_closeup"].includes(c.lighting?.id) || c.nightTemplate?.cat === "dark") s.push(PHONE_SCREEN_ONLY_STRICT);
     s.push(SINGLE_PIPELINE);
     s.push(imperfectionManifest(c));
-    s.push(this.finalCheckAndNegative());
+    s.push(this.finalCheckAndNegative(c));
     return s.filter(Boolean).join("\n\n");
   }
 
