@@ -11,6 +11,7 @@ import {
   GROUNDING,
   imperfectionManifest
 } from "./realismLocks.js";
+import { LIGHTING_REALISM_BLOCK } from "../data/lightingData.js";
 
 export class PromptEngine {
   constructor({ identityEngine, roomLockEngine, poseEngine, cameraEngine, lightingEngine }) {
@@ -82,7 +83,12 @@ Do not move, clean, replace, mirror, resize or redesign room geometry, furniture
       l.room_effect ? `Room: ${l.room_effect}.` : "",
       l.iso ? `Exposure: ${l.iso}.` : ""
     ].filter(Boolean);
-    if (parts.length === 1 && this.lightingEngine?.buildPrompt) parts.push(this.lightingEngine.buildPrompt(l));
+    if (l.category === "isolation") {
+      parts.push(`LOW-LIGHT SENSOR BEHAVIOR: ${l.iso ?? "high-ISO phone exposure"}; visible luminance noise and restrained chroma noise in shadow regions; black areas must not become clean, noise-free synthetic black.`);
+    }
+    if (l.id === "ac_led_micro") {
+      parts.push("MICRO-SOURCE RULE: visible AC/charger indicators are emissive dots that cast NO light; they never illuminate skin, walls, bedding or furniture.");
+    }
     return parts.join(" ");
   }
 
@@ -121,8 +127,8 @@ cartoon, illustration, painting, CGI, 3D render, beauty filter, face smoothing, 
     s.push(`${EXPRESSION_LOCK}\nSelected expression muscles: ${c.expression?.muscle ?? "eyelids, brows, cheeks, jaw and lips remain in the selected natural muscle state"}.${c.expression?.forbidden ? " FORBIDDEN with it: " + c.expression.forbidden + "." : ""}`);
     s.push(`${HAIR_REALISM_LOCK}\nArrangement: ${c.hair?.name_en ?? c.hair?.name_ar ?? "preserve IMAGE A arrangement"}.`);
     s.push(`${CLOTHING_LOCK}\n${this.clothingText(c)}`);
-    s.push(`${LIGHTING_PHYSICS_LOCK}\n${this.lightingText(c)}`);
-    if (c.lighting?.id === "phone_screen_only") s.push(PHONE_SCREEN_ONLY_STRICT);
+    s.push(`${LIGHTING_PHYSICS_LOCK}\n${this.lightingText(c)}\n\n${LIGHTING_REALISM_BLOCK}`);
+    if (["phone_screen_only", "phone_dark_closeup"].includes(c.lighting?.id)) s.push(PHONE_SCREEN_ONLY_STRICT);
     s.push(SINGLE_PIPELINE);
     s.push(imperfectionManifest(c));
     s.push(this.finalCheckAndNegative());
