@@ -7,7 +7,6 @@ import { LIGHTING_OPTIONS } from "./data/lightingData.js";
 import { CLOTHING_OPTIONS } from "./data/clothingData.js";
 import { EXPRESSIONS } from "./data/expressionsData.js";
 import { HAIR_OPTIONS } from "./data/hairData.js";
-import { QUAD_DEFAULTS, QUAD_EXPRESSION_IDS } from "./data/quadModeData.js";
 import { ROOM_LOCK_POLICIES } from "./policies/roomLockPolicy.js";
 import { SceneEngine } from "./engines/sceneEngine.js";
 import { PoseEngine } from "./engines/poseEngine.js";
@@ -18,45 +17,30 @@ import { RoomLockEngine } from "./engines/roomLockEngine.js";
 import { PromptEngine } from "./engines/promptEngine.js";
 import { Validator } from "./engines/validator.js";
 import { AutoEngineeringEngine } from "./engines/autoEngineeringEngine.js";
+import { QUICK_FIXES } from "./engines/realismLocks.js";
 import { StorageManager } from "./utils/storage.js";
-import { ImageHandler, formatBytes } from "./utils/imageHandler.js";
+import { ImageHandler } from "./utils/imageHandler.js";
 import { copyText } from "./utils/clipboard.js";
 import { downloadText } from "./utils/download.js";
-import { $, $$, closeDialog, openDialog, setOptions, showToast } from "./ui/dom.js";
-import { renderPrompt, renderPromptSummary } from "./ui/promptDisplay.js";
-import { renderValidation } from "./ui/conflictModal.js";
+import { closeDialog, openDialog, setOptions } from "./ui/dom.js";
 import { renderScenePicker } from "./ui/scenePicker.js";
 
-const CLOTHING_CATEGORY_LABELS = Object.freeze({
-  sleepwear: "ملابس نوم",
-  casual: "كاجوال",
-  sport: "رياضي",
-  winter: "شتوي",
-  traditional: "تقليدي"
-});
+const HISTORY_KEY = "prompt_history";
+const FAVORITES_KEY = "prompt_favorites";
+const LAST5_KEY = "prompt_last5";
+const FLOW_KEY = "prompt_personal_flow";
 
-const LIGHTING_CATEGORY_LABELS = Object.freeze({
-  screen: "شاشة الهاتف",
-  ceiling: "السقف",
-  lamp: "الأباجورة",
-  daylight: "النهار",
-  mixed: "مختلطة",
-  night: "ليلية"
-});
+const CLOTHING_CATEGORY_LABELS = Object.freeze({ sleepwear:"ملابس نوم", casual:"كاجوال", sport:"رياضي", winter:"شتوي", traditional:"تقليدي" });
+const LIGHTING_CATEGORY_LABELS = Object.freeze({ screen:"شاشة الهاتف", ceiling:"السقف", lamp:"الأباجورة", daylight:"النهار", mixed:"مختلطة", night:"ليلية" });
 
-const POSE_GROUPS = Object.freeze({
-  bed: "🛏️ السرير",
-  sofa: "🪑 الجلوس",
-  chair: "🪑 الجلوس",
-  room: "🧍 الوقوف",
-  vanity: "🧍 الوقوف",
-  wardrobe: "🧍 الوقوف"
-});
+function readJSON(key, fallback) {
+  try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); }
+  catch { return fallback; }
+}
 
 function poseGroupLabel(pose) {
   if (pose?.id?.startsWith("standing")) return "🧍 الوقوف";
   if (pose?.id?.startsWith("sitting")) return "🪑 الجلوس";
-  if (pose?.placement && POSE_GROUPS[pose.placement]) return POSE_GROUPS[pose.placement];
   return "🛏️ السرير";
 }
 
@@ -65,6 +49,10 @@ class App {
     this.storage = new StorageManager(APP_CONFIG.storageKey);
     this.state = this.storage.load(APP_CONFIG.defaultState);
     this.state.uploads = { imageA: null };
+    this.state.flow = localStorage.getItem(FLOW_KEY) || "poseFirst";
+    this.history = readJSON(HISTORY_KEY, []);
+    this.favorites = readJSON(FAVORITES_KEY, []);
+    this.last5 = readJSON(LAST5_KEY, []);
 
     this.poseEngine = new PoseEngine(POSES);
     this.sceneEngine = new SceneEngine(SCENES);
@@ -72,370 +60,448 @@ class App {
     this.lightingEngine = new LightingEngine(LIGHTING_OPTIONS);
     this.identityEngine = new IdentityEngine(FIXED_DATA, IMAGE_A_AUTHORITY);
     this.roomLockEngine = new RoomLockEngine(ROOM_LOCK_POLICIES, IMAGE_B_AUTHORITY);
-    this.autoEngineeringEngine = new AutoEngineeringEngine({ sceneEngine: this.sceneEngine, lightingEngine: this.lightingEngine });
-    this.promptEngine = new PromptEngine({
-      identityEngine: this.identityEngine,
-      roomLockEngine: this.roomLockEngine,
-      poseEngine: this.poseEngine,
-      cameraEngine: this.cameraEngine,
-      lightingEngine: this.lightingEngine
-    });
-    this.validator = new Validator({ lightingEngine: this.lightingEngine });
-    this.imageHandler = new ImageHandler({ maxBytes: APP_CONFIG.maxImageBytes, acceptedTypes: APP_CONFIG.acceptedImageTypes });
+    this.autoEngineeringEngine = new AutoEngineeringEngine({ sceneEngine:this.sceneEngine, lightingEngine:this.lightingEngine });
+    this.promptEngine = new PromptEngine({ identityEngine:this.identityEngine, roomLockEngine:this.roomLockEngine, poseEngine:this.poseEngine, cameraEngine:this.cameraEngine, lightingEngine:this.lightingEngine });
+    this.validator = new Validator({ lightingEngine:this.lightingEngine });
+    this.imageHandler = new ImageHandler({ maxBytes:APP_CONFIG.maxImageBytes, acceptedTypes:APP_CONFIG.acceptedImageTypes });
 
     this.engineering = null;
-    this.lastPrompt = "";
-    this.lastValidation = null;
+    this.currentConfig = null;
+    this.currentPrompt = "";
+    this.currentValidation = null;
     this.dom = this.cacheDOM();
   }
 
   cacheDOM() {
+    const byId = (id) => document.getElementById(id);
     return {
-      poseSelect: $("#poseSelect"), expressionSelect: $("#expressionSelect"), hairSelect: $("#hairSelect"),
-      lightingSelect: $("#lightingSelect"), clothingSelect: $("#clothingSelect"), aspectSelect: $("#aspectSelect"),
-      autoEngineerBtn: $("#autoEngineerBtn"), modeHint: $("#modeHint"), autoReferenceTitle: $("#autoReferenceTitle"),
-      autoReferenceMeta: $("#autoReferenceMeta"), selectSceneBtn: $("#selectSceneBtn"), sceneName: $("#sceneName"),
-      sceneRegion: $("#sceneRegion"), sceneFilename: $("#sceneFilename"), sceneReasons: $("#sceneReasons"),
-      sceneConfidence: $("#sceneConfidence"), sceneImage: $("#sceneImage"), sceneFallback: $("#sceneFallback"),
-      attachChip: $("#attachChip"), attachFile: $("#attachFile"), downloadSceneBtn: $("#downloadSceneBtn"),
-      confBadge: $("#confBadge"), strictLine: $("#strictLine"), validationStatus: $("#validationStatus"),
-      validationSummary: $("#validationSummary"), conflictsList: $("#conflictsList"), autoFixBtn: $("#autoFixBtn"),
-      finalPrompt: $("#finalPrompt"), promptWordCount: $("#promptWordCount"), promptSummary: $("#promptSummary"),
-      copyBtn: $("#copyBtn"), downloadBtn: $("#downloadBtn"), validateBtn: $("#validateBtn"), rebuildBtn: $("#rebuildBtn"),
-      sceneDialog: $("#sceneDialog"), scenePickerGrid: $("#scenePickerGrid"), helpBtn: $("#helpBtn"),
-      helpDialog: $("#helpDialog"), themeBtn: $("#themeBtn"), themeIcon: $("#themeIcon"), saveStatus: $("#saveStatus")
+      poseSelect:byId("poseSelect"), hairSelect:byId("hairSelect"), lightingSelect:byId("lightingSelect"), expressionSelect:byId("expressionSelect"), clothingSelect:byId("clothingSelect"), aspectSelect:byId("aspectSelect"),
+      poseFirstBtn:byId("poseFirstBtn"), refFirstBtn:byId("refFirstBtn"), imageAInput:byId("imageAInput"), imageAPreview:byId("imageAPreview"), imageARemove:byId("imageARemove"),
+      sceneImage:byId("sceneImage"), sceneName:byId("sceneName"), sceneMeta:byId("sceneMeta"), overrideSceneBtn:byId("overrideSceneBtn"), attachChip:byId("attachChip"), attachFile:byId("attachFile"), downloadSceneBtn:byId("downloadSceneBtn"), confBadge:byId("confBadge"), strictLine:byId("strictLine"),
+      conflictsBox:byId("conflictsBox"), finalPrompt:byId("finalPrompt"), wordCount:byId("promptWordCount"), engineerBtn:byId("engineerBtn"), validateBtn:byId("validateBtn"), copyBtn:byId("copyBtn"), resetBtn:byId("resetBtn"), downloadBtn:byId("downloadBtn"),
+      sessionBtn:byId("sessionBtn"), favBtn:byId("favBtn"), historyBtn:byId("historyBtn"), statusLine:byId("statusLine"), sceneDialog:byId("sceneDialog"), scenePickerGrid:byId("scenePickerGrid"), historyDialog:byId("historyDialog"), historyList:byId("historyList")
     };
   }
 
   init() {
     this.sanitizeState();
-    this.populateQuadControls();
-    this.bindEvents();
-    this.applyTheme();
-    this.onSmartModeChange({ initial: true });
-    window.addEventListener("load", () => this.onSmartModeChange({ initial: true }), { once: true });
+    this.populateSelects();
+    this.bindUI();
+    this.bindShortcuts();
+    this.renderFlowUI();
+    this.renderUpload();
+    this.engineer({ persistHistory:false });
+    window.addEventListener("load", () => this.engineer({ persistHistory:false }), { once:true });
+    window.addEventListener("beforeunload", () => this.imageHandler.destroy());
   }
 
   sanitizeState() {
-    if (!SELECTABLE_POSE_IDS.includes(this.state.poseId)) this.state.poseId = "lying_right_side";
-    if (!HAIR_OPTIONS.some((item) => item.id === this.state.hairId)) this.state.hairId = "same";
-    if (!QUAD_EXPRESSION_IDS.includes(this.state.expressionId)) this.state.expressionId = "relaxed";
-    if (!LIGHTING_OPTIONS.some((item) => item.id === this.state.lightingId)) this.state.lightingId = "lamp_and_phone";
-    if (!CLOTHING_OPTIONS.some((item) => item.id === this.state.clothingId)) this.state.clothingId = APP_CONFIG.defaultState.clothingId;
-    if (!["9:16", "1:1", "16:9"].includes(this.state.aspect)) this.state.aspect = APP_CONFIG.defaultState.aspect;
-    if (!["light", "dark", "system"].includes(this.state.theme)) this.state.theme = "system";
-    this.state.mode = QUAD_DEFAULTS.mode;
-    if (!this.sceneEngine.getById(this.state.sceneOverrideId)) this.state.sceneOverrideId = null;
+    if (!SELECTABLE_POSE_IDS.includes(this.state.poseId)) this.state.poseId = APP_CONFIG.defaultState.poseId;
+    if (!HAIR_OPTIONS.some((x) => x.id === this.state.hairId)) this.state.hairId = APP_CONFIG.defaultState.hairId;
+    if (!LIGHTING_OPTIONS.some((x) => x.id === this.state.lightingId)) this.state.lightingId = APP_CONFIG.defaultState.lightingId;
+    if (!EXPRESSIONS.some((x) => x.id === this.state.expressionId)) this.state.expressionId = APP_CONFIG.defaultState.expressionId;
+    if (!CLOTHING_OPTIONS.some((x) => x.id === this.state.clothingId)) this.state.clothingId = APP_CONFIG.defaultState.clothingId;
+    if (!["9:16","1:1","16:9"].includes(this.state.aspect)) this.state.aspect = APP_CONFIG.defaultState.aspect;
+    if (!["poseFirst","referenceFirst"].includes(this.state.flow)) this.state.flow = "poseFirst";
+    if (this.state.sceneOverrideId && !this.sceneEngine.getById(this.state.sceneOverrideId)) this.state.sceneOverrideId = null;
   }
 
-  populateClothingSelect() {
-    const fragment = document.createDocumentFragment();
-    Object.entries(CLOTHING_CATEGORY_LABELS).forEach(([category, label]) => {
-      const group = document.createElement("optgroup");
-      group.label = label;
-      CLOTHING_OPTIONS.filter((item) => item.category === category).forEach((item) => group.appendChild(new Option(item.name_ar, item.id)));
-      fragment.appendChild(group);
-    });
-    this.dom.clothingSelect.replaceChildren(fragment);
-    this.dom.clothingSelect.value = this.state.clothingId;
+  populateSelects() {
+    this.populatePoseSelect();
+    setOptions(this.dom.hairSelect, HAIR_OPTIONS, this.state.hairId);
+    this.populateLightingSelect();
+    setOptions(this.dom.expressionSelect, EXPRESSIONS, this.state.expressionId);
+    this.populateClothingSelect();
+    if (this.dom.aspectSelect) this.dom.aspectSelect.value = this.state.aspect;
   }
 
-  populateLightingSelect(options = LIGHTING_OPTIONS) {
+  selectablePoses() {
+    const all = POSES.filter((p) => SELECTABLE_POSE_IDS.includes(p.id));
+    if (this.state.flow !== "referenceFirst" || !this.state.sceneOverrideId) return all;
+    const scene = this.sceneEngine.getById(this.state.sceneOverrideId);
+    const ids = new Set(this.sceneEngine.getCompatiblePoseIds(scene, SELECTABLE_POSE_IDS));
+    return all.filter((p) => ids.has(p.id));
+  }
+
+  populatePoseSelect() {
+    const options = this.selectablePoses();
+    if (!options.some((p) => p.id === this.state.poseId)) this.state.poseId = options[0]?.id ?? APP_CONFIG.defaultState.poseId;
     const fragment = document.createDocumentFragment();
-    Object.entries(LIGHTING_CATEGORY_LABELS).forEach(([category, label]) => {
-      const items = options.filter((item) => item.category === category);
+    ["🛏️ السرير","🪑 الجلوس","🧍 الوقوف"].forEach((label) => {
+      const items = options.filter((p) => poseGroupLabel(p) === label);
       if (!items.length) return;
       const group = document.createElement("optgroup");
       group.label = label;
-      items.forEach((item) => group.appendChild(new Option(item.name_ar, item.id, false, item.id === this.state.lightingId)));
+      items.forEach((p) => group.appendChild(new Option(p.name_ar, p.id)));
+      fragment.appendChild(group);
+    });
+    this.dom.poseSelect.replaceChildren(fragment);
+    this.dom.poseSelect.value = this.state.poseId;
+  }
+
+  populateLightingSelect() {
+    const fragment = document.createDocumentFragment();
+    Object.entries(LIGHTING_CATEGORY_LABELS).forEach(([category,label]) => {
+      const items = LIGHTING_OPTIONS.filter((x) => x.category === category);
+      if (!items.length) return;
+      const group = document.createElement("optgroup"); group.label = label;
+      items.forEach((x) => group.appendChild(new Option(x.name_ar, x.id)));
       fragment.appendChild(group);
     });
     this.dom.lightingSelect.replaceChildren(fragment);
     this.dom.lightingSelect.value = this.state.lightingId;
   }
 
-  populatePoseSelect(options = [], selectedId = null) {
-    const groups = new Map();
-    options.forEach((pose) => {
-      const label = poseGroupLabel(pose);
-      if (!groups.has(label)) groups.set(label, []);
-      groups.get(label).push(pose);
-    });
+  populateClothingSelect() {
     const fragment = document.createDocumentFragment();
-    ["🛏️ السرير", "🪑 الجلوس", "🧍 الوقوف"].forEach((label) => {
-      const items = groups.get(label) ?? [];
+    Object.entries(CLOTHING_CATEGORY_LABELS).forEach(([category,label]) => {
+      const items = CLOTHING_OPTIONS.filter((x) => x.category === category);
       if (!items.length) return;
-      const group = document.createElement("optgroup");
-      group.label = label;
-      items.forEach((pose) => group.appendChild(new Option(pose.name_ar, pose.id, false, pose.id === selectedId)));
+      const group = document.createElement("optgroup"); group.label = label;
+      items.forEach((x) => group.appendChild(new Option(x.name_ar, x.id)));
       fragment.appendChild(group);
     });
-    this.dom.poseSelect.replaceChildren(fragment);
-    if (selectedId) this.dom.poseSelect.value = selectedId;
-    this.dom.poseSelect.disabled = options.length === 0;
+    this.dom.clothingSelect.replaceChildren(fragment);
+    this.dom.clothingSelect.value = this.state.clothingId;
   }
 
-  populateQuadControls() {
-    setOptions(this.dom.hairSelect, HAIR_OPTIONS, this.state.hairId);
-    setOptions(this.dom.expressionSelect, EXPRESSIONS.filter((item) => QUAD_EXPRESSION_IDS.includes(item.id)), this.state.expressionId);
-    this.populateLightingSelect(LIGHTING_OPTIONS);
-    this.populateClothingSelect();
-    this.dom.aspectSelect.value = this.state.aspect;
-    this.populatePoseSelect(POSES.filter((p) => SELECTABLE_POSE_IDS.includes(p.id)), this.state.poseId);
-    if (this.dom.modeHint) this.dom.modeHint.textContent = "5 اختيارات — هندسة فورية v2.0";
-  }
-
-  bindEvents() {
+  bindUI() {
     [[this.dom.poseSelect,"poseId"],[this.dom.hairSelect,"hairId"],[this.dom.lightingSelect,"lightingId"],[this.dom.expressionSelect,"expressionId"],[this.dom.clothingSelect,"clothingId"],[this.dom.aspectSelect,"aspect"]]
-      .forEach(([element, field]) => element?.addEventListener("change", () => {
-        this.state[field] = element.value;
-        this.onSmartModeChange();
-      }));
+      .forEach(([el,key]) => el?.addEventListener("change", () => { this.state[key] = el.value; this.engineer(); }));
 
-    this.bindUpload("imageA");
-    this.dom.autoEngineerBtn?.addEventListener("click", () => this.onSmartModeChange());
-    this.dom.selectSceneBtn?.addEventListener("click", () => this.openScenePicker());
-    this.dom.autoFixBtn?.addEventListener("click", () => this.applyAutoFixes());
+    this.dom.poseFirstBtn?.addEventListener("click", () => this.setFlow("poseFirst"));
+    this.dom.refFirstBtn?.addEventListener("click", () => this.setFlow("referenceFirst"));
+    this.dom.imageAInput?.addEventListener("change", () => this.handleImage(this.dom.imageAInput.files?.[0]));
+    this.dom.imageARemove?.addEventListener("click", () => this.removeImage());
+    this.dom.overrideSceneBtn?.addEventListener("click", () => this.openScenePicker());
+    this.dom.engineerBtn?.addEventListener("click", () => this.engineer());
+    this.dom.validateBtn?.addEventListener("click", () => this.renderValidation(true));
     this.dom.copyBtn?.addEventListener("click", () => this.copyPrompt());
-    this.dom.downloadBtn?.addEventListener("click", () => downloadText(this.lastPrompt));
-    this.dom.validateBtn?.addEventListener("click", () => this.focusValidation());
-    this.dom.rebuildBtn?.addEventListener("click", () => this.rebuildPrompt());
-    this.dom.helpBtn?.addEventListener("click", () => openDialog(this.dom.helpDialog));
-    this.dom.themeBtn?.addEventListener("click", () => this.toggleTheme());
+    this.dom.resetBtn?.addEventListener("click", () => this.resetToDefaults());
+    this.dom.downloadBtn?.addEventListener("click", () => downloadText(this.currentPrompt || ""));
+    this.dom.sessionBtn?.addEventListener("click", () => this.buildSession());
+    this.dom.favBtn?.addEventListener("click", () => this.toggleFavorite());
+    this.dom.historyBtn?.addEventListener("click", () => this.showHistory());
 
-    $$('[data-close-dialog]').forEach((button) => button.addEventListener("click", () => closeDialog($(`#${button.dataset.closeDialog}`))));
-    [this.dom.sceneDialog, this.dom.helpDialog].filter(Boolean).forEach((dialog) => dialog.addEventListener("click", (event) => { if (event.target === dialog) closeDialog(dialog); }));
-    window.addEventListener("beforeunload", () => this.imageHandler.destroy());
+    document.querySelectorAll("[data-fix]").forEach((btn) => btn.addEventListener("click", () => this.quickFix(btn.dataset.fix)));
+    document.querySelectorAll("[data-idx]").forEach((btn) => btn.addEventListener("click", () => this.loadFromLast5(Number(btn.dataset.idx))));
+    document.querySelectorAll("[data-close-dialog]").forEach((btn) => btn.addEventListener("click", () => closeDialog(document.getElementById(btn.dataset.closeDialog))));
   }
 
-  bindUpload(key) {
-    const input = $("#imageAInput"), dropzone = $("#imageADropzone"), remove = $("#imageARemove");
-    input?.addEventListener("change", () => this.handleImage(key, input.files?.[0]));
-    remove?.addEventListener("click", () => this.removeImage(key));
-    ["dragenter","dragover"].forEach((type) => dropzone?.addEventListener(type, (event) => { event.preventDefault(); dropzone.classList.add("is-dragging"); }));
-    ["dragleave","drop"].forEach((type) => dropzone?.addEventListener(type, (event) => { event.preventDefault(); dropzone.classList.remove("is-dragging"); }));
-    dropzone?.addEventListener("drop", (event) => this.handleImage(key, event.dataTransfer?.files?.[0]));
+  bindShortcuts() {
+    document.addEventListener("keydown", (e) => {
+      const tag = e.target?.tagName;
+      if (["INPUT","TEXTAREA","SELECT"].includes(tag) || e.target?.isContentEditable || e.ctrlKey || e.metaKey || e.altKey) return;
+      const key = e.key.toLowerCase();
+      if (key === "n") this.resetToDefaults();
+      else if (key === "c") this.copyPrompt();
+      else if (key === "r") this.engineer();
+      else if (key === "f") this.toggleFavorite();
+      else if (key === "h") this.showHistory();
+      else if (/^[1-5]$/.test(key)) this.loadFromLast5(Number(key) - 1);
+    });
   }
 
-  handleImage(key, file) {
-    const validation = this.imageHandler.validate(file);
-    if (!validation.valid) return showToast(validation.error, "error", 3600);
-    this.state.uploads[key] = this.imageHandler.createPreview(key, file);
-    this.renderUpload(key);
-    this.onSmartModeChange();
-    showToast("تمت إضافة صورة الهوية");
+  setFlow(flow) {
+    this.state.flow = flow;
+    if (flow === "poseFirst") this.state.sceneOverrideId = null;
+    else if (!this.state.sceneOverrideId && this.state.selectedSceneId) this.state.sceneOverrideId = this.state.selectedSceneId;
+    localStorage.setItem(FLOW_KEY, flow);
+    this.populatePoseSelect();
+    this.renderFlowUI();
+    this.engineer({ persistHistory:false });
   }
 
-  removeImage(key) {
-    this.imageHandler.revoke(key);
-    this.state.uploads[key] = null;
-    const input = $("#imageAInput"); if (input) input.value = "";
-    this.renderUpload(key);
-    this.onSmartModeChange();
+  renderFlowUI() {
+    this.dom.poseFirstBtn?.classList.toggle("active", this.state.flow === "poseFirst");
+    this.dom.refFirstBtn?.classList.toggle("active", this.state.flow === "referenceFirst");
+    if (this.dom.overrideSceneBtn) this.dom.overrideSceneBtn.textContent = this.state.flow === "referenceFirst" ? "اختيار المرجع" : "استبدال المرجع";
   }
 
-  renderUpload(key) {
-    const value = this.state.uploads[key], preview = $("#imageAPreview"), remove = $("#imageARemove"), meta = $("#imageAMeta"), card = $('[data-upload="imageA"]');
-    card?.classList.toggle("has-image", Boolean(value));
-    if (remove) remove.hidden = !value;
-    if (preview) {
-      preview.hidden = !value;
-      if (value) preview.src = value.url; else preview.removeAttribute("src");
+  handleImage(file) {
+    const result = this.imageHandler.validate(file);
+    if (!result.valid) return this.setStatus(result.error, true);
+    this.state.uploads.imageA = this.imageHandler.createPreview("imageA", file);
+    this.renderUpload();
+    this.engineer({ persistHistory:false });
+    this.setStatus("تم تحديث IMAGE A");
+  }
+
+  removeImage() {
+    this.imageHandler.revoke("imageA");
+    this.state.uploads.imageA = null;
+    if (this.dom.imageAInput) this.dom.imageAInput.value = "";
+    this.renderUpload();
+    this.setStatus("تم حذف IMAGE A");
+  }
+
+  renderUpload() {
+    const value = this.state.uploads.imageA;
+    if (this.dom.imageAPreview) {
+      this.dom.imageAPreview.hidden = !value;
+      if (value) this.dom.imageAPreview.src = value.url; else this.dom.imageAPreview.removeAttribute("src");
     }
-    if (meta) meta.textContent = value ? `${value.name} • ${formatBytes(value.size)}` : "";
+    if (this.dom.imageARemove) this.dom.imageARemove.hidden = !value;
   }
 
-  engineerState() {
-    const pose = this.poseEngine.getById(this.state.poseId);
-    this.engineering = this.autoEngineeringEngine.engineer({
+  engineerState(pose = this.poseEngine.getById(this.state.poseId), { sceneOverrideId = this.state.sceneOverrideId } = {}) {
+    return this.autoEngineeringEngine.engineer({
       pose,
-      lightingId: this.state.lightingId,
-      sceneOverrideId: this.state.sceneOverrideId,
-      requireSelectedScene: false
+      lightingId:this.state.lightingId,
+      sceneOverrideId,
+      requireSelectedScene:this.state.flow === "referenceFirst"
     });
-    if (!this.engineering) return;
-    ["bodyDirection","cameraAngle","cameraDistance","cameraType","lensType","roomMode","selectedSceneId","lightingId"].forEach((field) => {
-      if (this.engineering[field] != null) this.state[field] = this.engineering[field];
-    });
-    this.state.mode = "smart";
   }
 
-  buildConfig() {
+  applyEngineering(e) {
+    this.engineering = e;
+    if (!e) return;
+    ["bodyDirection","cameraAngle","cameraDistance","cameraType","lensType","roomMode","selectedSceneId","lightingId"].forEach((key) => {
+      if (e[key] != null) this.state[key] = e[key];
+    });
+  }
+
+  buildConfig(pose = this.poseEngine.getById(this.state.poseId), engineering = this.engineering) {
     return {
       ...this.state,
-      pose: this.poseEngine.getById(this.state.poseId),
-      scene: this.sceneEngine.getById(this.state.selectedSceneId),
-      camera: this.cameraEngine.getCamera(this.state.cameraType),
-      lens: this.cameraEngine.getLens(this.state.lensType),
-      expression: EXPRESSIONS.find((item) => item.id === this.state.expressionId) ?? EXPRESSIONS[0],
-      hair: HAIR_OPTIONS.find((item) => item.id === this.state.hairId) ?? HAIR_OPTIONS[0],
-      clothing: CLOTHING_OPTIONS.find((item) => item.id === this.state.clothingId) ?? CLOTHING_OPTIONS[0],
-      lighting: this.lightingEngine.getById(this.state.lightingId),
-      autoEngineering: this.engineering
+      pose,
+      scene:this.sceneEngine.getById(engineering?.selectedSceneId ?? this.state.selectedSceneId),
+      camera:this.cameraEngine.getCamera(engineering?.cameraType ?? this.state.cameraType),
+      lens:this.cameraEngine.getLens(engineering?.lensType ?? this.state.lensType),
+      expression:EXPRESSIONS.find((x) => x.id === this.state.expressionId) ?? EXPRESSIONS[0],
+      hair:HAIR_OPTIONS.find((x) => x.id === this.state.hairId) ?? HAIR_OPTIONS[0],
+      clothing:CLOTHING_OPTIONS.find((x) => x.id === this.state.clothingId) ?? CLOTHING_OPTIONS[0],
+      lighting:this.lightingEngine.getById(engineering?.lightingId ?? this.state.lightingId),
+      autoEngineering:engineering,
+      uploads:this.state.uploads
     };
   }
 
-  onSmartModeChange({ initial = false } = {}) {
-    this.updateAll({ initial });
-  }
-
-  applyFixesToState(fixes = []) {
-    fixes.forEach((fix) => { this.state[fix.field] = fix.value; if (fix.secondary) this.state[fix.secondary.field] = fix.secondary.value; });
-  }
-
-  updateAll({ initial = false } = {}) {
-    this.engineerState();
-    let config = this.buildConfig();
-    let validation = this.validator.validate(config);
-    for (let attempt = 0; attempt < 3 && validation.autoFixes.length; attempt += 1) {
-      this.applyFixesToState(validation.autoFixes);
-      this.engineerState();
-      config = this.buildConfig();
-      validation = this.validator.validate(config);
-    }
-
-    this.lastValidation = validation;
-    this.lastPrompt = this.promptEngine.generateV2(config);
-    this.populatePoseSelect(POSES.filter((p) => SELECTABLE_POSE_IDS.includes(p.id)), this.state.poseId);
-    this.populateLightingSelect(LIGHTING_OPTIONS);
-    this.renderAutoReference();
+  engineer({ persistHistory = true } = {}) {
+    const pose = this.poseEngine.getById(this.state.poseId);
+    const engineering = this.engineerState(pose);
+    this.applyEngineering(engineering);
+    this.currentConfig = this.buildConfig(pose, engineering);
+    this.currentValidation = this.validator.validate(this.currentConfig);
+    this.currentPrompt = this.promptEngine.generateV2(this.currentConfig);
+    this.renderPrompt(this.currentPrompt);
     this.renderScene();
-    this.renderAttachChip(config.scene);
-    this.renderConfidence(this.engineering);
-
-    renderValidation({ statusElement:this.dom.validationStatus, summaryElement:this.dom.validationSummary, listElement:this.dom.conflictsList, autoFixButton:this.dom.autoFixBtn, result:validation });
-    renderPrompt({ promptElement:this.dom.finalPrompt, countElement:this.dom.promptWordCount, prompt:this.lastPrompt });
-    renderPromptSummary(this.dom.promptSummary, config);
-
-    this.dom.copyBtn.disabled = !validation.valid;
-    this.dom.downloadBtn.disabled = !validation.valid;
-    this.dom.copyBtn.title = validation.valid ? "نسخ الأمر النهائي" : "أصلح التعارضات أولًا";
+    this.renderValidation(false);
+    this.renderFavoriteState();
     this.storage.save(this.state);
-    if (!initial) this.flashSaved();
+    if (persistHistory) {
+      this.saveToHistory(this.currentPrompt);
+      this.updateLast5();
+    }
+    return this.currentPrompt;
   }
 
-  renderAutoReference() {
-    const scene = this.engineering?.scene;
-    if (!scene) {
-      this.dom.autoReferenceTitle.textContent = "لا يوجد مرجع صالح";
-      this.dom.autoReferenceMeta.textContent = this.engineering?.strictNoMatchMessage ?? "غيّر الوضعية أو الإضاءة.";
-      return;
-    }
-    this.dom.autoReferenceTitle.textContent = `المرجع الهندسي: ${scene.name_ar}`;
-    this.dom.autoReferenceMeta.textContent = `${scene.image_filename} • هندسة تلقائية v2.0`;
+  renderPrompt(prompt) {
+    if (this.dom.finalPrompt) this.dom.finalPrompt.textContent = prompt;
+    if (this.dom.wordCount) this.dom.wordCount.textContent = `${prompt.trim().split(/\s+/u).filter(Boolean).length} كلمة`;
   }
 
   renderScene() {
-    const e = this.engineering, scene = e?.scene, reasons = document.createDocumentFragment();
+    const scene = this.currentConfig?.scene;
+    const e = this.engineering;
     if (!scene) {
-      this.dom.sceneName.textContent = "لا يوجد مرجع يجتاز المرشح";
-      this.dom.sceneRegion.textContent = "STRICT FILTER";
-      this.dom.sceneFilename.textContent = "—";
-      this.dom.sceneConfidence.textContent = "ثقة منخفضة";
-      this.setSceneImage("assets/scene-placeholder.svg", true);
+      this.dom.sceneImage?.setAttribute("src", "assets/scene-placeholder.svg");
+      if (this.dom.sceneName) this.dom.sceneName.textContent = "لا يوجد مرجع صالح للإعداد الحالي";
+      if (this.dom.sceneMeta) this.dom.sceneMeta.textContent = e?.strictNoMatchMessage || "غيّر الوضعية أو اختر مرجعًا آخر.";
+      this.dom.attachChip?.classList.add("hidden");
+      this.renderConfidence(e);
       return;
     }
-    this.dom.sceneName.textContent = scene.name_ar;
-    this.dom.sceneRegion.textContent = scene.region.replaceAll("_", " ").toUpperCase();
-    this.dom.sceneFilename.textContent = scene.image_filename;
-    this.dom.sceneConfidence.textContent = e.confidence;
-    [e.sceneReason, e.gateSummary, ...(e.sceneSelectionReasons ?? []), e.orientation].filter(Boolean).forEach((text) => {
-      const li = document.createElement("li"); li.textContent = text; reasons.append(li);
-    });
-    this.dom.sceneReasons.replaceChildren(reasons);
-    this.setSceneImage(scene.image_url, false);
+    if (this.dom.sceneImage) this.dom.sceneImage.src = scene.image_url;
+    if (this.dom.sceneName) this.dom.sceneName.textContent = scene.name_ar;
+    if (this.dom.sceneMeta) this.dom.sceneMeta.textContent = `${scene.image_filename} · ${scene.region.replaceAll("_", " ")}`;
+    this.renderAttachChip(scene);
+    this.renderConfidence(e);
   }
 
   renderAttachChip(scene) {
-    if (!this.dom.attachChip || !this.dom.attachFile || !this.dom.downloadSceneBtn) return;
-    if (!scene?.image_url) {
-      this.dom.attachChip.classList.add("hidden");
-      return;
-    }
+    if (!scene?.image_url || !this.dom.attachChip) return;
     this.dom.attachChip.classList.remove("hidden");
-    this.dom.attachFile.textContent = scene.image_url;
-    this.dom.downloadSceneBtn.onclick = () => {
-      const a = document.createElement("a");
-      a.href = scene.image_url;
-      a.download = scene.image_url.split("/").pop();
-      a.click();
+    if (this.dom.attachFile) this.dom.attachFile.textContent = scene.image_url;
+    if (this.dom.downloadSceneBtn) this.dom.downloadSceneBtn.onclick = () => {
+      const a = document.createElement("a"); a.href = scene.image_url; a.download = scene.image_url.split("/").pop(); a.click();
     };
   }
 
   renderConfidence(r) {
     if (!this.dom.confBadge || !this.dom.strictLine) return;
-    const confidence = r?.confidence ?? "ثقة منخفضة";
+    const confidence = r?.confidence || "ثقة منخفضة";
     const cls = confidence.includes("عالية") || confidence.includes("دقة عالية") ? "green" : confidence.includes("متوسطة") ? "yellow" : "red";
     this.dom.confBadge.className = `badge ${cls}`;
     this.dom.confBadge.textContent = confidence;
     this.dom.strictLine.textContent = `مرشح صارم: اجتاز ${r?.gatePassedCount ?? 0} من ${r?.gateTotalCount ?? SCENES.length} مرجعًا`;
   }
 
-  setSceneImage(source, knownFallback = false) {
-    const image = this.dom.sceneImage, fallback = this.dom.sceneFallback;
-    fallback.hidden = !knownFallback;
-    image.onerror = null;
-    if (!knownFallback) image.onerror = () => { image.src = "assets/scene-placeholder.svg"; fallback.hidden = false; };
-    image.src = source;
+  renderValidation(forceOpen = false) {
+    if (!this.dom.conflictsBox || !this.currentValidation) return;
+    const issues = [...(this.currentValidation.conflicts || []), ...(this.currentValidation.warnings || [])];
+    if (!issues.length) {
+      this.dom.conflictsBox.textContent = "الفحص: لا توجد تعارضات مانعة.";
+      this.dom.conflictsBox.classList.remove("hidden");
+    } else {
+      this.dom.conflictsBox.innerHTML = issues.map((x) => `<div>${x.message_ar || x.message || x.type}</div>`).join("");
+      this.dom.conflictsBox.classList.remove("hidden");
+    }
+    if (forceOpen) this.dom.conflictsBox.scrollIntoView({ behavior:"smooth", block:"nearest" });
+  }
+
+  async copyPrompt(text = this.currentPrompt) {
+    if (!text) return;
+    try { await copyText(text); this.setStatus("تم النسخ"); }
+    catch { this.setStatus("تعذر النسخ التلقائي", true); }
+  }
+
+  quickFix(key) {
+    const fix = QUICK_FIXES[key];
+    if (!fix || !this.currentPrompt) return;
+    const patched = `${this.currentPrompt}\n\n[QUICK FIX — APPLIED]\n${fix}`;
+    this.currentPrompt = patched;
+    this.renderPrompt(patched);
+    this.copyPrompt(patched);
+  }
+
+  saveToHistory(prompt) {
+    if (!prompt || this.history[0]?.prompt === prompt) return;
+    const entry = { timestamp:new Date().toISOString(), prompt, summary:this.summarySnapshot() };
+    this.history.unshift(entry);
+    this.history = this.history.slice(0, 50);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(this.history));
+  }
+
+  summarySnapshot() {
+    return {
+      pose:this.currentConfig?.pose?.name_ar,
+      lighting:this.currentConfig?.lighting?.name_ar,
+      expression:this.currentConfig?.expression?.name_ar,
+      clothing:this.currentConfig?.clothing?.name_ar,
+      scene:this.currentConfig?.scene?.name_ar
+    };
+  }
+
+  showHistory() {
+    if (!this.dom.historyList || !this.dom.historyDialog) return;
+    if (!this.history.length) this.dom.historyList.innerHTML = `<p class="muted">لا يوجد سجل بعد.</p>`;
+    else this.dom.historyList.innerHTML = this.history.map((h,i) => `<button class="history-item" type="button" data-history-idx="${i}"><strong>${h.summary.pose || "—"} · ${h.summary.lighting || "—"}</strong><span>${h.summary.expression || "—"} · ${new Date(h.timestamp).toLocaleString("ar-SA")}</span></button>`).join("");
+    this.dom.historyList.querySelectorAll("[data-history-idx]").forEach((btn) => btn.addEventListener("click", () => {
+      const item = this.history[Number(btn.dataset.historyIdx)];
+      if (!item) return;
+      this.currentPrompt = item.prompt;
+      this.renderPrompt(item.prompt);
+      closeDialog(this.dom.historyDialog);
+      this.setStatus("تم تحميل الأمر من السجل");
+    }));
+    openDialog(this.dom.historyDialog);
+  }
+
+  toggleFavorite() {
+    if (!this.currentPrompt) return;
+    const key = this.currentPrompt.slice(0, 240);
+    const idx = this.favorites.findIndex((x) => x.prompt.slice(0,240) === key);
+    if (idx >= 0) this.favorites.splice(idx,1);
+    else this.favorites.unshift({ prompt:this.currentPrompt, summary:this.summarySnapshot(), timestamp:new Date().toISOString() });
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify(this.favorites));
+    this.renderFavoriteState();
+    this.setStatus(idx >= 0 ? "أزيل من المفضلة" : "أضيف إلى المفضلة");
+  }
+
+  renderFavoriteState() {
+    if (!this.dom.favBtn) return;
+    const key = this.currentPrompt.slice(0,240);
+    const active = this.favorites.some((x) => x.prompt.slice(0,240) === key);
+    this.dom.favBtn.classList.toggle("active", active);
+    this.dom.favBtn.textContent = active ? "★ محفوظ بالمفضلة" : "☆ مفضلة";
+  }
+
+  updateLast5() {
+    const cfg = { poseId:this.state.poseId, lightingId:this.state.lightingId, expressionId:this.state.expressionId, clothingId:this.state.clothingId, hairId:this.state.hairId, aspect:this.state.aspect, sceneOverrideId:this.state.sceneOverrideId, flow:this.state.flow };
+    const sig = JSON.stringify(cfg);
+    this.last5 = [cfg, ...this.last5.filter((x) => JSON.stringify(x) !== sig)].slice(0,5);
+    localStorage.setItem(LAST5_KEY, JSON.stringify(this.last5));
+  }
+
+  loadFromLast5(idx) {
+    const cfg = this.last5[idx];
+    if (!cfg) return this.setStatus(`لا يوجد إعداد محفوظ في ${idx + 1}`, true);
+    Object.assign(this.state, cfg);
+    localStorage.setItem(FLOW_KEY, this.state.flow);
+    this.populateSelects();
+    this.renderFlowUI();
+    this.engineer({ persistHistory:false });
+    this.setStatus(`تم تحميل الإعداد ${idx + 1}`);
+  }
+
+  nextPoseVariant(offset) {
+    const current = this.poseEngine.getById(this.state.poseId);
+    const family = poseGroupLabel(current);
+    const pool = POSES.filter((p) => SELECTABLE_POSE_IDS.includes(p.id) && poseGroupLabel(p) === family);
+    const i = Math.max(0, pool.findIndex((p) => p.id === current.id));
+    return pool[(i + offset) % pool.length] || current;
+  }
+
+  sessionPromptForPose(pose) {
+    const sceneOverrideId = this.state.flow === "referenceFirst" ? this.state.sceneOverrideId : null;
+    const engineering = this.engineerState(pose, { sceneOverrideId });
+    const config = this.buildConfig(pose, engineering);
+    return this.promptEngine.generateV2(config);
+  }
+
+  buildSession() {
+    const session = [this.nextPoseVariant(0), this.nextPoseVariant(1), this.nextPoseVariant(2)].map((pose) => this.sessionPromptForPose(pose));
+    const blob = new Blob([session.join("\n\n\n--- SESSION BREAK ---\n\n\n")], { type:"text/plain;charset=utf-8" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `session_${Date.now()}.txt`; a.click();
+    window.setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    this.setStatus("تم إنشاء جلسة من 3 أوامر");
   }
 
   openScenePicker() {
-    const poseLabels = Object.fromEntries(POSES.map((pose) => [pose.id, pose.name_ar]));
+    const poseLabels = Object.fromEntries(POSES.map((p) => [p.id,p.name_ar]));
     renderScenePicker({
       container:this.dom.scenePickerGrid,
       scenes:SCENES,
-      selectedSceneId:this.state.sceneOverrideId,
+      selectedSceneId:this.state.sceneOverrideId || this.state.selectedSceneId,
       poseLabels,
-      onSelect:(sceneId) => { this.state.sceneOverrideId = sceneId; closeDialog(this.dom.sceneDialog); this.onSmartModeChange(); }
+      onSelect:(sceneId) => {
+        this.state.sceneOverrideId = sceneId;
+        if (this.state.flow === "referenceFirst") {
+          const scene = this.sceneEngine.getById(sceneId);
+          const compatible = this.sceneEngine.getCompatiblePoseIds(scene, SELECTABLE_POSE_IDS);
+          if (!compatible.includes(this.state.poseId)) this.state.poseId = compatible[0] || this.state.poseId;
+          this.populatePoseSelect();
+        }
+        closeDialog(this.dom.sceneDialog);
+        this.engineer();
+      }
     });
     openDialog(this.dom.sceneDialog);
   }
 
-  applyAutoFixes() {
-    if (!this.lastValidation?.autoFixes.length) return;
-    this.applyFixesToState(this.lastValidation.autoFixes);
-    this.onSmartModeChange();
-    showToast("تم إصلاح التعارضات القابلة للإصلاح");
+  resetToDefaults() {
+    const uploads = this.state.uploads;
+    this.state = { ...APP_CONFIG.defaultState, uploads, flow:this.state.flow, sceneOverrideId:this.state.flow === "referenceFirst" ? APP_CONFIG.defaultState.selectedSceneId : null };
+    this.populateSelects();
+    this.renderFlowUI();
+    this.engineer({ persistHistory:false });
+    this.setStatus("إعداد جديد");
   }
 
-  async copyPrompt() {
-    try { await copyText(this.lastPrompt); showToast("تم نسخ الأمر كاملًا"); }
-    catch { showToast("تعذر النسخ تلقائيًا؛ حدّد النص وانسخه يدويًا.", "error"); this.dom.finalPrompt.focus(); }
-  }
-
-  focusValidation() {
-    $(".validation-panel")?.scrollIntoView({ behavior:"smooth", block:"center" });
-    showToast(this.lastValidation.valid ? "الفحص مكتمل: لا توجد تعارضات مانعة" : "راجع التعارضات الحمراء", this.lastValidation.valid ? "success" : "error");
-  }
-
-  rebuildPrompt() {
-    this.onSmartModeChange();
-    showToast("أُعيد بناء الأمر وفق هندسة v2.0");
-  }
-
-  toggleTheme() {
-    const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const currentDark = this.state.theme === "dark" || (this.state.theme === "system" && systemDark);
-    this.state.theme = currentDark ? "light" : "dark";
-    this.applyTheme(); this.storage.save(this.state);
-  }
-
-  applyTheme() {
-    document.documentElement.dataset.theme = this.state.theme;
-    const isDark = this.state.theme === "dark" || (this.state.theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
-    this.dom.themeIcon.textContent = isDark ? "☀" : "☾";
-    this.dom.themeBtn.title = isDark ? "استخدام المظهر الفاتح" : "استخدام المظهر الداكن";
-  }
-
-  flashSaved() {
-    if (!this.dom.saveStatus) return;
-    this.dom.saveStatus.classList.add("is-saving");
-    this.dom.saveStatus.lastChild.textContent = " جارٍ الحفظ";
-    window.setTimeout(() => { this.dom.saveStatus.classList.remove("is-saving"); this.dom.saveStatus.lastChild.textContent = " محفوظ محليًا"; }, 420);
+  setStatus(message, isError = false) {
+    if (!this.dom.statusLine) return;
+    this.dom.statusLine.textContent = message;
+    this.dom.statusLine.classList.toggle("is-error", isError);
   }
 }
 
+window.App = App;
 document.addEventListener("DOMContentLoaded", () => {
-  try { const app = new App(); app.init(); }
-  catch (error) { console.error("AI Selfie Prompt Studio failed to initialize", error); showToast("تعذر تشغيل الاستوديو. حدّث الصفحة وحاول مرة ثانية.", "error", 6000); }
+  try { new App().init(); }
+  catch (error) {
+    console.error("prompt-studio personal initialization failed", error);
+    const status = document.getElementById("statusLine");
+    if (status) { status.textContent = "تعذر تشغيل الأداة"; status.classList.add("is-error"); }
+  }
 });
