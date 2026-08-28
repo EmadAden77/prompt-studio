@@ -1,5 +1,6 @@
-const VERSION = "v1.38";
+const VERSION = "v1.39";
 const STORAGE_KEY = "prompt-studio:car-selfie-angle:v1";
+const TEMPLATE_STORAGE_KEY = "prompt-studio:car-selfie-angle-template:v1";
 const MARKER_START = "SELFIE ANGLE AUTHORITY — USER SELECTED";
 const MARKER_END = "END SELFIE ANGLE AUTHORITY";
 
@@ -94,7 +95,51 @@ const ANGLES = Object.freeze([
   }
 ]);
 
+const TEMPLATE_PROFILES = Object.freeze([
+  {
+    id: "tight_identity",
+    name_ar: "1. قريب جدًا · هوية الوجه أولًا",
+    prompt: `ANGLE TEMPLATE — TIGHT IDENTITY
+- Use the selected angle at the closest physically comfortable selfie distance compatible with it, keeping the face dominant in frame.
+- Prioritize exact IMAGE A identity and stable facial landmarks over showing cabin context.
+- Crop naturally around head, neck and nearby shoulder only; do not widen to prove hidden anatomy or vehicle details.`
+  },
+  {
+    id: "close_natural",
+    name_ar: "2. قريب طبيعي · وجه وكتفان",
+    prompt: `ANGLE TEMPLATE — CLOSE NATURAL
+- Use the selected angle with a natural close selfie distance and a face-and-shoulders composition.
+- Keep moderate near-field perspective, restrained shoulder asymmetry and enough cabin edge context to prove the subject is seated in the car.
+- Do not let the cabin become more visually important than the face.`
+  },
+  {
+    id: "balanced_cabin",
+    name_ar: "3. متوازن · وجه + جزء من المقصورة",
+    prompt: `ANGLE TEMPLATE — BALANCED CABIN
+- Use the selected angle at ordinary arm reach with a balanced crop that preserves clear facial identity while allowing a useful slice of seat, headrest, door, glass or dashboard only where naturally included.
+- Keep the face the primary subject and avoid widening the shot beyond real selfie geometry.
+- Cabin perspective must agree exactly with the selected optical center.`
+  },
+  {
+    id: "contextual_selfie",
+    name_ar: "4. سياقي · مساحة أكبر للسيارة",
+    prompt: `ANGLE TEMPLATE — CONTEXTUAL SELFIE
+- Use the selected angle with the widest composition that remains physically credible at subject-held arm length.
+- Show more cabin context only if it enters naturally from the selected viewpoint; never move the camera to passenger, dashboard or external-observer distance.
+- Preserve face scale large enough for identity to remain immediately recognizable and camera-resolvable.`
+  },
+  {
+    id: "candid_offset",
+    name_ar: "5. عفوي · ميل/إزاحة خفيفة",
+    prompt: `ANGLE TEMPLATE — CANDID OFFSET
+- Keep the selected angle as the main authority, then add only a subtle candid variation: 2–4 degrees of frame roll OR a few centimeters of lateral/vertical hand-position offset, whichever is mechanically compatible.
+- Preserve spontaneous asymmetry without turning the image into a cinematic composition.
+- Do not stack extra yaw, pitch and roll simultaneously; one small imperfection is enough.`
+  }
+]);
+
 const BY_ID = Object.freeze(Object.fromEntries(ANGLES.map((x) => [x.id, x])));
+const TEMPLATE_BY_ID = Object.freeze(Object.fromEntries(TEMPLATE_PROFILES.map((x) => [x.id, x])));
 let writing = false;
 
 const $ = (id) => document.getElementById(id);
@@ -107,9 +152,22 @@ function savedAngle() {
   return "eye_level";
 }
 
+function savedTemplate() {
+  try {
+    const id = localStorage.getItem(TEMPLATE_STORAGE_KEY);
+    if (TEMPLATE_BY_ID[id]) return id;
+  } catch {}
+  return "close_natural";
+}
+
 function currentAngle() {
   const id = $("carSelfieAngleSelect")?.value || savedAngle();
   return BY_ID[id] || BY_ID.eye_level;
+}
+
+function currentTemplate() {
+  const id = $("carSelfieAngleTemplateSelect")?.value || savedTemplate();
+  return TEMPLATE_BY_ID[id] || TEMPLATE_BY_ID.close_natural;
 }
 
 function stripBlock(text) {
@@ -122,7 +180,8 @@ function stripBlock(text) {
 
 function angleBlock() {
   const angle = currentAngle();
-  return `${MARKER_START}\nSELECTED ANGLE — ${angle.name_ar}\n${angle.prompt}\n\nANGLE PRIORITY / CONFLICT RULES\n- IMAGE A facial identity lock remains higher priority than this angle. The angle may change perspective only, never stable facial geometry.\n- The selected selfie angle overrides historical template camera-angle wording when the two disagree, while preserving the template's seat/location/pose intent and crop as far as physically compatible.\n- Time-of-day and selected lighting remain independent authorities and must not be changed by the angle.\n- Xiaomi 15 Ultra front camera, approximately 22–24 mm full-frame equivalent around f/2.0, remains mandatory.\n- The phone and complete camera-holding arm stay outside the finished frame. The hidden shoulder-to-hand chain must still be anatomically reachable.\n- If the requested angle and template crop cannot coexist at realistic arm length inside the cabin, reduce angular extremity before moving the virtual camera to an observer position.\n- No rear-camera, passenger-held camera, dashboard camera, mirror-ray substitution, tripod, floating viewpoint or external photographer.\n\nFINAL SELFIE ANGLE GATE\nReject and correct: impossible arm reach; remote camera distance; observer perspective; exaggerated fisheye stretch; angle-induced identity drift; camera roll treated as body tilt; cabin perspective inconsistent with the selected optical center; or any visible phone/holding arm caused by the selected angle.\n${MARKER_END}`;
+  const template = currentTemplate();
+  return `${MARKER_START}\nSELECTED ANGLE — ${angle.name_ar}\n${angle.prompt}\n\nSELECTED ANGLE TEMPLATE — ${template.name_ar}\n${template.prompt}\n\nANGLE / TEMPLATE PRIORITY RULES\n- IMAGE A facial identity lock is the highest authority. Neither angle nor its template may alter stable facial geometry.\n- Selected selfie ANGLE defines the optical-center direction and orientation. Selected ANGLE TEMPLATE defines only distance/crop/context behavior inside that angle.\n- If the angle template conflicts with the selected angle, the angle wins and the template is reduced conservatively.\n- The selected selfie angle overrides historical template camera-angle wording when they disagree, while preserving seat/location/pose intent as far as physically compatible.\n- General car template framing is subordinate to this angle-template pair when they conflict, but vehicle location/seat/support rules remain active.\n- Time-of-day and selected lighting remain independent authorities and must not be changed by angle or angle template.\n- Xiaomi 15 Ultra front camera, approximately 22–24 mm full-frame equivalent around f/2.0, remains mandatory.\n- The phone and complete camera-holding arm stay outside the finished frame. The hidden shoulder-to-hand chain must still be anatomically reachable.\n- If requested angle + angle template + general template cannot coexist at realistic arm length inside the cabin, preserve identity and selected angle first, then simplify angle-template context/crop before changing pose or moving the camera remotely.\n- No rear-camera, passenger-held camera, dashboard camera, mirror-ray substitution, tripod, floating viewpoint or external photographer.\n\nFINAL SELFIE ANGLE GATE\nReject and correct: impossible arm reach; remote camera distance; observer perspective; exaggerated fisheye stretch; angle-induced identity drift; camera roll treated as body tilt; cabin perspective inconsistent with the selected optical center; angle-template widening beyond real arm reach; or any visible phone/holding arm caused by the selected angle.\n${MARKER_END}`;
 }
 
 function applyPrompt() {
@@ -141,13 +200,14 @@ function applyPrompt() {
 
 function updateVersion() {
   document.documentElement.dataset.carSelfieAngle = currentAngle().id;
+  document.documentElement.dataset.carSelfieAngleTemplate = currentTemplate().id;
   document.querySelectorAll(".car-version").forEach((node) => { node.textContent = VERSION; });
   const brand = document.querySelector(".brand small");
   if (brand) brand.textContent = `Car Templates ${VERSION}`;
   const eyebrow = document.querySelector(".intro .eyebrow");
   if (eyebrow) eyebrow.textContent = `CAR SELFIE ENGINE · ${VERSION}`;
   const footer = document.querySelector("footer p:first-child");
-  if (footer) footer.innerHTML = `Car Templates ${VERSION} <span>•</span> USER SELFIE ANGLE AUTHORITY`;
+  if (footer) footer.innerHTML = `Car Templates ${VERSION} <span>•</span> 5 TEMPLATES PER SELFIE ANGLE`;
   document.title = `قوالب السيارة ${VERSION} — AI Selfie Prompt Studio`;
 }
 
@@ -175,18 +235,39 @@ function installControl() {
   });
   select.value = savedAngle();
 
-  const note = document.createElement("small");
-  note.textContent = "تتحكم بموضع الهاتف وارتفاعه وميله فقط. الهوية، الوقت، الإضاءة والملابس لا تتغير بسبب الزاوية.";
+  const templateLabel = document.createElement("label");
+  templateLabel.htmlFor = "carSelfieAngleTemplateSelect";
+  templateLabel.textContent = "🎛️ قالب الزاوية · 5 خيارات";
 
-  field.append(label, select, note);
+  const templateSelect = document.createElement("select");
+  templateSelect.id = "carSelfieAngleTemplateSelect";
+  templateSelect.name = "carSelfieAngleTemplate";
+  TEMPLATE_PROFILES.forEach((template) => {
+    const option = document.createElement("option");
+    option.value = template.id;
+    option.textContent = template.name_ar;
+    templateSelect.appendChild(option);
+  });
+  templateSelect.value = savedTemplate();
+
+  const note = document.createElement("small");
+  note.textContent = "كل زاوية لها 5 قوالب تنفيذ مستقلة. الزاوية تحدد اتجاه الكاميرا، والقالب يحدد المسافة والكادر وكمية المقصورة الظاهرة فقط.";
+
+  field.append(label, select, templateLabel, templateSelect, note);
   form.prepend(field);
 
-  select.addEventListener("change", () => {
-    try { localStorage.setItem(STORAGE_KEY, select.value); } catch {}
+  const refresh = () => {
+    try {
+      localStorage.setItem(STORAGE_KEY, select.value);
+      localStorage.setItem(TEMPLATE_STORAGE_KEY, templateSelect.value);
+    } catch {}
     updateVersion();
     document.querySelector("#rebuildBtn")?.click();
     queueMicrotask(applyPrompt);
-  });
+  };
+
+  select.addEventListener("change", refresh);
+  templateSelect.addEventListener("change", refresh);
 }
 
 function install() {
