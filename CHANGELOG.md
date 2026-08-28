@@ -1,5 +1,23 @@
 # Changelog
 
+## v2.9-auto — 2026-08-28
+
+### Added
+
+- Added `js/engines/autoEngine.js` with deterministic `isNight`, `autoPose`, `autoHair`, and `autoExpression` decisions based on the selected scene, lighting and companion set.
+- Rebuilt section 02 around exactly three visible manual choices: clothing, lighting and companions. Pose, hair, expression, clutter and aspect compatibility controls remain hidden implementation state rather than user-facing selectors.
+- Added three transparent automatic-choice badges for pose, hair and expression, each with a deterministic 🎲 next-alternative control backed by session-persistent offsets.
+- Added `js/autoRuntime.js` to resolve the automatic IDs into the existing pose/hair/expression data objects before normal prompt generation, so all existing bedding/grounding, camera, expression-muscle, hair, clothing, lighting, companion and realism locks continue unchanged.
+- Automatic pose selection preserves active bedroom/night/sofa template intent and otherwise derives a pose from companion count, scene features and night/day lighting.
+- In reference-first or explicit-reference mode, an unsupported automatic pose is replaced by the nearest supported pose before validation, with an Arabic toast/status explanation.
+- Added responsive styling in `css/autoV29.css` for the three-choice layout, auto badges and correction toasts.
+- Added `tests/v2.9-auto.mjs` and CI coverage for the three-choice interface, load order, deterministic rules, badge shuffles and strict-reference fallback wiring.
+
+### Preserved
+
+- The full Validator remains active after automatic resolution; the generated prompt receives the resolved values exactly as if they had been selected manually.
+- `car.html`, car template data, scene files, room authority, sofa/night/bed template data, companions, clutter physics and the footer ethics line remain unchanged except for the explicitly authorized home-interface automation.
+
 ## v2.8-sofa — 2026-08-28
 
 ### Added
@@ -165,9 +183,9 @@
 ### Changed
 
 - Replaced the scattered car-template data sources with one canonical file: `js/data/carTemplatesData.js`.
-- `car.html` now loads the unified v1.22 data file before the car module runtimes.
+- `car.html` now loads the unified v1.22 data file before car module runtimes.
 - Removed template arrays from `js/carPosesData.js`; it now acts only as a compatibility adapter for the unified browser data source.
-- Preserved every supplied v1.22 category, template, zone, angle, distance, framing, gaze, mood, anatomy, lighting string, and helper exactly in the canonical data file.
+- Preserved every supplied v1.22 category/template/zone/angle/distance/framing/gaze/mood/anatomy/lighting/helper data exactly in the canonical data file.
 - No `CAR_TEMPLATES` + `NEW_CAR_TEMPLATES` merge path is used.
 
 ## v1.17 — 2026-08-26
