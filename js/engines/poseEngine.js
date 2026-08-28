@@ -1,3 +1,5 @@
+import { FURNITURE_ANCHOR, SOFA_SPATIAL_MAP, CHAIR_SPATIAL_MAP } from "./realismLocks.js";
+
 const STANDING_GROUNDING = `STANDING GROUNDING — FULL WEIGHT ON THE FLOOR
 1) FOOT CONTACT: both feet flat (or one slightly forward), soles fully meeting the floor; contact shadow hugs the sole line; on reflective floors a faint correct reflection appears.
 2) NATURAL STANCE: weight shifted slightly to one leg (contrapposto): pelvis mildly tilted, shoulders relaxed and uneven, one knee softly unlocked — no symmetrical mannequin pose.
@@ -68,6 +70,18 @@ export class PoseEngine {
     return "other";
   }
 
+  supportSurfaceOf(pose) {
+    if (!pose) return null;
+    return (pose.surfaces ?? []).find((surface) => ["sofa", "bed", "chair"].includes(surface)) ?? null;
+  }
+
+  buildFurnitureAnchor(pose) {
+    const surface = this.supportSurfaceOf(pose);
+    if (!surface) return "";
+    const map = surface === "sofa" ? SOFA_SPATIAL_MAP : surface === "chair" ? CHAIR_SPATIAL_MAP : "BED SPATIAL MAP: use the locked mattress, headboard/pillow zone and subject-relative lamp/vanity sides already defined for IMAGE B.";
+    return `FURNITURE ANCHOR\n${FURNITURE_ANCHOR.lock}\n${FURNITURE_ANCHOR[surface]}\n${map}`;
+  }
+
   isSideLying(poseId) {
     return poseId === "lying_right_side" || poseId === "lying_left_side";
   }
@@ -81,6 +95,7 @@ export class PoseEngine {
 
     const sections = {
       subject: this.buildSubjectLock(pose),
+      furnitureAnchor: this.buildFurnitureAnchor(pose),
       posePhysics: this.buildPosePhysics(pose, autoEngineering),
       armStrategy: this.buildArmStrategy(pose, autoEngineering),
       expression: this.buildExpressionLock(expression),
