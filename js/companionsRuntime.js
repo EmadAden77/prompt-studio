@@ -1,4 +1,5 @@
-import { COMPANION_SETS } from "./data/companionsData.js";
+import { COMPANION_SETS, COMPANIONS } from "./data/companionsData.js";
+import { resolveCompanionPoses } from "./data/companionPosesData.js";
 
 const DEFAULT_SET_ID = "none";
 const GROUPS = Object.freeze({
@@ -26,15 +27,28 @@ function groupReachWarning(config) {
   };
 }
 
+function fallbackSummary(app) {
+  const set = selectedSet(app);
+  if (!set?.members?.length) return "";
+  const resolved = resolveCompanionPoses(set, app.state.companionSeedExtra ?? 0, app.state.poseId ?? app.state.pose?.id ?? "");
+  if (!resolved.replacements.length) return "العفوية الحالية متوافقة مع الوضعية.";
+  return resolved.replacements.map((r) => {
+    const name = COMPANIONS[r.id]?.name_ar || r.id;
+    return `استبدال آمن: ${name} · ${r.from.ar} ← ${r.to.ar} (${r.reason}).`;
+  }).join(" ");
+}
+
 function install() {
   const App = window.App;
-  if (!App || App.prototype.__companionsV26) return;
-  App.prototype.__companionsV26 = true;
+  if (!App || App.prototype.__companionsV27) return;
+  App.prototype.__companionsV27 = true;
 
   const originalCacheDOM = App.prototype.cacheDOM;
   App.prototype.cacheDOM = function(...args) {
     const dom = originalCacheDOM.apply(this, args);
     dom.companionSelect = document.getElementById("companionSelect");
+    dom.companionShuffleBtn = document.getElementById("companionShuffleBtn");
+    dom.companionPoseSummary = document.getElementById("companionPoseSummary");
     return dom;
   };
 
@@ -42,23 +56,26 @@ function install() {
   App.prototype.sanitizeState = function() {
     originalSanitize.call(this);
     if (!COMPANION_SETS.some((set) => set.id === this.state.companionSetId)) this.state.companionSetId = DEFAULT_SET_ID;
+    if (!Number.isInteger(this.state.companionSeedExtra) || this.state.companionSeedExtra < 0) this.state.companionSeedExtra = 0;
   };
 
   const originalBuildConfig = App.prototype.buildConfig;
   App.prototype.buildConfig = function(...args) {
     const config = originalBuildConfig.apply(this, args);
     config.companionSet = selectedSet(this);
+    config.companionSeedExtra = this.state.companionSeedExtra ?? 0;
     return config;
   };
 
   const originalPopulateSelects = App.prototype.populateSelects;
   App.prototype.populateSelects = function(...args) {
     const result = originalPopulateSelects.apply(this, args);
-    this.populateCompanionSelectV26();
+    this.populateCompanionSelectV27();
+    this.renderCompanionSpontaneityV27();
     return result;
   };
 
-  App.prototype.populateCompanionSelectV26 = function() {
+  App.prototype.populateCompanionSelectV27 = function() {
     const select = this.dom?.companionSelect || document.getElementById("companionSelect");
     if (!select) return;
     const fragment = document.createDocumentFragment();
@@ -77,13 +94,36 @@ function install() {
     select.value = this.state.companionSetId || DEFAULT_SET_ID;
   };
 
+  App.prototype.renderCompanionSpontaneityV27 = function() {
+    const set = selectedSet(this);
+    const active = Boolean(set?.members?.length);
+    if (this.dom?.companionShuffleBtn) {
+      this.dom.companionShuffleBtn.disabled = !active;
+      this.dom.companionShuffleBtn.hidden = !active;
+    }
+    if (this.dom?.companionPoseSummary) {
+      this.dom.companionPoseSummary.textContent = active ? fallbackSummary(this) : "";
+      this.dom.companionPoseSummary.hidden = !active;
+    }
+  };
+
   const originalBindUI = App.prototype.bindUI;
   App.prototype.bindUI = function(...args) {
     const result = originalBindUI.apply(this, args);
     this.dom.companionSelect?.addEventListener("change", () => {
       this.state.companionSetId = this.dom.companionSelect.value;
+      this.state.companionSeedExtra = 0;
+      this.renderCompanionSpontaneityV27();
       this.engineer();
     });
+    this.dom.companionShuffleBtn?.addEventListener("click", () => {
+      const set = selectedSet(this);
+      if (!set?.members?.length) return;
+      this.state.companionSeedExtra = (this.state.companionSeedExtra ?? 0) + 1;
+      this.renderCompanionSpontaneityV27();
+      this.engineer();
+    });
+    this.dom.poseSelect?.addEventListener("change", () => queueMicrotask(() => this.renderCompanionSpontaneityV27()));
     return result;
   };
 
@@ -102,14 +142,18 @@ function install() {
       };
       this.__companionsValidatorPatched = true;
     }
-    return originalInit.apply(this, args);
+    const result = originalInit.apply(this, args);
+    queueMicrotask(() => this.renderCompanionSpontaneityV27());
+    return result;
   };
 
   const originalReset = App.prototype.resetToDefaults;
   App.prototype.resetToDefaults = function(...args) {
     this.state.companionSetId = DEFAULT_SET_ID;
+    this.state.companionSeedExtra = 0;
     const result = originalReset.apply(this, args);
-    this.populateCompanionSelectV26();
+    this.populateCompanionSelectV27();
+    this.renderCompanionSpontaneityV27();
     return result;
   };
 }
