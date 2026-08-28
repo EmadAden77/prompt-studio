@@ -1,4 +1,5 @@
 import { POSES as DEFAULT_POSES } from "../data/posesData.js";
+import { LIGHTING_OPTIONS as DEFAULT_LIGHTING } from "../data/lightingData.js";
 
 export const NIGHT_IDS = Object.freeze([
   "phone_screen_only","phone_dark_closeup","tv_glow_night","moonlight_window",
@@ -26,6 +27,72 @@ export function poseAllowed(pose, scene) {
   const featOk = !requirements.length || requirements.some((feature) => visible.has(feature));
   const listed = !Array.isArray(scene.supported_poses) || scene.supported_poses.includes(pose.id);
   return featOk && listed;
+}
+
+export function lightingAllowed(lighting, scene) {
+  if (!lighting) return false;
+  if (!scene) return true;
+  const visible = new Set(scene.visible_features || []);
+  const required = Array.isArray(lighting.required_features) ? lighting.required_features : [];
+  return required.every((feature) => visible.has(feature));
+}
+
+export function lightingCoherence(lighting, cfg = {}) {
+  const scene = cfg.selectedScene || null;
+  const poseId = cfg.pose?.id || cfg.poseId || "";
+  const n = cfg.companionSet?.members?.length || 0;
+  const visible = new Set(scene?.visible_features || []);
+  const mode = cfg.templateMode || "day";
+  let score = 0;
+
+  if (!lightingAllowed(lighting, scene)) return Number.NEGATIVE_INFINITY;
+  if (cfg.preferredLightingId && lighting.id === cfg.preferredLightingId) score += 120;
+
+  if (visible.has("daylight_access") && lighting.category === "daylight") score += 42;
+  if (visible.has("lamp") && lighting.category === "lamp") score += 38;
+  if (visible.has("ceiling_spots") && ["all_spots","ceiling_spots_dim"].includes(lighting.id)) score += 36;
+  if (visible.has("ceiling_light") && lighting.category === "ceiling") score += 32;
+  if (!(lighting.required_features || []).length) score += 14;
+
+  if (mode === "night") score += isNight(lighting) ? 55 : -24;
+  else if (mode === "day" || mode === "sofa") score += isNight(lighting) ? -10 : 18;
+
+  if (n >= 2) {
+    if (["daylight","ceiling"].includes(lighting.category)) score += 18;
+    if (lighting.id === "phone_screen_only" || lighting.id === "phone_dark_closeup") score -= 24;
+  }
+
+  if (poseId.startsWith("lying") || poseId === "semi_reclining") {
+    if (["lamp","screen","night"].includes(lighting.category) || isNight(lighting)) score += 12;
+  }
+  if (poseId.startsWith("standing")) {
+    if (["daylight","ceiling"].includes(lighting.category)) score += 12;
+  }
+  if (poseId === "sitting_sofa") {
+    if (visible.has("daylight_access") && lighting.category === "daylight") score += 14;
+    if (visible.has("ceiling_light") && lighting.category === "ceiling") score += 8;
+  }
+
+  return score;
+}
+
+export function rankedLighting(cfg = {}, options = DEFAULT_LIGHTING) {
+  return options
+    .filter((lighting) => lightingAllowed(lighting, cfg.selectedScene))
+    .map((lighting, index) => ({ lighting, score:lightingCoherence(lighting, cfg), index }))
+    .sort((a, b) => (b.score - a.score) || (a.index - b.index))
+    .map((entry) => entry.lighting);
+}
+
+export function autoLighting(cfg = {}, options = DEFAULT_LIGHTING) {
+  const pool = rankedLighting(cfg, options);
+  return pool[0] || options[0] || null;
+}
+
+export function altLighting(cfg = {}, k = 0, options = DEFAULT_LIGHTING) {
+  const pool = rankedLighting(cfg, options);
+  if (!pool.length) return options[0] || null;
+  return pool[Math.max(0, k) % pool.length] || pool[0];
 }
 
 export function coherence(pose, cfg = {}) {
@@ -76,4 +143,4 @@ export const autoExpression = (cfg = {}) => (cfg.companionSet?.members?.length >
   : isNight(cfg.lighting) ? "relaxed" : "smile";
 
 if (typeof window !== "undefined")
-  Object.assign(window, { NIGHT_IDS, isNight, poseAllowed, coherence, rankedPoses, autoPose, altPose, autoHair, autoExpression });
+  Object.assign(window, { NIGHT_IDS, isNight, poseAllowed, lightingAllowed, lightingCoherence, rankedLighting, autoLighting, altLighting, coherence, rankedPoses, autoPose, altPose, autoHair, autoExpression });
