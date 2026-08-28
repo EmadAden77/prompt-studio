@@ -1,5 +1,24 @@
 # Changelog
 
+## v2.0 — 2026-08-28
+
+### Added
+
+- Added `js/engines/realismLocks.js` with the v2 selfie viewpoint, Xiaomi front-camera emulator, lighting physics, strict phone-screen-only lighting, single-pipeline, hair, clothing, expression, bedding, sitting/standing grounding, and deterministic imperfection-manifest locks.
+- Replaced the expression source with the five v2 muscle-state expressions: neutral, smile, serious, relaxed, and confident. Existing module consumers retain a compatibility alias while the v2 source of truth is `EXPRESSIONS`.
+- Added `PromptEngine.generateV2()` and made it the active prompt path.
+- Enforced the v2 prompt order: TASK → SELFIE VIEWPOINT LOCK → natural five-part brief → IDENTITY LOCK → ROOM LOCK → POSE & PHYSICS + bedding/grounding → CAMERA EMULATOR → muscle-only EXPRESSION → HAIR → CLOTHING → LIGHTING PHYSICS + strict phone-screen block when selected → SINGLE PIPELINE → IMPERFECTION MANIFEST → FINAL CHECK + NEGATIVE.
+- Smart engineering now runs immediately on initialization/load instead of leaving the scene in a waiting-for-engineering state.
+- Added the section-03 attach chip with reference filename/path and direct reference download button.
+- Added a colored confidence badge plus strict-filter transparency line (`passed X of Y references`).
+- Pose options are rendered in bed, sitting, and standing optgroups using the v2 placement classification.
+
+### Preserved
+
+- The five-choice interface, sections 01–04 ordering, existing action buttons, scene/help dialogs, and footer wording remain unchanged except for the explicitly requested section-03 v2 indicators.
+- `car.html` was not modified by the v2 deployment.
+- `js/data/lightingData.js`, `js/data/posesData.js`, and `js/data/carTemplatesData.js` remain unchanged.
+
 ## v1.22 — 2026-08-28
 
 ### Changed
