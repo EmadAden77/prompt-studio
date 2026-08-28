@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.22 — 2026-08-28
+
+### Changed
+
+- Replaced the scattered car-template data sources with one canonical file: `js/data/carTemplatesData.js`.
+- `car.html` now loads the unified v1.22 data file before the car module runtimes.
+- Removed template arrays from `js/carPosesData.js`; it now acts only as a compatibility adapter for the unified browser data source.
+- Preserved every supplied v1.22 category, template, zone, angle, distance, framing, gaze, mood, anatomy, lighting string, and helper exactly in the canonical data file.
+- No `CAR_TEMPLATES` + `NEW_CAR_TEMPLATES` merge path is used.
+
 ## v1.17 — 2026-08-26
 
 ### Added
