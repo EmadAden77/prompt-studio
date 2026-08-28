@@ -3,233 +3,123 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="Smart Quad Mode لبناء أوامر سيلفي واقعية عبر قوالب جاهزة أو تخصيص يدوي بخمس اختيارات.">
   <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#0d1117">
-  <title>AI Selfie Prompt Studio — Smart Quad</title>
+  <title>AI Selfie Prompt Studio</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/responsive.css">
-  <style>
-    .hidden{display:none!important}.chip{margin-top:12px;padding:10px 12px;border:1px solid var(--border-color,rgba(127,127,127,.2));border-radius:12px;background:var(--surface-raised,rgba(127,127,127,.06));line-height:1.8}.chip code{direction:ltr;unicode-bidi:plaintext;overflow-wrap:anywhere}.chip button{margin-inline-start:8px}.badge{display:inline-flex;align-items:center;margin-top:10px;padding:6px 10px;border-radius:999px;font-weight:800;border:1px solid currentColor}.badge.green{color:#2e9d58}.badge.yellow{color:#b58a00}.badge.red{color:#c44}.muted{opacity:.72;margin:.45rem 0 0}
-  </style>
 </head>
-<body data-page="home">
-  <a class="skip-link" href="#workspace">انتقل إلى مساحة العمل</a>
-
-  <header class="topbar">
-    <div class="topbar__inner">
-      <a class="brand" href="#" aria-label="AI Selfie Prompt Studio — الرئيسية">
-        <span class="brand__mark" aria-hidden="true">S</span>
-        <span><strong>AI Selfie</strong><small>Smart Quad Studio</small></span>
-      </a>
-      <div class="topbar__actions">
-        <a class="ghost-button" href="car.html" style="text-decoration:none;white-space:nowrap">🚙 قوالب السيارة</a>
-        <span class="save-status" id="saveStatus" aria-live="polite"><span class="save-status__dot"></span> محفوظ محليًا</span>
-        <button class="icon-button" id="helpBtn" type="button" aria-label="فتح دليل الاستخدام" title="دليل الاستخدام">؟</button>
-        <button class="icon-button" id="themeBtn" type="button" aria-label="تبديل المظهر" title="تبديل المظهر"><span id="themeIcon" aria-hidden="true">◐</span></button>
-      </div>
+<body data-page="home" class="personal-app">
+  <header class="app-header">
+    <h1>AI Selfie Prompt Studio</h1>
+    <div class="flow-toggle" aria-label="ترتيب العمل">
+      <button id="poseFirstBtn" class="active" type="button">الوضعية أولًا</button>
+      <button id="refFirstBtn" type="button">المرجع أولًا</button>
     </div>
+    <div class="shortcuts-hint" aria-label="اختصارات لوحة المفاتيح">
+      <kbd>N</kbd> جديد · <kbd>C</kbd> نسخ · <kbd>R</kbd> إعادة · <kbd>F</kbd> مفضلة · <kbd>H</kbd> سجل · <kbd>1-5</kbd> آخر 5
+    </div>
+    <a class="ghost-button" href="car.html">🚙 السيارة</a>
   </header>
 
-  <main id="workspace" class="page-shell">
-    <section class="intro" aria-labelledby="pageTitle">
-      <div>
-        <p class="eyebrow">SMART QUAD MODE · SINGLE MASTER REFERENCE</p>
-        <h1 id="pageTitle">مرجع غرفة واحد، والقالب يغيّر الوضعية فقط</h1>
-        <p>ارفع صورة Bedroom Master Reference واحدة تجمع هوية الشخص والغرفة. القوالب تستخدم نفس الشخص ونفس الغرفة، وتغيّر فقط الوضعية ومكان التفاعل والإضاءة والكاميرا ضمن الهندسة الحقيقية للمرجع.</p>
+  <main class="personal-shell">
+    <section id="s01" class="card panel">
+      <div class="panel__header"><div><span class="step-number">01</span><h2>الصور المرجعية</h2></div></div>
+      <div class="upload-grid">
+        <div class="upload-box" data-upload="imageA">
+          <label for="imageAInput">IMAGE A — الهوية فقط</label>
+          <input type="file" id="imageAInput" accept="image/jpeg,image/png,image/webp,image/avif">
+          <img id="imageAPreview" alt="معاينة IMAGE A" hidden>
+          <button id="imageARemove" class="ghost-button" type="button" hidden>حذف</button>
+        </div>
+        <div class="upload-box info">
+          <strong>IMAGE B — من مكتبة المشاهد</strong>
+          <p class="muted">يُختار آليًا في وضع «الوضعية أولًا»، أو يدويًا في وضع «المرجع أولًا».</p>
+        </div>
       </div>
-      <span class="context-badge" id="modeHint">مرجع واحد فقط</span>
     </section>
 
-    <div class="workspace-grid">
-      <div class="configuration-column">
-        <section class="panel" aria-labelledby="referencesTitle">
-          <div class="panel__header">
-            <div><span class="step-number">01</span><h2 id="referencesTitle">الصورة المرجعية</h2></div>
-            <span class="privacy-badge">تبقى على جهازك</span>
-          </div>
-          <div class="upload-grid">
-            <article class="upload-card" data-upload="imageA">
-              <div class="upload-card__heading">
-                <div><strong>MASTER REFERENCE</strong><span>الهوية + غرفة النوم</span></div>
-                <button class="upload-remove" id="imageARemove" type="button" hidden>حذف</button>
-              </div>
-              <label class="dropzone" id="imageADropzone" for="imageAInput" tabindex="0">
-                <input id="imageAInput" type="file" accept="image/jpeg,image/png,image/webp,image/avif" hidden>
-                <span class="dropzone__icon" aria-hidden="true">M</span>
-                <span class="dropzone__empty"><strong>ارفع Bedroom Master Reference المعتمد</strong><small>JPG, PNG, WEBP أو AVIF — حتى 12MB</small></span>
-                <img id="imageAPreview" alt="معاينة مرجع غرفة النوم والهوية" hidden>
-              </label>
-              <p class="upload-card__hint">هذه الصورة هي السلطة المرئية الوحيدة: تحفظ ملامح الوجه والهوية، وفي الوقت نفسه تثبّت السرير والكرسي والدولاب والتسريحة والسجادة والستائر والأرضية وبقية هندسة الغرفة.</p>
-              <p class="file-meta" id="imageAMeta" aria-live="polite"></p>
-            </article>
+    <section id="s02" class="card panel">
+      <div class="panel__header"><div><span class="step-number">02</span><h2>الاختيارات الخمسة</h2></div></div>
+      <div class="form-grid personal-options">
+        <div class="field field--wide"><label for="poseSelect">1. الوضعية</label><select id="poseSelect"></select></div>
+        <div class="field"><label for="hairSelect">2. الشعر</label><select id="hairSelect"></select></div>
+        <div class="field"><label for="lightingSelect">3. الإضاءة</label><select id="lightingSelect"></select></div>
+        <div class="field"><label for="expressionSelect">4. التعبير</label><select id="expressionSelect"></select></div>
+        <div class="field"><label for="clothingSelect">5. الملابس</label><select id="clothingSelect"></select></div>
+        <div class="field"><label for="aspectSelect">الأبعاد</label><select id="aspectSelect"><option value="9:16">9:16</option><option value="1:1">1:1</option><option value="16:9">16:9</option></select></div>
+      </div>
+    </section>
 
-            <article class="upload-card upload-card--automatic" data-auto-reference>
-              <div class="upload-card__heading">
-                <div><strong>خريطة التفاعل الداخلية</strong><span>ليست صورة مرجعية ثانية</span></div>
-                <span class="auto-reference-badge">تخطيط داخلي</span>
-              </div>
-              <button id="selectSceneBtn" class="auto-reference-card auto-reference-card--button" type="button" aria-haspopup="dialog">
-                <span class="dropzone__icon" aria-hidden="true">⌖</span>
-                <span class="dropzone__empty">
-                  <strong id="autoReferenceTitle">اختر قالبًا من الأعلى</strong>
-                  <small id="autoReferenceMeta">سيحدد المحرك منطقة التفاعل داخل نفس الغرفة.</small>
-                </span>
-              </button>
-              <p class="upload-card__hint">هذه الخريطة لا تضيف أي شكل أو أثاث ولا تُرفق مع الأمر. وظيفتها فقط تحديد هل القالب يتفاعل مع السرير أو الكرسي أو الدولاب أو الأرضية داخل MASTER REFERENCE.</p>
-            </article>
-          </div>
-        </section>
-
-        <section class="panel" aria-labelledby="optionsTitle">
-          <div class="panel__header">
-            <div><span class="step-number">02</span><h2 id="optionsTitle">اختياراتك الشخصية</h2></div>
-            <span class="context-badge">3 اختيارات فقط</span>
-          </div>
-          <form id="optionsForm" class="form-grid" novalidate>
-            <div class="field field--wide">
-              <label for="templateSelect">قالب جاهز (محرك داخلي)</label>
-              <select id="templateSelect" name="template" disabled>
-                <option value="custom">يُدار من القوالب بالأعلى</option>
-              </select>
-              <small>هذا التحكم داخلي ويُدار تلقائيًا من خانة القالب المختارة بالأعلى.</small>
-            </div>
-            <div class="field field--wide">
-              <label for="poseSelect">الوضعية (تلقائي)</label>
-              <select id="poseSelect" name="pose"></select>
-              <small>تتغير تلقائيًا حسب القالب مع إبقاء الغرفة والهوية ثابتتين.</small>
-            </div>
-            <div class="field">
-              <label for="hairSelect">الشعر</label>
-              <select id="hairSelect" name="hair"></select>
-            </div>
-            <div class="field">
-              <label for="lightingSelect">الإضاءة (تلقائي)</label>
-              <select id="lightingSelect" name="lighting"></select>
-              <small>تتغير تلقائيًا حسب القالب ومصادر الإضاءة الممكنة داخل المرجع.</small>
-            </div>
-            <div class="field field--wide">
-              <label for="expressionSelect">تعبير الوجه</label>
-              <select id="expressionSelect" name="expression"></select>
-            </div>
-            <div class="field field--wide">
-              <label for="clothingSelect">الملابس</label>
-              <select id="clothingSelect" name="clothing"></select>
-              <small>مصنفة إلى ملابس نوم، كاجوال، رياضي، شتوي وتقليدي. في قوالب بعد الاستحمام فقط تُستبدل تلقائيًا بمنشفة حمام حول الخصر.</small>
-            </div>
-          </form>
-        </section>
-
-        <section class="panel scene-panel" aria-labelledby="sceneTitle">
-          <div class="panel__header">
-            <div><span class="step-number">03</span><h2 id="sceneTitle">منطقة التفاعل التي اختارها القالب</h2></div>
-            <span class="confidence-badge" id="sceneConfidence">—</span>
-          </div>
-          <div class="scene-card" id="sceneCard">
-            <div class="scene-card__visual">
-              <img id="sceneImage" src="assets/scene-placeholder.svg" alt="معاينة خريطة منطقة التفاعل">
-              <span class="scene-card__fallback" id="sceneFallback">الخريطة غير متاحة</span>
-            </div>
-            <div class="scene-card__body">
-              <p class="scene-card__region" id="sceneRegion">—</p>
-              <h3 id="sceneName">بانتظار اختيار قالب</h3>
-              <p id="sceneFilename" class="scene-card__filename">بيانات داخلية فقط</p>
-              <ul id="sceneReasons" class="reason-list"></ul>
-              <p class="scene-card__automatic-note">MASTER REFERENCE هو المرجع المرئي الوحيد؛ هذه البطاقة تحدد منطقة التفاعل المنطقية للقالب ولا تستبدل الغرفة.</p>
-            </div>
-          </div>
-          <div id="attachChip" class="chip hidden">📎 أرفق مع الأمر إلى ChatGPT:
-            <code id="attachFile"></code>
-            <button id="downloadSceneBtn" class="ghost-button" type="button">تنزيل صورة المرجع</button>
-          </div>
+    <section id="s03" class="card panel">
+      <div class="panel__header"><div><span class="step-number">03</span><h2>المرجع المختار</h2></div></div>
+      <div id="sceneDisplay" class="personal-scene">
+        <img id="sceneImage" src="assets/scene-placeholder.svg" alt="صورة المرجع المختار">
+        <div class="personal-scene__meta">
+          <h3 id="sceneName">—</h3>
+          <p id="sceneMeta" class="muted">—</p>
+          <div id="attachChip" class="chip hidden">📎 أرفق مع الأمر: <code id="attachFile"></code><button id="downloadSceneBtn" type="button">تنزيل</button></div>
           <span id="confBadge" class="badge"></span>
           <p id="strictLine" class="muted"></p>
-        </section>
-
-        <section class="panel validation-panel" aria-labelledby="validationTitle">
-          <div class="panel__header">
-            <div><span class="step-number">04</span><h2 id="validationTitle">الفحص الفيزيائي</h2></div>
-            <span class="validation-status" id="validationStatus">جارٍ الفحص</span>
-          </div>
-          <div id="validationSummary" class="validation-summary" aria-live="polite"></div>
-          <div id="conflictsList" class="issues-list"></div>
-          <button id="autoFixBtn" class="secondary-button" type="button" hidden>إصلاح التعارضات القابلة للإصلاح</button>
-        </section>
+          <button id="overrideSceneBtn" class="ghost-button" type="button">استبدال المرجع</button>
+        </div>
       </div>
+    </section>
 
-      <aside class="output-column" aria-labelledby="promptTitle">
-        <section class="prompt-panel">
-          <div class="prompt-panel__header">
-            <div><p class="eyebrow">READY FOR CHATGPT</p><h2 id="promptTitle">FINAL PROMPT</h2></div>
-            <span id="promptWordCount" class="word-count">0 كلمة</span>
-          </div>
-          <div id="promptSummary" class="selection-summary"></div>
-          <div class="field">
-            <label for="aspectSelect">أبعاد الصورة (تلقائي مع القالب)</label>
-            <select id="aspectSelect" name="aspect">
-              <option value="9:16" selected>9:16 — رأسي</option>
-              <option value="1:1">1:1 — مربع</option>
-              <option value="16:9">16:9 — أفقي</option>
-            </select>
-            <small>يُدار تلقائيًا من القالب.</small>
-          </div>
-          <div class="prompt-editor"><pre id="finalPrompt" tabindex="0" aria-label="الأمر النهائي باللغة الإنجليزية"></pre></div>
-          <div id="sendInstruction" class="validation-summary">أرفق صورة واحدة فقط: <strong>MASTER REFERENCE</strong>، ثم أرسل الأمر وقل:<br>«هذه MASTER REFERENCE الوحيدة لهويتي وغرفة نومي. حافظ على الشخص نفسه والغرفة نفسها، وغيّر فقط ما يطلبه القالب. ولّد صورة واحدة فقط وأعد الصورة النهائية دون شرح.»</div>
-          <div class="prompt-actions">
-            <button id="autoEngineerBtn" class="secondary-button" type="button">🎲 اقتراح وضعية</button>
-            <button id="validateBtn" class="ghost-button" type="button">🔍 فحص التعارضات</button>
-            <button id="copyBtn" class="primary-button" type="button">📋 نسخ الأمر</button>
-            <button id="rebuildBtn" class="ghost-button" type="button">🔄 إعادة بناء</button>
-            <button id="downloadBtn" type="button" hidden>تنزيل TXT</button>
-          </div>
-        </section>
-      </aside>
-    </div>
+    <section id="s04" class="card panel prompt-workspace">
+      <div class="panel__header"><div><span class="step-number">04</span><h2>FINAL PROMPT</h2></div><span id="promptWordCount" class="word-count">0 كلمة</span></div>
+      <div id="conflictsBox" class="validation-summary hidden"></div>
+      <pre id="finalPrompt" class="personal-prompt" tabindex="0"></pre>
+
+      <div class="primary-actions">
+        <button id="engineerBtn" class="secondary-button" type="button">🎲 هندسة</button>
+        <button id="validateBtn" class="ghost-button" type="button">🔍 فحص</button>
+        <button id="copyBtn" class="primary-button" type="button">📋 نسخ</button>
+        <button id="resetBtn" class="ghost-button" type="button">🔄 جديد</button>
+        <button id="downloadBtn" class="ghost-button" type="button">⬇ TXT</button>
+      </div>
+      <p id="statusLine" class="status-line" aria-live="polite"></p>
+
+      <details class="quick-fixes">
+        <summary>إصلاح سريع (5 تصحيحات)</summary>
+        <div class="fix-grid">
+          <button data-fix="face_drift" type="button">🧑 الوجه تغيّر</button>
+          <button data-fix="arm_leak" type="button">💪 ذراع ظهرت</button>
+          <button data-fix="light_leak" type="button">💡 الإضاءة ما انطبقت</button>
+          <button data-fix="seat_mess" type="button">🪑 الجلوس ملخبط</button>
+          <button data-fix="bg_cleaner" type="button">🖼️ الخلفية أنظف</button>
+        </div>
+      </details>
+
+      <details class="session-tools">
+        <summary>أدوات الجلسة والسجل</summary>
+        <div class="session-grid">
+          <button id="sessionBtn" type="button">🎞️ جلسة واحدة (3 لقطات)</button>
+          <button id="favBtn" type="button">☆ مفضلة</button>
+          <button id="historyBtn" type="button">🕘 السجل</button>
+          <div class="last5"><span>آخر 5:</span><button data-idx="0" type="button">1</button><button data-idx="1" type="button">2</button><button data-idx="2" type="button">3</button><button data-idx="3" type="button">4</button><button data-idx="4" type="button">5</button></div>
+        </div>
+      </details>
+    </section>
   </main>
 
-  <footer class="footer">
-    <p>Smart Quad Mode <span>•</span> Single Bedroom Master Reference</p>
-    <p>مرجع واحد للهوية والغرفة؛ القالب يغيّر الوضعية والتفاعل فقط.</p>
+  <footer class="footer personal-footer">
+    <p class="muted">Smart Quad v2.0-personal · واقعية مبنية على الفيزياء · لا تزوير EXIF، لا إزالة C2PA، ولا محاكاة PRNU.</p>
   </footer>
 
   <dialog id="sceneDialog" class="modal">
-    <div class="modal__header">
-      <div><p class="eyebrow">SPATIAL ZONE MAP</p><h2>خريطة منطقة التفاعل</h2></div>
-      <button class="icon-button" data-close-dialog="sceneDialog" type="button" aria-label="إغلاق">×</button>
-    </div>
-    <p class="modal__intro">هذه ليست صورة مرجعية ثانية. يستخدمها المحرك فقط لاختيار منطقة التفاعل المناسبة داخل MASTER REFERENCE مثل السرير أو الكرسي أو الدولاب أو الأرضية.</p>
+    <div class="modal__header"><h2>SCENE OVERRIDE</h2><button class="icon-button" data-close-dialog="sceneDialog" type="button">×</button></div>
     <div id="scenePickerGrid" class="scene-picker-grid"></div>
   </dialog>
 
-  <dialog id="helpDialog" class="modal modal--narrow">
-    <div class="modal__header">
-      <div><p class="eyebrow">SINGLE MASTER GUIDE</p><h2>كيف يعمل؟</h2></div>
-      <button class="icon-button" data-close-dialog="helpDialog" type="button" aria-label="إغلاق">×</button>
-    </div>
-    <ol class="help-steps">
-      <li><strong>ارفع MASTER REFERENCE واحدة</strong><span>هي السلطة الوحيدة لهوية الشخص وهندسة غرفة النوم معًا.</span></li>
-      <li><strong>اختر فئة القالب ثم القالب</strong><span>القالب يحدد الوضعية ومنطقة التفاعل داخل نفس الغرفة.</span></li>
-      <li><strong>التطبيق يحافظ على المكان</strong><span>السرير والكرسي والدولاب والتسريحة والسجادة والستائر وباقي التفاصيل لا يعاد اختراعها.</span></li>
-      <li><strong>غيّر مظهرك ضمن الهوية</strong><span>الشعر والتعبير والملابس تتبع الخيارات، لكن ملامح الوجه وشكل الوجه تبقى مقفلة على MASTER REFERENCE.</span></li>
-    </ol>
+  <dialog id="historyDialog" class="modal modal--narrow">
+    <div class="modal__header"><h2>سجل الأوامر المحلي</h2><button class="icon-button" data-close-dialog="historyDialog" type="button">×</button></div>
+    <div id="historyList" class="history-list"></div>
   </dialog>
 
-  <div id="toastRegion" class="toast-region" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="js/bedroomMasterReferenceRuntime.js"></script>
   <script type="module" src="js/engines/realismLocks.js"></script>
   <script type="module" src="js/app.js"></script>
-  <script type="module" src="js/templates.js"></script>
-  <script type="module" src="js/indoorTimeTemplates.js"></script>
-  <script type="module" src="js/indoorTemplateAuthority.js"></script>
-  <script type="module" src="js/templateHub.js"></script>
-  <script type="module" src="js/roomScenarioRuntime.js"></script>
-  <script type="module" src="js/roomScenarioHub.js"></script>
-  <script type="module" src="js/xiaomiFrontCaptureModes.js"></script>
 </body>
 </html>
