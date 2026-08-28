@@ -24,7 +24,12 @@ export class Validator {
   }
 
   furnitureSurface(pose) {
-    return (pose?.surfaces ?? []).find((surface) => ANCHORED_SURFACES.has(surface)) ?? null;
+    if (!pose) return null;
+    const surfaces = pose.surfaces ?? [];
+    if (pose.placement === "sofa" || surfaces.some((surface) => surface.startsWith("sofa"))) return "sofa";
+    if (pose.placement === "chair" || surfaces.some((surface) => surface.startsWith("chair"))) return "chair";
+    if (pose.placement === "bed" || surfaces.some((surface) => ["bed", "mattress", "mattress_edge", "pillow", "headboard"].includes(surface))) return "bed";
+    return surfaces.find((surface) => ANCHORED_SURFACES.has(surface)) ?? null;
   }
 
   getFurnitureAnchorIssue(config, prompt = "") {
