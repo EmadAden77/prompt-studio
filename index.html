@@ -16,6 +16,10 @@
 <body data-page="home" class="personal-app">
   <header class="app-header">
     <h1>AI Selfie Prompt Studio</h1>
+    <div class="flow-toggle" aria-label="ترتيب العمل">
+      <button id="poseFirstBtn" class="active" type="button">الوضعية أولًا</button>
+      <button id="refFirstBtn" type="button">المرجع أولًا</button>
+    </div>
     <div class="shortcuts-hint" aria-label="اختصارات لوحة المفاتيح">
       <kbd>N</kbd> جديد · <kbd>C</kbd> نسخ · <kbd>R</kbd> إعادة · <kbd>F</kbd> مفضلة · <kbd>H</kbd> سجل · <kbd>1-5</kbd> آخر 5
     </div>
@@ -33,8 +37,8 @@
           <button id="imageARemove" class="ghost-button" type="button" hidden>حذف</button>
         </div>
         <div class="upload-box info">
-          <strong>IMAGE B — تلقائي</strong>
-          <p class="muted">المرجع الأوحد: غرفة النوم الرئيسية.</p>
+          <strong>IMAGE B — من مكتبة المشاهد</strong>
+          <p class="muted">يُختار آليًا في وضع «الوضعية أولًا»، أو يدويًا في وضع «المرجع أولًا».</p>
         </div>
       </div>
     </section>
@@ -46,7 +50,7 @@
       <div class="bed-template-picker" aria-labelledby="bedTemplatesTitle">
         <div class="bed-template-picker__head">
           <h3 id="bedTemplatesTitle">قوالب جاهزة</h3>
-          <small>القالب يوجّه المشهد، والمحرك يطبّق المرجع الأوحد ثم يشتق الإضاءة والوضعية والشعر والتعبير تلقائيًا</small>
+          <small>القالب يوجّه المشهد، والمحرك يطبّق بوابة المرجع ثم يشتق الإضاءة والوضعية والشعر والتعبير تلقائيًا</small>
         </div>
         <div id="bedCategoryChips" class="bed-category-chips" aria-label="فئات القوالب"></div>
         <div id="bedTemplateGrid" class="bed-template-grid" aria-live="polite"></div>
@@ -81,14 +85,16 @@
     </section>
 
     <section id="s03" class="card panel">
-      <div class="panel__header"><div><span class="step-number">03</span><h2>المرجع الأوحد</h2></div><span class="badge green">المرجع الأوحد ✓</span></div>
+      <div class="panel__header"><div><span class="step-number">03</span><h2>المرجع المختار</h2></div></div>
       <div id="sceneDisplay" class="personal-scene">
-        <img id="sceneImage" src="scenes/master_bedroom_v2.svg" alt="غرفة النوم الرئيسية — المرجع الأوحد">
+        <img id="sceneImage" src="assets/scene-placeholder.svg" alt="صورة المرجع المختار">
         <div class="personal-scene__meta">
-          <h3 id="sceneName">غرفة النوم الرئيسية — المرجع الأوحد</h3>
-          <p id="sceneMeta" class="muted">master_bedroom_v2.jpg · single master reference</p>
-          <p class="muted">البصمة: سرير رمادي يسار · أريكة فحمية أمام الستارة · دولاب مرايا يمين · سجادة وسطية · سبوتات سقف + أباجورة الباب.</p>
-          <div id="attachChip" class="chip">📎 أرفق مع الأمر: <code>scenes/master_bedroom_v2.jpg</code><button id="downloadMasterSceneBtn" type="button">تنزيل</button></div>
+          <h3 id="sceneName">—</h3>
+          <p id="sceneMeta" class="muted">—</p>
+          <div id="attachChip" class="chip hidden">📎 أرفق مع الأمر: <code id="attachFile"></code><button id="downloadSceneBtn" type="button">تنزيل</button></div>
+          <span id="confBadge" class="badge"></span>
+          <p id="strictLine" class="muted"></p>
+          <button id="overrideSceneBtn" class="ghost-button" type="button">استبدال المرجع</button>
         </div>
       </div>
     </section>
@@ -134,12 +140,16 @@
     <p class="muted">Smart Quad v2.0-personal · واقعية مبنية على الفيزياء · لا تزوير EXIF، لا إزالة C2PA، ولا محاكاة PRNU.</p>
   </footer>
 
+  <dialog id="sceneDialog" class="modal">
+    <div class="modal__header"><h2>SCENE OVERRIDE</h2><button class="icon-button" data-close-dialog="sceneDialog" type="button">×</button></div>
+    <div id="scenePickerGrid" class="scene-picker-grid"></div>
+  </dialog>
+
   <dialog id="historyDialog" class="modal modal--narrow">
     <div class="modal__header"><h2>سجل الأوامر المحلي</h2><button class="icon-button" data-close-dialog="historyDialog" type="button">×</button></div>
     <div id="historyList" class="history-list"></div>
   </dialog>
 
-  <script>localStorage.setItem("prompt_personal_flow", "poseFirst");</script>
   <script type="module" src="js/data/bedTemplatesData.js"></script>
   <script type="module" src="js/data/nightTemplatesData.js"></script>
   <script type="module" src="js/data/sofaTemplatesData.js"></script>
@@ -154,25 +164,5 @@
   <script type="module" src="js/clutterRuntime.js"></script>
   <script type="module" src="js/companionsRuntime.js"></script>
   <script type="module" src="js/autoRuntime.js"></script>
-  <script>
-    document.getElementById("downloadMasterSceneBtn")?.addEventListener("click", () => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        canvas.width = img.naturalWidth || 864;
-        canvas.height = img.naturalHeight || 1536;
-        canvas.getContext("2d").drawImage(img, 0, 0);
-        canvas.toBlob((blob) => {
-          if (!blob) return;
-          const a = document.createElement("a");
-          a.href = URL.createObjectURL(blob);
-          a.download = "master_bedroom_v2.jpg";
-          a.click();
-          setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-        }, "image/jpeg", 0.92);
-      };
-      img.src = "scenes/master_bedroom_v2.svg";
-    });
-  </script>
 </body>
 </html>
