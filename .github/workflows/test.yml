@@ -36,6 +36,8 @@ jobs:
         run: node tests/v2.5-clutter.mjs
       - name: Run v2.6 companion tests
         run: node tests/v2.6-companions.mjs
+      - name: Run v2.7 companion spontaneity tests
+        run: node tests/v2.7-companion-poses.mjs
       - name: Run template preset tests
         run: node tests/templates.mjs
       - name: Run expanded clothing tests
