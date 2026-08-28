@@ -18,6 +18,12 @@
     --topbar-height: 60px;
   }
 
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
   .topbar__inner,
   .page-shell,
   .footer {
@@ -101,6 +107,174 @@
     display: grid;
     text-align: center;
   }
+
+  /* v2 personal mobile layout */
+  .app-header {
+    position: sticky;
+    top: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "title car"
+      "flow flow";
+    gap: 10px 8px;
+    width: 100%;
+    padding: 10px 12px;
+  }
+
+  .app-header h1 {
+    grid-area: title;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 15px;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .app-header > .ghost-button {
+    grid-area: car;
+    min-height: 38px;
+    padding: 7px 11px;
+    justify-self: end;
+    white-space: nowrap;
+  }
+
+  .flow-toggle {
+    grid-area: flow;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .flow-toggle button {
+    min-width: 0;
+    min-height: 42px;
+    padding: 8px 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .shortcuts-hint {
+    display: none;
+  }
+
+  .personal-shell {
+    width: 100%;
+    margin: 12px 0 32px;
+    gap: 12px;
+    padding-inline: 10px;
+  }
+
+  .personal-shell > .panel,
+  .personal-shell > .card {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .panel__header {
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .panel__header > div:first-child {
+    min-width: 0;
+  }
+
+  .panel__header h2 {
+    font-size: 17px;
+  }
+
+  .step-number {
+    flex: 0 0 auto;
+  }
+
+  .upload-box {
+    min-width: 0;
+    min-height: 112px;
+    padding: 13px;
+  }
+
+  .upload-box input[type="file"] {
+    min-width: 0;
+    max-width: 100%;
+    font-size: 13px;
+  }
+
+  .personal-scene {
+    grid-template-columns: 1fr;
+    min-width: 0;
+  }
+
+  .personal-options {
+    grid-template-columns: 1fr;
+  }
+
+  .field,
+  .field--wide,
+  .field select {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .primary-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .primary-actions button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .primary-actions .primary-button {
+    grid-column: 1 / -1;
+  }
+
+  .fix-grid,
+  .session-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .fix-grid button,
+  .session-grid button {
+    min-width: 0;
+    white-space: normal;
+  }
+
+  .last5 {
+    grid-column: 1 / -1;
+    flex-wrap: wrap;
+  }
+
+  .personal-prompt {
+    width: 100%;
+    max-width: 100%;
+    min-height: 300px;
+    max-height: 58vh;
+    padding: 13px;
+    font-size: 10.5px;
+    overflow-wrap: anywhere;
+  }
+
+  .chip {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .chip button {
+    display: block;
+    width: 100%;
+    margin: 8px 0 0;
+  }
+
+  .personal-footer {
+    width: calc(100% - 20px);
+    padding-inline: 0;
+  }
 }
 
 @media (max-width: 520px) {
@@ -122,6 +296,11 @@
 
   .field--wide {
     grid-column: auto;
+  }
+
+  .panel {
+    padding: 14px 12px;
+    border-radius: 14px;
   }
 
   .panel__header {
@@ -153,7 +332,7 @@
   }
 
   #finalPrompt {
-    padding: 14px;
+    padding: 12px;
     font-size: 10px;
   }
 
@@ -162,6 +341,59 @@
   }
 
   .modal {
-    padding: 17px;
+    width: calc(100vw - 20px);
+    max-width: calc(100vw - 20px);
+    padding: 14px;
+  }
+
+  .app-header h1 {
+    font-size: 14px;
+  }
+
+  .app-header > .ghost-button {
+    font-size: 12px;
+  }
+
+  .flow-toggle button {
+    font-size: 13px;
+  }
+
+  .personal-shell {
+    padding-inline: 8px;
+  }
+
+  .fix-grid,
+  .session-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .last5 {
+    display: grid;
+    grid-template-columns: auto repeat(5, 30px);
+    gap: 5px;
+    justify-content: start;
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 380px) {
+  .app-header {
+    padding-inline: 8px;
+  }
+
+  .app-header h1 {
+    font-size: 13px;
+  }
+
+  .app-header > .ghost-button {
+    padding-inline: 8px;
+  }
+
+  .panel {
+    padding-inline: 10px;
+  }
+
+  .panel__header h2 {
+    font-size: 16px;
   }
 }
