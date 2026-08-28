@@ -42,8 +42,9 @@ assert.match(prompt, /CLUTTER REALISM LOCK/u);
 assert.match(prompt, /fixed furniture NEVER moves/u);
 
 const index = readFileSync(resolve(root, "index.html"), "utf8");
-assert.match(index, /6\. الفوضى/u);
 assert.match(index, /id="clutterSelect"/u);
+assert.match(index, /auto-compat-hidden/u);
+assert.doesNotMatch(index, /<label for="clutterSelect">6\. الفوضى<\/label>/u);
 assert.match(index, /js\/data\/clutterData\.js/u);
 assert.match(index, /js\/clutterRuntime\.js/u);
 
