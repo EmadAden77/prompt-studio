@@ -475,7 +475,62 @@ export const LIGHTING_OPTIONS = Object.freeze([
     required_features: ["ceiling_light"],
     portable_sources: [],
     room_dark: true
-  }
+  },
+
+  // ═══ 🌑 عزل ليلي ═══
+  { id:"phone_dark_closeup", name_ar:"شاشة الهاتف في الظلام الدامس (كلوس أب)", name_en:"phone screen in pitch darkness, frontal close-up", category:"isolation",
+    kelvin:"~6500K", quality:"soft cool frontal, ONLY source", iso:"ISO 1600–3200", mood_ar:"هدوء وعزل تام",
+    physics:"Pitch-dark room; the screen at 30–40cm is the only photon source. Inverse-square falloff: face readable, shoulders noticeably darker, everything beyond ~0.5–1m pure black. Light sits slightly below eye level → soft upward shadows; calm, isolated mood.",
+    shadows:"soft upward under brows, nose and chin; background black with noise only", catchlights:"two rectangular screen glows", room_effect:"room invisible; headboard barely readable as noise shapes", required_features:[], portable_sources:["phone_screen"], room_dark:true, disable_visible_lamps:true },
+  { id:"tv_glow_night", name_ar:"وهج تلفاز خارج الإطار", name_en:"off-frame TV glow at night", category:"isolation",
+    kelvin:"6500–8000K fluctuating", quality:"large soft frontal wash", iso:"ISO 1200–2500", mood_ar:"سهرة هادئة",
+    physics:"Dark room washed by an off-frame TV: one captured moment of cool blue-white light, softly varying like content changes; phone screen adds a weaker frontal layer. No hard shadows; skin evenly cool-washed.",
+    shadows:"extremely soft, direction vague", catchlights:"large soft TV rectangle + smaller phone rectangle", room_effect:"walls faintly blue-washed, corners darker", required_features:[], portable_sources:["phone_screen"], room_dark:true },
+  { id:"moonlight_window", name_ar:"ضوء قمر خافت", name_en:"faint moonlight through window", category:"isolation",
+    kelvin:"4100–4500K dim", quality:"weak directional cool", iso:"ISO 2000–3200", mood_ar:"سكينة ليلية",
+    physics:"Moonlight enters as a weak cool directional source + phone screen on the face; long ultra-soft shadow from the window side; skin nearly desaturated cool; heavy shadow noise.",
+    shadows:"long, ultra-soft, cool", catchlights:"small phone rectangle; faint cool window glint", room_effect:"window shape barely readable, rest near-black", required_features:["daylight_access"], portable_sources:["phone_screen"], room_dark:true },
+  { id:"ac_led_micro", name_ar:"ظلام + نقاط LED صغيرة", name_en:"near-dark with micro LED dots", category:"isolation",
+    kelvin:"6500K screen + emissive dots", quality:"screen key only; dots emit but light nothing", iso:"ISO 2000–3200", mood_ar:"واقعية ليلية خام",
+    physics:"Near-total darkness; screen lights the face; 2–3 tiny emissive dots visible (AC display high on wall, power-strip LED) that glow but cast NO light — authentic micro-sources; heavy luminance+chroma noise. These are emissive dots that cast NO light.",
+    shadows:"screen-direction only", catchlights:"rectangular screen", room_effect:"black room punctuated by 2–3 colored micro dots", required_features:[], portable_sources:["phone_screen"], room_dark:true },
+
+  // ═══ 🚪 تسرب ضوء ═══
+  { id:"hallway_spill", name_ar:"تسرب ضوء الممر من باب موارب", name_en:"warm hallway spill through ajar door", category:"spill",
+    kelvin:"3000K spill + 6500K screen", quality:"narrow warm wedge + cool frontal", iso:"ISO 1600–2500", mood_ar:"استيقاظ ليلي",
+    physics:"Door ajar: warm hallway light cuts a narrow wedge across the floor and bed edge; face lit by cool screen; warm rim on the door-side shoulder. Door frame casts a sharp wedge edge on the floor.",
+    shadows:"sharp wedge boundary on floor; soft screen shadows on face", catchlights:"phone rectangle + faint warm dot", room_effect:"warm floor wedge, rest dark", required_features:[], portable_sources:["phone_screen"], room_dark:true },
+  { id:"bathroom_spill", name_ar:"تسرب ضوء الحمام الملحق", name_en:"cool bathroom spill through open door", category:"spill",
+    kelvin:"4000–5000K spill + 6500K screen", quality:"cool pool from one side", iso:"ISO 1200–2500", mood_ar:"منتصف الليل",
+    physics:"Open en-suite door spills cool white light pooling on the floor and rimming one side; face on cool screen; two cool sources with slightly different direction.",
+    shadows:"soft pool edge on floor; gentle side shadow", catchlights:"phone rectangle + cool wash", room_effect:"cool floor pool, far corners dark", required_features:[], portable_sources:["phone_screen"], room_dark:true },
+  { id:"streetlight_curtain", name_ar:"صوديوم خارجي عبر ستارة رقيقة", name_en:"sodium streetlight through sheer curtain", category:"spill",
+    kelvin:"2200K ambient + 6500K screen", quality:"dim warm ambient through fabric", iso:"ISO 1600–3200", mood_ar:"ليلة مدينة",
+    physics:"External sodium lamp glows through the sheer curtain as a dim warm ambient; curtain weave faintly visible as texture in the glow; face cool from screen → mixed WB (warm room, cool face).",
+    shadows:"no hard shadows; warm ambient softness", catchlights:"phone rectangle", room_effect:"curtain glowing warm-dim, room in warm shadow", required_features:["daylight_access"], portable_sources:["phone_screen"], room_dark:true },
+
+  // ═══ ☀️ نهاري درامي ═══
+  { id:"sunbeam_dust", name_ar:"شعاع شمس عبر فتحة الستارة + غبار", name_en:"morning sunbeam through curtain gap with dust", category:"drama",
+    kelvin:"3000–3500K hard beam", quality:"narrow hard warm shaft", iso:"ISO 100–200", mood_ar:"صباح باكر",
+    physics:"Early sun enters as a narrow hard beam through a curtain gap, crossing the bed and part of the face; visible dust motes inside the beam; sharp beam edge; face half in beam (warm, lit) half in shadow (cool) with a real skin-tone delta.",
+    shadows:"hard beam boundary across bedding and face", catchlights:"intense small sun glint in one eye", room_effect:"bright shaft, rest in soft shadow", required_features:["daylight_access"], portable_sources:[], room_dark:false },
+  { id:"blinds_stripes", name_ar:"خطوط ضوء عبر ستارة شرائح", name_en:"daylight stripes through blinds", category:"drama",
+    kelvin:"5500K", quality:"parallel hard stripes", iso:"ISO 100–400", mood_ar:"ظهيرة هادئة",
+    physics:"Daylight through blinds casts parallel stripe shadows across bed and face; stripes BEND over nose, cheek and body contours (3D proof); partial stripe on one eye.",
+    shadows:"stripe pattern deforming over facial contours", catchlights:"striped window glints", room_effect:"striped bed, even ambient elsewhere", required_features:["daylight_access"], portable_sources:[], room_dark:false },
+  { id:"blue_hour_dusk", name_ar:"الشفق الأزرق بعد الغروب", name_en:"blue hour after sunset, no lamps yet", category:"drama",
+    kelvin:"7000–8000K ambient + 6500K screen", quality:"deep blue ambient, no warm sources", iso:"ISO 800–1600", mood_ar:"سكون ما بعد المغرب",
+    physics:"Just after sunset: window glows deep blue; no lamp switched on yet; face on cool screen; room in blue shadow; skin cool with slight magenta edge from the sky.",
+    shadows:"soft blue ambient, minimal direction", catchlights:"phone rectangle + blue window wash", room_effect:"blue-tinted room, window brightest area", required_features:["daylight_access"], portable_sources:["phone_screen"], room_dark:true },
+  { id:"fajr_pre_dawn", name_ar:"ما قبل الفجر (سياق قيام)", name_en:"pre-dawn faint blue + hallway spill", category:"drama",
+    kelvin:"deep blue ambient + 3000K spill + 6500K screen", quality:"three faint coherent sources", iso:"ISO 2000–3200", mood_ar:"هدوء الفجر",
+    physics:"Pre-dawn: faint deep-blue window ambient + warm hallway spill under/through the door + cool screen on face; three weak sources, each with consistent falloff; very quiet, reverent mood.",
+    shadows:"multiple faint, directionally consistent", catchlights:"phone rectangle + warm spill dot", room_effect:"near-black with blue window and warm door line", required_features:["daylight_access"], portable_sources:["phone_screen"], room_dark:true },
+
+  { id:"lamp_rim_phone", name_ar:"أباجورة خلف الرأس + شاشة أمامية", name_en:"lamp behind head rim + screen frontal", category:"mixed",
+    kelvin:"2700K rim + 6500K frontal", quality:"warm rim + cool key separation", iso:"ISO 800–1600", mood_ar:"دافئ معزول",
+    physics:"Lamp placed behind/beside the head creates a warm rim on hair and shoulder edges while the screen gives a cool frontal key; strong subject-background separation; two distinct catchlights.",
+    shadows:"cool frontal shadows; warm rim outlines hair", catchlights:"phone rectangle + warm rim glints on hair", room_effect:"warm halo behind head, room dim", required_features:["lamp"], portable_sources:["phone_screen"], room_dark:true }
 ]);
 
 export const LIGHTING_BY_ID = Object.freeze(Object.fromEntries(LIGHTING_OPTIONS.map((item) => [item.id, item])));
