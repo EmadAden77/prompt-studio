@@ -11,6 +11,8 @@ const BED_SELFIE_POSE_IDS = new Set([
   "sitting_bed_edge"
 ]);
 
+const ANCHORED_SURFACES = new Set(["sofa", "bed", "chair"]);
+
 export class Validator {
   constructor({ lightingEngine, sceneEngine = null }) {
     this.lightingEngine = lightingEngine;
@@ -19,6 +21,30 @@ export class Validator {
 
   createIssue(severity, type, message, suggestion = "", autoFix = null, solution = null) {
     return { severity, type, message, suggestion, autoFix, solution };
+  }
+
+  furnitureSurface(pose) {
+    return (pose?.surfaces ?? []).find((surface) => ANCHORED_SURFACES.has(surface)) ?? null;
+  }
+
+  getFurnitureAnchorIssue(config, prompt = "") {
+    const surface = this.furnitureSurface(config?.pose);
+    if (!surface || !prompt) return null;
+    const hasAnchor = /FURNITURE ANCHOR(?: LOCK)?/u.test(prompt)
+      && prompt.includes(`ROOM/FURNITURE AUTHORITY (${surface.toUpperCase()})`);
+    if (hasAnchor) return null;
+    return this.createIssue(
+      "error",
+      "furniture_anchor",
+      "قفل تثبيت الأثاث مفقود من الأمر لوضعية تعتمد على سطح ارتكاز ثابت.",
+      "أعد بناء الأمر ليُحقن FURNITURE ANCHOR قبل POSE & PHYSICS، مع إبقاء الأثاث في موضعه الحقيقي من IMAGE B.",
+      { kind:"regenerate_prompt", reason:"furniture_anchor", surface }
+    );
+  }
+
+  validateGeneratedPrompt(config, prompt) {
+    const issue = this.getFurnitureAnchorIssue(config, prompt);
+    return issue ? { valid:false, conflicts:[issue], autoFixes:[issue.autoFix] } : { valid:true, conflicts:[], autoFixes:[] };
   }
 
   getStrictReferenceMismatch(config) {
@@ -278,6 +304,11 @@ export class Validator {
 
     if (!config.uploads?.imageA) {
       warnings.push(this.createIssue("warning", "image_a_missing", "صورة الهوية غير مرفوعة داخل المعاينة.", "ارفع IMAGE A قبل استخدام الأمر مع ChatGPT."));
+    }
+
+    if (config.generatedPrompt) {
+      const anchorIssue = this.getFurnitureAnchorIssue(config, config.generatedPrompt);
+      if (anchorIssue) conflicts.push(anchorIssue);
     }
 
     const issues = [...conflicts, ...warnings, ...notices];
