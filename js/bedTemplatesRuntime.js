@@ -1,5 +1,6 @@
 import { BED_CATEGORIES, BED_TEMPLATES, getBedTemplatesByCat } from "./data/bedTemplatesData.js";
 import { NIGHT_CATEGORIES, NIGHT_TEMPLATES, getNightTemplatesByCat } from "./data/nightTemplatesData.js";
+import { SOFA_CATEGORIES, SOFA_TEMPLATES, getSofaTemplatesByCat } from "./data/sofaTemplatesData.js";
 
 const CATEGORY_POSE = Object.freeze({
   lb: "lying_back",
@@ -59,7 +60,7 @@ function poseForDayTemplate(template) {
 }
 
 function currentMode(app) {
-  return app.state.bedTemplateMode === "night" ? "night" : "day";
+  return ["day", "night", "sofa"].includes(app.state.bedTemplateMode) ? app.state.bedTemplateMode : "day";
 }
 
 function selectedDayTemplate(app) {
@@ -72,29 +73,56 @@ function selectedNightTemplate(app) {
   return NIGHT_TEMPLATES.find((t) => t.id === app.state.selectedNightTemplateId) || null;
 }
 
+function selectedSofaTemplate(app) {
+  if (currentMode(app) !== "sofa") return null;
+  return SOFA_TEMPLATES.find((t) => t.id === app.state.selectedSofaTemplateId) || null;
+}
+
 function categoriesFor(app) {
-  return currentMode(app) === "night" ? NIGHT_CATEGORIES : BED_CATEGORIES;
+  if (currentMode(app) === "night") return NIGHT_CATEGORIES;
+  if (currentMode(app) === "sofa") return SOFA_CATEGORIES;
+  return BED_CATEGORIES;
 }
 
 function templatesForCategory(app, cat) {
-  return currentMode(app) === "night" ? getNightTemplatesByCat(cat) : getBedTemplatesByCat(cat);
+  if (currentMode(app) === "night") return getNightTemplatesByCat(cat);
+  if (currentMode(app) === "sofa") return getSofaTemplatesByCat(cat);
+  return getBedTemplatesByCat(cat);
 }
 
 function selectedIdFor(app) {
-  return currentMode(app) === "night" ? app.state.selectedNightTemplateId : app.state.selectedBedTemplateId;
+  if (currentMode(app) === "night") return app.state.selectedNightTemplateId;
+  if (currentMode(app) === "sofa") return app.state.selectedSofaTemplateId;
+  return app.state.selectedBedTemplateId;
+}
+
+function sofaReferenceIssue(config, scenes = []) {
+  if (!config?.sofaTemplate || !config?.scene) return null;
+  if (config.scene.visible_features?.includes("sofa")) return null;
+  const candidates = scenes.filter((scene) => scene.visible_features?.includes("sofa") && scene.supported_poses?.includes("sitting_sofa"));
+  const names = candidates.slice(0, 4).map((scene) => scene.name_ar).join("، ");
+  return {
+    severity:"error",
+    type:"sofa_reference_missing",
+    message:"المرجع لا يحتوي أريكة",
+    suggestion:names ? `اختر مرجعًا صالحًا يحتوي أريكة مثل: ${names}، أو استخدم وضعية بديلة لا تعتمد على الأريكة.` : "اختر مرجعًا يحتوي sofa ضمن visible_features أو استخدم وضعية بديلة.",
+    autoFix:null,
+    solution:candidates.length ? { title:"الحل المقترح", text:`مراجع صالحة للأريكة: ${names}.`, actions:[{ kind:"scene", values:candidates.map((scene) => scene.id) }] } : null
+  };
 }
 
 function install() {
   const App = window.App;
-  if (!App || App.prototype.__bedTemplatesV24) return;
-  App.prototype.__bedTemplatesV24 = true;
+  if (!App || App.prototype.__bedTemplatesV28) return;
+  App.prototype.__bedTemplatesV28 = true;
 
   const originalSanitize = App.prototype.sanitizeState;
   App.prototype.sanitizeState = function() {
     originalSanitize.call(this);
-    if (!["day", "night"].includes(this.state.bedTemplateMode)) this.state.bedTemplateMode = "day";
+    if (!["day", "night", "sofa"].includes(this.state.bedTemplateMode)) this.state.bedTemplateMode = "day";
     if (!BED_TEMPLATES.some((t) => t.id === this.state.selectedBedTemplateId)) this.state.selectedBedTemplateId = null;
     if (!NIGHT_TEMPLATES.some((t) => t.id === this.state.selectedNightTemplateId)) this.state.selectedNightTemplateId = null;
+    if (!SOFA_TEMPLATES.some((t) => t.id === this.state.selectedSofaTemplateId)) this.state.selectedSofaTemplateId = null;
     const categories = categoriesFor(this);
     if (!categories.some((c) => c.id === this.state.bedTemplateCategory)) this.state.bedTemplateCategory = categories[0].id;
   };
@@ -104,14 +132,28 @@ function install() {
     const config = originalBuildConfig.apply(this, args);
     config.bedTemplate = selectedDayTemplate(this);
     config.nightTemplate = selectedNightTemplate(this);
+    config.sofaTemplate = selectedSofaTemplate(this);
     return config;
   };
 
   const originalInit = App.prototype.init;
   App.prototype.init = function(...args) {
+    if (!this.__sofaValidatorPatched && this.validator?.validate) {
+      const originalValidate = this.validator.validate.bind(this.validator);
+      this.validator.validate = (config) => {
+        const result = originalValidate(config);
+        const issue = sofaReferenceIssue(config, this.sceneEngine?.scenes || []);
+        if (issue) {
+          result.conflicts.push(issue);
+          result.issues.push(issue);
+        }
+        return result;
+      };
+      this.__sofaValidatorPatched = true;
+    }
     const result = originalInit.apply(this, args);
     window.__promptStudioApp = this;
-    this.initBedTemplatesV24();
+    this.initBedTemplatesV28();
     return result;
   };
 
@@ -119,6 +161,7 @@ function install() {
   App.prototype.resetToDefaults = function(...args) {
     this.state.selectedBedTemplateId = null;
     this.state.selectedNightTemplateId = null;
+    this.state.selectedSofaTemplateId = null;
     this.state.bedTemplateMode = "day";
     const result = originalReset.apply(this, args);
     this.state.bedTemplateCategory = BED_CATEGORIES[0].id;
@@ -132,12 +175,13 @@ function install() {
   App.prototype.loadFromLast5 = function(...args) {
     this.state.selectedBedTemplateId = null;
     this.state.selectedNightTemplateId = null;
+    this.state.selectedSofaTemplateId = null;
     const result = originalLoadRecent.apply(this, args);
     this.renderBedTemplateCards?.();
     return result;
   };
 
-  App.prototype.initBedTemplatesV24 = function() {
+  App.prototype.initBedTemplatesV28 = function() {
     this.dom.bedCategoryChips = document.getElementById("bedCategoryChips");
     this.dom.bedTemplateGrid = document.getElementById("bedTemplateGrid");
     if (!this.dom.bedCategoryChips || !this.dom.bedTemplateGrid) return;
@@ -148,8 +192,8 @@ function install() {
       const mode = document.createElement("div");
       mode.id = "bedTemplateModeSwitch";
       mode.className = "bed-template-mode";
-      mode.setAttribute("aria-label", "نوع قوالب غرفة النوم");
-      mode.innerHTML = `<button type="button" data-template-mode="day">نهاري ☀️</button><button type="button" data-template-mode="night">ليلي 🌙</button>`;
+      mode.setAttribute("aria-label", "نوع القوالب");
+      mode.innerHTML = `<button type="button" data-template-mode="day">نهاري ☀️</button><button type="button" data-template-mode="night">ليلي 🌙</button><button type="button" data-template-mode="sofa">أريكة 🛋️</button>`;
       head.appendChild(mode);
       mode.querySelectorAll("[data-template-mode]").forEach((button) => button.addEventListener("click", () => this.setBedTemplateMode(button.dataset.templateMode)));
     }
@@ -159,9 +203,10 @@ function install() {
     this.renderBedTemplateCards();
 
     this.dom.poseSelect?.addEventListener("change", () => {
-      if (!this.state.selectedBedTemplateId && !this.state.selectedNightTemplateId) return;
+      if (!this.state.selectedBedTemplateId && !this.state.selectedNightTemplateId && !this.state.selectedSofaTemplateId) return;
       this.state.selectedBedTemplateId = null;
       this.state.selectedNightTemplateId = null;
+      this.state.selectedSofaTemplateId = null;
       this.renderBedTemplateCards();
     }, true);
 
@@ -173,14 +218,13 @@ function install() {
   };
 
   App.prototype.setBedTemplateMode = function(mode) {
-    if (![
-      "day",
-      "night"
-    ].includes(mode) || currentMode(this) === mode) return;
+    if (!["day", "night", "sofa"].includes(mode) || currentMode(this) === mode) return;
     this.state.bedTemplateMode = mode;
     this.state.selectedBedTemplateId = null;
     this.state.selectedNightTemplateId = null;
-    this.state.bedTemplateCategory = (mode === "night" ? NIGHT_CATEGORIES : BED_CATEGORIES)[0].id;
+    this.state.selectedSofaTemplateId = null;
+    const categories = mode === "night" ? NIGHT_CATEGORIES : mode === "sofa" ? SOFA_CATEGORIES : BED_CATEGORIES;
+    this.state.bedTemplateCategory = categories[0].id;
     this.renderBedTemplateMode();
     this.renderBedCategoryChips();
     this.renderBedTemplateCards();
@@ -222,15 +266,15 @@ function install() {
       ? this.state.bedTemplateCategory
       : categories[0].id;
     const selectedId = selectedIdFor(this);
-    const night = currentMode(this) === "night";
+    const mode = currentMode(this);
     const cards = templatesForCategory(this, cat).map((template) => {
       const button = document.createElement("button");
       button.type = "button";
       button.className = `bed-template-card${template.id === selectedId ? " selected" : ""}`;
       button.dataset.bedTemplate = template.id;
-      const badge = night ? "ليلي 🌙" : timeBadge(template.light);
+      const badge = mode === "night" ? "ليلي 🌙" : mode === "sofa" ? "أريكة 🛋️" : timeBadge(template.light);
       button.innerHTML = `<span class="bed-template-card__top"><strong>${template.ar}</strong><span class="bed-template-time">${badge}</span></span><span>📐 ${template.angle}</span><span>🖼️ ${template.frame}</span><span>🙂 ${template.mood}</span><small>${template.anti}</small>`;
-      button.addEventListener("click", () => night ? this.selectNightTemplate(template.id) : this.selectBedTemplate(template.id));
+      button.addEventListener("click", () => mode === "night" ? this.selectNightTemplate(template.id) : mode === "sofa" ? this.selectSofaTemplate(template.id) : this.selectBedTemplate(template.id));
       return button;
     });
     this.dom.bedTemplateGrid.replaceChildren(...cards);
@@ -241,6 +285,7 @@ function install() {
     if (!template) return;
     this.state.bedTemplateMode = "day";
     this.state.selectedNightTemplateId = null;
+    this.state.selectedSofaTemplateId = null;
     this.state.selectedBedTemplateId = template.id;
     this.state.bedTemplateCategory = template.cat;
     this.state.poseId = poseForDayTemplate(template);
@@ -260,6 +305,7 @@ function install() {
     const lightingExists = this.lightingEngine?.options?.some((item) => item.id === lightingId);
     this.state.bedTemplateMode = "night";
     this.state.selectedBedTemplateId = null;
+    this.state.selectedSofaTemplateId = null;
     this.state.selectedNightTemplateId = template.id;
     this.state.bedTemplateCategory = template.cat;
     this.state.poseId = template.pose;
@@ -270,6 +316,24 @@ function install() {
     this.renderBedTemplateCards();
     this.engineer();
     this.setStatus(`قالب ليلي: ${template.ar}`);
+  };
+
+  App.prototype.selectSofaTemplate = function(templateId) {
+    const template = SOFA_TEMPLATES.find((t) => t.id === templateId);
+    if (!template) return;
+    this.state.bedTemplateMode = "sofa";
+    this.state.selectedBedTemplateId = null;
+    this.state.selectedNightTemplateId = null;
+    this.state.selectedSofaTemplateId = template.id;
+    this.state.bedTemplateCategory = template.cat;
+    this.state.poseId = "sitting_sofa";
+    if (!this.state.lightingId) this.state.lightingId = this.lightingEngine?.options?.[0]?.id || "lamp_and_phone";
+    this.populateSelects();
+    this.renderBedTemplateMode();
+    this.renderBedCategoryChips();
+    this.renderBedTemplateCards();
+    this.engineer();
+    this.setStatus(`قالب أريكة: ${template.ar}`);
   };
 }
 
