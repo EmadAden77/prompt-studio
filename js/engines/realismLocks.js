@@ -10,6 +10,17 @@ export const LIGHTING_PHYSICS_LOCK = `LIGHTING PHYSICS LOCK — ONE LIGHTING EVE
 
 export const PHONE_SCREEN_ONLY_STRICT = `STRICT "PHONE SCREEN ONLY": the bedside lamp visible in IMAGE B is an UNLIT decorative prop emitting ZERO light; ANY warm/amber cast on skin, bedding, wall or headboard = INVALID; the screen (35–45cm) is the ONLY photon source; face cool ~6500K with soft under-brow/chin shadows; rectangular screen catchlights only; beyond ~1m NEAR BLACK; ISO 1600–3200 with visible luminance + chroma noise.`;
 
+export const NIGHT_REALISM_LOCK = `NIGHT REALISM LOCK (all night templates):
+- Darkness is NEVER clean: shadows and black areas carry real sensor luminance + chroma noise at the declared ISO; blacks lifted slightly by noise, NOT pure #000.
+- Inverse-square falloff from the phone screen: face readable, shoulders darker, beyond ~1m near-black but noisy.
+- Catchlights: rectangular phone-screen glows in both eyes; add a secondary catchlight ONLY if that template's second source is actually lit.
+- The bedside lamp is an UNLIT prop unless the template explicitly lights it.
+- Mixed white balance imperfect: cool screen on face, ambient tint on edges.
+- Pupils slightly dilated in low light; slight cool skin cast; faint screen sheen on the T-zone.
+- One emissive micro-dot (AC/charger LED) allowed that casts NO light.
+- No cinematic grading, no teal-orange, no clean studio black, no even light.
+- Bedding physics unchanged from day: pillow compression, blanket tension, lying face ≠ standing face.`;
+
 export const SINGLE_PIPELINE = `SINGLE PHONE PIPELINE: the background is NEVER sharper, cleaner or less noisy than the face; same exposure, HDR merge, noise, sharpening and compression everywhere.`;
 
 export const HAIR_REALISM_LOCK = `HAIR REALISM LOCK: density, volume, wave, length and hairline LOCKED to IMAGE A; hair forms soft natural clumps; individual strands resolved ONLY at the hairline edge, flyaways (5–12) and highlight glints; warm sun-lifted crests vs deeper valleys; matte sheen; NO wire strands, NO helmet, NO invented length/density.`;
@@ -58,6 +69,7 @@ if (typeof window !== "undefined") {
     CAMERA_EMULATOR,
     LIGHTING_PHYSICS_LOCK,
     PHONE_SCREEN_ONLY_STRICT,
+    NIGHT_REALISM_LOCK,
     SINGLE_PIPELINE,
     HAIR_REALISM_LOCK,
     CLOTHING_LOCK,
