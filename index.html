@@ -15,6 +15,9 @@
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/responsive.css">
+  <style>
+    .hidden{display:none!important}.chip{margin-top:12px;padding:10px 12px;border:1px solid var(--border-color,rgba(127,127,127,.2));border-radius:12px;background:var(--surface-raised,rgba(127,127,127,.06));line-height:1.8}.chip code{direction:ltr;unicode-bidi:plaintext;overflow-wrap:anywhere}.chip button{margin-inline-start:8px}.badge{display:inline-flex;align-items:center;margin-top:10px;padding:6px 10px;border-radius:999px;font-weight:800;border:1px solid currentColor}.badge.green{color:#2e9d58}.badge.yellow{color:#b58a00}.badge.red{color:#c44}.muted{opacity:.72;margin:.45rem 0 0}
+  </style>
 </head>
 <body data-page="home">
   <a class="skip-link" href="#workspace">انتقل إلى مساحة العمل</a>
@@ -141,6 +144,12 @@
               <p class="scene-card__automatic-note">MASTER REFERENCE هو المرجع المرئي الوحيد؛ هذه البطاقة تحدد منطقة التفاعل المنطقية للقالب ولا تستبدل الغرفة.</p>
             </div>
           </div>
+          <div id="attachChip" class="chip hidden">📎 أرفق مع الأمر إلى ChatGPT:
+            <code id="attachFile"></code>
+            <button id="downloadSceneBtn" class="ghost-button" type="button">تنزيل صورة المرجع</button>
+          </div>
+          <span id="confBadge" class="badge"></span>
+          <p id="strictLine" class="muted"></p>
         </section>
 
         <section class="panel validation-panel" aria-labelledby="validationTitle">
@@ -213,6 +222,7 @@
 
   <div id="toastRegion" class="toast-region" aria-live="polite" aria-atomic="true"></div>
   <script type="module" src="js/bedroomMasterReferenceRuntime.js"></script>
+  <script type="module" src="js/engines/realismLocks.js"></script>
   <script type="module" src="js/app.js"></script>
   <script type="module" src="js/templates.js"></script>
   <script type="module" src="js/indoorTimeTemplates.js"></script>
