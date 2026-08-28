@@ -46,6 +46,8 @@ jobs:
         run: node tests/v3.0-auto.mjs
       - name: Run v3.1 automatic lighting tests
         run: node tests/v3.1-auto-light.mjs
+      - name: Run v3.1 furniture anchor tests
+        run: node tests/v3.1-anchor.mjs
       - name: Run template preset tests
         run: node tests/templates.mjs
       - name: Run expanded clothing tests
