@@ -4,6 +4,7 @@ const DAY_LIGHTS = new Set(["N4", "D2"]);
 const NIGHT_LIGHTS = new Set(["N1", "N2", "N3", "N5", "N6"]);
 const TIME_MARKER_START = "CAR TIME AUTHORITY — ABSOLUTE";
 const TIME_MARKER_END = "END CAR TIME AUTHORITY";
+const ANGLE_MARKER_START = "SELFIE ANGLE AUTHORITY — USER SELECTED";
 
 const INTERIOR_DAY_NAMES = new Set([
   "المقود + هواء المكيّف",
@@ -167,12 +168,21 @@ function timeAuthorityBlock() {
   return `${TIME_MARKER_START}\nSELECTED TIME — DAY / USER AUTHORITY\n- The final photographic event occurs in DAYLIGHT. This selection overrides any historical template wording, scene metadata, parking description, lighting default, or cached state that implies night, streetlight-only darkness, gas-station night, underground-night mood, or dark nocturnal sky.\n- Allowed lighting is DAY ONLY: N4 or D2, according to the user's current selection. N1, N2, N3, N5 and N6 are forbidden while DAY is active.\n- Exterior brightness, sky, glass transmission, reflections, cabin exposure, sensor gain, white balance and shadow detail must all read coherently as daytime.\n- Preserve location geometry while replacing any old nighttime illumination state with the selected daylight state.\nFINAL TIME CONFLICT GATE — DAY: if any visible or textual cue still reads as night, nocturnal darkness, night streetlight mood, N1, N2, N3, N5 or N6, reject it and rebuild the same composition under the selected day lighting before output.\n${TIME_MARKER_END}`;
 }
 
+function composeStablePrompt(clean) {
+  const block = timeAuthorityBlock();
+  const angleIndex = clean.indexOf(ANGLE_MARKER_START);
+  if (angleIndex < 0) return `${clean.trim()}\n\n${block}`;
+  const before = clean.slice(0, angleIndex).trimEnd();
+  const angleAndAfter = clean.slice(angleIndex).trimStart();
+  return `${before}\n\n${block}\n\n${angleAndAfter}`.trim();
+}
+
 function enforcePromptTime() {
   const output = document.querySelector("#finalPrompt");
   if (!output || promptWriting) return;
   const clean = stripTimeAuthority(output.textContent || "");
   if (!clean.trim()) return;
-  const next = `${clean.trim()}\n\n${timeAuthorityBlock()}`;
+  const next = composeStablePrompt(clean);
   if (next === output.textContent) return;
   promptWriting = true;
   output.textContent = next;
