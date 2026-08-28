@@ -1,7 +1,9 @@
-const VERSION = "v1.35";
+const VERSION = "v1.36";
 const STORAGE_KEY = "prompt-studio:car-time:v1";
 const DAY_LIGHTS = new Set(["N4", "D2"]);
 const NIGHT_LIGHTS = new Set(["N1", "N2", "N3", "N5", "N6"]);
+const TIME_MARKER_START = "CAR TIME AUTHORITY — ABSOLUTE";
+const TIME_MARKER_END = "END CAR TIME AUTHORITY";
 
 const INTERIOR_DAY_NAMES = new Set([
   "المقود + هواء المكيّف",
@@ -51,10 +53,14 @@ function savedTime() {
 
 let activeTime = "night";
 let applying = false;
+let promptWriting = false;
 
 function kindFromLabel(label, daySet, nightSet) {
   if (daySet.has(label)) return "day";
   if (nightSet.has(label)) return "night";
+  const normalized = String(label || "").toLowerCase();
+  if (/ليل|ليلي|night|underground|محطة وقود/.test(normalized)) return "night";
+  if (/نهار|نهاري|صباح|ظهيرة|day|morning|midday|afternoon/.test(normalized)) return "day";
   return "both";
 }
 
@@ -69,7 +75,7 @@ function updateButtons() {
     button.setAttribute("aria-pressed", active ? "true" : "false");
   });
   const badge = document.querySelector("#carTimeBadge");
-  if (badge) badge.textContent = activeTime === "day" ? "نهاري · اختر الإضاءة بنفسك" : "ليلي · اختر الإضاءة بنفسك";
+  if (badge) badge.textContent = activeTime === "day" ? "نهاري · سلطة الوقت مطبقة" : "ليلي · سلطة الوقت مطبقة";
   document.documentElement.dataset.carTime = activeTime;
   document.body.dataset.carTime = activeTime;
 }
@@ -81,7 +87,7 @@ function updateVersionLabels() {
   const eyebrow = document.querySelector(".intro .eyebrow");
   if (eyebrow) eyebrow.textContent = `CAR SELFIE ENGINE · ${VERSION}`;
   const footer = document.querySelector("footer p:first-child");
-  if (footer) footer.innerHTML = `Car Templates ${VERSION} <span>•</span> USER-CONTROLLED LIGHTING · SEPARATE POSE MODES`;
+  if (footer) footer.innerHTML = `Car Templates ${VERSION} <span>•</span> AUTHORITATIVE DAY / NIGHT · USER LIGHTING`;
   document.title = `قوالب السيارة ${VERSION} — AI Selfie Prompt Studio`;
 }
 
@@ -146,6 +152,35 @@ function filterParking() {
   }
 }
 
+function stripTimeAuthority(text) {
+  const start = text.indexOf(TIME_MARKER_START);
+  if (start < 0) return text;
+  const end = text.indexOf(TIME_MARKER_END, start);
+  if (end < 0) return text.slice(0, start).trimEnd();
+  return `${text.slice(0, start)}${text.slice(end + TIME_MARKER_END.length)}`.replace(/\n{3,}/g, "\n\n").trim();
+}
+
+function timeAuthorityBlock() {
+  if (activeTime === "night") {
+    return `${TIME_MARKER_START}\nSELECTED TIME — NIGHT / USER AUTHORITY\n- The final photographic event occurs at NIGHT. This selection overrides any historical template wording, scene metadata, parking description, lighting default, or cached state that implies daylight, morning, midday, afternoon, bright sun, blue daytime sky, or sunlit exterior.\n- Allowed lighting is NIGHT ONLY: N1, N2, N3, N5 or N6, according to the user's current selection. N4 and D2 are forbidden while NIGHT is active.\n- Exterior brightness, sky, glass transmission, reflections, cabin exposure, sensor gain, white balance and shadow noise must all read coherently as nighttime or dusk only when N5 is selected.\n- Do not preserve daylight from a template just because the physical location is also usable by day. Preserve location geometry, not its old time-of-day illumination.\nFINAL TIME CONFLICT GATE — NIGHT: if any visible or textual cue still reads as daytime, morning, midday, afternoon, direct sun, bright blue daylight sky, N4 or D2, reject it and rebuild the same composition under the selected night lighting before output.\n${TIME_MARKER_END}`;
+  }
+  return `${TIME_MARKER_START}\nSELECTED TIME — DAY / USER AUTHORITY\n- The final photographic event occurs in DAYLIGHT. This selection overrides any historical template wording, scene metadata, parking description, lighting default, or cached state that implies night, streetlight-only darkness, gas-station night, underground-night mood, or dark nocturnal sky.\n- Allowed lighting is DAY ONLY: N4 or D2, according to the user's current selection. N1, N2, N3, N5 and N6 are forbidden while DAY is active.\n- Exterior brightness, sky, glass transmission, reflections, cabin exposure, sensor gain, white balance and shadow detail must all read coherently as daytime.\n- Preserve location geometry while replacing any old nighttime illumination state with the selected daylight state.\nFINAL TIME CONFLICT GATE — DAY: if any visible or textual cue still reads as night, nocturnal darkness, night streetlight mood, N1, N2, N3, N5 or N6, reject it and rebuild the same composition under the selected day lighting before output.\n${TIME_MARKER_END}`;
+}
+
+function enforcePromptTime() {
+  const output = document.querySelector("#finalPrompt");
+  if (!output || promptWriting) return;
+  const clean = stripTimeAuthority(output.textContent || "");
+  if (!clean.trim()) return;
+  const next = `${clean.trim()}\n\n${timeAuthorityBlock()}`;
+  if (next === output.textContent) return;
+  promptWriting = true;
+  output.textContent = next;
+  const wc = document.querySelector("#promptWordCount");
+  if (wc) wc.textContent = `${next.trim().split(/\s+/).filter(Boolean).length} كلمة`;
+  queueMicrotask(() => { promptWriting = false; });
+}
+
 function applyTime() {
   if (applying) return;
   applying = true;
@@ -156,7 +191,10 @@ function applyTime() {
   filterExteriorTemplates();
   filterParking();
   window.dispatchEvent(new CustomEvent("car-time-change", { detail:{ time:activeTime } }));
-  queueMicrotask(() => { applying = false; });
+  queueMicrotask(() => {
+    applying = false;
+    enforcePromptTime();
+  });
 }
 
 function setTime(value) {
@@ -164,6 +202,8 @@ function setTime(value) {
   activeTime = value;
   try { localStorage.setItem(STORAGE_KEY, activeTime); } catch {}
   applyTime();
+  queueMicrotask(() => document.querySelector("#rebuildBtn")?.click());
+  setTimeout(enforcePromptTime, 0);
 }
 
 function install() {
@@ -187,11 +227,24 @@ function install() {
     if (button) setTime(button.dataset.carTime);
   });
 
-  const observer = new MutationObserver(() => queueMicrotask(applyTime));
-  [document.querySelector("#carTemplateGrid"), document.querySelector("#exteriorPoseGrid")].filter(Boolean).forEach((node) => observer.observe(node, { childList:true }));
+  const cardsObserver = new MutationObserver(() => queueMicrotask(applyTime));
+  [document.querySelector("#carTemplateGrid"), document.querySelector("#exteriorPoseGrid")].filter(Boolean).forEach((node) => cardsObserver.observe(node, { childList:true }));
+
+  const output = document.querySelector("#finalPrompt");
+  if (output) {
+    const promptObserver = new MutationObserver(() => queueMicrotask(enforcePromptTime));
+    promptObserver.observe(output, { childList:true, characterData:true, subtree:true });
+  }
+
   document.addEventListener("click", (event) => {
     if (event.target.closest(".car-chip, .car-mode-btn, .car-pose-card, .car-exterior-card")) queueMicrotask(applyTime);
   });
+  document.querySelector("#lightingSelect")?.addEventListener("change", () => queueMicrotask(() => {
+    filterLighting();
+    enforcePromptTime();
+  }));
+  document.querySelector("#copyBtn")?.addEventListener("click", enforcePromptTime, true);
+  document.querySelector("#downloadBtn")?.addEventListener("click", enforcePromptTime, true);
 
   applyTime();
 }
