@@ -1,212 +1,66 @@
-/**
- * Scene metadata describes the room-reference library. The image files are
- * intentionally replaceable; see scenes/README.md for the required filenames.
- */
 export const SCENES = Object.freeze([
-  {
-    id: "bed_right_nightstand",
-    name_ar: "جانب السرير الأيمن مع الأباجورة",
-    image_url: "scenes/bed_right_nightstand.jpg",
-    image_filename: "bed_right_nightstand.jpg",
-    region: "right_side_of_bed",
-    supported_poses: ["standing_bedside", "sitting_bed_edge", "lying_right_side", "lying_back", "lying_stomach", "semi_reclining"],
-    supported_directions: ["toward_lamp", "toward_ceiling", "facing_right", "facing_room"],
-    camera_angles: ["high_angle", "eye_level"],
-    camera_distances: ["close", "medium"],
+  Object.freeze({
+    id: "master_bedroom_v2",
+    name_ar: "غرفة النوم الرئيسية — المرجع الأوحد",
+    name_en: "master bedroom v2 (single master reference)",
+    image_url: "scenes/master_bedroom_v2.svg",
+    image_filename: "master_bedroom_v2.jpg",
+    canonical_image_path: "scenes/master_bedroom_v2.jpg",
+    region: "master_bedroom",
+    priority: 100,
+    visible_features: Object.freeze([
+      "bed","headboard","nightstand_door","lamp","nightstand_far",
+      "sofa","chair_corner","rug","wardrobe_mirror","dresser_mirror",
+      "curtain_blackout","ac","door","tile_floor","ceiling_spots",
+      "mattress","mattress_edge","pillow","blanket","nightstand",
+      "sofa_cushion","sofa_back","sofa_armrest","chair","chair_seat","chair_back",
+      "floor","wardrobe","wardrobe_doors","vanity_mirror","vanity_table",
+      "full_room_overview","ceiling_light"
+    ]),
+    surfaces: Object.freeze([
+      "floor","mattress","mattress_edge","pillow","headboard",
+      "sofa_cushion","sofa_back","sofa_armrest","chair_seat","chair_back",
+      "wardrobe","vanity"
+    ]),
+    supported_poses: Object.freeze([
+      "lying_back","lying_right_side","lying_left_side","lying_stomach",
+      "semi_reclining","sitting_bed_edge","sitting_sofa","sitting_chair","sitting_floor",
+      "standing_center","standing_bedside","standing_sofa","standing_wardrobe","standing_vanity",
+      "standing_dresser","mirror_selfie","mirror_wardrobe","mirror_dresser"
+    ]),
+    supported_directions: Object.freeze([
+      "any","toward_ceiling","toward_lamp","toward_vanity","toward_sofa","toward_bed",
+      "facing_room","facing_right","facing_left","facing_wardrobe","side_to_wardrobe","facing_mirror"
+    ]),
+    camera_angles: Object.freeze(["eye_level","high_angle","low_angle"]),
+    camera_distances: Object.freeze(["close","medium","wide"]),
     base_camera_angle: "eye_level",
     base_camera_distance: "medium",
-    default_for_poses: ["lying_right_side", "semi_reclining"],
-    visible_features: ["bed", "mattress", "mattress_edge", "pillow", "blanket", "nightstand", "lamp", "headboard"],
-    surfaces: ["floor", "mattress", "mattress_edge", "pillow", "headboard"],
-    priority: 90
-  },
-  {
-    id: "bed_left_vanity",
-    name_ar: "جانب السرير الأيسر باتجاه التسريحة",
-    image_url: "scenes/bed_left_vanity.jpg",
-    image_filename: "bed_left_vanity.jpg",
-    region: "left_side_of_bed",
-    supported_poses: ["standing_bedside", "sitting_bed_edge", "lying_left_side", "lying_back", "lying_stomach", "semi_reclining"],
-    supported_directions: ["toward_vanity", "toward_ceiling", "facing_left", "facing_room"],
-    camera_angles: ["high_angle", "eye_level"],
-    camera_distances: ["close", "medium"],
-    base_camera_angle: "eye_level",
-    base_camera_distance: "medium",
-    default_for_poses: ["lying_left_side"],
-    visible_features: ["bed", "mattress", "mattress_edge", "pillow", "blanket", "vanity_direction", "headboard"],
-    surfaces: ["floor", "mattress", "mattress_edge", "pillow", "headboard"],
-    priority: 88
-  },
-  {
-    id: "bed_front_overview",
-    name_ar: "واجهة السرير — نظرة عامة",
-    image_url: "scenes/bed_front_overview.jpg",
-    image_filename: "bed_front_overview.jpg",
-    region: "front_of_bed",
-    supported_poses: ["standing_bedside", "sitting_bed_edge", "lying_back", "lying_stomach", "semi_reclining"],
-    supported_directions: ["facing_room", "toward_ceiling", "toward_lamp", "toward_vanity"],
-    camera_angles: ["eye_level", "high_angle"],
-    camera_distances: ["medium", "wide"],
-    base_camera_angle: "eye_level",
-    base_camera_distance: "wide",
-    default_for_poses: ["lying_back", "lying_stomach", "standing_bedside"],
-    visible_features: ["bed", "mattress", "mattress_edge", "pillow", "blanket", "headboard", "floor", "ceiling_light", "ceiling_spots", "daylight_access"],
-    surfaces: ["floor", "mattress", "mattress_edge", "pillow", "headboard"],
-    priority: 84
-  },
-  {
-    id: "vanity_mirror",
-    name_ar: "التسريحة مع المرآة",
-    image_url: "scenes/vanity_mirror.jpg",
-    image_filename: "vanity_mirror.jpg",
-    region: "vanity_area",
-    supported_poses: ["standing_vanity", "mirror_selfie"],
-    supported_directions: ["facing_mirror"],
-    camera_angles: ["eye_level"],
-    camera_distances: ["close", "medium"],
-    base_camera_angle: "eye_level",
-    base_camera_distance: "medium",
-    default_for_poses: ["standing_vanity", "mirror_selfie"],
-    visible_features: ["vanity_mirror", "vanity_table", "vanity_stool", "floor", "ceiling_light"],
-    surfaces: ["floor", "vanity"],
-    priority: 100
-  },
-  {
-    id: "sofa_area",
-    name_ar: "منطقة الأريكة",
-    image_url: "scenes/sofa_area.jpg",
-    image_filename: "sofa_area.jpg",
-    region: "sofa_zone",
-    supported_poses: ["sitting_sofa", "standing_sofa"],
-    supported_directions: ["toward_sofa", "facing_room"],
-    camera_angles: ["eye_level", "high_angle", "low_angle"],
-    camera_distances: ["close", "medium", "wide"],
-    base_camera_angle: "eye_level",
-    base_camera_distance: "medium",
-    default_for_poses: ["sitting_sofa", "standing_sofa"],
-    visible_features: ["sofa", "sofa_cushion", "sofa_back", "sofa_armrest", "floor", "coffee_table", "daylight_access"],
-    surfaces: ["floor", "sofa_cushion", "sofa_back", "sofa_armrest"],
-    priority: 95
-  },
-  {
-    id: "chair_area",
-    name_ar: "منطقة الكرسي",
-    image_url: "scenes/chair_area.jpg",
-    image_filename: "chair_area.jpg",
-    region: "chair_zone",
-    supported_poses: ["sitting_chair"],
-    supported_directions: ["facing_room", "facing_right", "facing_left"],
-    camera_angles: ["eye_level", "high_angle"],
-    camera_distances: ["close", "medium"],
-    base_camera_angle: "eye_level",
-    base_camera_distance: "medium",
-    default_for_poses: ["sitting_chair"],
-    visible_features: ["chair", "chair_seat", "chair_back", "floor", "ceiling_light"],
-    surfaces: ["chair_seat", "chair_back", "floor"],
-    priority: 92
-  },
-  {
-    id: "wardrobe_area",
-    name_ar: "منطقة الدولاب",
-    image_url: "scenes/wardrobe_area.jpg",
-    image_filename: "wardrobe_area.jpg",
-    region: "wardrobe_zone",
-    supported_poses: ["standing_wardrobe"],
-    supported_directions: ["facing_wardrobe", "side_to_wardrobe"],
-    camera_angles: ["eye_level"],
-    camera_distances: ["medium"],
-    base_camera_angle: "eye_level",
-    base_camera_distance: "medium",
-    default_for_poses: ["standing_wardrobe"],
-    visible_features: ["wardrobe", "wardrobe_doors", "floor", "ceiling_light"],
-    surfaces: ["wardrobe", "floor"],
-    priority: 96
-  },
-  {
-    id: "room_center",
-    name_ar: "وسط الغرفة",
-    image_url: "scenes/room_center.jpg",
-    image_filename: "room_center.jpg",
-    region: "center",
-    supported_poses: ["standing_center", "sitting_floor"],
-    supported_directions: ["facing_room", "facing_right", "facing_left", "any"],
-    camera_angles: ["eye_level", "low_angle", "high_angle"],
-    camera_distances: ["medium", "wide"],
-    base_camera_angle: "eye_level",
-    base_camera_distance: "wide",
-    default_for_poses: ["standing_center", "sitting_floor"],
-    visible_features: ["full_room_overview", "floor", "ceiling_light", "ceiling_spots", "daylight_access"],
-    surfaces: ["floor"],
-    priority: 94
-  },
-  {
-    id: "user_room_1000204882",
-    name_ar: "مرجع الغرفة — الأريكة والسرير",
-    image_url: "scenes/user_room_1000204882.svg",
-    image_filename: "1000204882.png",
-    region: "sofa_bed_overview",
-    supported_poses: ["standing_sofa", "sitting_sofa", "standing_bedside", "standing_center", "sitting_floor"],
-    supported_directions: ["toward_sofa", "toward_bed", "facing_room", "any"],
-    camera_angles: ["eye_level", "high_angle", "low_angle"],
-    camera_distances: ["medium", "wide"],
-    base_camera_angle: "eye_level",
-    base_camera_distance: "wide",
-    default_for_poses: ["standing_sofa", "sitting_sofa", "standing_bedside"],
-    visible_features: ["bed", "mattress", "mattress_edge", "pillow", "blanket", "headboard", "nightstand", "lamp", "sofa", "sofa_cushion", "sofa_back", "sofa_armrest", "floor", "ceiling_light", "ceiling_spots", "full_room_overview"],
-    surfaces: ["floor", "mattress_edge", "sofa_cushion", "sofa_back", "sofa_armrest"],
-    priority: 60
-  },
-  {
-    id: "user_room_1000204898",
-    name_ar: "مرجع الغرفة — زاوية الباب والأريكة",
-    image_url: "scenes/user_room_1000204898.svg",
-    image_filename: "1000204898.jpg",
-    region: "door_sofa_overview",
-    supported_poses: ["standing_sofa", "sitting_sofa", "sitting_chair", "standing_center", "sitting_floor"],
-    supported_directions: ["toward_sofa", "facing_room", "facing_right", "any"],
-    camera_angles: ["eye_level", "high_angle", "low_angle"],
-    camera_distances: ["close", "medium", "wide"],
-    base_camera_angle: "eye_level",
-    base_camera_distance: "medium",
-    default_for_poses: ["standing_sofa", "sitting_sofa", "sitting_chair"],
-    visible_features: ["sofa", "sofa_cushion", "sofa_back", "sofa_armrest", "chair", "chair_seat", "chair_back", "bed", "mattress", "lamp", "floor", "ceiling_light", "ceiling_spots"],
-    surfaces: ["floor", "sofa_cushion", "sofa_back", "sofa_armrest", "chair_seat", "chair_back"],
-    priority: 60
-  },
-  {
-    id: "user_room_1000204918",
-    name_ar: "مرجع الغرفة — السرير والدولاب والكرسي",
-    image_url: "scenes/user_room_1000204918.svg",
-    image_filename: "1000204918.png",
-    region: "bed_wardrobe_chair_overview",
-    supported_poses: ["standing_center", "sitting_floor", "standing_wardrobe", "standing_vanity", "standing_sofa", "sitting_sofa", "sitting_chair", "standing_bedside", "sitting_bed_edge"],
-    supported_directions: ["facing_room", "facing_wardrobe", "toward_vanity", "toward_sofa", "toward_bed", "facing_left", "facing_right", "any"],
-    camera_angles: ["eye_level", "low_angle", "high_angle"],
-    camera_distances: ["close", "medium", "wide"],
-    base_camera_angle: "eye_level",
-    base_camera_distance: "wide",
-    default_for_poses: ["standing_center", "standing_wardrobe", "sitting_chair", "standing_bedside"],
-    visible_features: ["full_room_overview", "floor", "ceiling_light", "ceiling_spots", "bed", "mattress", "mattress_edge", "blanket", "sofa", "sofa_cushion", "sofa_back", "sofa_armrest", "chair", "chair_seat", "chair_back", "wardrobe", "wardrobe_doors", "vanity_table", "vanity_direction"],
-    surfaces: ["floor", "mattress", "mattress_edge", "sofa_cushion", "sofa_back", "sofa_armrest", "chair_seat", "chair_back", "wardrobe", "vanity"],
-    priority: 62
-  },
-  {
-    id: "user_room_1000204796",
-    name_ar: "مرجع الغرفة — النظرة الكاملة",
-    image_url: "scenes/user_room_1000204796.svg",
-    image_filename: "1000204796.png",
-    region: "full_room_user_overview",
-    supported_poses: ["standing_center", "sitting_floor", "standing_wardrobe", "standing_vanity", "standing_sofa", "sitting_chair", "standing_bedside"],
-    supported_directions: ["facing_room", "facing_wardrobe", "toward_vanity", "toward_sofa", "toward_bed", "any"],
-    camera_angles: ["eye_level", "low_angle", "high_angle"],
-    camera_distances: ["medium", "wide"],
-    base_camera_angle: "eye_level",
-    base_camera_distance: "wide",
-    default_for_poses: ["standing_center", "sitting_floor", "standing_wardrobe", "standing_vanity"],
-    visible_features: ["full_room_overview", "floor", "ceiling_light", "ceiling_spots", "bed", "mattress", "mattress_edge", "pillow", "blanket", "headboard", "sofa", "sofa_back", "chair", "chair_seat", "chair_back", "wardrobe", "wardrobe_doors", "vanity_table", "vanity_direction"],
-    surfaces: ["floor", "mattress_edge", "sofa_back", "chair_seat", "chair_back", "wardrobe", "vanity"],
-    priority: 60
-  }
+    default_for_poses: Object.freeze([
+      "lying_back","lying_right_side","lying_left_side","lying_stomach","semi_reclining",
+      "sitting_bed_edge","sitting_sofa","sitting_chair","sitting_floor",
+      "standing_center","standing_bedside","standing_sofa","standing_wardrobe","standing_vanity","mirror_selfie"
+    ]),
+    spatial_map: Object.freeze({
+      bed: "left wall; headboard west; lamp on near-door nightstand (subject's LEFT when lying supine)",
+      sofa: "back wall against blackout curtain, facing into the room; walkway clear in front",
+      chair: "back-left corner angled ~45°; seat FREE; yellow/black jacket on backrest",
+      wardrobe: "right wall; mirrored sliding doors; hanging white thobes",
+      dresser: "right side; dark-wood chest with mirror above",
+      rug: "center between bed and sofa; floor-sitting zone",
+      door: "foreground; the selfie viewpoint axis"
+    }),
+    fingerprint: Object.freeze([
+      "sofa: charcoal 3-seat, 2 gray + 1 beige cushions, beige throw over right arm, wooden legs",
+      "bed: gray duvet smoothed with dark runner stripe; white throw FOLDED at foot; 2 gray pillows",
+      "chair: yellow/black jacket draped on backrest; backpack leaning at leg",
+      "footwear: brown sandals + black slides near bed edge; white sneakers on rug; brown sneakers on tile right of rug",
+      "nightstand_door: lit warm lamp, power strip + chargers + cables, closed laptop, water bottles, remote",
+      "shell: recessed cool ceiling spots ON; white split AC top-left; closed black blackout curtain; glossy light tile"
+    ])
+  })
 ]);
 
-export const SCENE_BY_ID = Object.freeze(Object.fromEntries(SCENES.map((scene) => [scene.id, scene])));
+export const SCENE_BY_ID = Object.freeze({ master_bedroom_v2: SCENES[0] });
+
+if (typeof window !== "undefined") window.SCENES = SCENES;
