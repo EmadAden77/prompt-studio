@@ -1,5 +1,23 @@
 # Changelog
 
+## v3.0-auto — 2026-08-28
+
+### Added
+
+- Upgraded `js/engines/autoEngine.js` from heuristic branching to a strict two-stage decision: reference eligibility first (`poseAllowed`), then deterministic physical-context scoring (`coherence`).
+- Night detection now includes the full v3 night set, including `lamp_only` and `lamp_and_phone`.
+- Section 02 remains exactly three visible manual choices: الملابس / الإضاءة / المرافقون, with the new heading `3 اختيارات فقط — والباقي هندسة تلقائية واقعية`.
+- Automatic pose selection now ranks only poses supported by the active scene and its visible features. Night solo favors lying/semi-reclining, daytime solo favors standing/bed-edge sitting, groups favor sofa/standing, and a single child favors seated support.
+- Added deterministic `altPose()` for the pose 🎲 control. Hair and expression alternatives keep their separate session offsets, so repeated state is stable until the user explicitly asks for another alternative.
+- `js/autoRuntime.js` now exposes `App.prototype.runAuto()` and invokes it before the existing `engineer()` pipeline, so generated prompts receive the resolved pose/hair/expression exactly like manual selections and retain all existing grounding, bedding, camera, muscle-expression and imperfection locks.
+- If a template-suggested or shuffled pose fails the active reference gate, v3 automatically moves to the highest-ranked valid pose and displays an Arabic correction toast/status explaining that the reference did not support the rejected pose.
+- Added `tests/v3.0-auto.mjs` and CI coverage without deleting prior regression files. Legacy v2.9 API behavior remains supported for existing tests and integrations.
+
+### Preserved
+
+- The personal build already removed SMART QUAD GUIDE in v2.0-personal, so v3 does not reintroduce a marketing/help modal merely to rename it. The three-step workflow is represented directly by the three visible controls.
+- `car.html`, all `scenes/` files, the footer ethics line, existing realism locks, companion personas/poses, and all previous tests remain in place.
+
 ## v2.9-auto — 2026-08-28
 
 ### Added
@@ -39,7 +57,7 @@
 
 ### Added
 
-- Added `js/data/companionPosesData.js` with deterministic woman/child micro-poses, four irregular group arrangements, `SPONTANEITY LOCK`, seeded assignment, pose-safety resolution and prompt-section generation.
+- Added `js/data/companionPosesData.js` with deterministic woman/child micro-poses, four irregular group arrangements, `SPONTANEITY_LOCK`, seeded assignment, pose-safety resolution and prompt-section generation.
 - Companion groups now inject `COMPANION SPONTANEOUS POSES` immediately after the v2.6 `COMPANIONS` section. Empty companion selection injects no spontaneity block.
 - Added 🎲 `عفوية مختلفة` beside the companion selector. The same set and seed produce the same spontaneous assignment; pressing the button increments `companionSeedExtra` and deterministically produces a different assignment.
 - Added automatic safety fallbacks for incompatible or persona-specific micro-poses, including tight-lying camera reach, child-only/adult-required contact, C7-only missing-tooth grin, and toddler-specific sleepy behavior.
