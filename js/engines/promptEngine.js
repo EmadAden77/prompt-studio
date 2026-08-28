@@ -4,6 +4,7 @@ import {
   LIGHTING_PHYSICS_LOCK,
   PHONE_SCREEN_ONLY_STRICT,
   NIGHT_REALISM_LOCK,
+  CLUTTER_REALISM_LOCK,
   SINGLE_PIPELINE,
   HAIR_REALISM_LOCK,
   CLOTHING_LOCK,
@@ -52,6 +53,12 @@ Preserve face width/length, cheek fullness, jaw/chin, nose, lip volume, eye size
 ${this.roomLockEngine.buildAuthorityText()}
 ${this.roomLockEngine.buildLockText(roomMode)}
 Do not move, clean, replace, mirror, resize or redesign room geometry, furniture, bedding, fixtures, materials or visible clutter.`;
+  }
+
+  clutterText(c) {
+    const t = c.clutter;
+    if (!t) return "";
+    return `CLUTTER (user-selected, movable props only): ${t.items}. Physics: ${t.physics}. Anti-AI: ${t.anti}.\n${CLUTTER_REALISM_LOCK}`;
   }
 
   posePhysics(c) {
@@ -125,6 +132,7 @@ cartoon, illustration, painting, CGI, 3D render, beauty filter, face smoothing, 
     s.push(this.buildNaturalBrief(c));
     s.push(this.identityLock());
     s.push(this.roomLock(c.roomMode || "GENERATE"));
+    s.push(this.clutterText(c));
     s.push(this.posePhysics(c));
     s.push(this.bedroomTemplateText(c));
     s.push(this.nightTemplateText(c));
