@@ -30,6 +30,8 @@ jobs:
         run: node tests/v2.1-bed.mjs
       - name: Run v2.3 lighting tests
         run: node tests/v2.3-light.mjs
+      - name: Run v2.4 night template tests
+        run: node tests/v2.4-night.mjs
       - name: Run template preset tests
         run: node tests/templates.mjs
       - name: Run expanded clothing tests
