@@ -24,8 +24,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Run regression tests
-        run: node tests/run-tests.mjs
+      - name: Run v2 deployment regression tests
+        run: node tests/v2-deployment.mjs
       - name: Run template preset tests
         run: node tests/templates.mjs
       - name: Run expanded clothing tests
