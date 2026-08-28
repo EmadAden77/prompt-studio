@@ -59,6 +59,22 @@ ${this.roomLockEngine.buildLockText(roomMode)}
 Do not move, clean, replace, mirror, resize or redesign room geometry, furniture, bedding, fixtures, materials or visible clutter.`;
   }
 
+  furnitureAnchorText(c) {
+    if (!c.pose) return "";
+    const poseSections = this.poseEngine.engineer({
+      pose:c.pose,
+      expression:c.expression,
+      hair:c.hair,
+      clothing:c.clothing,
+      autoEngineering:c.autoEngineering
+    });
+    const anchor = poseSections?.furnitureAnchor ?? "";
+    if (!anchor) return "";
+    const surface = this.poseEngine.supportSurfaceOf?.(c.pose);
+    const authority = this.roomLockEngine.buildFurnitureAnchorAuthority?.(surface) ?? "";
+    return [anchor, authority].filter(Boolean).join("\n");
+  }
+
   clutterText(c) {
     const t = c.clutter;
     if (!t) return "";
@@ -140,11 +156,12 @@ ${peopleLine}
 - IMAGE A controls the main subject identity only; companion identities come only from their fixed persona specifications; IMAGE B controls room only.
 - Facial landmarks remain the same main subject after perspective and expression compensation; companion faces stay mutually distinct and never inherit IMAGE A.
 - Support surfaces carry weight; contact shadows attach to real contact points; no floating body, impossible limbs or decorative pressure marks.
+- Furniture position, orientation, scale and design remain exactly locked to IMAGE B; the body adapts to its verified support geometry before the camera is derived.
 - Lighting direction, shadows, catchlights, reflections, exposure, white balance and noise agree across every visible face, hair, clothing, bedding/furniture and room.
 - The phone viewpoint remains subject-held at arm's length. No third-person observer, room camera, tripod or photographer.
 
 NEGATIVE PROMPT
-cartoon, illustration, painting, CGI, 3D render, beauty filter, face smoothing, facial reshaping, thinner face, sharper jaw, narrower eyes, changed beard, same-face companions, twin effect, adult facial features on children, childlike skin on adults, immodest family framing, incomplete child clothing, evenly spaced group lineup, identical companion smiles, every person staring perfectly at lens, plastic skin, waxy skin, wire hair, helmet hair, extra fingers, extra arms, fused limbs, impossible joints, floating body, unsupported contact, broken reflection, third-person view, observer camera, wide room shot, camera at foot of bed, doorway camera, tripod, another photographer, full-body distant selfie, fake DSLR bokeh, cinematic grading, studio softbox, hidden fill, extreme HDR, artificial glow, fake 8K detail, destructive noise, unrequested text or logos.`;
+cartoon, illustration, painting, CGI, 3D render, beauty filter, face smoothing, facial reshaping, thinner face, sharper jaw, narrower eyes, changed beard, same-face companions, twin effect, adult facial features on children, childlike skin on adults, immodest family framing, incomplete child clothing, evenly spaced group lineup, identical companion smiles, every person staring perfectly at lens, plastic skin, waxy skin, wire hair, helmet hair, extra fingers, extra arms, fused limbs, impossible joints, floating body, unsupported contact, backdrop-sitting in front of furniture, shifted furniture, resized furniture, rotated furniture, mirrored furniture, duplicated sofa, duplicated bed, duplicated chair, broken reflection, third-person view, observer camera, wide room shot, camera at foot of bed, doorway camera, tripod, another photographer, full-body distant selfie, fake DSLR bokeh, cinematic grading, studio softbox, hidden fill, extreme HDR, artificial glow, fake 8K detail, destructive noise, unrequested text or logos.`;
   }
 
   generateV2(c) {
@@ -154,6 +171,7 @@ cartoon, illustration, painting, CGI, 3D render, beauty filter, face smoothing, 
     s.push(this.buildNaturalBrief(c));
     s.push(this.identityLock());
     s.push(this.roomLock(c.roomMode || "GENERATE"));
+    s.push(this.furnitureAnchorText(c));
     s.push(this.clutterText(c));
     s.push(this.posePhysics(c));
     s.push(this.bedroomTemplateText(c));
@@ -175,7 +193,9 @@ cartoon, illustration, painting, CGI, 3D render, beauty filter, face smoothing, 
     s.push(SINGLE_PIPELINE);
     s.push(imperfectionManifest(c));
     s.push(this.finalCheckAndNegative(c));
-    return s.filter(Boolean).join("\n\n");
+    const prompt = s.filter(Boolean).join("\n\n");
+    c.generatedPrompt = prompt;
+    return prompt;
   }
 
   generate(config) {
