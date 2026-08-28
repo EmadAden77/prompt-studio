@@ -157,3 +157,5 @@ function install() {
 
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", install, { once:true });
 else install();
+
+import("./referencePoseRealityRuntime.js");
