@@ -1,8 +1,9 @@
 import { POSES } from "./data/posesData.js";
 import { HAIR_OPTIONS } from "./data/hairData.js";
 import { EXPRESSIONS } from "./data/expressionsData.js";
+import { LIGHTING_OPTIONS } from "./data/lightingData.js";
 import { COMPANION_SETS } from "./data/companionsData.js";
-import { autoPose, altPose, autoHair, autoExpression, poseAllowed } from "./engines/autoEngine.js";
+import { autoPose, altPose, autoHair, autoExpression, poseAllowed, autoLighting, altLighting } from "./engines/autoEngine.js";
 
 const unique = (items) => [...new Set(items.filter(Boolean))];
 const byId = (items, id) => items.find((item) => item.id === id);
@@ -35,13 +36,31 @@ function nearestSupportedPose(cfg, proposed) {
   return { pose, corrected:pose?.id !== proposed?.id };
 }
 
+function preferredTemplateLighting(app) {
+  if (!app.state.selectedNightTemplateId) return null;
+  const current = app.lightingEngine.getById(app.state.lightingId);
+  return current?.id || null;
+}
+
 function autoDecision(app) {
   const scene = activeScene(app);
-  const lighting = app.lightingEngine.getById(app.state.lightingId);
   const companionSet = selectedCompanions(app);
-  const cfg = { selectedScene:scene, companionSet, lighting };
   const templated = templatePose(app);
+  const templateMode = app.state.bedTemplateMode || "day";
 
+  const lightingCfg = {
+    selectedScene:scene,
+    companionSet,
+    pose:templated || byId(POSES, app.state.poseId),
+    poseId:templated?.id || app.state.poseId,
+    templateMode,
+    preferredLightingId:preferredTemplateLighting(app)
+  };
+  const lighting = (app.state.autoLightingOffset || 0) > 0
+    ? altLighting(lightingCfg, app.state.autoLightingOffset, LIGHTING_OPTIONS)
+    : autoLighting(lightingCfg, LIGHTING_OPTIONS);
+
+  const cfg = { selectedScene:scene, companionSet, lighting };
   const basePose = templated && poseAllowed(templated, scene) ? templated : autoPose(cfg, POSES);
   const offset = app.state.autoPoseOffset || 0;
   const proposed = offset > 0 ? altPose(cfg, offset, POSES) : basePose;
@@ -60,6 +79,7 @@ function autoDecision(app) {
     poseId,
     hairId:rotate(hairBase, hairPool, app.state.autoHairOffset),
     expressionId:rotate(expressionBase, expressionPool, app.state.autoExpressionOffset),
+    lightingId:lighting?.id || app.state.lightingId,
     companionSet,
     lighting,
     scene,
@@ -86,8 +106,8 @@ function showToast(message) {
 
 function install() {
   const App = window.App;
-  if (!App || App.prototype.__autoV30) return;
-  App.prototype.__autoV30 = true;
+  if (!App || App.prototype.__autoV31) return;
+  App.prototype.__autoV31 = true;
 
   const originalCacheDOM = App.prototype.cacheDOM;
   App.prototype.cacheDOM = function(...args) {
@@ -95,13 +115,14 @@ function install() {
     dom.autoPose = document.getElementById("autoPose");
     dom.autoHair = document.getElementById("autoHair");
     dom.autoExpression = document.getElementById("autoExpression");
+    dom.autoLighting = document.getElementById("autoLighting");
     return dom;
   };
 
   const originalSanitize = App.prototype.sanitizeState;
   App.prototype.sanitizeState = function(...args) {
     const result = originalSanitize.apply(this, args);
-    ["autoPoseOffset","autoHairOffset","autoExpressionOffset"].forEach((key) => {
+    ["autoPoseOffset","autoHairOffset","autoExpressionOffset","autoLightingOffset"].forEach((key) => {
       if (!Number.isInteger(this.state[key]) || this.state[key] < 0) this.state[key] = 0;
     });
     return result;
@@ -112,11 +133,13 @@ function install() {
     this.state.poseId = decision.poseId;
     this.state.hairId = decision.hairId;
     this.state.expressionId = decision.expressionId;
+    this.state.lightingId = decision.lightingId;
     this.state.companionSet = decision.companionSet;
 
     if (this.dom.poseSelect) this.dom.poseSelect.value = decision.poseId;
     if (this.dom.hairSelect) this.dom.hairSelect.value = decision.hairId;
     if (this.dom.expressionSelect) this.dom.expressionSelect.value = decision.expressionId;
+    if (this.dom.lightingSelect) this.dom.lightingSelect.value = decision.lightingId;
 
     if (decision.correction.corrected && announceCorrection) {
       const rejected = decision.rejectedPose?.name_ar || decision.rejectedPose?.id || "الاقتراح الأول";
@@ -131,9 +154,11 @@ function install() {
     const pose = byId(POSES, this.state.poseId);
     const hair = byId(HAIR_OPTIONS, this.state.hairId);
     const expression = byId(EXPRESSIONS, this.state.expressionId);
+    const lighting = byId(LIGHTING_OPTIONS, this.state.lightingId);
     if (this.dom.autoPose) this.dom.autoPose.textContent = pose?.name_ar || "—";
     if (this.dom.autoHair) this.dom.autoHair.textContent = hair?.name_ar || "—";
     if (this.dom.autoExpression) this.dom.autoExpression.textContent = expression?.name_ar || "—";
+    if (this.dom.autoLighting) this.dom.autoLighting.textContent = lighting?.name_ar || "—";
   };
 
   const originalPopulate = App.prototype.populateSelects;
@@ -160,8 +185,10 @@ function install() {
       if (kind === "pose") this.state.autoPoseOffset = (this.state.autoPoseOffset || 0) + 1;
       if (kind === "hair") this.state.autoHairOffset = (this.state.autoHairOffset || 0) + 1;
       if (kind === "expr") this.state.autoExpressionOffset = (this.state.autoExpressionOffset || 0) + 1;
+      if (kind === "lighting") this.state.autoLightingOffset = (this.state.autoLightingOffset || 0) + 1;
       this.engineer();
-      showToast(`تم اختيار بديل تلقائي جديد لـ${kind === "pose" ? "لوضعية" : kind === "hair" ? "لشعر" : "لتعبير"}.`);
+      const label = kind === "pose" ? "لوضعية" : kind === "hair" ? "لشعر" : kind === "expr" ? "لتعبير" : "لإضاءة";
+      showToast(`تم اختيار بديل تلقائي جديد ${label}.`);
     }));
     return result;
   };
@@ -171,6 +198,7 @@ function install() {
     this.state.autoPoseOffset = 0;
     this.state.autoHairOffset = 0;
     this.state.autoExpressionOffset = 0;
+    this.state.autoLightingOffset = 0;
     const result = originalReset.apply(this, args);
     this.renderAutoBadgesV30();
     return result;
