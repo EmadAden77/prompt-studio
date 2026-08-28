@@ -54,8 +54,7 @@ function sensorBlock() {
   const light = lightId();
   if (!light) return `XIAOMI FRONT SENSOR / EXPOSURE MODEL — WAITING FOR USER LIGHTING
 - Do not invent exposure behavior until the user selects a lighting preset.`;
-  const low = LOW_LIGHT.has(light);
-  if (low) return `XIAOMI 15 ULTRA FRONT SENSOR / EXPOSURE MODEL — LOW LIGHT
+  if (LOW_LIGHT.has(light)) return `XIAOMI 15 ULTRA FRONT SENSOR / EXPOSURE MODEL — LOW LIGHT
 - Treat this as a real handheld front-camera low-light exposure, not a studio-clean render. Preserve finite highlight headroom, underexposed distant regions, illumination-dependent chroma/luma noise and some loss of fine detail in deep shadows.
 - Multi-frame HDR/denoise may reduce noise only to a believable smartphone degree. Do not erase texture selectively from the face or recover impossible shadow detail.
 - Sharpening and compression remain restrained and whole-frame coherent. Darker regions may look slightly softer/noisier than well-lit regions.
@@ -127,7 +126,7 @@ function scoreModel() {
   if (LYING_POSES.has(pose)) contact = 10;
   if (SUPPORT_POSES.has(pose) && scope !== "identity_clothes_scene") {
     contact -= 1;
-    risks.push("الوضعية تعتمد على سطح داعم؛ مرجع المكان المحفوظ يقلل احتمال اختراع الدعم.");
+    risks.push("الوضعية تعتمد على سطح داعم؛ حفظ المكان يقلل احتمال اختراع الدعم.");
   }
   if (frame === "full") {
     framing = 5;
@@ -146,15 +145,31 @@ function scoreModel() {
   return { camera, contact, lighting, framing, total, risks };
 }
 
+function ensureUi() {
+  const eyebrow = document.querySelector(".intro .eyebrow");
+  if (eyebrow) eyebrow.textContent = `REFERENCE POSE TRANSFORMER · ${VERSION}`;
+  if ($("realityValidationScore")) return;
+  const summary = $("poseConflictSummary")?.parentElement;
+  if (!summary) return;
+  const box = document.createElement("div");
+  box.id = "realityValidationScore";
+  box.className = "decision-summary";
+  box.style.marginTop = "8px";
+  box.setAttribute("aria-live", "polite");
+  summary.appendChild(box);
+}
+
 function renderScore() {
+  ensureUi();
   const box = $("realityValidationScore");
   if (!box) return;
   const s = scoreModel();
-  box.innerHTML = `<strong>تقييم اتساق الإعدادات: ${s.total}/10</strong><br>الكاميرا: ${s.camera}/10 · التلامس والجاذبية: ${s.contact}/10 · الإضاءة/الحساس: ${s.lighting}/10 · قابلية كادر السيلفي: ${s.framing}/10${s.risks.length ? `<br><span>${s.risks.join(" ")}</span>` : "<br><span>لا توجد مخاطر إعداد واضحة حاليًا.</span>"}`;
+  box.innerHTML = `<strong>Reality Validation Score · اتساق الإعدادات: ${s.total}/10</strong><br>الكاميرا: ${s.camera}/10 · التلامس والجاذبية: ${s.contact}/10 · الإضاءة/الحساس: ${s.lighting}/10 · قابلية كادر السيلفي: ${s.framing}/10${s.risks.length ? `<br><span>${s.risks.join(" ")}</span>` : "<br><span>لا توجد مخاطر إعداد واضحة حاليًا.</span>"}`;
   box.dataset.score = String(s.total);
 }
 
 function apply() {
+  ensureUi();
   const output = $("posePromptOutput");
   if (!output || writing) return;
   const next = transform(output.textContent || "");
@@ -169,6 +184,7 @@ function apply() {
 }
 
 function install() {
+  ensureUi();
   ["targetPoseSelect","poseBoldnessSelect","nightLightingSelect","framingSelect","clothingSelect","expressionSelect"].forEach((id) => $(id)?.addEventListener("input", apply));
   document.querySelectorAll('input[name="preserveScope"]').forEach((node) => node.addEventListener("change", apply));
   $("buildPosePromptBtn")?.addEventListener("click", () => queueMicrotask(apply));
