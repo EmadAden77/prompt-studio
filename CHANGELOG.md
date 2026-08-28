@@ -1,5 +1,21 @@
 # Changelog
 
+## v3.1-auto-light — 2026-08-28
+
+### Changed
+
+- Removed the visible manual lighting selector from section 02; the home workspace now exposes only clothing and companions as manual choices.
+- Added deterministic automatic lighting selection to `js/engines/autoEngine.js` with strict scene-source eligibility through `lightingAllowed()`, physical-context scoring through `lightingCoherence()`, ranked candidates, and deterministic `altLighting()` alternatives.
+- Automatic lighting rejects presets whose `required_features` are absent from the active room reference, preventing cases such as selecting `ceiling_spots` for `sofa_area` when that reference does not contain ceiling spots.
+- Added an automatic lighting badge with a 🎲 deterministic alternative control. Lighting is resolved before pose/hair/expression and is written back to the normal `lightingId`, so `generateV2()` and all lighting realism locks continue unchanged.
+- Night templates keep their explicitly synchronized lighting preset when that source is physically supported by the reference; otherwise the automatic engine falls back to the highest-ranked compatible source.
+- Added `tests/v3.1-auto-light.mjs` and CI coverage while preserving all prior regression tests.
+
+### Preserved
+
+- `car.html`, scene assets and metadata, realism locks, prompt ordering, validators, companion behavior and footer ethics text remain unchanged.
+- Legacy v2.9/v3.0 hidden compatibility controls remain available to existing runtimes/tests, but lighting is no longer user-facing on the home page.
+
 ## v3.0-auto — 2026-08-28
 
 ### Added
@@ -57,7 +73,7 @@
 
 ### Added
 
-- Added `js/data/companionPosesData.js` with deterministic woman/child micro-poses, four irregular group arrangements, `SPONTANEITY_LOCK`, seeded assignment, pose-safety resolution and prompt-section generation.
+- Added `js/data/companionPosesData.js` with deterministic woman/child micro-poses, four irregular group arrangements, `SPONTANEITY LOCK`, seeded assignment, pose-safety resolution and prompt-section generation.
 - Companion groups now inject `COMPANION SPONTANEOUS POSES` immediately after the v2.6 `COMPANIONS` section. Empty companion selection injects no spontaneity block.
 - Added 🎲 `عفوية مختلفة` beside the companion selector. The same set and seed produce the same spontaneous assignment; pressing the button increments `companionSeedExtra` and deterministically produces a different assignment.
 - Added automatic safety fallbacks for incompatible or persona-specific micro-poses, including tight-lying camera reach, child-only/adult-required contact, C7-only missing-tooth grin, and toddler-specific sleepy behavior.
