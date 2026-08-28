@@ -51,7 +51,8 @@ const runtime = readFileSync(resolve(root, "js/clutterRuntime.js"), "utf8");
 assert.match(runtime, /DEFAULT_CLUTTER_ID = "just_woke"/u);
 assert.match(runtime, /الفوضى تلامس سطح الارتكاز/u);
 assert.match(runtime, /اقتراح فقط/u);
-assert.match(runtime, /selectedBedTemplate/u);
-assert.match(runtime, /selectedNightTemplate/u);
+assert.match(runtime, /selectBedTemplate/u);
+assert.match(runtime, /selectNightTemplate/u);
+assert.match(runtime, /اختيارك الحالي لم يتغير/u);
 
 console.log("✓ v2.5-clutter independent movable-prop realism passed");
