@@ -30,6 +30,18 @@ export const CLUTTER_REALISM_LOCK = `CLUTTER REALISM LOCK (movable props only �
 - Repeated items vary: of 3 bottles, one is half-full, one empty, one lying on its side with the cap off.
 - Clutter never intersects the body or support surfaces impossibly; a thrown garment drapes with real folds and a contact shadow.`;
 
+export const GROUP_SELFIE_REALISM_LOCK = `COMPANION & GROUP SELFIE REALISM LOCK:
+- ONE phone, ONE arm-length capture: all faces within reachable frame; people lean/cluster naturally toward the phone; heads sit at slightly different depths → nearest face sharpest, farthest slightly softer (natural phone DoF).
+- OCCLUSION: at least one person partially overlaps another (shoulder behind shoulder, child's head in front of an adult's chest). Real group selfies always overlap — no evenly spaced lineup.
+- GAZE & EXPRESSION VARIANCE: main subject at lens; most companions at lens; ONE companion may be naturally distracted (child looking at a toy/away, a woman mid-laugh with eyes softly closed). Never everyone perfectly posed.
+- DISTINCT FACES: each companion uses their fixed persona spec; faces must NOT share features with IMAGE A or with each other (different face shape, nose, skin tone, age markers). No "same face" or twin effect.
+- DISTINCT CLOTHING: each wears their fixed outfit; no two people share the same color/pattern; all differ from the selected main clothing (engine auto-swaps on collision).
+- CONSISTENT LIGHT: all faces lit by the same declared source(s) with matching shadow direction and catchlights; a turned-away face receives less key light.
+- HEIGHT/POSE LOGIC: adults taller, children lower; in seated/lying selfies a child is held, leans on an adult, or is squeezed between; heads align at plausible heights; an adult tilts toward a child.
+- CONTACT: people genuinely lean/touch (arm around shoulders, heads touching, child held) with real contact shadows and fabric compression — never floating apart.
+- AGE ACCURACY: 40/42 women show mature skin (fine lines, natural texture, NO beautify); children show true child proportions (larger forehead ratio, round cheeks, short neck). No adult features on kids, no child smoothness on adults.
+- SINGLE PIPELINE for everyone; no one rendered cleaner/sharper than others beyond depth. Modest, respectful, fully-clothed family framing.`;
+
 export const SINGLE_PIPELINE = `SINGLE PHONE PIPELINE: the background is NEVER sharper, cleaner or less noisy than the face; same exposure, HDR merge, noise, sharpening and compression everywhere.`;
 
 export const HAIR_REALISM_LOCK = `HAIR REALISM LOCK: density, volume, wave, length and hairline LOCKED to IMAGE A; hair forms soft natural clumps; individual strands resolved ONLY at the hairline edge, flyaways (5–12) and highlight glints; warm sun-lifted crests vs deeper valleys; matte sheen; NO wire strands, NO helmet, NO invented length/density.`;
@@ -80,6 +92,7 @@ if (typeof window !== "undefined") {
     PHONE_SCREEN_ONLY_STRICT,
     NIGHT_REALISM_LOCK,
     CLUTTER_REALISM_LOCK,
+    GROUP_SELFIE_REALISM_LOCK,
     SINGLE_PIPELINE,
     HAIR_REALISM_LOCK,
     CLOTHING_LOCK,
