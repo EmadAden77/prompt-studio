@@ -42,6 +42,16 @@ export const GROUP_SELFIE_REALISM_LOCK = `COMPANION & GROUP SELFIE REALISM LOCK:
 - AGE ACCURACY: 40/42 women show mature skin (fine lines, natural texture, NO beautify); children show true child proportions (larger forehead ratio, round cheeks, short neck). No adult features on kids, no child smoothness on adults.
 - SINGLE PIPELINE for everyone; no one rendered cleaner/sharper than others beyond depth. Modest, respectful, fully-clothed family framing.`;
 
+export const SOFA_GROUNDING_LOCK = `SOFA GROUNDING (all sofa templates):
+- Sit bones and upper thighs load the seat cushion with 3–5cm compression and a visible bulge beside the hips; NO floating gap under the thighs.
+- Leaning back → backrest cushion compresses behind the shoulder blades; leaning forward → back leaves the backrest, elbows on knees with pressure folds.
+- Elbow on the armrest shows fabric compression + a soft contact shadow; the armrest padding dips slightly.
+- Feet on the floor carry their own contact shadows; if legs are up, they depress the cushion and cast a shadow on it.
+- Throw pillows: a leaned-on pillow compresses and wrinkles; a pushed-aside pillow tilts with a folded corner; NEVER perfectly plump and upright.
+- A draped blanket/throw hangs over one arm or bunches at a corner with tension folds + contact shadow; it never floats.
+- Clothing: shirt gathers at the waist and lower belly; trousers tension at the knees and relax at the hips.
+- Posture: natural slight slouch or lean; shoulders relaxed and asymmetric — no mannequin stiffness. Seated eye height ~1.1–1.2m (background reads from sofa height, not standing).`;
+
 export const SINGLE_PIPELINE = `SINGLE PHONE PIPELINE: the background is NEVER sharper, cleaner or less noisy than the face; same exposure, HDR merge, noise, sharpening and compression everywhere.`;
 
 export const HAIR_REALISM_LOCK = `HAIR REALISM LOCK: density, volume, wave, length and hairline LOCKED to IMAGE A; hair forms soft natural clumps; individual strands resolved ONLY at the hairline edge, flyaways (5–12) and highlight glints; warm sun-lifted crests vs deeper valleys; matte sheen; NO wire strands, NO helmet, NO invented length/density.`;
@@ -93,6 +103,7 @@ if (typeof window !== "undefined") {
     NIGHT_REALISM_LOCK,
     CLUTTER_REALISM_LOCK,
     GROUP_SELFIE_REALISM_LOCK,
+    SOFA_GROUNDING_LOCK,
     SINGLE_PIPELINE,
     HAIR_REALISM_LOCK,
     CLOTHING_LOCK,
