@@ -68,8 +68,8 @@ const noSetPrompt = engine.generateV2({
 assert.doesNotMatch(noSetPrompt, /COMPANIONS \(fixed distinct personas/u);
 
 const index = readFileSync(resolve(root, "index.html"), "utf8");
-assert.match(index, /الاختيارات السبعة/u);
-assert.match(index, /7\. المرافقون/u);
+assert.match(index, /3 اختيارات يدوية/u);
+assert.match(index, /3\. المرافقون/u);
 assert.match(index, /id="companionSelect"/u);
 assert.match(index, /js\/data\/companionsData\.js/u);
 assert.match(index, /js\/companionsRuntime\.js/u);
