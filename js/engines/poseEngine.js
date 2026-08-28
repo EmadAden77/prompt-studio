@@ -72,7 +72,11 @@ export class PoseEngine {
 
   supportSurfaceOf(pose) {
     if (!pose) return null;
-    return (pose.surfaces ?? []).find((surface) => ["sofa", "bed", "chair"].includes(surface)) ?? null;
+    const surfaces = pose.surfaces ?? [];
+    if (pose.placement === "sofa" || surfaces.some((surface) => surface.startsWith("sofa"))) return "sofa";
+    if (pose.placement === "chair" || surfaces.some((surface) => surface.startsWith("chair"))) return "chair";
+    if (pose.placement === "bed" || surfaces.some((surface) => ["bed", "mattress", "mattress_edge", "pillow", "headboard"].includes(surface))) return "bed";
+    return surfaces.find((surface) => ["sofa", "bed", "chair"].includes(surface)) ?? null;
   }
 
   buildFurnitureAnchor(pose) {
