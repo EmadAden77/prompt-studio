@@ -15,7 +15,8 @@ import {
   imperfectionManifest
 } from "./realismLocks.js";
 import { LIGHTING_REALISM_BLOCK } from "../data/lightingData.js";
-import { buildCompanionsSection } from "../data/companionsData.js";
+import { COMPANIONS, buildCompanionsSection } from "../data/companionsData.js";
+import { buildCompanionPosesSection } from "../data/companionPosesData.js";
 
 export class PromptEngine {
   constructor({ identityEngine, roomLockEngine, poseEngine, cameraEngine, lightingEngine }) {
@@ -118,6 +119,10 @@ Do not move, clean, replace, mirror, resize or redesign room geometry, furniture
     return buildCompanionsSection(c.companionSet, c.clothing, GROUP_SELFIE_REALISM_LOCK);
   }
 
+  companionPosesText(c) {
+    return buildCompanionPosesSection(c.companionSet, c.companionSeedExtra ?? 0, c.pose?.id ?? "", COMPANIONS);
+  }
+
   finalCheckAndNegative(c = {}) {
     const companionCount = c.companionSet?.members?.length ?? 0;
     const peopleLine = companionCount
@@ -132,7 +137,7 @@ ${peopleLine}
 - The phone viewpoint remains subject-held at arm's length. No third-person observer, room camera, tripod or photographer.
 
 NEGATIVE PROMPT
-cartoon, illustration, painting, CGI, 3D render, beauty filter, face smoothing, facial reshaping, thinner face, sharper jaw, narrower eyes, changed beard, same-face companions, twin effect, adult facial features on children, childlike skin on adults, immodest family framing, incomplete child clothing, plastic skin, waxy skin, wire hair, helmet hair, extra fingers, extra arms, fused limbs, impossible joints, floating body, unsupported contact, broken reflection, third-person view, observer camera, wide room shot, camera at foot of bed, doorway camera, tripod, another photographer, full-body distant selfie, fake DSLR bokeh, cinematic grading, studio softbox, hidden fill, extreme HDR, artificial glow, fake 8K detail, destructive noise, unrequested text or logos.`;
+cartoon, illustration, painting, CGI, 3D render, beauty filter, face smoothing, facial reshaping, thinner face, sharper jaw, narrower eyes, changed beard, same-face companions, twin effect, adult facial features on children, childlike skin on adults, immodest family framing, incomplete child clothing, evenly spaced group lineup, identical companion smiles, every person staring perfectly at lens, plastic skin, waxy skin, wire hair, helmet hair, extra fingers, extra arms, fused limbs, impossible joints, floating body, unsupported contact, broken reflection, third-person view, observer camera, wide room shot, camera at foot of bed, doorway camera, tripod, another photographer, full-body distant selfie, fake DSLR bokeh, cinematic grading, studio softbox, hidden fill, extreme HDR, artificial glow, fake 8K detail, destructive noise, unrequested text or logos.`;
   }
 
   generateV2(c) {
@@ -155,6 +160,7 @@ cartoon, illustration, painting, CGI, 3D render, beauty filter, face smoothing, 
     s.push(`${HAIR_REALISM_LOCK}\nArrangement: ${c.hair?.name_en ?? c.hair?.name_ar ?? "preserve IMAGE A arrangement"}.`);
     s.push(`${CLOTHING_LOCK}\n${this.clothingText(c)}`);
     s.push(this.companionsText(c));
+    s.push(this.companionPosesText(c));
     s.push(`${LIGHTING_PHYSICS_LOCK}\n${this.lightingText(c)}\n\n${LIGHTING_REALISM_BLOCK}`);
     if (["phone_screen_only", "phone_dark_closeup"].includes(c.lighting?.id) || c.nightTemplate?.cat === "dark") s.push(PHONE_SCREEN_ONLY_STRICT);
     s.push(SINGLE_PIPELINE);
