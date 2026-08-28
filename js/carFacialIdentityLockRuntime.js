@@ -43,16 +43,27 @@ function transform(text) {
   return `${identityBlock()}\n\n${clean}`.trim();
 }
 
+function updateVersionLabels() {
+  document.querySelectorAll(".car-version").forEach((node) => { node.textContent = VERSION; });
+  const brand = document.querySelector(".brand small");
+  if (brand) brand.textContent = `Car Templates ${VERSION}`;
+  const eyebrow = document.querySelector(".intro .eyebrow");
+  if (eyebrow) eyebrow.textContent = `CAR SELFIE ENGINE · ${VERSION}`;
+  document.title = `قوالب السيارة ${VERSION} — AI Selfie Prompt Studio`;
+}
+
 function apply() {
   const output = $("finalPrompt");
   if (!output || writing) return;
   const next = transform(output.textContent || "");
-  if (next === output.textContent) return;
-  writing = true;
-  output.textContent = next;
-  const words = next.trim().split(/\s+/).filter(Boolean).length;
-  if ($("promptWordCount")) $("promptWordCount").textContent = `${words} كلمة`;
-  queueMicrotask(() => { writing = false; });
+  if (next !== output.textContent) {
+    writing = true;
+    output.textContent = next;
+    const words = next.trim().split(/\s+/).filter(Boolean).length;
+    if ($("promptWordCount")) $("promptWordCount").textContent = `${words} كلمة`;
+    queueMicrotask(() => { writing = false; });
+  }
+  updateVersionLabels();
 }
 
 function installVisibleLockNote() {
@@ -67,6 +78,7 @@ function installVisibleLockNote() {
 function install() {
   document.documentElement.dataset.carFacialIdentityLock = VERSION;
   installVisibleLockNote();
+  updateVersionLabels();
   ["lightingSelect","hairSelect","expressionSelect","clothingSelect"].forEach((id) => $(id)?.addEventListener("change", () => queueMicrotask(apply)));
   document.addEventListener("car-time-change", () => queueMicrotask(apply));
   document.addEventListener("click", (event) => {
