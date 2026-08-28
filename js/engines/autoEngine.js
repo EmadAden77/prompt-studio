@@ -1,3 +1,5 @@
+import { POSES as DEFAULT_POSES } from "../data/posesData.js";
+
 export const NIGHT_IDS = Object.freeze([
   "phone_screen_only","phone_dark_closeup","tv_glow_night","moonlight_window",
   "ac_led_micro","hallway_spill","bathroom_spill","streetlight_curtain","night_city_window",
@@ -17,7 +19,6 @@ function featureRequirements(pose) {
   return [];
 }
 
-// Strict gate: a pose is eligible only when the selected room reference supports it.
 export function poseAllowed(pose, scene) {
   if (!pose || !scene) return Boolean(pose);
   const visible = new Set(scene.visible_features || []);
@@ -27,7 +28,6 @@ export function poseAllowed(pose, scene) {
   return featOk && listed;
 }
 
-// Higher score means stronger physical/contextual coherence after the strict gate.
 export function coherence(pose, cfg = {}) {
   const n = cfg.companionSet?.members?.length || 0;
   const child = cfg.companionSet?.members?.some((m) => m.startsWith("C"));
@@ -37,18 +37,18 @@ export function coherence(pose, cfg = {}) {
 
   if (night && n === 0 && (id.startsWith("lying") || id === "semi_reclining")) score += 40;
   if (!night && n === 0 && (id.startsWith("standing") || id === "sitting_bed_edge")) score += 30;
-  if (n >= 2 && (id === "sitting_sofa" || id === "standing_center")) score += 45;
+  if (n >= 3 && (id === "sitting_sofa" || id === "standing_center")) score += 45;
+  else if (n >= 2 && (id === "sitting_sofa" || id === "standing_center")) score += 45;
   if (n === 1 && child && (id === "sitting_sofa" || id === "sitting_bed_edge")) score += 45;
   if (n === 0 && id === "sitting_sofa" && !night) score += 15;
 
-  // Small deterministic tie-breakers that prefer stable, ordinary support geometry.
   if (id === "sitting_sofa" || id === "sitting_bed_edge") score += 4;
   if (id === "standing_center") score += 3;
   if (id === "semi_reclining") score += 2;
   return score;
 }
 
-export function rankedPoses(cfg = {}, poses = []) {
+export function rankedPoses(cfg = {}, poses = DEFAULT_POSES) {
   return poses
     .filter((pose) => poseAllowed(pose, cfg.selectedScene))
     .map((pose, index) => ({ pose, score:coherence(pose, cfg), index }))
@@ -56,12 +56,14 @@ export function rankedPoses(cfg = {}, poses = []) {
     .map((entry) => entry.pose);
 }
 
-export function autoPose(cfg = {}, poses = []) {
-  const pool = rankedPoses(cfg, poses);
-  return pool[0] || poses[0] || { id:"sitting_bed_edge", name_ar:"الجلوس على حافة السرير" };
+// v3 returns a pose object when an explicit pool is supplied. Legacy callers without a pool receive the pose id.
+export function autoPose(cfg = {}, poses) {
+  const pool = rankedPoses(cfg, poses || DEFAULT_POSES);
+  const pose = pool[0] || (poses || DEFAULT_POSES)[0] || { id:"sitting_bed_edge", name_ar:"الجلوس على حافة السرير" };
+  return poses ? pose : pose.id;
 }
 
-export function altPose(cfg = {}, k = 0, poses = []) {
+export function altPose(cfg = {}, k = 0, poses = DEFAULT_POSES) {
   const pool = rankedPoses(cfg, poses);
   if (!pool.length) return poses[0] || { id:"sitting_bed_edge", name_ar:"الجلوس على حافة السرير" };
   return pool[Math.max(0, k) % pool.length] || pool[0];
