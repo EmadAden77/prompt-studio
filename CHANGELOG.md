@@ -1,5 +1,22 @@
 # Changelog
 
+## v2.4-night — 2026-08-28
+
+### Added
+
+- Added `js/data/nightTemplatesData.js` with five night-template categories and the supplied 20 bedroom night templates.
+- Added a `نهاري ☀️ / ليلي 🌙` switch above the bedroom template categories. Night mode replaces the daytime chips/cards with `NIGHT_CATEGORIES` and `NIGHT_TEMPLATES`; daytime mode preserves the v2.1 library.
+- Added `NIGHT REALISM LOCK` to `realismLocks.js` for noisy low-light blacks, screen falloff, physically valid catchlights, imperfect mixed white balance, low-light pupil/skin behavior, non-lighting emissive micro-dots, and unchanged bedding physics.
+- Night templates inject `NIGHT BEDROOM TEMPLATE` immediately after pose physics, then the night realism lock and the existing family grounding/bedding locks.
+- `dark` night templates automatically trigger `PHONE_SCREEN_ONLY_STRICT`, keeping the bedside lamp unlit unless a template explicitly selects a lamp source.
+- Night-template selection now reverse-synchronizes the five-choice lighting selector to the matching v2.3 lighting preset, including hallway/bathroom/street spill, lamp, blue-hour, moonlight, pre-dawn, TV glow, and pitch-dark screen-only mappings.
+- Added `tests/v2.4-night.mjs` and CI coverage for the supplied catalog, night-lock injection, strict dark behavior, family locks, UI mode switch, and lighting synchronization.
+
+### Preserved
+
+- `car.html`, `js/data/carTemplatesData.js`, scene files, `scenes/README.md`, and the existing five-choice controls remain structurally unchanged.
+- Night `mood` remains UI-only. The English prompt receives source/physics, anatomy, camera, framing, gaze and anti-artifact constraints without cinematic mood grading.
+
 ## v2.3-light — 2026-08-28
 
 ### Added
