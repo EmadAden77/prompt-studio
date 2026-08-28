@@ -1,5 +1,22 @@
 # Changelog
 
+## v2.1-bed — 2026-08-28
+
+### Added
+
+- Added `js/data/bedTemplatesData.js` with seven bedroom selfie categories and the supplied 18 physically described bedroom templates.
+- Added a category-chip bar and template-card grid at the top of section 02 without changing the existing five-choice controls.
+- Template cards show the Arabic name, camera angle, framing/face share, mood, short anti-artifact rule, and a derived `ليلي 🌙 / نهاري ☀️ / محايد` badge based on the template lighting text.
+- Added `js/bedTemplatesRuntime.js` to map a selected template to the appropriate existing pose while preserving all five manual choices as editable controls.
+- `PromptEngine.generateV2()` now injects one `BEDROOM TEMPLATE` line immediately after `POSE & PHYSICS` and before family bedding/grounding locks.
+- Added dedicated v2.1-bed regression coverage for template data integrity, prompt insertion order, UI wiring, and car-page isolation.
+
+### Preserved
+
+- `car.html`, `js/data/carTemplatesData.js`, `js/engines/realismLocks.js`, all scene files, `scenes/README.md`, and `tests/run-tests.mjs` remain unchanged.
+- The existing five-choice behavior remains authoritative after template prefill; changing the pose manually clears the active bedroom template rather than forcing it back.
+- Existing v2 identity, room, bedding/grounding, camera, lighting, single-pipeline, imperfection, and final-check locks remain unchanged.
+
 ## v2.0-personal — 2026-08-28
 
 ### Added
@@ -184,7 +201,6 @@
 - The selected reference remains built-in, so IMAGE B still never requires an upload.
 - Updated prompt wording, validation guidance, the reference picker, and the help flow to reflect user-selected room references.
 
-
 ## v1.3.1 — 2026-08-25
 
 ### Changed
@@ -194,7 +210,6 @@
 
 ### Prompt behavior
 - Generated prompts identify the selected built-in room reference instead of claiming that the user attached IMAGE B.
-
 
 ## v1.3 — 2026-08-25
 
