@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/responsive.css">
   <style>
-    .pose-transformer{max-width:1120px;margin:0 auto;padding:24px 16px 48px}.pose-transformer__grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}.pose-transformer .panel{height:max-content}.pose-transformer__controls{display:grid;grid-template-columns:1fr 1fr;gap:12px}.pose-transformer__controls .field--wide{grid-column:1/-1}.pose-reference-preview{width:100%;max-height:440px;object-fit:contain;border-radius:16px}.preserve-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.preserve-option{display:block}.preserve-option input{position:absolute;opacity:0;pointer-events:none}.preserve-option span{display:block;padding:12px;border:1px solid var(--border-color,rgba(127,127,127,.22));border-radius:12px;text-align:center;cursor:pointer}.preserve-option input:checked+span{outline:2px solid currentColor;outline-offset:1px;background:rgba(127,127,127,.1)}.pose-output pre{white-space:pre-wrap;word-break:break-word;max-height:620px;overflow:auto}.pose-transformer__actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.smart-pose-note,.lighting-note,.camera-lock-note,.expression-note,.clothing-note{margin:8px 0 0;padding:10px 12px;border-radius:12px;background:rgba(127,127,127,.06);line-height:1.7;font-size:.9rem}@media(max-width:820px){.pose-transformer__grid{grid-template-columns:1fr}.pose-transformer__controls{grid-template-columns:1fr}.pose-transformer__controls .field--wide{grid-column:auto}.preserve-grid{grid-template-columns:1fr}}
+    .pose-transformer{max-width:1120px;margin:0 auto;padding:24px 16px 48px}.pose-transformer__grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}.pose-transformer .panel{height:max-content}.pose-transformer__controls{display:grid;grid-template-columns:1fr 1fr;gap:12px}.pose-transformer__controls .field--wide{grid-column:1/-1}.pose-reference-preview{width:100%;max-height:440px;object-fit:contain;border-radius:16px}.preserve-grid,.mode-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.mode-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.preserve-option,.mode-option{display:block}.preserve-option input,.mode-option input{position:absolute;opacity:0;pointer-events:none}.preserve-option span,.mode-option span{display:block;padding:12px;border:1px solid var(--border-color,rgba(127,127,127,.22));border-radius:12px;text-align:center;cursor:pointer}.preserve-option input:checked+span,.mode-option input:checked+span{outline:2px solid currentColor;outline-offset:1px;background:rgba(127,127,127,.1)}.pose-output pre{white-space:pre-wrap;word-break:break-word;max-height:620px;overflow:auto}.pose-transformer__actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.smart-pose-note,.lighting-note,.camera-lock-note,.expression-note,.clothing-note,.decision-summary,.conflict-summary{margin:8px 0 0;padding:10px 12px;border-radius:12px;background:rgba(127,127,127,.06);line-height:1.7;font-size:.9rem}.decision-summary{font-weight:600}.conflict-summary[data-has-conflict="true"]{outline:1px solid rgba(235,180,50,.5)}[hidden]{display:none!important}@media(max-width:820px){.pose-transformer__grid{grid-template-columns:1fr}.pose-transformer__controls{grid-template-columns:1fr}.pose-transformer__controls .field--wide{grid-column:auto}.preserve-grid,.mode-grid{grid-template-columns:1fr}}
   </style>
 </head>
 <body data-page="pose-transformer">
@@ -32,7 +32,7 @@
 
   <main class="pose-transformer">
     <section class="intro">
-      <div><p class="eyebrow">REFERENCE POSE TRANSFORMER · v1.6</p><h1>حوّل أي صورة إلى لقطة سيلفي أمامية</h1><p>ارفع أي صورة للشخص. اختر الوضعية، تعبير الوجه، الملابس، والإضاءة، والمحرك يبني Prompt لسيلفي حقيقي بالكاميرا الأمامية لهاتف Xiaomi 15 Ultra دون إظهار جهاز التصوير.</p></div>
+      <div><p class="eyebrow">REFERENCE POSE TRANSFORMER · v1.7</p><h1>حوّل أي صورة إلى لقطة سيلفي أمامية</h1><p>ارفع أي صورة للشخص. الوضع السريع يبقي أهم الاختيارات أمامك، والوضع المتقدم يكشف الحفظ والكادر والتفاصيل الإضافية، مع كشف تلقائي للتعارضات قبل نسخ الـPrompt.</p></div>
       <span class="context-badge">Xiaomi 15 Ultra Front Selfie · Prompt فقط</span>
     </section>
 
@@ -48,6 +48,14 @@
         <p class="file-meta" id="poseReferenceMeta"></p>
 
         <div class="pose-transformer__controls" style="margin-top:16px">
+          <div class="field field--wide">
+            <label>واجهة العمل</label>
+            <div class="mode-grid">
+              <label class="mode-option"><input type="radio" name="poseUiMode" value="quick" checked><span>⚡ سريع</span></label>
+              <label class="mode-option"><input type="radio" name="poseUiMode" value="advanced"><span>🧩 متقدم</span></label>
+            </div>
+          </div>
+
           <div class="field field--wide">
             <label for="targetPoseSelect">الوضعية الجديدة</label>
             <select id="targetPoseSelect">
@@ -67,12 +75,20 @@
             </select>
             <p class="smart-pose-note" id="smartPoseNote">الوضع الذكي يطلب تحليل وضعية الشخص الحالية أولًا ثم اختيار انتقال تشريحي مناسب ومختلف عنها.</p>
           </div>
+          <div class="field field--wide">
+            <label for="poseBoldnessSelect">جرأة تغيير الوضعية</label>
+            <select id="poseBoldnessSelect">
+              <option value="conservative">محافظ · أقل تغيير ممكن</option>
+              <option value="medium" selected>متوسط · اختلاف واضح وطبيعي</option>
+              <option value="clear">واضح · اختلاف أكبر ضمن الفيزياء</option>
+            </select>
+          </div>
           <div class="field field--wide" id="customPoseField" hidden>
             <label for="customPoseInput">صف الوضعية المطلوبة</label>
             <textarea id="customPoseInput" rows="3" placeholder="مثال: واقف بجانب نافذة، الكتف الأيسر أقرب قليلًا للكاميرا واليد الحرة مرتخية"></textarea>
           </div>
 
-          <div class="field field--wide">
+          <div class="field field--wide" data-pose-advanced>
             <label>ما الذي تريد الحفاظ عليه؟</label>
             <div class="preserve-grid">
               <label class="preserve-option"><input type="radio" name="preserveScope" value="identity" checked><span>الشخص فقط</span></label>
@@ -144,13 +160,19 @@
             <p class="lighting-note">هذا الاختيار هو سلطة الإضاءة الوحيدة. لا يضيف المحرك مصادر ضوء أخرى.</p>
           </div>
 
-          <div class="field">
+          <div class="field" data-pose-advanced>
             <label for="framingSelect">الكادر</label>
             <select id="framingSelect"><option value="auto">تلقائي محافظ</option><option value="close">قريب</option><option value="half">نصف جسم</option><option value="three_quarter">ثلاثة أرباع</option><option value="full">كامل الجسم</option></select>
           </div>
-          <div class="field field--wide">
+          <div class="field field--wide" data-pose-advanced>
             <label>نوع الالتقاط</label>
             <p class="camera-lock-note"><strong>ثابت وإجباري:</strong> أي هاتف ظاهر في الصورة المرجعية يُحذف من النتيجة وتُعاد وضعية اليد والذراع تشريحيًا. التصوير النهائي سيلفي بالكاميرا الأمامية لهاتف Xiaomi 15 Ultra فقط، بينما جهاز التصوير وذراعه يبقيان خارج الإطار.</p>
+          </div>
+
+          <div class="field field--wide">
+            <label>ملخص القرار قبل الإنشاء</label>
+            <div class="decision-summary" id="poseDecisionSummary">جارٍ تجهيز الملخص…</div>
+            <div class="conflict-summary" id="poseConflictSummary">جارٍ فحص التعارضات…</div>
           </div>
         </div>
         <div class="pose-transformer__actions"><button id="buildPosePromptBtn" class="primary-button" type="button">⚙️ إنشاء Prompt</button><button id="resetPoseTransformerBtn" class="ghost-button" type="button">↺ إعادة ضبط</button></div>
@@ -158,7 +180,7 @@
 
       <section class="panel pose-output">
         <div class="panel__header"><div><span class="step-number">02</span><h2>Prompt تغيير الوضعية</h2></div><span id="posePromptWordCount" class="word-count">0 كلمة</span></div>
-        <div class="validation-summary" id="posePromptStatus">ارفع صورة، اختر التعبير والملابس والإضاءة، ثم أنشئ الـPrompt.</div>
+        <div class="validation-summary" id="posePromptStatus">ارفع صورة، اختر الجرأة والتعبير والملابس والإضاءة، ثم أنشئ الـPrompt.</div>
         <div class="prompt-editor"><pre id="posePromptOutput" tabindex="0">REFERENCE IMAGE REQUIRED.</pre></div>
         <div class="pose-transformer__actions"><button id="copyPosePromptBtn" class="primary-button" type="button">📋 نسخ Prompt</button></div>
       </section>
@@ -166,5 +188,6 @@
   </main>
   <script type="module" src="js/referencePoseTransformer.js"></script>
   <script type="module" src="js/referencePoseClothingRuntime.js"></script>
+  <script type="module" src="js/referencePoseUxRuntime.js"></script>
 </body>
 </html>
