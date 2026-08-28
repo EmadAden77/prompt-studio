@@ -1,5 +1,22 @@
 # Changelog
 
+## v2.5-clutter — 2026-08-28
+
+### Added
+
+- Added `js/data/clutterData.js` with four clutter-density levels and 14 movable-prop presets; default selection is `just_woke`.
+- Expanded section 02 from five to six choices with `6. الفوضى`, grouped as مرتبة / خفيفة / متوسطة / كثيفة.
+- Added `CLUTTER REALISM LOCK` to enforce gravity, contact shadows, natural overlap/occlusion, coherent density, unreadable generic labels, non-repeating repeated items, lighting consistency, and one shared phone-processing pipeline.
+- `PromptEngine.generateV2()` injects the user-selected clutter immediately after `ROOM LOCK` and before `POSE & PHYSICS`; fixed furniture remains under ROOM LOCK authority and never moves.
+- Added a clutter/support validator warning, `الفوضى تلامس سطح الارتكاز`, for clear bed/floor/chair support conflicts, with a suggestion to move only the movable props away from the body's contact zone.
+- Day/night bedroom templates now surface a non-binding clutter-density suggestion; selecting a template does not overwrite the user's clutter choice.
+- Added `tests/v2.5-clutter.mjs` and CI coverage for data levels, default choice, prompt order, lock content, UI wiring, validator warning text, and non-forcing template suggestions.
+
+### Preserved
+
+- `car.html`, `js/data/carTemplatesData.js`, scene files, `scenes/README.md`, fixed room furniture geometry, and all previously frozen controls remain unchanged except for the explicitly authorized sixth choice.
+- Clutter affects movable props only and cannot relocate fixed furniture, body support surfaces, room geometry, walls, doors, windows, fixtures, bed frame, wardrobe, vanity or other ROOM LOCK landmarks.
+
 ## v2.4-night — 2026-08-28
 
 ### Added
