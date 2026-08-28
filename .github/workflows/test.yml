@@ -38,6 +38,8 @@ jobs:
         run: node tests/v2.6-companions.mjs
       - name: Run v2.7 companion spontaneity tests
         run: node tests/v2.7-companion-poses.mjs
+      - name: Run v2.8 sofa template tests
+        run: node tests/v2.8-sofa.mjs
       - name: Run template preset tests
         run: node tests/templates.mjs
       - name: Run expanded clothing tests
