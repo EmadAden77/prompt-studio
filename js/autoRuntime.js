@@ -1,0 +1,196 @@
+import { POSES, SELECTABLE_POSE_IDS } from "./data/posesData.js";
+import { HAIR_OPTIONS } from "./data/hairData.js";
+import { EXPRESSIONS } from "./data/expressionsData.js";
+import { COMPANION_SETS } from "./data/companionsData.js";
+import { autoPose, autoHair, autoExpression } from "./engines/autoEngine.js";
+
+const unique = (items) => [...new Set(items.filter(Boolean))];
+const byId = (items, id) => items.find((item) => item.id === id);
+
+function selectedCompanions(app) {
+  return COMPANION_SETS.find((set) => set.id === app.state.companionSetId)
+    || COMPANION_SETS.find((set) => set.id === "none")
+    || { id:"none", members:[] };
+}
+
+function activeScene(app) {
+  return app.sceneEngine.getById(app.state.sceneOverrideId || app.state.selectedSceneId) || null;
+}
+
+function rotate(base, pool, offset) {
+  const choices = unique([base, ...pool]);
+  if (!choices.length) return base;
+  const start = Math.max(0, choices.indexOf(base));
+  return choices[(start + (offset || 0)) % choices.length];
+}
+
+function compatiblePosePool(app, scene) {
+  if (!scene) return SELECTABLE_POSE_IDS.slice();
+  const supported = new Set(app.sceneEngine.getCompatiblePoseIds(scene, SELECTABLE_POSE_IDS));
+  return SELECTABLE_POSE_IDS.filter((id) => supported.has(id));
+}
+
+function nearestSupportedPose(app, proposed, scene) {
+  if (!scene) return { poseId:proposed, corrected:false };
+  const pool = compatiblePosePool(app, scene);
+  if (pool.includes(proposed)) return { poseId:proposed, corrected:false };
+  const preferred = [
+    proposed,
+    "sitting_sofa","sitting_bed_edge","standing_center","sitting_chair","sitting_floor",
+    "semi_reclining","lying_back","lying_right_side","lying_left_side","standing_sofa","standing_bedside"
+  ];
+  const poseId = preferred.find((id) => pool.includes(id)) || pool[0] || proposed;
+  return { poseId, corrected:poseId !== proposed };
+}
+
+function templateOwnsPose(app) {
+  return Boolean(app.state.selectedBedTemplateId || app.state.selectedNightTemplateId || app.state.selectedSofaTemplateId);
+}
+
+function autoDecision(app) {
+  const scene = activeScene(app);
+  const lighting = app.lightingEngine.getById(app.state.lightingId);
+  const companionSet = selectedCompanions(app);
+  const basePose = templateOwnsPose(app)
+    ? app.state.poseId
+    : autoPose({ selectedScene:scene, companionSet, lighting });
+
+  const posePool = compatiblePosePool(app, scene);
+  let proposedPose = rotate(basePose, posePool, app.state.autoPoseOffset);
+  let correction = { poseId:proposedPose, corrected:false };
+  if (app.state.flow === "referenceFirst" || app.state.sceneOverrideId) {
+    correction = nearestSupportedPose(app, proposedPose, scene);
+    proposedPose = correction.poseId;
+  }
+
+  const hairBase = autoHair(proposedPose);
+  const hairPool = unique([hairBase, "same", "morning_messy", "neat", "natural_tousled"])
+    .filter((id) => HAIR_OPTIONS.some((item) => item.id === id));
+  const expressionBase = autoExpression({ companionSet, lighting });
+  const expressionPool = unique([expressionBase, "relaxed", "smile", "neutral", "serious"])
+    .filter((id) => EXPRESSIONS.some((item) => item.id === id));
+
+  return {
+    poseId:proposedPose,
+    hairId:rotate(hairBase, hairPool, app.state.autoHairOffset),
+    expressionId:rotate(expressionBase, expressionPool, app.state.autoExpressionOffset),
+    correction,
+    scene,
+    companionSet,
+    lighting
+  };
+}
+
+function showToast(message) {
+  if (!message) return;
+  let toast = document.getElementById("autoToast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "autoToast";
+    toast.className = "auto-toast";
+    toast.setAttribute("role", "status");
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.classList.add("show");
+  clearTimeout(showToast.timer);
+  showToast.timer = setTimeout(() => toast.classList.remove("show"), 3600);
+}
+
+function install() {
+  const App = window.App;
+  if (!App || App.prototype.__autoV29) return;
+  App.prototype.__autoV29 = true;
+
+  const originalCacheDOM = App.prototype.cacheDOM;
+  App.prototype.cacheDOM = function(...args) {
+    const dom = originalCacheDOM.apply(this, args);
+    dom.autoPose = document.getElementById("autoPose");
+    dom.autoHair = document.getElementById("autoHair");
+    dom.autoExpression = document.getElementById("autoExpression");
+    return dom;
+  };
+
+  const originalSanitize = App.prototype.sanitizeState;
+  App.prototype.sanitizeState = function(...args) {
+    const result = originalSanitize.apply(this, args);
+    ["autoPoseOffset","autoHairOffset","autoExpressionOffset"].forEach((key) => {
+      if (!Number.isInteger(this.state[key]) || this.state[key] < 0) this.state[key] = 0;
+    });
+    return result;
+  };
+
+  App.prototype.applyAutoSelectionV29 = function({ announceCorrection = true } = {}) {
+    const decision = autoDecision(this);
+    this.state.poseId = decision.poseId;
+    this.state.hairId = decision.hairId;
+    this.state.expressionId = decision.expressionId;
+    if (this.dom.poseSelect) this.dom.poseSelect.value = decision.poseId;
+    if (this.dom.hairSelect) this.dom.hairSelect.value = decision.hairId;
+    if (this.dom.expressionSelect) this.dom.expressionSelect.value = decision.expressionId;
+    if (decision.correction.corrected && announceCorrection) {
+      const from = byId(POSES, decision.correction.poseId)?.name_ar || decision.correction.poseId;
+      showToast(`تم تصحيح الوضعية تلقائيًا لتوافق المرجع: ${from}`);
+      this.setStatus?.(`الوضعية التلقائية صُححت لأن المرجع لا يدعم الاقتراح الأول.`);
+    }
+    return decision;
+  };
+
+  App.prototype.renderAutoBadgesV29 = function() {
+    const pose = byId(POSES, this.state.poseId);
+    const hair = byId(HAIR_OPTIONS, this.state.hairId);
+    const expression = byId(EXPRESSIONS, this.state.expressionId);
+    if (this.dom.autoPose) this.dom.autoPose.textContent = pose?.name_ar || "—";
+    if (this.dom.autoHair) this.dom.autoHair.textContent = hair?.name_ar || "—";
+    if (this.dom.autoExpression) this.dom.autoExpression.textContent = expression?.name_ar || "—";
+  };
+
+  const originalPopulate = App.prototype.populateSelects;
+  App.prototype.populateSelects = function(...args) {
+    const result = originalPopulate.apply(this, args);
+    this.renderAutoBadgesV29?.();
+    return result;
+  };
+
+  const originalEngineer = App.prototype.engineer;
+  App.prototype.engineer = function(options = {}) {
+    this.applyAutoSelectionV29({ announceCorrection:true });
+    const result = originalEngineer.call(this, options);
+    this.renderAutoBadgesV29();
+    this.renderCompanionSpontaneityV27?.();
+    return result;
+  };
+
+  const originalBindUI = App.prototype.bindUI;
+  App.prototype.bindUI = function(...args) {
+    const result = originalBindUI.apply(this, args);
+    document.querySelectorAll("[data-auto-r]").forEach((button) => button.addEventListener("click", () => {
+      const kind = button.dataset.autoR;
+      if (kind === "pose") this.state.autoPoseOffset = (this.state.autoPoseOffset || 0) + 1;
+      if (kind === "hair") this.state.autoHairOffset = (this.state.autoHairOffset || 0) + 1;
+      if (kind === "expr") this.state.autoExpressionOffset = (this.state.autoExpressionOffset || 0) + 1;
+      this.engineer();
+      showToast(`تم اختيار بديل تلقائي جديد لـ${kind === "pose" ? "لوضعية" : kind === "hair" ? "لشعر" : "لتعبير"}.`);
+    }));
+    return result;
+  };
+
+  const originalReset = App.prototype.resetToDefaults;
+  App.prototype.resetToDefaults = function(...args) {
+    this.state.autoPoseOffset = 0;
+    this.state.autoHairOffset = 0;
+    this.state.autoExpressionOffset = 0;
+    const result = originalReset.apply(this, args);
+    this.renderAutoBadgesV29();
+    return result;
+  };
+
+  const originalLoadRecent = App.prototype.loadFromLast5;
+  App.prototype.loadFromLast5 = function(...args) {
+    const result = originalLoadRecent.apply(this, args);
+    this.renderAutoBadgesV29();
+    return result;
+  };
+}
+
+install();
