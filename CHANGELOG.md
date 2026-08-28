@@ -1,5 +1,23 @@
 # Changelog
 
+## v2.6-companions — 2026-08-28
+
+### Added
+
+- Added `js/data/companionsData.js` with six fixed, visually distinct companion personas and 12 selectable companion sets, including women, children and family groups.
+- Expanded section 02 from six to seven choices with `7. المرافقون`; the default remains `بدون مرافقين`, with optgroups for نساء / أطفال / مجموعات.
+- Added `COMPANION & GROUP SELFIE REALISM LOCK` for one reachable phone capture, natural overlap/occlusion, varied gaze, distinct faces and clothing, shared lighting, height/age logic, real body contact and one phone-processing pipeline.
+- `PromptEngine.generateV2()` now injects the companion section immediately after the main `CLOTHING LOCK` and before lighting, while IMAGE A remains authority for the main subject only.
+- Companion attire collision handling now works on copied persona data rather than mutating the fixed persona catalog; colliding companion colors are swapped to an alternate olive outfit while facial identity remains fixed.
+- Added explicit modest-family rules: all companions are fully clothed, children use age-appropriate full clothing, and family framing remains respectful and non-sexual.
+- Added a validator warning `المجموعة أوسع من مدى الذراع` for companion sets above four people, with guidance to loosen crop only within a physically reachable selfie field of view or reduce the group size.
+- Added `tests/v2.6-companions.mjs` and CI coverage for persona markers, color-collision handling, prompt order, group-lock injection, UI groups and arm-reach validation wording.
+
+### Preserved
+
+- `car.html`, `js/data/carTemplatesData.js`, scene files, `scenes/README.md`, room geometry, clutter behavior, day/night template behavior and all previously frozen controls remain unchanged except for the explicitly authorized seventh choice.
+- Existing persona markers remain distinct: W40 mole/age lines, W42 rectangular glasses/deeper laugh lines, C7 missing front tooth, and C2 large forehead/short neck/baby cheeks.
+
 ## v2.5-clutter — 2026-08-28
 
 ### Added
