@@ -1,5 +1,22 @@
 # Changelog
 
+## v2.7 — 2026-08-28
+
+### Added
+
+- Added `js/data/companionPosesData.js` with deterministic woman/child micro-poses, four irregular group arrangements, `SPONTANEITY LOCK`, seeded assignment, pose-safety resolution and prompt-section generation.
+- Companion groups now inject `COMPANION SPONTANEOUS POSES` immediately after the v2.6 `COMPANIONS` section. Empty companion selection injects no spontaneity block.
+- Added 🎲 `عفوية مختلفة` beside the companion selector. The same set and seed produce the same spontaneous assignment; pressing the button increments `companionSeedExtra` and deterministically produces a different assignment.
+- Added automatic safety fallbacks for incompatible or persona-specific micro-poses, including tight-lying camera reach, child-only/adult-required contact, C7-only missing-tooth grin, and toddler-specific sleepy behavior.
+- Added the Arabic compatibility summary under the companion selector. When a micro-pose is replaced, it reports `استبدال آمن` with the original pose, replacement and physical reason.
+- Expanded the final negative constraints against evenly spaced group lineups, identical companion smiles and every person staring perfectly at the lens.
+- Added `tests/v2.7-companion-poses.mjs` and CI coverage for deterministic seeding, shuffle variation, empty-set behavior, prompt order, spontaneity-lock injection and safe fallback wiring.
+
+### Preserved
+
+- `car.html`, car template data, scene files, room/clutter/day-night behavior, fixed companion personas, modest-family constraints and all previously frozen controls remain unchanged.
+- Companion spontaneity changes timing, gaze, micro-motion and contact behavior only; it never changes IMAGE A identity authority or the fixed face/persona specifications from v2.6.
+
 ## v2.6-companions — 2026-08-28
 
 ### Added
