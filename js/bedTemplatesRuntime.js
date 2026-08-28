@@ -65,6 +65,24 @@ function install() {
     return result;
   };
 
+  const originalReset = App.prototype.resetToDefaults;
+  App.prototype.resetToDefaults = function(...args) {
+    this.state.selectedBedTemplateId = null;
+    const result = originalReset.apply(this, args);
+    this.state.bedTemplateCategory = BED_CATEGORIES[0].id;
+    this.renderBedCategoryChips?.();
+    this.renderBedTemplateCards?.();
+    return result;
+  };
+
+  const originalLoadRecent = App.prototype.loadFromLast5;
+  App.prototype.loadFromLast5 = function(...args) {
+    this.state.selectedBedTemplateId = null;
+    const result = originalLoadRecent.apply(this, args);
+    this.renderBedTemplateCards?.();
+    return result;
+  };
+
   App.prototype.initBedTemplatesV21 = function() {
     this.dom.bedCategoryChips = document.getElementById("bedCategoryChips");
     this.dom.bedTemplateGrid = document.getElementById("bedTemplateGrid");
