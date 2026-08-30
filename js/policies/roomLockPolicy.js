@@ -33,5 +33,18 @@ export const ROOM_LOCK_POLICIES = Object.freeze({
       "cleaning or redesigning the room",
       "revealing impossible sides of fixed objects"
     ]
+  },
+  TEXT_REFERENCE: {
+    name: "TEXT REFERENCE MODE",
+    principle: "The selected scene description_en is the permanent room authority. IMAGE B is intentionally absent and must never be requested or treated as a conflict.",
+    allowed: [
+      "rendering the room elements, materials, fixtures and clutter explicitly described by the selected text reference",
+      "physically coherent occlusion, contact, compression, reflections and lighting for the selected viewpoint"
+    ],
+    forbidden: [
+      "requiring IMAGE B or showing a missing-image warning",
+      "replacing the fixed text room with a generic room",
+      "inventing furniture, fixtures, materials or clutter that contradict the selected description_en"
+    ]
   }
 });
