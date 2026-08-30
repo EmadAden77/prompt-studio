@@ -120,9 +120,18 @@ const rightGate = sceneEngine.hardGate(
     bedRealismProfile: rightMapping.bedRealismProfile
   }
 );
-assert.equal(rightGate.passedCount, 1, "Only the actual right-side lamp reference may pass right-side + lamp + selfie feasibility");
 assert.equal(rightGate.totalCount, SCENES.length);
-assert.deepEqual(rightGate.passed.map((item) => item.scene.id), ["bed_right_nightstand"]);
+assert.ok(
+  rightGate.passed.some((item) => item.scene.id === "my_bedroom_text"),
+  "The permanent text bedroom must pass without requiring IMAGE B."
+);
+assert.deepEqual(
+  rightGate.passed
+    .filter((item) => !item.scene.text_reference)
+    .map((item) => item.scene.id),
+  ["bed_right_nightstand"],
+  "Only the actual right-side image reference may pass the strict right-side lamp gate."
+);
 assert.equal(
   sceneEngine.evaluateHardGate(sceneEngine.getById("vanity_mirror"), rightPose.id, [], {
     cameraType: "front",
@@ -165,9 +174,12 @@ assert.deepEqual(rightEngineering.bedRealismProfile.cameraDistanceCm, [45, 70]);
 assert.deepEqual(rightEngineering.bedRealismProfile.cameraPitchDeg, [5, 20]);
 assert.deepEqual(rightEngineering.bedRealismProfile.cameraYawDeg, [10, 30]);
 assert.equal(rightEngineering.confidence, "تلقائي صارم — دقة عالية");
-assert.equal(rightEngineering.gatePassedCount, 1);
+assert.equal(rightEngineering.gatePassedCount, rightGate.passedCount);
 assert.equal(rightEngineering.gateTotalCount, SCENES.length);
-assert.match(rightEngineering.gateSummary, /مرشح صارم v1\.3: اجتاز 1 من 8 مرجعًا/u);
+assert.match(
+  rightEngineering.gateSummary,
+  new RegExp(`مرشح صارم v1\\.3: اجتاز ${rightEngineering.gatePassedCount} من ${rightEngineering.gateTotalCount} مرجعًا`, "u")
+);
 assert.equal(rightEngineering.manualOverrideInvalid, false);
 assert.equal(rightEngineering.lightingId, "lamp_and_phone");
 
