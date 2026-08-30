@@ -120,6 +120,22 @@ export class SceneEngine {
       };
     }
 
+    if (scene.text_reference) {
+      const poseMatch = scene.supported_poses.includes(poseId);
+      return {
+        pass: poseMatch,
+        poseMatch,
+        featureMatch: true,
+        lightingMatch: true,
+        selfieCameraFeasible: true,
+        missingFeatures: [],
+        missingLightingFeatures: [],
+        requirement,
+        selfieFeasibility: { pass: true, surfacePass: true, nearViewSupport: true, cameraAngleSupport: true },
+        textReference: true
+      };
+    }
+
     const poseMatch = scene.supported_poses.includes(poseId);
     const missingFeatures = requirement.required_features_all.filter(
       (feature) => !scene.visible_features.includes(feature)
@@ -203,7 +219,7 @@ export class SceneEngine {
       reasons.push("بيانات المرجع تساعد على مصالحة مسافة الخلفية مع موضع السيلفي");
     }
 
-    if (scene.default_for_poses.includes(poseId)) {
+    if ((scene.default_for_poses ?? []).includes(poseId)) {
       score += 5;
       reasons.push("المرجع افتراضي لهذه الوضعية");
     }
