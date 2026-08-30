@@ -1,4 +1,7 @@
+import { PHYSICS_CONTRACT } from "./physicsPolicy.js";
+
 export const AUTHORITY_HIERARCHY = Object.freeze([
+  { priority: 0, id: "physics", name: "Master Physics Contract" },
   { priority: 1, id: "identity", name: "Person Identity (IMAGE A)" },
   { priority: 2, id: "room", name: "Room Reference (IMAGE B or fixed text reference)" },
   { priority: 3, id: "pose", name: "Pose & Body Physics" },
@@ -11,6 +14,14 @@ export const AUTHORITY_HIERARCHY = Object.freeze([
   { priority: 10, id: "processing", name: "Post-processing" },
   { priority: 11, id: "aesthetics", name: "Aesthetics" }
 ]);
+
+export const MASTER_PHYSICS_AUTHORITY = Object.freeze({
+  priority: 0,
+  id: "physics",
+  name: "Master Physics Contract",
+  contract: PHYSICS_CONTRACT,
+  rule: "When any lower-priority scene, placement, camera or lighting instruction conflicts with the physics contract, the physics contract wins."
+});
 
 export const TEXT_ROOM_REFERENCE_AUTHORITY = Object.freeze({
   source: "scene.description_en",
