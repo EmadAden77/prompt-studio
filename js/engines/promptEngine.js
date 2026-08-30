@@ -16,8 +16,12 @@ import {
   imperfectionManifest
 } from "./realismLocks.js";
 import { LIGHTING_REALISM_BLOCK } from "../data/lightingData.js";
+import { SCENES } from "../data/scenesData.js";
+import { PHYSICS_CONTRACT } from "../policies/physicsPolicy.js";
 import { COMPANIONS, buildCompanionsSection } from "../data/companionsData.js";
 import { buildCompanionPosesSection } from "../data/companionPosesData.js";
+
+const BEDROOM_SCENE_IDS = new Set(SCENES.map((scene) => scene.id));
 
 export class PromptEngine {
   constructor({ identityEngine, roomLockEngine, poseEngine, cameraEngine, lightingEngine }) {
@@ -26,6 +30,10 @@ export class PromptEngine {
     this.poseEngine = poseEngine;
     this.cameraEngine = cameraEngine;
     this.lightingEngine = lightingEngine;
+  }
+
+  isBedroomPrompt(c) {
+    return Boolean(c?.scene && BEDROOM_SCENE_IDS.has(c.scene.id));
   }
 
   isTextRoomReference(c) {
@@ -195,7 +203,9 @@ cartoon, illustration, painting, CGI, 3D render, beauty filter, face smoothing, 
     s.push(this.roomLock(c, c.roomMode || "GENERATE"));
     s.push(this.furnitureAnchorText(c));
     s.push(this.clutterText(c));
-    s.push(this.posePhysics(c));
+    const bedroomPrompt = this.isBedroomPrompt(c);
+    s.push(bedroomPrompt ? `[POSE]\n${this.posePhysics(c)}` : this.posePhysics(c));
+    if (bedroomPrompt) s.push(PHYSICS_CONTRACT);
     s.push(this.bedroomTemplateText(c));
     s.push(this.nightTemplateText(c));
     s.push(this.sofaTemplateText(c));
@@ -210,7 +220,8 @@ cartoon, illustration, painting, CGI, 3D render, beauty filter, face smoothing, 
     s.push(`${CLOTHING_LOCK}\n${this.clothingText(c)}`);
     s.push(this.companionsText(c));
     s.push(this.companionPosesText(c));
-    s.push(`${LIGHTING_PHYSICS_LOCK}\n${this.lightingText(c)}\n\n${LIGHTING_REALISM_BLOCK}`);
+    const lightingBlock = `${LIGHTING_PHYSICS_LOCK}\n${this.lightingText(c)}\n\n${LIGHTING_REALISM_BLOCK}`;
+    s.push(bedroomPrompt ? `[LIGHTING]\n${lightingBlock}` : lightingBlock);
     if (["phone_screen_only", "phone_dark_closeup"].includes(c.lighting?.id) || c.nightTemplate?.cat === "dark") s.push(PHONE_SCREEN_ONLY_STRICT);
     s.push(SINGLE_PIPELINE);
     s.push(imperfectionManifest(c));
