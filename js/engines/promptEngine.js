@@ -28,6 +28,17 @@ export class PromptEngine {
     this.lightingEngine = lightingEngine;
   }
 
+  isTextRoomReference(c) {
+    return Boolean(c.scene?.text_reference && c.scene?.description_en);
+  }
+
+  roomDescription(c) {
+    if (!this.isTextRoomReference(c)) return "";
+    return `[ROOM DESCRIPTION — PERMANENT TEXT REFERENCE]
+${c.scene.description_en}
+This fixed text-only room description is the sole room authority. IMAGE B is intentionally absent: do not request it, substitute another room, or raise a missing-reference conflict.`;
+  }
+
   buildNaturalBrief(c) {
     const personDescription = this.identityEngine.fixedData?.person?.description
       ?? "Middle Eastern man, 35 years old, 183 cm tall, 82 kg, with a lightly athletic build";
@@ -36,10 +47,13 @@ export class PromptEngine {
     const lightingName = c.lighting?.name_en?.toLowerCase() ?? "the selected physically motivated lighting";
     const aspect = ["9:16", "1:1", "16:9"].includes(c.aspect) ? c.aspect : "9:16";
     const aspectLabel = aspect === "9:16" ? "vertical phone selfie" : aspect === "1:1" ? "square phone selfie" : "horizontal phone selfie";
+    const roomAuthority = this.isTextRoomReference(c)
+      ? "using the fixed [ROOM DESCRIPTION] as the sole room authority; IMAGE B is intentionally absent."
+      : "using IMAGE B only as room geometry/material authority.";
 
     return `PHOTOGRAPHIC BRIEF — NATURAL FIVE-PART BRIEF
 Subject: the exact real man from IMAGE A, ${personDescription}, with unchanged identity geometry, skin tone, hairline and beard pattern.
-Setting: ${sceneName}, using IMAGE B only as room geometry/material authority.
+Setting: ${sceneName}, ${roomAuthority}
 Action / pose: ${poseName}, physically supported by the real bed, seat, floor or furniture required by the selected pose.
 Photographic style: ordinary candid smartphone selfie, not studio, CGI, commercial portrait or cinematic render; aspect ratio ${aspect} ${aspectLabel}.
 Lighting / camera: ${lightingName}, captured with the Xiaomi 15 Ultra front camera from a physically reachable arm-length viewpoint.`;
@@ -52,10 +66,11 @@ ${this.identityEngine.buildLockText()}
 Preserve face width/length, cheek fullness, jaw/chin, nose, lip volume, eye size/spacing, ears, hairline, beard pattern, skin tone, age cues and natural asymmetry. Do not beautify, symmetrize, slim, sharpen or redesign the face.`;
   }
 
-  roomLock(roomMode = "GENERATE") {
-    return `ROOM LOCK — IMAGE B ONLY
-${this.roomLockEngine.buildAuthorityText()}
-${this.roomLockEngine.buildLockText(roomMode)}
+  roomLock(c, roomMode = "GENERATE") {
+    const textReference = this.isTextRoomReference(c);
+    return `ROOM LOCK — ${textReference ? "FIXED TEXT REFERENCE" : "IMAGE B ONLY"}
+${this.roomLockEngine.buildAuthorityText(c.scene)}
+${this.roomLockEngine.buildLockText(roomMode, c.scene)}
 Do not move, clean, replace, mirror, resize or redesign room geometry, furniture, bedding, fixtures, materials or visible clutter.`;
   }
 
@@ -71,7 +86,7 @@ Do not move, clean, replace, mirror, resize or redesign room geometry, furniture
     const anchor = poseSections?.furnitureAnchor ?? "";
     if (!anchor) return "";
     const surface = this.poseEngine.supportSurfaceOf?.(c.pose);
-    const authority = this.roomLockEngine.buildFurnitureAnchorAuthority?.(surface) ?? "";
+    const authority = this.roomLockEngine.buildFurnitureAnchorAuthority?.(surface, c.scene) ?? "";
     return [anchor, authority].filter(Boolean).join("\n");
   }
 
@@ -151,12 +166,18 @@ Do not move, clean, replace, mirror, resize or redesign room geometry, furniture
     const peopleLine = companionCount
       ? `- The result is one coherent physical event with one main subject plus ${companionCount} selected companion${companionCount === 1 ? "" : "s"}, one room, one reachable selfie camera, one lighting event and one phone-processing pipeline.`
       : `- The result is one coherent physical event with one person, one room, one reachable selfie camera, one lighting event and one phone-processing pipeline.`;
+    const roomAuthorityLine = this.isTextRoomReference(c)
+      ? "- IMAGE A controls the main subject identity only; the fixed [ROOM DESCRIPTION] controls the room; IMAGE B is intentionally absent and is not required."
+      : "- IMAGE A controls the main subject identity only; companion identities come only from their fixed persona specifications; IMAGE B controls room only.";
+    const furnitureAuthorityLine = this.isTextRoomReference(c)
+      ? "- Furniture materials, placement, scale and design must match [ROOM DESCRIPTION]; the body adapts to the fixed text room before the camera is derived."
+      : "- Furniture position, orientation, scale and design remain exactly locked to IMAGE B; the body adapts to its verified support geometry before the camera is derived.";
     return `FINAL CHECK
 ${peopleLine}
-- IMAGE A controls the main subject identity only; companion identities come only from their fixed persona specifications; IMAGE B controls room only.
+${roomAuthorityLine}
 - Facial landmarks remain the same main subject after perspective and expression compensation; companion faces stay mutually distinct and never inherit IMAGE A.
 - Support surfaces carry weight; contact shadows attach to real contact points; no floating body, impossible limbs or decorative pressure marks.
-- Furniture position, orientation, scale and design remain exactly locked to IMAGE B; the body adapts to its verified support geometry before the camera is derived.
+${furnitureAuthorityLine}
 - Lighting direction, shadows, catchlights, reflections, exposure, white balance and noise agree across every visible face, hair, clothing, bedding/furniture and room.
 - The phone viewpoint remains subject-held at arm's length. No third-person observer, room camera, tripod or photographer.
 
@@ -166,11 +187,12 @@ cartoon, illustration, painting, CGI, 3D render, beauty filter, face smoothing, 
 
   generateV2(c) {
     const s = [];
-    s.push(`TASK: one ordinary, coherent, physically believable smartphone photograph. Use IMAGE A only for identity and IMAGE B only for the room. Return only the final image.`);
+    s.push(`TASK: one ordinary, coherent, physically believable smartphone photograph. Use IMAGE A only for identity and ${this.isTextRoomReference(c) ? "the fixed text [ROOM DESCRIPTION] only for the room; IMAGE B is intentionally absent." : "IMAGE B only for the room."} Return only the final image.`);
     s.push(SELFIE_VIEWPOINT_LOCK);
     s.push(this.buildNaturalBrief(c));
     s.push(this.identityLock());
-    s.push(this.roomLock(c.roomMode || "GENERATE"));
+    s.push(this.roomDescription(c));
+    s.push(this.roomLock(c, c.roomMode || "GENERATE"));
     s.push(this.furnitureAnchorText(c));
     s.push(this.clutterText(c));
     s.push(this.posePhysics(c));
