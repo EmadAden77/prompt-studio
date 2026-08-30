@@ -13,6 +13,8 @@ import { HAIR_OPTIONS } from "../js/data/hairData.js";
 import { BED_REALISM_POSE_IDS, QUAD_DEFAULTS, QUAD_POSE_IDS } from "../js/data/quadModeData.js";
 import { FIXED_DATA, IMAGE_A_AUTHORITY, IMAGE_B_AUTHORITY } from "../js/data/fixedData.js";
 import { ROOM_LOCK_POLICIES } from "../js/policies/roomLockPolicy.js";
+import { PHYSICS_CONTRACT } from "../js/policies/physicsPolicy.js";
+import { AUTHORITY_HIERARCHY } from "../js/policies/authorityPolicy.js";
 import { SceneEngine, POSE_REQUIREMENTS } from "../js/engines/sceneEngine.js";
 import { PoseEngine } from "../js/engines/poseEngine.js";
 import { CameraEngine } from "../js/engines/cameraEngine.js";
@@ -371,6 +373,30 @@ const wrongLensResult = validator.validate({ ...baseConfig, lens: cameraEngine.g
 assert.equal(wrongLensResult.valid, false);
 assert.ok(wrongLensResult.conflicts.some((issue) => issue.type === "camera_lens_conflict"));
 
+const physicsAxes = ["Gravity:", "Compression:", "Light:", "Mirrors:", "Materials:", "Anatomy:", "Camera:", "Clutter:"];
+assert.equal(AUTHORITY_HIERARCHY[0]?.id, "physics", "Master physics must have the highest authority priority");
+for (const axis of physicsAxes) {
+  assert.ok(PHYSICS_CONTRACT.includes(axis), `Physics contract must define ${axis}`);
+}
+for (const bedroomScene of SCENES) {
+  const bedroomPrompt = promptEngine.generate({
+    ...baseConfig,
+    scene: bedroomScene,
+    selectedSceneId: bedroomScene.id,
+    autoEngineering: { ...baseConfig.autoEngineering, selectedSceneId: bedroomScene.id }
+  });
+  const poseIndex = bedroomPrompt.indexOf("[POSE]");
+  const physicsIndex = bedroomPrompt.indexOf("[BEDROOM PHYSICS]");
+  const lightingIndex = bedroomPrompt.indexOf("[LIGHTING]");
+  assert.ok(
+    poseIndex >= 0 && poseIndex < physicsIndex && physicsIndex < lightingIndex,
+    `Physics contract must remain directly after [POSE] and before [LIGHTING]: ${bedroomScene.id}`
+  );
+  for (const axis of physicsAxes) {
+    assert.ok(bedroomPrompt.includes(axis), `Bedroom prompt must include ${axis}: ${bedroomScene.id}`);
+  }
+}
+
 const prompt = promptEngine.generate(baseConfig);
 assert.match(prompt, /^CHATGPT IMAGE TASK/u);
 assert.match(prompt, /LIGHTING REALISM \(anti-AI\)/u);
@@ -495,6 +521,7 @@ while (sourceFiles.length) {
   }
 }
 
+console.log("✓ permanent bedroom Master Physics Rule regression tests passed");
 console.log("✓ expanded daylight lighting realism and Camera Emulator tests passed");
 console.log("✓ Smart Quad deterministic mapping tests passed");
 console.log("✓ v1.3 bedroom realism camera geometry tests passed");
