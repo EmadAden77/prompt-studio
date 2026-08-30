@@ -9,7 +9,7 @@
     />
     <meta name="theme-color" content="#0b1020" />
     <title>Physics Prompt Studio</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles-v2.css" />
   </head>
   <body>
     <main class="app-shell">
@@ -127,6 +127,48 @@
           </div>
         </section>
 
+        <section class="panel bedroom-panel" id="bedroom-options" aria-labelledby="bedroom-options-title" hidden>
+          <div class="section-heading">
+            <div>
+              <span class="section-number">B</span>
+              <h2 id="bedroom-options-title">خيارات خاصة بغرفة النوم</h2>
+            </div>
+            <p>تظهر هذه الخيارات عند اختيار غرفة النوم فقط، وتربط وضع الجسم والنافذة ومصدر الضوء الحقيقي في لقطة واحدة متماسكة.</p>
+          </div>
+
+          <div class="bedroom-guidance" role="note">
+            اختر منظومة إضاءة واحدة واقعية أو مزيجاً مذكوراً صراحةً؛ التطبيق يمنع إضافة ضوء استوديو أو مصدر لا يظهر سببه في الغرفة.
+          </div>
+
+          <div class="form-grid">
+            <label class="field" for="bedroom-position">
+              <span>الموضع داخل الغرفة</span>
+              <select id="bedroom-position" name="bedroomPosition"></select>
+            </label>
+
+            <label class="field" for="bedroom-window">
+              <span>النافذة والستائر</span>
+              <select id="bedroom-window" name="bedroomWindow"></select>
+            </label>
+
+            <label class="field field-span-2 bedroom-lighting-field" for="bedroom-lighting">
+              <span>منظومة الإضاءة الفيزيائية</span>
+              <select id="bedroom-lighting" name="bedroomLighting"></select>
+              <small>الحرارة اللونية والمسافة وسقوط الضوء تدخل تلقائياً في البرومبت.</small>
+            </label>
+
+            <label class="field field-span-2" for="bedroom-detail">
+              <span>تفاصيل غرفة النوم الاختيارية</span>
+              <input
+                id="bedroom-detail"
+                name="bedroomDetail"
+                type="text"
+                placeholder="مثال: اللابتوب مفتوح على السرير، الكومودينة يسار السرير، الحذاء بجانب السجادة."
+              />
+            </label>
+          </div>
+        </section>
+
         <section class="panel" aria-labelledby="appearance-title">
           <div class="section-heading">
             <div>
@@ -222,7 +264,7 @@
               </select>
             </label>
 
-            <label class="field" for="lighting">
+            <label class="field non-bedroom-only" id="general-lighting-field" for="lighting">
               <span>مصدر الإضاءة</span>
               <select id="lighting" name="lighting"></select>
             </label>
@@ -288,6 +330,6 @@
       <li><strong></strong><span></span></li>
     </template>
 
-    <script type="module" src="js/physics-app.js"></script>
+    <script type="module" src="js/physics-app-v2.js"></script>
   </body>
 </html>
