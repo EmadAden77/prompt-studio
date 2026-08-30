@@ -24,12 +24,20 @@ This rule becomes mandatory whenever a car-interior template or car reference is
 - Keep the Saudi parking background secondary and believable. Do not invent prominent readable license plates, brand signage, road signs, or location text unless they are explicitly present in the reference or separately requested.
 - FINAL VEHICLE GATE: if the car appears to be moving, the outside context reads as active roadway travel, or any interior component changes identity or geometry relative to the reference, the result is invalid and must be corrected before output.`;
 
+const TEXT_ROOM_REFERENCE_LOCK = `TEXT-ONLY ROOM REFERENCE LOCK
+This lock becomes mandatory when the selected scene has text_reference: true.
+- The selected scene description_en is the complete permanent authority for the room: furniture, fixtures, materials, surfaces, arrangement and realistic daily clutter.
+- IMAGE B is intentionally absent. Never ask for IMAGE B, mark it as missing, or raise a conflict merely because no environment image is attached.
+- Do not replace the described bedroom with a generic room or invent contradictory furniture, finishes, lighting fixtures or clutter.
+- IMAGE A remains the sole identity reference and its behavior is unchanged.`;
+
 export const MASTER_POLICY = Object.freeze({
   realismCore: REALISM_CORE,
   roomRealismCore: buildRealismCore({ context: "room" }),
   carRealismCore: buildRealismCore({ context: "car" }),
   immutablePhotographicRealismLock: IMMUTABLE_PHOTOGRAPHIC_REALISM_LOCK,
   carInteriorSaudiParkingLock: CAR_INTERIOR_SAUDI_PARKING_LOCK,
+  textRoomReferenceLock: TEXT_ROOM_REFERENCE_LOCK,
   globalSelfieArmRule: "The camera-holding arm and phone are always physically solved outside the crop and must never appear in the finished image. Any visible-arm or arm-extension instruction is invalid.",
   eventRule: `${buildRealismCore({ context: "room" })}\n\n${IMMUTABLE_PHOTOGRAPHIC_REALISM_LOCK}\n\n${CAR_INTERIOR_SAUDI_PARKING_LOCK}`,
   conflictDomains: [
