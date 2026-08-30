@@ -1,5 +1,19 @@
 # Changelog
 
+## v3.3-laptop-work-selfies — 2026-08-30
+
+### Added
+
+- Added four fixed 💻 laptop-work selfie positions to the bedroom-only position selector: bed edge, prone on the bed, semi-reclining against the headboard, and seated on the bedroom chair.
+- Each preset injects its own load, compression, hand, laptop, phone-reach, screen-fill and anatomy constraints into the existing `[POSE]` section.
+- Selecting a laptop-work preset deterministically locks the compatible Xiaomi front-camera selfie mode, arm reach, blackout curtains, and a ceiling downlight as the single dominant room key; the laptop screen remains a weak local cool fill only.
+- Added work-template-specific negative exclusions for floating or sinking laptops, merged hands/keyboard, and contradictory laptop-screen glow, plus a QA entry identifying the active preset.
+- Added active mobile prompt-engine regression coverage for all four presets, their selfie/downlight/curtain locks, prompt ordering and laptop-specific negative exclusions.
+
+### Preserved
+
+- All existing scenes, bedroom positions, clothing, hair, skin, lighting controls, room reference behavior and IMAGE A handling remain available and unchanged when a 💻 preset is not selected.
+
 ## v3.2-physics-contract — 2026-08-30
 
 ### Added
