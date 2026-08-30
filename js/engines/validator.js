@@ -38,11 +38,14 @@ export class Validator {
     const hasAnchor = /FURNITURE ANCHOR(?: LOCK)?/u.test(prompt)
       && prompt.includes(`ROOM/FURNITURE AUTHORITY (${surface.toUpperCase()})`);
     if (hasAnchor) return null;
+    const textReference = Boolean(config?.scene?.text_reference);
     return this.createIssue(
       "error",
       "furniture_anchor",
       "قفل تثبيت الأثاث مفقود من الأمر لوضعية تعتمد على سطح ارتكاز ثابت.",
-      "أعد بناء الأمر ليُحقن FURNITURE ANCHOR قبل POSE & PHYSICS، مع إبقاء الأثاث في موضعه الحقيقي من IMAGE B.",
+      textReference
+        ? "أعد بناء الأمر ليُحقن FURNITURE ANCHOR قبل POSE & PHYSICS، مع إبقاء الأثاث مطابقاً للوصف النصي الثابت."
+        : "أعد بناء الأمر ليُحقن FURNITURE ANCHOR قبل POSE & PHYSICS، مع إبقاء الأثاث في موضعه الحقيقي من IMAGE B.",
       { kind:"regenerate_prompt", reason:"furniture_anchor", surface }
     );
   }
@@ -78,6 +81,7 @@ export class Validator {
     if (!scene) return [];
     return this.lightingEngine.options.filter((option) => {
       if (cameraType === "rear" && option.id === "phone_screen_only") return false;
+      if (scene.text_reference) return true;
       return this.lightingEngine.getMissingFeatures(option, scene).length === 0;
     });
   }
@@ -158,6 +162,7 @@ export class Validator {
     const bedSelfiePose = Boolean(pose && BED_SELFIE_POSE_IDS.has(pose.id));
     const physicalBedSelfie = Boolean(config.autoEngineering?.bedRealismProfile);
     const mirrorSelfie = pose?.id === "mirror_selfie";
+    const textReference = Boolean(scene?.text_reference);
 
     if (!pose) {
       conflicts.push(this.createIssue("error", "pose_missing", "ما تم اختيار وضعية صالحة.", "اختر وضعية من القائمة."));
@@ -227,13 +232,13 @@ export class Validator {
         ));
       }
 
-      const missingSurfaces = pose.surfaces.filter((surface) => !scene.surfaces.includes(surface));
+      const missingSurfaces = textReference ? [] : pose.surfaces.filter((surface) => !scene.surfaces.includes(surface));
       if (missingSurfaces.length) {
         conflicts.push(this.createIssue("error", "surface_not_available", `أسطح الارتكاز المطلوبة غير متوفرة: ${missingSurfaces.join("، ")}.`, "اختر مرجعًا يحتوي أسطح التلامس الفعلية."));
       }
 
       const poseAngleInvalid = !pose.valid_angles.includes(config.cameraAngle);
-      const sceneAngleInvalid = !physicalBedSelfie && !scene.camera_angles.includes(config.cameraAngle);
+      const sceneAngleInvalid = !textReference && !physicalBedSelfie && !scene.camera_angles.includes(config.cameraAngle);
       if (poseAngleInvalid || sceneAngleInvalid) {
         conflicts.push(this.createIssue(
           "error",
@@ -249,7 +254,7 @@ export class Validator {
       }
 
       const poseDistanceInvalid = !pose.valid_distances.includes(config.cameraDistance);
-      const sceneDistanceInvalid = !physicalBedSelfie && !scene.camera_distances.includes(config.cameraDistance);
+      const sceneDistanceInvalid = !textReference && !physicalBedSelfie && !scene.camera_distances.includes(config.cameraDistance);
       if (poseDistanceInvalid || sceneDistanceInvalid) {
         conflicts.push(this.createIssue(
           "error",
@@ -264,15 +269,15 @@ export class Validator {
         ));
       }
 
-      if (!bedSelfiePose && !mirrorSelfie && config.roomMode === "EDIT" && config.cameraAngle !== scene.base_camera_angle) {
+      if (!textReference && !bedSelfiePose && !mirrorSelfie && config.roomMode === "EDIT" && config.cameraAngle !== scene.base_camera_angle) {
         conflicts.push(this.createIssue("error", "edit_mode_angle", "وضع EDIT يفرض زاوية اللوحة الأصلية.", "استخدم زاوية المرجع أو حوّل إلى GENERATE.", { field: "cameraAngle", value: scene.base_camera_angle }));
       }
 
-      if (!bedSelfiePose && !mirrorSelfie && config.roomMode === "EDIT" && config.cameraDistance !== scene.base_camera_distance) {
+      if (!textReference && !bedSelfiePose && !mirrorSelfie && config.roomMode === "EDIT" && config.cameraDistance !== scene.base_camera_distance) {
         conflicts.push(this.createIssue("error", "edit_mode_distance", "وضع EDIT يحافظ على القص والمنظور الأصليين.", "استخدم مسافة المرجع الأصلية أو حوّل إلى GENERATE.", { field: "cameraDistance", value: scene.base_camera_distance }));
       }
 
-      const missingLightFeatures = this.lightingEngine.getMissingFeatures(lighting, scene);
+      const missingLightFeatures = textReference ? [] : this.lightingEngine.getMissingFeatures(lighting, scene);
       const lightingAlreadyBlockedByGate = Boolean(strictMismatch?.missingLightingFeatures?.length);
       if (missingLightFeatures.length && !lightingAlreadyBlockedByGate) {
         const compatibleLights = this.getCompatibleLightingForScene(scene, camera?.type ?? "front");
