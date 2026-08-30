@@ -1,4 +1,5 @@
 import { REALISM_CORE, buildRealismCore } from "./realismCore.js";
+import { PHYSICS_CONTRACT } from "./physicsPolicy.js";
 
 const IMMUTABLE_PHOTOGRAPHIC_REALISM_LOCK = `GLOBAL PHOTOGRAPHIC IMPERFECTION & CONSISTENCY LOCK — IMMUTABLE, ALWAYS ACTIVE
 This rule applies to EVERY template, pose, room scenario, camera path, clothing state, lighting preset, and future template. It is not a style option, cannot be disabled, and cannot be weakened by any lower-priority instruction.
@@ -33,6 +34,7 @@ This lock becomes mandatory when the selected scene has text_reference: true.
 
 export const MASTER_POLICY = Object.freeze({
   realismCore: REALISM_CORE,
+  physicsContract: PHYSICS_CONTRACT,
   roomRealismCore: buildRealismCore({ context: "room" }),
   carRealismCore: buildRealismCore({ context: "car" }),
   immutablePhotographicRealismLock: IMMUTABLE_PHOTOGRAPHIC_REALISM_LOCK,
@@ -41,6 +43,7 @@ export const MASTER_POLICY = Object.freeze({
   globalSelfieArmRule: "The camera-holding arm and phone are always physically solved outside the crop and must never appear in the finished image. Any visible-arm or arm-extension instruction is invalid.",
   eventRule: `${buildRealismCore({ context: "room" })}\n\n${IMMUTABLE_PHOTOGRAPHIC_REALISM_LOCK}\n\n${CAR_INTERIOR_SAUDI_PARKING_LOCK}`,
   conflictDomains: [
+    "master bedroom physics contract",
     "identity",
     "place and room continuity",
     "vehicle-interior continuity and stationary Saudi parking context when a car template is active",
