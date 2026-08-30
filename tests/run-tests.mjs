@@ -24,6 +24,8 @@ import { RoomLockEngine } from "../js/engines/roomLockEngine.js";
 import { Validator } from "../js/engines/validator.js";
 import { PromptEngine } from "../js/engines/promptEngine.js";
 import { AutoEngineeringEngine } from "../js/engines/autoEngineeringEngine.js";
+import { BEDROOM_POSITION_OPTIONS as PHYSICS_BEDROOM_POSITION_OPTIONS } from "../js/physics-data-v4.js";
+import { buildPromptPack as buildPhysicsPromptPack } from "../js/physics-prompt-engine-v5.js";
 
 const sceneEngine = new SceneEngine(SCENES);
 const poseEngine = new PoseEngine(POSES);
@@ -390,6 +392,45 @@ assert.equal(AUTHORITY_HIERARCHY[0]?.id, "physics", "Master physics must have th
 for (const axis of physicsAxes) {
   assert.ok(PHYSICS_CONTRACT.includes(axis), `Physics contract must define ${axis}`);
 }
+
+const laptopWorkPositionIds = ["laptop-bed-edge", "laptop-stomach", "laptop-semi-reclining", "laptop-chair"];
+assert.deepEqual(
+  PHYSICS_BEDROOM_POSITION_OPTIONS.filter((option) => option.workSelfie).map((option) => option.value),
+  laptopWorkPositionIds,
+  "The mobile bedroom selector must expose all four fixed laptop-work selfie poses"
+);
+for (const laptopWorkPositionId of laptopWorkPositionIds) {
+  const laptopWorkPack = buildPhysicsPromptPack({
+    scene: "my_bedroom_text",
+    time: "night",
+    mode: "standard",
+    bedroomPosition: laptopWorkPositionId,
+    bedroomLighting: "bedside-3000",
+    bedroomWindow: "night-blinds-sodium"
+  });
+  assert.equal(laptopWorkPack.state.mode, "selfie", `${laptopWorkPositionId} must lock a front-camera selfie`);
+  assert.equal(laptopWorkPack.state.bedroomLighting, "single-downlight-4000", `${laptopWorkPositionId} must lock one ceiling downlight`);
+  assert.equal(laptopWorkPack.state.bedroomWindow, "night-blackout", `${laptopWorkPositionId} must lock blackout curtains`);
+  assert.match(laptopWorkPack.positive, /\[POSE\]/u);
+  assert.match(laptopWorkPack.positive, /\[BEDROOM PHYSICS\]/u);
+  assert.match(laptopWorkPack.positive, /\[LIGHTING\]/u);
+  assert.ok(
+    laptopWorkPack.positive.indexOf("[POSE]") < laptopWorkPack.positive.indexOf("[BEDROOM PHYSICS]")
+    && laptopWorkPack.positive.indexOf("[BEDROOM PHYSICS]") < laptopWorkPack.positive.indexOf("[LIGHTING]"),
+    `${laptopWorkPositionId} must preserve the bedroom physics ordering`
+  );
+  assert.match(laptopWorkPack.negative, /floating laptop/u);
+}
+const normalPhysicsBedroomPack = buildPhysicsPromptPack({
+  scene: "bedroom",
+  time: "night",
+  mode: "standard",
+  bedroomPosition: "bed-edge",
+  bedroomLighting: "bedside-3000"
+});
+assert.equal(normalPhysicsBedroomPack.state.mode, "standard", "A normal bedroom position must not be forced into a laptop-work selfie");
+assert.equal(normalPhysicsBedroomPack.state.bedroomLighting, "bedside-3000", "A normal bedroom position must keep its selected lighting");
+
 for (const bedroomScene of SCENES) {
   const bedroomPrompt = promptEngine.generate({
     ...baseConfig,
@@ -534,6 +575,7 @@ while (sourceFiles.length) {
 }
 
 console.log("✓ permanent bedroom Master Physics Rule regression tests passed");
+console.log("✓ fixed laptop-work bedroom selfie template tests passed");
 console.log("✓ expanded daylight lighting realism and Camera Emulator tests passed");
 console.log("✓ Smart Quad deterministic mapping tests passed");
 console.log("✓ v1.3 bedroom realism camera geometry tests passed");
