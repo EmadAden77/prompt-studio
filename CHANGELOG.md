@@ -1,5 +1,20 @@
 # Changelog
 
+## v3.2-physics-contract — 2026-08-30
+
+### Added
+
+- Added immutable `js/policies/physicsPolicy.js` with the permanent `PHYSICS_CONTRACT` for bedroom gravity, compression, lighting, mirrors, materials, anatomy, smartphone-camera geometry and fixed clutter.
+- Registered the contract as priority `0` in `authorityPolicy`, ahead of all scene, pose, camera and lighting instructions; lower-priority choices cannot override it.
+- `PromptEngine.generateV2()` now injects the contract automatically for every bedroom scene immediately after `[POSE]` and before `[LIGHTING]`; there is no UI control or opt-out.
+- Added a regression contract in `tests/run-tests.mjs` that verifies all eight physics axes and their ordering for every bedroom scene.
+- The mobile GitHub Pages prompt engine applies the same mandatory bedroom contract.
+
+### Preserved
+
+- Identity-reference handling, non-bedroom prompts, scene options and all existing controls remain unchanged.
+
+
 ## v3.1-anchor — 2026-08-29
 
 ### Added
