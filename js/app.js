@@ -312,15 +312,23 @@ class App {
       this.renderConfidence(e);
       return;
     }
-    if (this.dom.sceneImage) this.dom.sceneImage.src = scene.image_url;
+    if (this.dom.sceneImage) this.dom.sceneImage.src = scene.text_reference ? "assets/scene-placeholder.svg" : scene.image_url;
     if (this.dom.sceneName) this.dom.sceneName.textContent = scene.name_ar;
-    if (this.dom.sceneMeta) this.dom.sceneMeta.textContent = `${scene.image_filename} · ${scene.region.replaceAll("_", " ")}`;
+    if (this.dom.sceneMeta) {
+      this.dom.sceneMeta.textContent = scene.text_reference
+        ? "🏠 بدون صورة · مرجع نصي ثابت · لا يلزم IMAGE B"
+        : `${scene.image_filename} · ${scene.region.replaceAll("_", " ")}`;
+    }
     this.renderAttachChip(scene);
     this.renderConfidence(e);
   }
 
   renderAttachChip(scene) {
-    if (!scene?.image_url || !this.dom.attachChip) return;
+    if (!this.dom.attachChip) return;
+    if (scene?.text_reference || !scene?.image_url) {
+      this.dom.attachChip.classList.add("hidden");
+      return;
+    }
     this.dom.attachChip.classList.remove("hidden");
     if (this.dom.attachFile) this.dom.attachFile.textContent = scene.image_url;
     if (this.dom.downloadSceneBtn) this.dom.downloadSceneBtn.onclick = () => {
