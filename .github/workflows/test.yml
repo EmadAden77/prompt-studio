@@ -1,4 +1,4 @@
-name: Smart Quad Tests
+name: Physics v5 Tests
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 concurrency:
-  group: smart-quad-${{ github.workflow }}-${{ github.ref }}
+  group: physics-v5-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -24,33 +24,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Run v2 deployment regression tests
+      - name: Run active deployment contract
         run: node tests/v2-deployment.mjs
-      - name: Run v2.1 bedroom template tests
-        run: node tests/v2.1-bed.mjs
-      - name: Run v2.3 lighting tests
-        run: node tests/v2.3-light.mjs
-      - name: Run v2.4 night template tests
-        run: node tests/v2.4-night.mjs
-      - name: Run v2.5 clutter tests
-        run: node tests/v2.5-clutter.mjs
-      - name: Run v2.6 companion tests
-        run: node tests/v2.6-companions.mjs
-      - name: Run v2.7 companion spontaneity tests
-        run: node tests/v2.7-companion-poses.mjs
-      - name: Run v2.8 sofa template tests
-        run: node tests/v2.8-sofa.mjs
-      - name: Run v2.9 automatic selection tests
-        run: node tests/v2.9-auto.mjs
-      - name: Run v3.0 automatic selection tests
-        run: node tests/v3.0-auto.mjs
-      - name: Run v3.1 automatic lighting tests
-        run: node tests/v3.1-auto-light.mjs
-      - name: Run v3.1 furniture anchor tests
-        run: node tests/v3.1-anchor.mjs
-      - name: Run template preset tests
-        run: node tests/templates.mjs
-      - name: Run expanded clothing tests
-        run: node tests/clothing-extra.mjs
-      - name: Run library coverage report
-        run: node tests/library-coverage.mjs
+      - name: Run Physics v5 and WikiPrompt integration tests
+        run: node tests/physics-v5-wikiprompt.mjs
