@@ -1,15 +1,37 @@
 // WikiPrompt realism integration for the static GitHub Pages app.
-// Primary source is a same-origin metadata cache to avoid cross-origin failures.
-// No third-party prompt bodies are redistributed by this module.
+// Uses a same-origin metadata cache to avoid CORS failures.
+// Third-party prompt bodies are not redistributed by this module.
 
 const LOCAL_DATASET_URL = "./data/wikiprompt-realism.json";
 const CACHE_TTL_MS = 30 * 60 * 1000;
 
 const REJECT_TERMS = /\b(8k|16k|ultra[- ]?hd|masterpiece|cinematic lighting|studio lighting|beauty retouch|perfect skin|razor sharp|extreme hdr|unreal engine|octane render)\b/i;
-const PREFER_TERMS = /\b(selfie|smartphone|phone camera|front camera|candid|natural light|practical light|identity|reference image|sensor noise|white balance|handheld|jpeg|realistic|photorealistic|authentic)\b/i;
+const PREFER_TERMS = /\b(selfie|smartphone|phone camera|front camera|candid|natural light|practical light|identity|reference image|sensor noise|white balance|handheld|jpeg|realistic|photorealistic|authentic|photography|imperfection)\b/i;
 
 function clean(value) {
   return String(value ?? "").replace(/\s+/g, " ").trim();
+}
+
+function recordText(record = {}) {
+  return clean([
+    record.title,
+    record.description,
+    record.category,
+    record.model,
+    ...(Array.isArray(record.tags) ? record.tags : []),
+    record.metadata?.style,
+    ...(Array.isArray(record.metadata?.keywords) ? record.metadata.keywords : [record.metadata?.keywords])
+  ].filter(Boolean).join(" "));
+}
+
+function configText(config = {}) {
+  return clean([
+    config.scene?.id, config.scene?.name_en, config.scene?.name_ar, config.scene,
+    config.pose?.id, config.pose?.name_en, config.pose?.name_ar, config.pose,
+    config.lighting?.id, config.lighting?.name_en, config.lighting?.name_ar, config.lighting,
+    config.mode, config.composition, config.selfieAngle,
+    "realistic photorealistic smartphone selfie front camera identity reference candid photography natural practical light"
+  ].filter(Boolean).join(" ")).toLowerCase();
 }
 
 export class WikiPromptService {
@@ -34,20 +56,22 @@ export class WikiPromptService {
   }
 
   score(record = {}, config = {}) {
-    const context = clean([
-      config.scene?.name_en, config.scene?.name_ar, config.scene,
-      config.pose?.name_en, config.pose?.name_ar, config.pose,
-      config.lighting?.name_en, config.lighting?.name_ar, config.lighting
-    ].filter(Boolean).join(" ")).toLowerCase();
-    const text = clean([record.title, record.description, ...(Array.isArray(record.tags) ? record.tags : [])].filter(Boolean).join(" "));
+    const text = recordText(record);
+    const context = configText(config);
+    const lower = text.toLowerCase();
     let score = 0;
-    if (PREFER_TERMS.test(text)) score += 4;
-    if (/\bselfie\b/i.test(text)) score += 3;
-    if (/\b(smartphone|front camera|phone camera|handheld)\b/i.test(text)) score += 3;
-    if (/\b(identity|reference)\b/i.test(text)) score += 2;
-    if (/\b(candid|natural light|authentic|imperfection)\b/i.test(text)) score += 2;
-    if (context && text.toLowerCase().split(/\s+/).some((word) => word.length > 4 && context.includes(word))) score += 1;
-    if (REJECT_TERMS.test(text)) score -= 6;
+
+    if (PREFER_TERMS.test(text)) score += 5;
+    if (/\b(selfie|selfie-vlog|selfie prompts?)\b/i.test(text)) score += 5;
+    if (/\b(smartphone|front camera|phone camera|handheld|arm[- ]length)\b/i.test(text)) score += 4;
+    if (/\b(identity|reference|identity-preserving|identity-reference)\b/i.test(text)) score += 3;
+    if (/\b(candid|natural|authentic|imperfection|photography|photorealistic|realistic)\b/i.test(text)) score += 3;
+
+    const contextTokens = context.split(/[^a-z0-9\u0600-\u06ff-]+/i).filter((word) => word.length >= 4);
+    const overlap = new Set(contextTokens.filter((word) => lower.includes(word))).size;
+    score += Math.min(overlap, 6);
+
+    if (REJECT_TERMS.test(text)) score -= 8;
     return score;
   }
 
@@ -78,12 +102,35 @@ export class WikiPromptService {
 
   async discover(config = {}, { maxResults = 8 } = {}) {
     const records = await this.loadLocalRecords();
-    const ranked = records
+    if (!records.length) {
+      this.setStatus("empty", "WikiPrompt local cache is empty", { count:0 });
+      return [];
+    }
+
+    const scored = records
       .map((record) => ({ ...record, _realismScore:this.score(record, config) }))
-      .filter((record) => record._realismScore > 0)
-      .sort((a, b) => b._realismScore - a._realismScore)
-      .slice(0, maxResults);
-    this.setStatus(ranked.length ? "local-ready" : "empty", ranked.length ? `WikiPrompt local discovery ready: ${ranked.length} matches` : "WikiPrompt local cache produced no usable matches", { count:ranked.length });
+      .sort((a, b) => b._realismScore - a._realismScore);
+
+    let ranked = scored.filter((record) => record._realismScore > 0).slice(0, maxResults);
+    let fallback = false;
+
+    // The local file is intentionally a small, realism-curated cache. If a very
+    // specific scene name has no lexical overlap, use the curated general records
+    // instead of incorrectly reporting that WikiPrompt has no suitable evidence.
+    if (!ranked.length) {
+      fallback = true;
+      ranked = scored
+        .filter((record) => !REJECT_TERMS.test(recordText(record)))
+        .slice(0, Math.min(maxResults, 5));
+    }
+
+    this.setStatus(
+      ranked.length ? "local-ready" : "empty",
+      ranked.length
+        ? `WikiPrompt local discovery ready: ${ranked.length} matches${fallback ? " (general realism fallback)" : ""}`
+        : "WikiPrompt local cache produced no usable matches",
+      { count:ranked.length, fallback }
+    );
     return ranked;
   }
 
@@ -118,6 +165,7 @@ export class WikiPromptService {
         const guidance = this.buildGuidance(records);
         this.cache.set(key, { guidance, savedAt:Date.now() });
         if (guidance) this.setStatus("synced", "WikiPrompt local guidance synchronized", { key, count:records.length });
+        else this.setStatus("empty", "WikiPrompt local cache produced no guidance", { key, count:0 });
         return guidance;
       })
       .catch((error) => {
