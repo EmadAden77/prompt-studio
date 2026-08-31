@@ -1,7 +1,6 @@
 import {
   ANATOMY_AND_CAPTURE_LOCK,
   BASE_NEGATIVE,
-  BASE_SKIN_TEXTURE,
   BASE_TEMPLATES,
   BEDROOM_LIGHTING_OPTIONS,
   BEDROOM_POSITION_OPTIONS,
@@ -61,6 +60,20 @@ const compact = (parts) =>
     .map((part) => cleanText(part))
     .filter(Boolean)
     .join(", ");
+
+const PHONE_CAMERA_SKIN_REALISM = [
+  "raw unedited photo",
+  "natural phone-camera skin rendering",
+  "visible but non-exaggerated pores",
+  "fine facial texture",
+  "small natural blemishes",
+  "slight local tonal variation",
+  "subtle fine wrinkles and peach fuzz only where naturally present",
+  "restrained sharpening",
+  "realistic low-level sensor noise",
+  "unretouched documentary capture",
+  "natural skin oil reflection"
+];
 
 export const DEFAULT_STATE = {
   scene: "bedroom",
@@ -176,6 +189,20 @@ export function getTemplate(state) {
   };
 }
 
+function buildTemplateCaptureCue(state, template) {
+  if (getSceneFamily(state.scene) !== "rangeRover") return template.text;
+  if (state.time === "day" && state.mode === "selfie") {
+    return "candid daytime front-camera selfie from the driver's seat, realistic physical sunlight across the face and cabin, a plausible Saudi street or parking area visible through the side window, restrained daytime grain";
+  }
+  if (state.time === "night" && state.mode === "selfie") {
+    return "candid nighttime front-camera selfie from the driver's seat, dashboard and exterior practical lights kept physically consistent, restrained low-light noise and coherent windshield reflections";
+  }
+  if (state.time === "day") {
+    return "candid daylight portrait from inside the parked cabin, panoramic-roof and side-window light producing source-consistent patterns, bright exterior held within believable phone-camera dynamic range";
+  }
+  return "candid night portrait from inside the parked cabin, restrained cabin ambient light and dashboard-screen glow, streetlights reflecting coherently in the windshield, realistic low-light noise";
+}
+
 function buildCameraGeometry(state) {
   const composition = optionText(COMPOSITION_OPTIONS, state.composition);
   if (state.mode === "selfie") {
@@ -269,7 +296,7 @@ export function buildPositivePrompt(rawState = {}) {
   return compact([
     buildReferenceDetail(state),
     ANATOMY_AND_CAPTURE_LOCK,
-    template.text,
+    buildTemplateCaptureCue(state, template),
     buildRoomDescription(state),
     buildContextPhysics(state),
     buildBedroomPoseSection(state),
@@ -277,7 +304,7 @@ export function buildPositivePrompt(rawState = {}) {
     buildStyling(state),
     buildCameraGeometry(state),
     buildLightingSection(state),
-    BASE_SKIN_TEXTURE,
+    PHONE_CAMERA_SKIN_REALISM,
     "REALISM QA: preserve one coherent camera, one lens, one perspective, one exposure strategy and source-supported lighting; prioritize identity, anatomy, contact, camera geometry, lighting, reflections and sensor behavior over stylization"
   ]);
 }
