@@ -77,10 +77,19 @@
         </section>
 
         <section class="panel" aria-labelledby="appearance-title">
-          <div class="section-heading"><div><span class="section-number">03</span><h2 id="appearance-title">الملابس والشعر والمظهر</h2></div><p>تتغير التسريحة بإعادة ترتيب الشعر الموجود فقط. لا زيادة للكثافة ولا ملء للفراغات.</p></div>
+          <div class="section-heading"><div><span class="section-number">03</span><h2 id="appearance-title">الملابس والشعر والمظهر</h2></div><p>الملابس الآن لها خامة ووزن وحالة كي واستعمال وقصة، والطيات تتغير حسب الوضعية والكادر بدل وصف عام محفوظ.</p></div>
           <div class="form-grid">
-            <label class="field field-span-2" for="clothing"><span>الملابس</span><select id="clothing" name="clothing"></select></label>
-            <label class="field field-span-2" for="clothing-custom"><span>تفصيل إضافي للملابس</span><input id="clothing-custom" name="clothingCustom" type="text" placeholder="اختياري: لون أو تفصيل بسيط فقط، مثال: بدون شعارات، قماش أسود مطفي." /><small>إذا تعارض التفصيل مع نوع اللباس أو الوضعية يتجاهله المحرك.</small></label>
+            <label class="field field-span-2" for="clothing"><span>الملابس</span><select id="clothing" name="clothing"></select><small>القائمة موسعة وتشمل منزلي، كاجوال، ثياب سعودية، عمل، شتوي ورياضي.</small></label>
+
+            <label class="field" for="fabric"><span>نوع القماش</span><select id="fabric" name="fabric"></select><small>يعرض فقط الخامات المنطقية للقطعة المختارة.</small></label>
+            <label class="field" for="fabric-weight"><span>وزن القماش</span><select id="fabric-weight" name="fabricWeight"></select><small>يغير سقوط القماش وعمق الطيات وسرعة استجابته للجاذبية.</small></label>
+
+            <label class="field" for="iron-state"><span>حالة الكي</span><select id="iron-state" name="ironState"></select><small>المكوي قد يبقى مرتباً، لكنه يكوّن طيات جديدة عند الجلوس أو الحركة.</small></label>
+            <label class="field" for="wear-state"><span>حالة الاستعمال</span><select id="wear-state" name="wearState"></select><small>جديد، يومي، بعد ساعات من اللبس، منزلي أو بعد تمرين حسب نوع اللباس.</small></label>
+
+            <label class="field field-span-2" for="clothing-fit"><span>القصة / المقاس</span><select id="clothing-fit" name="clothingFit"></select><small>القصة تؤثر على الشد، السقوط والبنش الطبيعي ولا تغيّر شكل الجسم.</small></label>
+
+            <label class="field field-span-2" for="clothing-custom"><span>تفصيل إضافي للملابس</span><input id="clothing-custom" name="clothingCustom" type="text" placeholder="اختياري: لون أو تفصيل بسيط فقط، مثال: بدون شعارات، أزرار بسيطة." /><small>إذا تعارض التفصيل مع نوع اللباس أو القماش أو الوضعية يتجاهله المحرك.</small></label>
             <label class="field field-span-2" for="hair"><span>تسريحة الشعر مع تثبيت الكثافة الأصلية</span><select id="hair" name="hair"></select></label>
             <label class="field" for="skin"><span>حالة البشرة</span><select id="skin" name="skin"></select></label>
             <label class="field" for="expression"><span>التعبير</span><select id="expression" name="expression"></select></label>
