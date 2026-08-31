@@ -18,6 +18,7 @@ import { PromptEngine } from "./engines/promptEngine.js";
 import { Validator } from "./engines/validator.js";
 import { AutoEngineeringEngine } from "./engines/autoEngineeringEngine.js";
 import { QUICK_FIXES } from "./engines/realismLocks.js";
+import { wikiPromptService } from "./services/wikiPromptService.js";
 import { StorageManager } from "./utils/storage.js";
 import { ImageHandler } from "./utils/imageHandler.js";
 import { copyText } from "./utils/clipboard.js";
@@ -64,6 +65,8 @@ class App {
     this.promptEngine = new PromptEngine({ identityEngine:this.identityEngine, roomLockEngine:this.roomLockEngine, poseEngine:this.poseEngine, cameraEngine:this.cameraEngine, lightingEngine:this.lightingEngine });
     this.validator = new Validator({ lightingEngine:this.lightingEngine });
     this.imageHandler = new ImageHandler({ maxBytes:APP_CONFIG.maxImageBytes, acceptedTypes:APP_CONFIG.acceptedImageTypes });
+    this.wikiPromptService = wikiPromptService;
+    this.wikiPromptSyncId = 0;
 
     this.engineering = null;
     this.currentConfig = null;
@@ -281,9 +284,13 @@ class App {
     const pose = this.poseEngine.getById(this.state.poseId);
     const engineering = this.engineerState(pose);
     this.applyEngineering(engineering);
+    const syncId = ++this.wikiPromptSyncId;
     this.currentConfig = this.buildConfig(pose, engineering);
+    const cachedGuidance = this.wikiPromptService.getCachedGuidance(this.currentConfig);
+    if (cachedGuidance) this.currentConfig.wikiPromptGuidance = cachedGuidance;
     this.currentValidation = this.validator.validate(this.currentConfig);
     this.currentPrompt = this.promptEngine.generateV2(this.currentConfig);
+    const localPrompt = this.currentPrompt;
     this.renderPrompt(this.currentPrompt);
     this.renderScene();
     this.renderValidation(false);
@@ -293,7 +300,27 @@ class App {
       this.saveToHistory(this.currentPrompt);
       this.updateLast5();
     }
+    void this.syncWikiPrompt(this.currentConfig, syncId, { localPrompt, persistHistory });
     return this.currentPrompt;
+  }
+
+  async syncWikiPrompt(config, syncId, { localPrompt, persistHistory } = {}) {
+    const guidance = await this.wikiPromptService.sync(config);
+    if (!guidance || syncId !== this.wikiPromptSyncId || config !== this.currentConfig) return;
+    if (config.wikiPromptGuidance === guidance) return;
+
+    config.wikiPromptGuidance = guidance;
+    const syncedPrompt = this.promptEngine.generateV2(config);
+    if (syncId !== this.wikiPromptSyncId || config !== this.currentConfig) return;
+
+    this.currentPrompt = syncedPrompt;
+    this.renderPrompt(syncedPrompt);
+    this.renderFavoriteState();
+
+    if (persistHistory && this.history[0]?.prompt === localPrompt) {
+      this.history[0].prompt = syncedPrompt;
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(this.history));
+    }
   }
 
   renderPrompt(prompt) {
