@@ -47,17 +47,25 @@ assert.match(workPack.positive, /\[POSE\]/u);
 assert.match(workPack.positive, /\[BEDROOM PHYSICS\]/u);
 assert.match(workPack.positive, /\[LIGHTING\]/u);
 assert.match(workPack.positive, /front-camera/u);
+assert.match(workPack.positive, /natural phone-camera skin rendering/u);
+assert.doesNotMatch(workPack.positive, /microscopic pores|subsurface scattering|hyper-realistic anatomical accuracy/u);
 assert.match(workPack.negative, /floating laptop/u);
 assert.ok(workPack.qa.length >= 6, "Active prompt pack must expose realism QA");
 
 const carPack = buildPromptPack({
   ...DEFAULT_STATE,
   scene:"rangeRover",
-  time:"night",
+  time:"day",
   mode:"selfie",
+  clothing:"thobe-car",
   activity:"sitting naturally behind the steering wheel while safely parked"
 });
 assert.match(carPack.positive, /fully stationary and safely parked/u);
+assert.match(carPack.positive, /candid daytime front-camera selfie from the driver's seat/u);
+assert.match(carPack.positive, /natural phone-camera skin rendering/u);
+assert.doesNotMatch(carPack.positive, /microscopic pores|subsurface scattering|hyper-realistic anatomical accuracy/u);
+assert.equal((carPack.positive.match(/stationary white 2022 Range Rover Sport/gu) ?? []).length, 1, "Vehicle identity should be stated once, not duplicated by the capture template");
+assert.equal((carPack.positive.match(/183 cm and 82 kg/gu) ?? []).length, 1, "Body measurements should not be repeated in the skin-realism block");
 assert.match(carPack.negative, /moving vehicle/u);
 
 const localRecords = [
@@ -98,9 +106,10 @@ assert.ok(records.length > 0, "Curated WikiPrompt metadata must produce usable l
 assert.equal(records[0].slug, "realistic-selfie", "Realistic selfie evidence must outrank cinematic render language");
 
 const guidance = await wiki.sync(config);
-assert.match(guidance, /WIKIPROMPT REALISM DISCOVERY — LOCAL SAME-ORIGIN EVIDENCE/u);
-assert.match(guidance, /Realistic smartphone selfie/u);
-assert.doesNotMatch(guidance, /Cinematic 16K studio render/u);
+assert.match(guidance, /^Apply physically compatible candid-smartphone realism cues:/u);
+assert.match(guidance, /realistic auto-exposure behavior/u);
+assert.doesNotMatch(guidance, /WIKIPROMPT REALISM DISCOVERY|Realistic smartphone selfie|Cinematic 16K studio render/u);
+assert.ok(guidance.length < 600, "WikiPrompt should contribute a compact internal cue, not a research appendix");
 assert.equal(wiki.getStatus().state, "synced");
 assert.equal(wiki.getCachedGuidance(config), guidance);
 
@@ -113,11 +122,11 @@ const blockedFetch = async () => {
 };
 const fallbackWiki = new WikiPromptService({ fetchImpl:blockedFetch, localUrl:"https://example.test/data/wikiprompt-realism.json" });
 const fallbackGuidance = await fallbackWiki.sync(config);
-assert.match(fallbackGuidance, /Realistic selfie image-prompt generator system prompt/u);
-assert.match(fallbackGuidance, /embedded WikiPrompt metadata/u);
-assert.equal(fallbackWiki.getStatus().state, "synced-fallback", "Mobile/network JSON fetch failures must still produce WikiPrompt guidance");
+assert.match(fallbackGuidance, /^Apply physically compatible candid-smartphone realism cues:/u);
+assert.doesNotMatch(fallbackGuidance, /Realistic selfie image-prompt generator system prompt|embedded WikiPrompt metadata/u);
+assert.equal(fallbackWiki.getStatus().state, "synced-fallback", "Mobile/network JSON fetch failures must still produce compact WikiPrompt guidance");
 assert.equal(fallbackWiki.getStatus().details?.source, "embedded-fallback");
 
 console.log("✓ active Physics v5 prompt engine passed");
-console.log("✓ local WikiPrompt same-origin integration passed");
+console.log("✓ compact WikiPrompt realism cue passed");
 console.log("✓ WikiPrompt embedded fallback passed");
