@@ -2,8 +2,8 @@
 // Uses a same-origin metadata cache to avoid CORS failures.
 // Third-party prompt bodies are not redistributed by this module.
 
-// Resolve from this module instead of document.baseURI so the file imports
-// safely in both browsers and Node-based regression tests.
+// Resolve from this module URL so the file imports safely in both browsers
+// and Node-based regression tests.
 const LOCAL_DATASET_URL = new URL("../../data/wikiprompt-realism.json", import.meta.url).href;
 const CACHE_TTL_MS = 30 * 60 * 1000;
 
