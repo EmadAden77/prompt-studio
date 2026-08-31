@@ -1,14 +1,20 @@
 import {
   DEFAULT_STATE,
   buildPromptPack,
-  getBedroomLightingOptions,
-  getBedroomPositionOptions,
-  getBedroomPositionRequirements,
-  getBedroomWindowOptions,
   getClothingOptions,
+  getCompatibleBedroomWindowOptions,
+  getCompositionOptions,
+  getExpressionOptions,
+  getHairOptions,
   getLightingOptions,
+  getPoseFamilyOptions,
+  getPoseOptions,
+  getSceneOptions,
+  getSelfieAngleOptions,
+  getSkinOptions,
   isBedroomScene,
-  isTextRoomReference
+  isTextRoomReference,
+  normalizeState
 } from "./physics-prompt-engine-v5.js";
 import { wikiPromptService } from "./services/wikiPromptService.js";
 
@@ -17,14 +23,18 @@ const referenceImage = document.querySelector("#reference-image");
 const referencePreview = document.querySelector("#reference-preview");
 const referencePreviewWrap = document.querySelector("#reference-preview-wrap");
 const removeReferenceButton = document.querySelector("#remove-reference");
+const sceneSelect = document.querySelector("#scene");
+const poseFamilySelect = document.querySelector("#pose-family");
+const poseSelect = document.querySelector("#pose");
+const selfieAngleSelect = document.querySelector("#selfie-angle");
+const compositionSelect = document.querySelector("#composition");
 const clothingSelect = document.querySelector("#clothing");
+const hairSelect = document.querySelector("#hair");
+const skinSelect = document.querySelector("#skin");
+const expressionSelect = document.querySelector("#expression");
 const lightingSelect = document.querySelector("#lighting");
-const bedroomOptionsPanel = document.querySelector("#bedroom-options");
-const bedroomPositionSelect = document.querySelector("#bedroom-position");
 const bedroomWindowSelect = document.querySelector("#bedroom-window");
-const bedroomLightingSelect = document.querySelector("#bedroom-lighting");
-const generalLightingField = document.querySelector("#general-lighting-field");
-const selfieAngleField = document.querySelector("#selfie-angle").closest(".selfie-only");
+const bedroomWindowField = document.querySelector("#bedroom-window-field");
 const templateHint = document.querySelector("#template-hint");
 const positivePrompt = document.querySelector("#positive-prompt");
 const negativePrompt = document.querySelector("#negative-prompt");
@@ -37,57 +47,11 @@ let referenceObjectUrl = "";
 let hasReference = false;
 let wikiSyncId = 0;
 
-const SELECTED_SCENE_STORAGE_KEY = "physics-prompt-studio:selected-scene";
-const value = (id) => document.querySelector(`#${id}`).value;
+const SELECTED_SCENE_STORAGE_KEY = "wikiprompt-selfie-studio:selected-scene";
+const value = (id) => document.querySelector(`#${id}`)?.value ?? "";
 
 function setStatus(message) {
   formStatus.textContent = message;
-}
-
-function wikiConfig(state) {
-  const lightingName = isBedroomScene(state.scene) ? state.bedroomLighting : state.lighting;
-  return {
-    scene:{ id:state.scene, name_en:state.scene },
-    pose:{ id:state.bedroomPosition || state.activity || state.mode, name_en:state.activity || state.bedroomPosition || state.mode },
-    lighting:{ id:lightingName, name_en:lightingName }
-  };
-}
-
-function wikiStatusText(status = wikiPromptService.getStatus()) {
-  const labels = {
-    idle:"⚪ WikiPrompt: لم يُفحص بعد",
-    loading:"🟡 WikiPrompt: جارٍ الفحص",
-    ok:"🟢 WikiPrompt: متصل",
-    synced:"🟢 WikiPrompt: متزامن",
-    "synced-fallback":"🟢 WikiPrompt: متزامن عبر النسخة الاحتياطية",
-    cache:"🟢 WikiPrompt: من الكاش",
-    "local-ready":"🟢 WikiPrompt: البيانات المحلية جاهزة",
-    "local-fallback":"🟢 WikiPrompt: النسخة الاحتياطية المحلية فعّالة",
-    empty:"🟠 WikiPrompt: لا توجد نتائج مناسبة",
-    unavailable:"🔴 WikiPrompt: غير متاح",
-    "local-http-error":"🔴 WikiPrompt: خطأ HTTP محلي",
-    "local-error":"🔴 WikiPrompt: تعذر تحميل البيانات المحلية",
-    "http-error":"🔴 WikiPrompt: خطأ HTTP",
-    "network-error":"🔴 WikiPrompt: خطأ شبكة/CORS",
-    error:"🔴 WikiPrompt: فشل المزامنة"
-  };
-  return labels[status?.state] || `⚪ WikiPrompt: ${status?.state || "غير معروف"}`;
-}
-
-function appendWikiGuidance(basePrompt, guidance) {
-  return guidance ? `${basePrompt}\n\n${guidance}` : basePrompt;
-}
-
-function restoreSelectedScene() {
-  try {
-    const savedScene = localStorage.getItem(SELECTED_SCENE_STORAGE_KEY);
-    const sceneSelect = document.querySelector("#scene");
-    if ([...sceneSelect.options].some((option) => option.value === savedScene)) sceneSelect.value = savedScene;
-  } catch {}
-}
-
-function persistSelectedScene() {
-  try { localStorage.setItem(SELECTED_SCENE_STORAGE_KEY, value("scene")); } catch {}
 }
 
 function populateSelect(select, options, preferredValue) {
@@ -98,52 +62,154 @@ function populateSelect(select, options, preferredValue) {
     element.textContent = option.label;
     select.append(element);
   });
-  const canPreserve = options.some((option) => option.value === preferredValue);
-  select.value = canPreserve ? preferredValue : options[0]?.value ?? "";
+  const preferredExists = options.some((option) => option.value === preferredValue);
+  select.value = preferredExists ? preferredValue : options[0]?.value ?? "";
+}
+
+function wikiConfig(state) {
+  return {
+    scene:{ id:state.scene, name_en:state.scene },
+    pose:{ id:state.pose, name_en:state.pose },
+    lighting:{ id:state.lighting, name_en:state.lighting },
+    mode:"selfie",
+    composition:state.composition,
+    selfieAngle:state.selfieAngle
+  };
+}
+
+function wikiStatusText(status = wikiPromptService.getStatus()) {
+  const labels = {
+    idle:"⚪ WikiPrompt: لم يُفحص بعد",
+    loading:"🟡 WikiPrompt: جارٍ الفحص",
+    synced:"🟢 WikiPrompt: الأساس متزامن",
+    "synced-fallback":"🟢 WikiPrompt: الأساس متزامن عبر النسخة الاحتياطية",
+    cache:"🟢 WikiPrompt: الأساس من الكاش",
+    "local-ready":"🟢 WikiPrompt: البيانات المحلية جاهزة",
+    "local-fallback":"🟢 WikiPrompt: النسخة الاحتياطية المحلية فعّالة",
+    empty:"🟠 WikiPrompt: لا توجد إشارات مناسبة",
+    unavailable:"🔴 WikiPrompt: غير متاح",
+    error:"🔴 WikiPrompt: فشل المزامنة"
+  };
+  return labels[status?.state] || `⚪ WikiPrompt: ${status?.state || "غير معروف"}`;
+}
+
+function composeWikiFirstPrompt(basePrompt, guidance) {
+  return guidance ? `[WIKIPROMPT BASE REALISM]\n${guidance}\n\n${basePrompt}` : basePrompt;
+}
+
+function restoreSelectedScene() {
+  try {
+    const savedScene = localStorage.getItem(SELECTED_SCENE_STORAGE_KEY);
+    if ([...sceneSelect.options].some((option) => option.value === savedScene)) {
+      sceneSelect.value = savedScene;
+    }
+  } catch {}
+}
+
+function persistSelectedScene() {
+  try { localStorage.setItem(SELECTED_SCENE_STORAGE_KEY, sceneSelect.value); } catch {}
 }
 
 function readState() {
   return {
-    scene:value("scene"), city:value("city"), time:value("time"), mode:value("mode"),
-    clothing:value("clothing"), clothingCustom:value("clothing-custom"), hair:value("hair"), skin:value("skin"),
-    expression:value("expression"), composition:value("composition"), selfieAngle:value("selfie-angle"),
-    messiness:value("messiness"), lighting:value("lighting"), bedroomPosition:value("bedroom-position"),
-    bedroomWindow:value("bedroom-window"), bedroomLighting:value("bedroom-lighting"), bedroomDetail:value("bedroom-detail"),
-    identityNotes:value("identity-notes"), activity:value("activity"), environmentNote:value("environment-note"), hasReference
+    scene:value("scene"),
+    city:value("city"),
+    time:value("time"),
+    mode:"selfie",
+    poseFamily:value("pose-family"),
+    pose:value("pose"),
+    clothing:value("clothing"),
+    clothingCustom:value("clothing-custom"),
+    hair:value("hair"),
+    skin:value("skin"),
+    expression:value("expression"),
+    composition:value("composition"),
+    selfieAngle:value("selfie-angle"),
+    messiness:value("messiness"),
+    lighting:value("lighting"),
+    bedroomWindow:value("bedroom-window"),
+    identityNotes:value("identity-notes"),
+    environmentNote:value("environment-note"),
+    hasReference
   };
 }
 
+function syncUiToNormalizedState(state) {
+  const pairs = [
+    [sceneSelect, state.scene],
+    [poseFamilySelect, state.poseFamily],
+    [poseSelect, state.pose],
+    [selfieAngleSelect, state.selfieAngle],
+    [compositionSelect, state.composition],
+    [clothingSelect, state.clothing],
+    [hairSelect, state.hair],
+    [skinSelect, state.skin],
+    [expressionSelect, state.expression],
+    [lightingSelect, state.lighting],
+    [bedroomWindowSelect, state.bedroomWindow]
+  ];
+  pairs.forEach(([select, selectedValue]) => {
+    if (select && [...select.options].some((option) => option.value === selectedValue)) {
+      select.value = selectedValue;
+    }
+  });
+}
+
 function refreshDynamicFields() {
-  const scene = value("scene");
-  const time = value("time");
-  let mode = value("mode");
-  const currentClothing = clothingSelect.value;
-  const currentLighting = lightingSelect.value;
-  const currentBedroomPosition = bedroomPositionSelect.value;
-  const currentBedroomWindow = bedroomWindowSelect.value;
-  const currentBedroomLighting = bedroomLightingSelect.value;
+  const scene = sceneSelect.value || DEFAULT_STATE.scene;
+  const time = value("time") || DEFAULT_STATE.time;
 
-  populateSelect(clothingSelect, getClothingOptions(scene), currentClothing);
-  populateSelect(lightingSelect, getLightingOptions(scene, time), currentLighting);
-  populateSelect(bedroomPositionSelect, getBedroomPositionOptions(), currentBedroomPosition);
-  populateSelect(bedroomWindowSelect, getBedroomWindowOptions(time), currentBedroomWindow);
-  populateSelect(bedroomLightingSelect, getBedroomLightingOptions(time), currentBedroomLighting);
+  populateSelect(poseFamilySelect, getPoseFamilyOptions(scene), poseFamilySelect.value || DEFAULT_STATE.poseFamily);
+  populateSelect(poseSelect, getPoseOptions(scene, poseFamilySelect.value), poseSelect.value || DEFAULT_STATE.pose);
 
-  const isBedroom = isBedroomScene(scene);
-  const positionRequirements = isBedroom ? getBedroomPositionRequirements(bedroomPositionSelect.value, time) : null;
-  if (positionRequirements) {
-    mode = positionRequirements.mode;
-    document.querySelector("#mode").value = mode;
-    document.querySelector("#selfie-angle").value = positionRequirements.selfieAngle;
-    bedroomWindowSelect.value = positionRequirements.bedroomWindow;
-    bedroomLightingSelect.value = positionRequirements.bedroomLighting;
+  populateSelect(
+    selfieAngleSelect,
+    getSelfieAngleOptions(poseSelect.value),
+    selfieAngleSelect.value || DEFAULT_STATE.selfieAngle
+  );
+  populateSelect(
+    compositionSelect,
+    getCompositionOptions(poseSelect.value),
+    compositionSelect.value || DEFAULT_STATE.composition
+  );
+
+  populateSelect(clothingSelect, getClothingOptions(scene), clothingSelect.value || DEFAULT_STATE.clothing);
+  populateSelect(lightingSelect, getLightingOptions(scene, time), lightingSelect.value || DEFAULT_STATE.lighting);
+
+  const bedroom = isBedroomScene(scene);
+  bedroomWindowField.hidden = !bedroom;
+  if (bedroom) {
+    populateSelect(
+      bedroomWindowSelect,
+      getCompatibleBedroomWindowOptions(time, lightingSelect.value),
+      bedroomWindowSelect.value || DEFAULT_STATE.bedroomWindow
+    );
+  } else {
+    bedroomWindowSelect.replaceChildren();
   }
 
-  bedroomOptionsPanel.hidden = !isBedroom;
-  generalLightingField.hidden = isBedroom;
-  selfieAngleField.hidden = mode !== "selfie";
-  const pack = buildPromptPack(readState());
-  templateHint.textContent = `القالب النشط: ${pack.template.title}`;
+  const normalized = normalizeState(readState());
+
+  if (normalized.poseFamily !== poseFamilySelect.value) {
+    populateSelect(poseFamilySelect, getPoseFamilyOptions(normalized.scene), normalized.poseFamily);
+    populateSelect(poseSelect, getPoseOptions(normalized.scene, normalized.poseFamily), normalized.pose);
+  }
+  populateSelect(selfieAngleSelect, getSelfieAngleOptions(normalized.pose), normalized.selfieAngle);
+  populateSelect(compositionSelect, getCompositionOptions(normalized.pose), normalized.composition);
+  populateSelect(clothingSelect, getClothingOptions(normalized.scene), normalized.clothing);
+  populateSelect(lightingSelect, getLightingOptions(normalized.scene, normalized.time), normalized.lighting);
+
+  if (isBedroomScene(normalized.scene)) {
+    populateSelect(
+      bedroomWindowSelect,
+      getCompatibleBedroomWindowOptions(normalized.time, normalized.lighting),
+      normalized.bedroomWindow
+    );
+  }
+
+  syncUiToNormalizedState(normalized);
+  const pack = buildPromptPack(normalized);
+  templateHint.textContent = `السيلفي النشط: ${pack.template.title}`;
 }
 
 function renderQa(items) {
@@ -157,37 +223,47 @@ function renderQa(items) {
 }
 
 function localStatus(pack) {
-  return isTextRoomReference(pack.state.scene)
-    ? hasReference
-      ? "تم تثبيت وصف غرفتك النصي؛ لا يلزم IMAGE B، وصورة الهوية تبقى المرجع الوحيد للشخص."
-      : "وصف غرفتك النصي ثابت؛ لا يلزم IMAGE B. أرفق فقط صورة الهوية عند الاستخدام."
-    : hasReference
-      ? "تم بناء البرومبت مع قيد المرجع الواحد."
-      : "البرومبت جاهز؛ أرفق صورة هوية واحدة مع مولّد الصور عند الاستخدام.";
+  if (isTextRoomReference(pack.state.scene)) {
+    return hasReference
+      ? "هوية واحدة مثبتة؛ وصف الغرفة سياق اختياري ولا يلزم IMAGE B."
+      : "الغرفة وصف نصي مساعد؛ أرفق صورة هوية واحدة فقط عند الاستخدام.";
+  }
+  return hasReference
+    ? "تم تثبيت مرجع الهوية الواحد؛ الخلفية غير إجبارية."
+    : "البرومبت جاهز؛ أرفق صورة هوية واحدة فقط عند الاستخدام.";
 }
 
 function renderPrompt() {
+  refreshDynamicFields();
   const pack = buildPromptPack(readState());
   const config = wikiConfig(pack.state);
   const cachedGuidance = wikiPromptService.getCachedGuidance(config);
-  positivePrompt.value = appendWikiGuidance(pack.positive, cachedGuidance);
+
+  positivePrompt.value = composeWikiFirstPrompt(pack.positive, cachedGuidance);
   negativePrompt.value = pack.negative;
-  resultMeta.textContent = `${pack.template.title} · ${pack.state.mode === "selfie" ? "كاميرا أمامية" : "كاميرا خلفية رئيسية"} · ${pack.state.time === "night" ? "ليلي" : "نهاري"}`;
-  renderQa([...pack.qa, { label:"WikiPrompt", value:cachedGuidance ? "متصل — إرشادات الواقعية مضافة" : "جارٍ التحقق من الاتصال" }]);
+  resultMeta.textContent = `${pack.template.title} · Xiaomi 15 Ultra Front · ${pack.state.time === "night" ? "ليلي" : "نهاري"}`;
+  renderQa([
+    ...pack.qa,
+    { label:"WikiPrompt", value:cachedGuidance ? "هو أساس البرومبت الحالي" : "جارٍ تحميل أساس الواقعية" }
+  ]);
   setStatus(`${localStatus(pack)} · ${cachedGuidance ? wikiStatusText({ state:"cache" }) : "🟡 WikiPrompt: جارٍ الفحص"}`);
 
   const syncId = ++wikiSyncId;
   void wikiPromptService.sync(config).then((guidance) => {
     if (syncId !== wikiSyncId) return;
     const status = wikiPromptService.getStatus();
-    if (guidance) {
-      positivePrompt.value = appendWikiGuidance(pack.positive, guidance);
-      const fallbackActive = status.state === "synced-fallback" || status.state === "local-fallback";
-      renderQa([...pack.qa, { label:"WikiPrompt", value:fallbackActive ? "متصل — إرشادات الواقعية مضافة عبر النسخة الاحتياطية" : "متصل — إرشادات الواقعية مضافة" }]);
-    } else {
-      positivePrompt.value = pack.positive;
-      renderQa([...pack.qa, { label:"WikiPrompt", value:wikiStatusText(status).replace(/^\S+\sWikiPrompt:\s*/, "") }]);
-    }
+    positivePrompt.value = composeWikiFirstPrompt(pack.positive, guidance);
+    renderQa([
+      ...pack.qa,
+      {
+        label:"WikiPrompt",
+        value:guidance
+          ? (status.state === "synced-fallback"
+              ? "الأساس الواقعي مضاف عبر النسخة الاحتياطية"
+              : "الأساس الواقعي مضاف أول البرومبت")
+          : wikiStatusText(status).replace(/^\S+\sWikiPrompt:\s*/, "")
+      }
+    ]);
     setStatus(`${localStatus(pack)} · ${wikiStatusText(status)}`);
   });
 }
@@ -204,17 +280,21 @@ function clearReference() {
 function setReference(file) {
   clearReference();
   if (!file) return;
-  if (!file.type.startsWith("image/")) { setStatus("اختر ملف صورة صالحاً فقط."); return; }
+  if (!file.type.startsWith("image/")) {
+    setStatus("اختر ملف صورة صالحاً فقط.");
+    return;
+  }
   referenceObjectUrl = URL.createObjectURL(file);
   referencePreview.src = referenceObjectUrl;
   referencePreviewWrap.hidden = false;
   hasReference = true;
-  setStatus("تمت معاينة مرجع واحد محلياً؛ لم يتم رفعه أو حفظه.");
+  setStatus("تمت معاينة مرجع الهوية محلياً؛ لم يتم رفعه أو حفظه.");
 }
 
 async function copyText(text, label) {
-  try { await navigator.clipboard.writeText(text); }
-  catch {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
     const fallback = document.createElement("textarea");
     fallback.value = text;
     fallback.setAttribute("readonly", "");
@@ -229,12 +309,20 @@ async function copyText(text, label) {
 }
 
 function downloadPrompt() {
-  const pack = ["PHYSICS PROMPT STUDIO", "", "POSITIVE PROMPT", positivePrompt.value, "", "NEGATIVE PROMPT", negativePrompt.value].join("\n");
+  const pack = [
+    "WIKIPROMPT SELFIE STUDIO",
+    "",
+    "POSITIVE PROMPT",
+    positivePrompt.value,
+    "",
+    "NEGATIVE PROMPT",
+    negativePrompt.value
+  ].join("\n");
   const blob = new Blob([pack], { type:"text/plain;charset=utf-8" });
   const href = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = href;
-  link.download = "physics-prompt.txt";
+  link.download = "wikiprompt-selfie.txt";
   document.body.append(link);
   link.click();
   link.remove();
@@ -244,36 +332,53 @@ function downloadPrompt() {
 
 function resetForm() {
   form.reset();
-  document.querySelector("#scene").value = DEFAULT_STATE.scene;
+  sceneSelect.value = DEFAULT_STATE.scene;
   document.querySelector("#city").value = DEFAULT_STATE.city;
   document.querySelector("#time").value = DEFAULT_STATE.time;
-  document.querySelector("#mode").value = DEFAULT_STATE.mode;
-  document.querySelector("#hair").value = DEFAULT_STATE.hair;
-  document.querySelector("#skin").value = DEFAULT_STATE.skin;
-  document.querySelector("#expression").value = DEFAULT_STATE.expression;
-  document.querySelector("#composition").value = DEFAULT_STATE.composition;
-  document.querySelector("#selfie-angle").value = DEFAULT_STATE.selfieAngle;
   document.querySelector("#messiness").value = DEFAULT_STATE.messiness;
-  document.querySelector("#bedroom-position").value = DEFAULT_STATE.bedroomPosition;
-  document.querySelector("#bedroom-window").value = DEFAULT_STATE.bedroomWindow;
-  document.querySelector("#bedroom-lighting").value = DEFAULT_STATE.bedroomLighting;
   clearReference();
-  persistSelectedScene();
   refreshDynamicFields();
+  syncUiToNormalizedState(DEFAULT_STATE);
+  persistSelectedScene();
   renderPrompt();
 }
 
+function initializeStaticSelects() {
+  populateSelect(sceneSelect, getSceneOptions(), DEFAULT_STATE.scene);
+  populateSelect(hairSelect, getHairOptions(), DEFAULT_STATE.hair);
+  populateSelect(skinSelect, getSkinOptions(), DEFAULT_STATE.skin);
+  populateSelect(expressionSelect, getExpressionOptions(), DEFAULT_STATE.expression);
+}
+
 referenceImage.addEventListener("change", (event) => setReference(event.target.files?.[0]));
-removeReferenceButton.addEventListener("click", () => { clearReference(); setStatus("أزيلت معاينة المرجع من الجهاز."); });
-document.querySelector("#scene").addEventListener("change", () => { persistSelectedScene(); refreshDynamicFields(); });
-["time", "mode", "bedroom-position"].forEach((id) => document.querySelector(`#${id}`).addEventListener("change", refreshDynamicFields));
-form.addEventListener("submit", (event) => { event.preventDefault(); refreshDynamicFields(); renderPrompt(); });
+removeReferenceButton.addEventListener("click", () => {
+  clearReference();
+  setStatus("أزيلت معاينة المرجع من الجهاز.");
+});
+
+sceneSelect.addEventListener("change", () => {
+  persistSelectedScene();
+  refreshDynamicFields();
+});
+
+["time","pose-family","pose","lighting"].forEach((id) => {
+  document.querySelector(`#${id}`).addEventListener("change", refreshDynamicFields);
+});
+
+form.addEventListener("submit", (event) => {
+  event.preventDefault();
+  renderPrompt();
+});
+
 document.querySelector("#reset-form").addEventListener("click", resetForm);
 document.querySelector("#copy-positive").addEventListener("click", () => copyText(positivePrompt.value, "البرومبت"));
 document.querySelector("#copy-negative").addEventListener("click", () => copyText(negativePrompt.value, "البرومبت السلبي"));
-document.querySelector("#copy-pack").addEventListener("click", () => copyText(`POSITIVE PROMPT\n${positivePrompt.value}\n\nNEGATIVE PROMPT\n${negativePrompt.value}`, "الحزمة الكاملة"));
+document.querySelector("#copy-pack").addEventListener("click", () =>
+  copyText(`POSITIVE PROMPT\n${positivePrompt.value}\n\nNEGATIVE PROMPT\n${negativePrompt.value}`, "الحزمة الكاملة")
+);
 document.querySelector("#download-prompt").addEventListener("click", downloadPrompt);
 
+initializeStaticSelects();
 restoreSelectedScene();
 refreshDynamicFields();
 renderPrompt();

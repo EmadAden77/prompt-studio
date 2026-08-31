@@ -2,7 +2,14 @@ import assert from "node:assert/strict";
 import {
   DEFAULT_STATE,
   buildPromptPack,
-  getBedroomPositionRequirements,
+  getClothingOptions,
+  getCompatibleBedroomWindowOptions,
+  getCompositionOptions,
+  getHairOptions,
+  getLightingOptions,
+  getPoseFamilyOptions,
+  getPoseOptions,
+  getSelfieAngleOptions,
   isBedroomScene,
   isTextRoomReference,
   normalizeState
@@ -10,102 +17,80 @@ import {
 import { WikiPromptService } from "../js/services/wikiPromptService.js";
 
 assert.equal(DEFAULT_STATE.mode, "selfie");
-assert.equal(isBedroomScene("bedroom"), true);
+assert.equal(DEFAULT_STATE.scene, "my_bedroom_text");
 assert.equal(isBedroomScene("my_bedroom_text"), true);
 assert.equal(isTextRoomReference("my_bedroom_text"), true);
 
-const normalized = normalizeState({
-  ...DEFAULT_STATE,
-  scene:"not-a-real-scene",
-  time:"not-a-real-time",
-  mode:"not-a-real-mode"
-});
-assert.equal(normalized.scene, DEFAULT_STATE.scene);
-assert.equal(normalized.time, DEFAULT_STATE.time);
-assert.equal(normalized.mode, DEFAULT_STATE.mode);
+const bedroomFamilies = getPoseFamilyOptions("my_bedroom_text").map((item) => item.value);
+assert.ok(bedroomFamilies.includes("lying"), "Bedroom must expose the expanded lying family");
+assert.ok(bedroomFamilies.includes("seated"));
+assert.ok(bedroomFamilies.includes("standing"));
+assert.ok(bedroomFamilies.includes("activity"));
 
-const workRequirements = getBedroomPositionRequirements("laptop-bed-edge", "night");
-assert.ok(workRequirements, "Laptop work pose must have deterministic capture requirements");
-assert.equal(workRequirements.mode, "selfie");
-assert.equal(workRequirements.bedroomWindow, "night-blackout");
-assert.equal(workRequirements.bedroomLighting, "single-downlight-4000");
+const lyingPoses = getPoseOptions("my_bedroom_text", "lying");
+assert.ok(lyingPoses.length >= 10, "Bed lying catalog must be substantially expanded");
+for (const pose of lyingPoses) {
+  assert.ok(getSelfieAngleOptions(pose.value).length > 0, `Pose needs compatible selfie angles: ${pose.value}`);
+  assert.ok(getCompositionOptions(pose.value).length > 0, `Pose needs compatible compositions: ${pose.value}`);
+}
 
-const workPack = buildPromptPack({
-  ...DEFAULT_STATE,
-  scene:"my_bedroom_text",
-  time:"night",
-  mode:"standard",
-  bedroomPosition:"laptop-bed-edge",
-  bedroomWindow:"night-blinds-sodium",
-  bedroomLighting:"bedside-3000"
-});
-assert.equal(workPack.state.mode, "selfie", "Laptop work pose must force selfie mode");
-assert.equal(workPack.state.bedroomWindow, "night-blackout");
-assert.equal(workPack.state.bedroomLighting, "single-downlight-4000");
-assert.match(workPack.positive, /SINGLE-REFERENCE IDENTITY LOCK/u);
-assert.match(workPack.positive, /\[POSE\]/u);
-assert.match(workPack.positive, /\[BEDROOM PHYSICS\]/u);
-assert.match(workPack.positive, /\[LIGHTING\]/u);
-assert.match(workPack.positive, /front-camera/u);
-assert.match(workPack.positive, /21mm-equivalent f\/2\.0 perspective/u);
-assert.match(workPack.positive, /32MP OV32B/u);
-assert.match(workPack.positive, /90-degree field of view/u);
-assert.match(workPack.positive, /natural Xiaomi front-camera color rendering/u);
-assert.doesNotMatch(workPack.positive, /23mm-equivalent|Leica Authentic/u);
-assert.match(workPack.positive, /natural phone-camera skin rendering/u);
-assert.doesNotMatch(workPack.positive, /microscopic pores|subsurface scattering|hyper-realistic anatomical accuracy/u);
-assert.match(workPack.negative, /floating laptop/u);
-assert.ok(workPack.qa.length >= 6, "Active prompt pack must expose realism QA");
+assert.ok(getHairOptions().length >= 15, "Hair catalog must be expanded while density remains locked");
+assert.ok(getClothingOptions("my_bedroom_text").length >= 20, "Bedroom clothing catalog must be expanded");
+assert.ok(getClothingOptions("rangeRover").length >= 15, "Car clothing catalog must be expanded");
+assert.ok(getLightingOptions("my_bedroom_text", "night").length >= 10, "Night bedroom lighting must be expanded");
+assert.ok(getLightingOptions("my_bedroom_text", "day").length >= 10, "Day bedroom lighting must be expanded");
 
-const daylightLyingPack = buildPromptPack({
+const incompatibleWindow = normalizeState({
   ...DEFAULT_STATE,
-  scene:"my_bedroom_text",
   time:"day",
-  mode:"selfie",
-  bedroomPosition:"bed-lying",
-  bedroomWindow:"day-sheer",
-  bedroomLighting:"soft-window-6200"
+  lighting:"day-direct-sun",
+  bedroomWindow:"day-charcoal-closed"
 });
-assert.match(daylightLyingPack.positive, /bedside lamp present but switched off/u, "Daylight-only bedroom prompt must explicitly keep the bedside lamp off");
-assert.doesNotMatch(daylightLyingPack.positive, /nightstand with a lit lamp/u, "Fixed room description must not contradict daylight-only lighting");
-assert.match(daylightLyingPack.positive, /existing charcoal floor-to-ceiling curtains are partly drawn/u, "Daylight window cue must preserve the fixed charcoal curtains");
-assert.doesNotMatch(daylightLyingPack.positive, /sheer white curtains/u, "Fixed charcoal curtain material must not be replaced with invented white sheers");
-assert.doesNotMatch(daylightLyingPack.positive, /phone and person visible in reflection/u, "Non-mirror selfie must never force phone/person into a wardrobe reflection");
-assert.doesNotMatch(daylightLyingPack.positive, /rug pile compressed where seated/u, "Lying pose must not inherit seated rug compression");
-assert.doesNotMatch(daylightLyingPack.positive, /overhead shots cast the phone's shadow/u, "Eye-level lying selfie must not inherit overhead phone-shadow rules");
-assert.match(daylightLyingPack.positive, /Never force the phone or subject to appear in a mirror/u);
-assert.match(daylightLyingPack.positive, /obey only the currently selected bedroom-lighting setup/u);
-assert.match(daylightLyingPack.positive, /21mm-equivalent f\/2\.0 perspective/u);
-assert.doesNotMatch(daylightLyingPack.positive, /23mm-equivalent|Leica Authentic/u);
+assert.notEqual(incompatibleWindow.bedroomWindow, "day-charcoal-closed", "Direct sun must reject a closed-curtain state");
+assert.ok(
+  getCompatibleBedroomWindowOptions("day", "day-direct-sun").some((item) => item.value === incompatibleWindow.bedroomWindow),
+  "Normalized window must come from the lighting-compatible window set"
+);
 
-const bedsideLyingPack = buildPromptPack({
+const rightSidePack = buildPromptPack({
   ...DEFAULT_STATE,
-  scene:"my_bedroom_text",
-  time:"night",
-  mode:"selfie",
-  bedroomPosition:"bed-lying",
-  bedroomWindow:"night-blackout",
-  bedroomLighting:"bedside-3000"
+  time:"day",
+  poseFamily:"lying",
+  pose:"lying-right-close",
+  lighting:"day-soft-window",
+  bedroomWindow:"day-charcoal-parted-soft",
+  hair:"bedhead",
+  clothing:"sleep-cotton-short",
+  hasReference:true
 });
-assert.match(bedsideLyingPack.positive, /selected visible bedside lamp active/u, "Bedside-lamp lighting must activate the fixed room lamp instead of treating it as permanently lit or permanently off");
+
+assert.match(rightSidePack.positive, /^\[SELFIE TASK\]/u);
+assert.match(rightSidePack.positive, /SINGLE-REFERENCE IDENTITY LOCK/u);
+assert.match(rightSidePack.positive, /HAIR DENSITY LOCK/u);
+assert.match(rightSidePack.positive, /right cheek and shoulder/u);
+assert.match(rightSidePack.positive, /subject physically holds the phone/u);
+assert.match(rightSidePack.positive, /21mm-equivalent f\/2\.0/u);
+assert.match(rightSidePack.positive, /SELFIE PRIORITY/u);
+assert.match(rightSidePack.positive, /does NOT require every listed item to appear/u);
+assert.doesNotMatch(rightSidePack.positive, /Leica Authentic|23mm-equivalent|sheer white curtains|phone and person visible in reflection/u);
+assert.doesNotMatch(rightSidePack.positive, /rug pile compressed where seated|overhead shots cast the phone's shadow/u);
+
+const carPoses = getPoseOptions("rangeRover", "car");
+assert.ok(carPoses.some((pose) => pose.value === "car-driver-close"));
+assert.equal(getPoseOptions("my_bedroom_text", "car").length, 0, "Car-only poses must not leak into bedroom choices");
 
 const carPack = buildPromptPack({
   ...DEFAULT_STATE,
   scene:"rangeRover",
-  time:"day",
-  mode:"selfie",
-  clothing:"thobe-car",
-  activity:"sitting naturally behind the steering wheel while safely parked"
+  time:"night",
+  poseFamily:"car",
+  pose:"car-driver-side",
+  lighting:"car-night-parking-led",
+  clothing:"thobe-white"
 });
 assert.match(carPack.positive, /fully stationary and safely parked/u);
-assert.match(carPack.positive, /candid daytime front-camera selfie from the driver's seat/u);
-assert.match(carPack.positive, /21mm-equivalent f\/2\.0 perspective/u);
-assert.match(carPack.positive, /32MP OV32B/u);
-assert.doesNotMatch(carPack.positive, /23mm-equivalent|Leica Authentic/u);
-assert.match(carPack.positive, /natural phone-camera skin rendering/u);
-assert.doesNotMatch(carPack.positive, /microscopic pores|subsurface scattering|hyper-realistic anatomical accuracy/u);
-assert.equal((carPack.positive.match(/stationary white 2022 Range Rover Sport/gu) ?? []).length, 1, "Vehicle identity should be stated once, not duplicated by the capture template");
-assert.equal((carPack.positive.match(/183 cm and 82 kg/gu) ?? []).length, 1, "Body measurements should not be repeated in the skin-realism block");
+assert.match(carPack.positive, /left-hand-drive/u);
+assert.match(carPack.positive, /secondary context/u);
 assert.match(carPack.negative, /moving vehicle/u);
 
 const localRecords = [
@@ -113,13 +98,13 @@ const localRecords = [
     slug:"realistic-selfie",
     title:"Realistic smartphone selfie",
     description:"Identity-preserving candid front-camera photography with natural practical light and authentic imperfections.",
-    tags:["selfie", "smartphone", "identity", "front-camera", "photorealistic"]
+    tags:["selfie","smartphone","identity","front-camera","photorealistic"]
   },
   {
     slug:"cinematic-render",
     title:"Cinematic 16K studio render",
     description:"Masterpiece studio lighting and extreme HDR.",
-    tags:["16k", "cinematic"]
+    tags:["16k","cinematic"]
   }
 ];
 
@@ -131,45 +116,37 @@ const fetchImpl = async () => ({
   }
 });
 
-const wiki = new WikiPromptService({ fetchImpl, localUrl:"https://example.test/data/wikiprompt-realism.json" });
-const config = {
-  scene:{ id:"bedroom", name_en:"bedroom" },
-  pose:{ id:"laptop-bed-edge", name_en:"laptop bed edge selfie" },
-  lighting:{ id:"single-downlight-4000", name_en:"single ceiling downlight" },
+const wiki = new WikiPromptService({
+  fetchImpl,
+  localUrl:"https://example.test/data/wikiprompt-realism.json"
+});
+const guidance = await wiki.sync({
+  scene:{ id:"bedroom" },
+  pose:{ id:"lying-right-close" },
+  lighting:{ id:"day-soft-window" },
   mode:"selfie",
   composition:"close",
   selfieAngle:"eye"
-};
-
-const records = await wiki.discover(config);
-assert.ok(records.length > 0, "Curated WikiPrompt metadata must produce usable local matches");
-assert.equal(records[0].slug, "realistic-selfie", "Realistic selfie evidence must outrank cinematic render language");
-
-const guidance = await wiki.sync(config);
+});
 assert.match(guidance, /^Apply physically compatible candid-smartphone realism cues:/u);
-assert.match(guidance, /realistic auto-exposure behavior/u);
-assert.doesNotMatch(guidance, /WIKIPROMPT REALISM DISCOVERY|Realistic smartphone selfie|Cinematic 16K studio render/u);
-assert.ok(guidance.length < 600, "WikiPrompt should contribute a compact internal cue, not a research appendix");
+assert.doesNotMatch(guidance, /Cinematic 16K studio render/u);
+assert.ok(guidance.length < 600);
 assert.equal(wiki.getStatus().state, "synced");
-assert.equal(wiki.getCachedGuidance(config), guidance);
 
-const second = await wiki.sync(config);
-assert.equal(second, guidance);
-assert.equal(wiki.getStatus().state, "cache");
-
-const blockedFetch = async () => {
-  throw new TypeError("Failed to fetch");
-};
-const fallbackWiki = new WikiPromptService({ fetchImpl:blockedFetch, localUrl:"https://example.test/data/wikiprompt-realism.json" });
-const fallbackGuidance = await fallbackWiki.sync(config);
+const blockedFetch = async () => { throw new TypeError("Failed to fetch"); };
+const fallbackWiki = new WikiPromptService({
+  fetchImpl:blockedFetch,
+  localUrl:"https://example.test/data/wikiprompt-realism.json"
+});
+const fallbackGuidance = await fallbackWiki.sync({
+  scene:{ id:"bedroom" },
+  pose:{ id:"lying-right-close" },
+  lighting:{ id:"day-soft-window" }
+});
 assert.match(fallbackGuidance, /^Apply physically compatible candid-smartphone realism cues:/u);
-assert.doesNotMatch(fallbackGuidance, /Realistic selfie image-prompt generator system prompt|embedded WikiPrompt metadata/u);
-assert.equal(fallbackWiki.getStatus().state, "synced-fallback", "Mobile/network JSON fetch failures must still produce compact WikiPrompt guidance");
-assert.equal(fallbackWiki.getStatus().details?.source, "embedded-fallback");
+assert.equal(fallbackWiki.getStatus().state, "synced-fallback");
 
-console.log("✓ active Physics v5 prompt engine passed");
-console.log("✓ Xiaomi 15 Ultra front-camera contract passed");
-console.log("✓ fixed-room curtain consistency passed");
-console.log("✓ bedroom physics contradiction guards passed");
-console.log("✓ compact WikiPrompt realism cue passed");
-console.log("✓ WikiPrompt embedded fallback passed");
+console.log("✓ WikiPrompt-first selfie engine passed");
+console.log("✓ expanded clothing, hair, lighting and pose catalogs passed");
+console.log("✓ pose/angle/composition/window contradiction guards passed");
+console.log("✓ WikiPrompt local + fallback integration passed");

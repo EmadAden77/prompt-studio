@@ -1,0 +1,64 @@
+.priority-panel {
+  border-color: rgba(124, 231, 208, 0.42);
+  background:
+    radial-gradient(circle at 92% 0%, rgba(124, 231, 208, 0.11), transparent 28rem),
+    linear-gradient(145deg, rgba(16, 43, 53, 0.94), rgba(10, 17, 33, 0.9));
+}
+
+.selfie-guidance {
+  margin: -4px 0 20px;
+  padding: 12px 14px;
+  border: 1px solid rgba(124, 231, 208, 0.28);
+  border-radius: 12px;
+  color: #c9f7ee;
+  font-size: 0.86rem;
+  line-height: 1.75;
+  background: rgba(14, 64, 67, 0.24);
+}
+
+.selfie-camera-lock .readonly-card {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid rgba(124, 231, 208, 0.28);
+  border-radius: 11px;
+  color: #d8fffa;
+  direction: ltr;
+  text-align: left;
+  background: rgba(5, 20, 26, 0.62);
+}
+
+.lighting-panel {
+  border-color: rgba(248, 188, 121, 0.28);
+}
+
+.context-secondary-panel {
+  opacity: 0.96;
+}
+
+.context-secondary-panel .section-number {
+  color: var(--muted);
+  border-color: var(--border);
+}
+
+#pose,
+#clothing,
+#hair,
+#lighting {
+  min-height: 46px;
+}
+
+@media (max-width: 760px) {
+  .priority-panel .form-grid,
+  .lighting-panel .form-grid,
+  .context-secondary-panel .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .priority-panel .field-span-2,
+  .lighting-panel .field-span-2,
+  .context-secondary-panel .field-span-2 {
+    grid-column: auto;
+  }
+}

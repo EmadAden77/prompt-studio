@@ -1,4 +1,4 @@
-name: Physics v5 Tests
+name: WikiPrompt Selfie Tests
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 concurrency:
-  group: physics-v5-${{ github.workflow }}-${{ github.ref }}
+  group: wikiprompt-selfie-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -24,7 +24,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Run active deployment contract
+      - name: Run live deployment contract
         run: node tests/v2-deployment.mjs
-      - name: Run Physics v5 and WikiPrompt integration tests
+      - name: Run WikiPrompt selfie engine tests
         run: node tests/physics-v5-wikiprompt.mjs
