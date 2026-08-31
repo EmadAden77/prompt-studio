@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {
   DEFAULT_STATE,
   buildPromptPack,
+  getCarSeatOptions,
   getClothingOptions,
   getCompatibleBedroomWindowOptions,
   getCompositionOptions,
@@ -11,6 +12,7 @@ import {
   getPoseOptions,
   getSelfieAngleOptions,
   isBedroomScene,
+  isCarScene,
   isTextRoomReference,
   normalizeState
 } from "../js/physics-prompt-engine-v5.js";
@@ -18,7 +20,9 @@ import { WikiPromptService } from "../js/services/wikiPromptService.js";
 
 assert.equal(DEFAULT_STATE.mode, "selfie");
 assert.equal(DEFAULT_STATE.scene, "my_bedroom_text");
+assert.equal(DEFAULT_STATE.carSeat, "driver-left");
 assert.equal(isBedroomScene("my_bedroom_text"), true);
+assert.equal(isCarScene("rangeRover"), true);
 assert.equal(isTextRoomReference("my_bedroom_text"), true);
 
 const bedroomFamilies = getPoseFamilyOptions("my_bedroom_text").map((item) => item.value);
@@ -73,13 +77,22 @@ assert.match(rightSidePack.positive, /21mm-equivalent f\/2\.0/u);
 assert.match(rightSidePack.positive, /SELFIE PRIORITY/u);
 assert.match(rightSidePack.positive, /does NOT require every listed item to appear/u);
 assert.match(rightSidePack.positive, /Do not force height, weight, hands, legs or full-body visibility/u);
+assert.match(rightSidePack.positive, /sole identity source\. Describe only anatomy/u);
 assert.doesNotMatch(rightSidePack.positive, /183 cm and 82 kg/u, "Close crops must not carry irrelevant full-body dimensions");
 assert.doesNotMatch(rightSidePack.positive, /Leica Authentic|23mm-equivalent|sheer white curtains|phone and person visible in reflection/u);
 assert.doesNotMatch(rightSidePack.positive, /rug pile compressed where seated|overhead shots cast the phone's shadow/u);
+assert.equal(rightSidePack.state.carSeat, "", "Non-car scenes must clear car-seat state");
 
 const carPoses = getPoseOptions("rangeRover", "car");
 assert.ok(carPoses.some((pose) => pose.value === "car-driver-close"));
 assert.equal(getPoseOptions("my_bedroom_text", "car").length, 0, "Car-only poses must not leak into bedroom choices");
+assert.equal(getCarSeatOptions("rangeRover", "waiting-relaxed").length, 4, "Generic car poses may use any real seat");
+assert.deepEqual(
+  getCarSeatOptions("rangeRover", "car-driver-close").map((item) => item.value),
+  ["driver-left"],
+  "Driver-labeled poses must expose only the left-front driver seat"
+);
+assert.equal(getCarSeatOptions("my_bedroom_text", "waiting-relaxed").length, 0);
 
 const carPack = buildPromptPack({
   ...DEFAULT_STATE,
@@ -87,10 +100,16 @@ const carPack = buildPromptPack({
   time:"night",
   poseFamily:"car",
   pose:"car-driver-side",
+  carSeat:"passenger-front-right",
   lighting:"car-night-parking-led",
   clothing:"thobe-white",
   messiness:"busy"
 });
+assert.equal(carPack.state.carSeat, "driver-left", "Driver pose must override a contradictory passenger-seat request");
+assert.match(carPack.positive, /\[CAR SEAT POSITION\]/u);
+assert.match(carPack.positive, /LEFT FRONT DRIVER'S SEAT LOCK/u);
+assert.match(carPack.positive, /driver door and side window are on the subject's left/u);
+assert.match(carPack.positive, /center console is on the subject's right/u);
 assert.match(carPack.positive, /fully stationary and safely parked/u);
 assert.match(carPack.positive, /left-hand-drive/u);
 assert.match(carPack.positive, /supporting context only/u);
@@ -98,6 +117,42 @@ assert.match(carPack.positive, /do not invent loose clutter/u);
 assert.match(carPack.positive, /never duplicate controls/u);
 assert.match(carPack.negative, /moving vehicle/u);
 assert.match(carPack.negative, /invented cabin clutter/u);
+assert.match(carPack.negative, /subject seated in front passenger seat/u);
+assert.match(carPack.negative, /swapped driver and passenger positions/u);
+assert.ok(carPack.qa.some((item) => item.label === "المقعد" && /السائق الأمامي الأيسر/u.test(item.value)));
+
+const waitingDriverPack = buildPromptPack({
+  ...DEFAULT_STATE,
+  scene:"rangeRover",
+  time:"day",
+  poseFamily:"activity",
+  pose:"waiting-relaxed",
+  carSeat:"driver-left",
+  lighting:"car-day-roof-light",
+  clothing:"work-blue-navy",
+  composition:"close"
+});
+assert.match(waitingDriverPack.positive, /LEFT FRONT DRIVER'S SEAT LOCK/u);
+assert.match(waitingDriverPack.positive, /The front-camera viewpoint originates from this exact seat position/u);
+assert.match(waitingDriverPack.positive, /lower-body clothing may remain outside frame/u);
+assert.match(waitingDriverPack.negative, /passenger-side subject position/u);
+
+const waitingPassengerPack = buildPromptPack({
+  ...DEFAULT_STATE,
+  scene:"rangeRover",
+  time:"day",
+  poseFamily:"activity",
+  pose:"waiting-relaxed",
+  carSeat:"passenger-front-right",
+  lighting:"car-day-roof-light",
+  clothing:"work-blue-navy",
+  composition:"close"
+});
+assert.equal(waitingPassengerPack.state.carSeat, "passenger-front-right");
+assert.match(waitingPassengerPack.positive, /RIGHT FRONT PASSENGER SEAT LOCK/u);
+assert.match(waitingPassengerPack.positive, /center console is on the subject's left/u);
+assert.match(waitingPassengerPack.negative, /subject seated in driver seat/u);
+assert.match(waitingPassengerPack.negative, /steering wheel directly in front of passenger/u);
 
 const carDirectSun = getLightingOptions("rangeRover", "day").find((item) => /direct sun/i.test(item.text));
 assert.ok(carDirectSun, "Car daylight options must include direct sun");
@@ -107,6 +162,7 @@ const carDirectSunPack = buildPromptPack({
   time:"day",
   poseFamily:"car",
   pose:"car-driver-close",
+  carSeat:"driver-left",
   lighting:carDirectSun.value,
   clothing:"tee-black",
   composition:"close"
@@ -171,5 +227,6 @@ assert.equal(fallbackWiki.getStatus().state, "synced-fallback");
 console.log("✓ WikiPrompt-first selfie engine passed");
 console.log("✓ expanded clothing, hair, lighting and pose catalogs passed");
 console.log("✓ pose/angle/composition/window contradiction guards passed");
+console.log("✓ car seat selection and driver/passenger geometry locks passed");
 console.log("✓ close-crop pruning and hard-light exposure guards passed");
 console.log("✓ WikiPrompt local + fallback integration passed");
