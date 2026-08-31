@@ -343,6 +343,52 @@ function buildContextDensity(state) {
   return base;
 }
 
+export function getBackgroundVisibility(rawState = {}) {
+  const state = normalizeState(rawState);
+  const family = sceneFamily(state.scene);
+  if (!isCarScene(state.scene) && family !== "street") return "none";
+
+  let score = ({ tight:0, close:1, upper:2, medium:3 })[state.composition] ?? 1;
+  if (["three-quarter","side-close"].includes(state.selfieAngle)) score += 1;
+  if (family === "street") score += 1;
+
+  if (score <= 0) return "minimal";
+  if (score <= 2) return "conditional";
+  return "open";
+}
+
+function buildBackgroundRealism(state) {
+  const visibility = getBackgroundVisibility(state);
+  if (visibility === "none") return "";
+
+  const family = sceneFamily(state.scene);
+  const timeRule = state.time === "night"
+    ? "At night, use uneven real-world illumination: localized parking or street-light pools, darker gaps between fixtures, believable vehicle lamp spill and restrained distant practical lights rather than a uniformly bright background."
+    : "In daylight, preserve real outdoor exposure behavior: believable sun or open shade, natural sky-to-ground contrast, ordinary atmospheric haze, and exterior highlights that may be brighter than the cabin or face when physically expected.";
+
+  const worldRule = "When the real front-camera field of view actually reaches the exterior, render a believable Saudi street or parking slice with physically grounded asphalt, curbs or paving, ordinary light poles or roadside elements, and varied everyday vehicles at plausible scale, spacing, orientation and distance. Cars may be parked or naturally passing only when consistent with the stationary selfie scene. Sparse pedestrians may appear only where the angle truly exposes public space; keep them secondary, naturally posed, correctly scaled and unaware of the selfie rather than staged or staring at the camera.";
+
+  const geometryRule = "Every visible background car or person must obey perspective, occlusion, contact with the ground, shadow direction and distance-based detail. Do not duplicate vehicles, clone pedestrians, fill empty space merely for activity, or make the background look like a showroom, stock photo or generated crowd.";
+
+  if (family === "car") {
+    if (visibility === "minimal") {
+      return `[BACKGROUND REALISM] The tight selfie crop has priority. Do not force an exterior view. If a real side, rear or windshield slice naturally enters the frame, keep it small but physically believable. ${timeRule} ${worldRule} ${geometryRule}`;
+    }
+    if (visibility === "conditional") {
+      return `[BACKGROUND REALISM] Use the selected selfie angle to decide whether a side window, windshield edge or rear-window slice is genuinely visible. Only through those real openings may exterior street or parking detail appear. ${timeRule} ${worldRule} ${geometryRule}`;
+    }
+    return `[BACKGROUND REALISM] This wider or more lateral selfie angle can support meaningful exterior context through physically visible vehicle glass. Keep the subject dominant while allowing a coherent Saudi street or parking slice to contribute real-world depth. ${timeRule} ${worldRule} ${geometryRule}`;
+  }
+
+  if (visibility === "minimal") {
+    return `[BACKGROUND REALISM] Keep the outdoor background minimal because the face dominates the crop. Use only the street detail that naturally survives around the subject. ${timeRule} ${worldRule} ${geometryRule}`;
+  }
+  if (visibility === "conditional") {
+    return `[BACKGROUND REALISM] Allow a moderate amount of real Saudi street or parking context around the subject according to the selected angle and crop, never at the expense of selfie plausibility. ${timeRule} ${worldRule} ${geometryRule}`;
+  }
+  return `[BACKGROUND REALISM] The selected outdoor angle and crop permit a richer but still secondary real-world background. Build coherent depth using ordinary Saudi street or parking elements, varied cars and sparse people only where geometry supports them. ${timeRule} ${worldRule} ${geometryRule}`;
+}
+
 function buildContextSection(state) {
   const scene = SCENES[state.scene];
   const city = optionText(CITIES, state.city, "a plausible Saudi Arabian location");
@@ -364,7 +410,7 @@ function buildSceneSpecificSafety(state) {
     return "Gym equipment, mirrors and people are secondary context. Do not force mirrors or full machines into the crop.";
   }
   if (sceneFamily(state.scene) === "street") {
-    return "Outdoor cars, signs and pedestrians are optional context. Do not rely on readable signage or force a complete vehicle into the frame.";
+    return "Outdoor cars, signs and pedestrians are optional context. Do not rely on readable signage or force a complete vehicle or person into the frame.";
   }
   if (isBedroomScene(state.scene)) {
     return "Pillow, mattress, sofa or chair compression appears only where the selected pose actually contacts those surfaces. Mirror reflections appear only if a mirror naturally enters the crop.";
@@ -403,6 +449,24 @@ function carSeatNegativeRules(state) {
   return [];
 }
 
+function backgroundNegativeRules(state) {
+  const family = sceneFamily(state.scene);
+  if (!isCarScene(state.scene) && family !== "street") return [];
+  return [
+    "sterile empty street when exterior context is naturally visible",
+    "showroom-like background",
+    "staged crowd",
+    "pedestrians staring at selfie camera",
+    "cloned pedestrians",
+    "identical duplicated cars",
+    "floating cars",
+    "cars without ground contact",
+    "impossible traffic orientation",
+    "background vehicles at impossible scale",
+    "overfilled background activity"
+  ];
+}
+
 export function getTemplate(rawState = {}) {
   const state = normalizeState(rawState);
   const pose = getPoseById(state.pose);
@@ -426,10 +490,11 @@ export function buildPositivePrompt(rawState = {}) {
     buildLightingSection(state),
     buildRoomAuthority(state),
     buildContextSection(state),
+    buildBackgroundRealism(state),
     buildSceneSpecificSafety(state),
     `[PHONE REALISM] ${SMARTPHONE_REALISM}`,
     `[CONFLICT RESOLUTION] ${REALISM_ORDER}`,
-    "[FINAL QA] One identity, one subject-held phone, one front camera, one lens, one physically possible arm reach, one coherent pose, one lighting setup and one exposure strategy. For car scenes, preserve the selected seat position and cabin side mapping. Do not add full-body requirements to a tight crop. Omit secondary details rather than forcing them into the frame."
+    "[FINAL QA] One identity, one subject-held phone, one front camera, one lens, one physically possible arm reach, one coherent pose, one lighting setup and one exposure strategy. For car scenes, preserve the selected seat position and cabin side mapping. Background activity may appear only where the selected front-camera angle and crop physically reveal it. Do not add full-body requirements to a tight crop. Omit secondary details rather than forcing them into the frame."
   ];
   return sections.filter(Boolean).join("\n\n");
 }
@@ -475,6 +540,7 @@ export function buildNegativePrompt(rawState = {}) {
     contextual.push("garbled required signage", "duplicated cars", "floating vehicles", "forced full street view");
   }
 
+  contextual.push(...backgroundNegativeRules(state));
   return [...BASE_NEGATIVE, ...contextual].join(", ");
 }
 
@@ -483,6 +549,14 @@ export function buildRealismQa(rawState = {}) {
   const pose = getPoseById(state.pose);
   const lighting = optionByValue(getLightingOptions(state.scene, state.time), state.lighting);
   const seat = isCarScene(state.scene) ? optionByValue(CAR_SEAT_OPTIONS, state.carSeat) : null;
+  const backgroundVisibility = getBackgroundVisibility(state);
+  const backgroundQa = backgroundVisibility === "none"
+    ? "سياق مساعد فقط؛ لا يلزم ظهور كل التفاصيل"
+    : backgroundVisibility === "minimal"
+      ? "محدودة جداً حسب الكادر؛ لا تُفرض سيارات أو أشخاص"
+      : backgroundVisibility === "conditional"
+        ? "تظهر سيارات أو أشخاص فقط إذا كشفت الزاوية الخارج فعلياً"
+        : "الزاوية تسمح بخلفية شارع أغنى مع بقاء الشخص هو العنصر الأساسي";
   return [
     { label:"الأساس", value:"WikiPrompt أولاً — واقعية سيلفي هاتف عفوية" },
     { label:"الهوية", value:"مرجع شخص واحد فقط؛ الوجه وكثافة الشعر مقفلان" },
@@ -490,7 +564,7 @@ export function buildRealismQa(rawState = {}) {
     { label:"الوضعية", value:`${pose?.label ?? state.pose} — الزاوية والتكوين مقيدان بها` },
     ...(seat ? [{ label:"المقعد", value:`${seat.label} — منظور المقصورة مقفل على هذا الموضع` }] : []),
     { label:"الإضاءة", value:lighting?.label ?? state.lighting },
-    { label:"الخلفية", value:"سياق مساعد فقط؛ لا يلزم ظهور كل التفاصيل" },
+    { label:"الخلفية", value:backgroundQa },
     { label:"التناقضات", value:"تُحذف التفاصيل الأقل أولوية تلقائياً عند التعارض" }
   ];
 }
