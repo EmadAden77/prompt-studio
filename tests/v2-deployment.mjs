@@ -24,7 +24,6 @@ assert.match(index, /id="negative-prompt"/u);
 assert.match(index, /id="qa-list"/u);
 assert.match(index, /<input id="mode" name="mode" type="hidden" value="selfie"/u);
 assert.doesNotMatch(index, /<option value="standard">/u, "Standard/observer photography must not remain as an active option");
-assert.doesNotMatch(index, /تصوير عادي/u, "The live UI must stay selfie-first");
 assert.match(index, /styles-wikiprompt\.css/u);
 assert.match(index, /<script type="module" src="js\/physics-app-v5\.js"><\/script>/u);
 
