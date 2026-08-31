@@ -59,9 +59,14 @@ function wikiStatusText(status = wikiPromptService.getStatus()) {
     loading:"🟡 WikiPrompt: جارٍ الفحص",
     ok:"🟢 WikiPrompt: متصل",
     synced:"🟢 WikiPrompt: متزامن",
+    "synced-fallback":"🟢 WikiPrompt: متزامن عبر النسخة الاحتياطية",
     cache:"🟢 WikiPrompt: من الكاش",
+    "local-ready":"🟢 WikiPrompt: البيانات المحلية جاهزة",
+    "local-fallback":"🟢 WikiPrompt: النسخة الاحتياطية المحلية فعّالة",
     empty:"🟠 WikiPrompt: لا توجد نتائج مناسبة",
     unavailable:"🔴 WikiPrompt: غير متاح",
+    "local-http-error":"🔴 WikiPrompt: خطأ HTTP محلي",
+    "local-error":"🔴 WikiPrompt: تعذر تحميل البيانات المحلية",
     "http-error":"🔴 WikiPrompt: خطأ HTTP",
     "network-error":"🔴 WikiPrompt: خطأ شبكة/CORS",
     error:"🔴 WikiPrompt: فشل المزامنة"
@@ -177,7 +182,8 @@ function renderPrompt() {
     const status = wikiPromptService.getStatus();
     if (guidance) {
       positivePrompt.value = appendWikiGuidance(pack.positive, guidance);
-      renderQa([...pack.qa, { label:"WikiPrompt", value:"متصل — إرشادات الواقعية مضافة" }]);
+      const fallbackActive = status.state === "synced-fallback" || status.state === "local-fallback";
+      renderQa([...pack.qa, { label:"WikiPrompt", value:fallbackActive ? "متصل — إرشادات الواقعية مضافة عبر النسخة الاحتياطية" : "متصل — إرشادات الواقعية مضافة" }]);
     } else {
       positivePrompt.value = pack.positive;
       renderQa([...pack.qa, { label:"WikiPrompt", value:wikiStatusText(status).replace(/^\S+\sWikiPrompt:\s*/, "") }]);
