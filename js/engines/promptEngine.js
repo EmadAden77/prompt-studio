@@ -175,6 +175,7 @@ export class PromptEngine {
     const s = [];
     s.push(`TASK: one ordinary, coherent, physically believable smartphone photograph. Use IMAGE A only for identity and ${this.isTextRoomReference(c) ? "the fixed text [ROOM DESCRIPTION] only for the room; IMAGE B is intentionally absent." : "IMAGE B only for the room."} Return only the final image.`);
     s.push(REALISTIC_IMAGE_GENERATOR_RULES);
+    if (c.wikiPromptGuidance) s.push(c.wikiPromptGuidance);
     s.push(SELFIE_VIEWPOINT_LOCK);
     s.push(this.buildNaturalBrief(c));
     s.push(this.identityLock());
