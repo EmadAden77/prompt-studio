@@ -265,16 +265,19 @@ export function optimizePrompt(prompt) {
     seenSections.add(sectionKey);
 
     if (protectedSection) { output.push(compact); continue; }
-    const sentences = compact.split(/(?<=[.!?])\s+(?=[A-Z\[])/u);
+
+    const body = header ? compact.slice(header.length).trim() : compact;
+    const sentences = body.split(/(?<=[.!?])\s+(?=[A-Z\[])/u).filter(Boolean);
     const seenLocal = new Set();
     const kept = [];
-    for (const sentence of sentences) {
-      const key = sentence.replace(/\s+/g, " ").trim().toLowerCase();
+    for (const current of sentences) {
+      const key = current.replace(/\s+/g, " ").trim().toLowerCase();
       if (key && seenLocal.has(key)) { removedSentences += 1; continue; }
       if (key) seenLocal.add(key);
-      kept.push(sentence.trim());
+      kept.push(current.trim());
     }
-    output.push(kept.join(" "));
+    const rebuilt = [header, kept.join(" ")].filter(Boolean).join(" ").trim();
+    output.push(rebuilt);
   }
 
   return { prompt:output.join("\n\n"), stats:{ removedSections, removedSentences, sectionCount:output.length } };
