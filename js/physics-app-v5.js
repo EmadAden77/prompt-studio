@@ -10,6 +10,7 @@ import {
   isBedroomScene,
   isTextRoomReference
 } from "./physics-prompt-engine-v5.js";
+import { wikiPromptService } from "./services/wikiPromptService.js";
 
 const form = document.querySelector("#prompt-form");
 const referenceImage = document.querySelector("#reference-image");
@@ -34,33 +35,54 @@ const formStatus = document.querySelector("#form-status");
 
 let referenceObjectUrl = "";
 let hasReference = false;
+let wikiSyncId = 0;
 
 const SELECTED_SCENE_STORAGE_KEY = "physics-prompt-studio:selected-scene";
-
 const value = (id) => document.querySelector(`#${id}`).value;
 
 function setStatus(message) {
   formStatus.textContent = message;
 }
 
+function wikiConfig(state) {
+  const lightingName = isBedroomScene(state.scene) ? state.bedroomLighting : state.lighting;
+  return {
+    scene:{ id:state.scene, name_en:state.scene },
+    pose:{ id:state.bedroomPosition || state.activity || state.mode, name_en:state.activity || state.bedroomPosition || state.mode },
+    lighting:{ id:lightingName, name_en:lightingName }
+  };
+}
+
+function wikiStatusText(status = wikiPromptService.getStatus()) {
+  const labels = {
+    idle:"⚪ WikiPrompt: لم يُفحص بعد",
+    loading:"🟡 WikiPrompt: جارٍ الفحص",
+    ok:"🟢 WikiPrompt: متصل",
+    synced:"🟢 WikiPrompt: متزامن",
+    cache:"🟢 WikiPrompt: من الكاش",
+    empty:"🟠 WikiPrompt: لا توجد نتائج مناسبة",
+    unavailable:"🔴 WikiPrompt: غير متاح",
+    "http-error":"🔴 WikiPrompt: خطأ HTTP",
+    "network-error":"🔴 WikiPrompt: خطأ شبكة/CORS",
+    error:"🔴 WikiPrompt: فشل المزامنة"
+  };
+  return labels[status?.state] || `⚪ WikiPrompt: ${status?.state || "غير معروف"}`;
+}
+
+function appendWikiGuidance(basePrompt, guidance) {
+  return guidance ? `${basePrompt}\n\n${guidance}` : basePrompt;
+}
+
 function restoreSelectedScene() {
   try {
     const savedScene = localStorage.getItem(SELECTED_SCENE_STORAGE_KEY);
     const sceneSelect = document.querySelector("#scene");
-    if ([...sceneSelect.options].some((option) => option.value === savedScene)) {
-      sceneSelect.value = savedScene;
-    }
-  } catch {
-    // Storage can be unavailable in a private browser session; the form still works.
-  }
+    if ([...sceneSelect.options].some((option) => option.value === savedScene)) sceneSelect.value = savedScene;
+  } catch {}
 }
 
 function persistSelectedScene() {
-  try {
-    localStorage.setItem(SELECTED_SCENE_STORAGE_KEY, value("scene"));
-  } catch {
-    // Keep the selection in the current page even when storage is unavailable.
-  }
+  try { localStorage.setItem(SELECTED_SCENE_STORAGE_KEY, value("scene")); } catch {}
 }
 
 function populateSelect(select, options, preferredValue) {
@@ -77,27 +99,12 @@ function populateSelect(select, options, preferredValue) {
 
 function readState() {
   return {
-    scene: value("scene"),
-    city: value("city"),
-    time: value("time"),
-    mode: value("mode"),
-    clothing: value("clothing"),
-    clothingCustom: value("clothing-custom"),
-    hair: value("hair"),
-    skin: value("skin"),
-    expression: value("expression"),
-    composition: value("composition"),
-    selfieAngle: value("selfie-angle"),
-    messiness: value("messiness"),
-    lighting: value("lighting"),
-    bedroomPosition: value("bedroom-position"),
-    bedroomWindow: value("bedroom-window"),
-    bedroomLighting: value("bedroom-lighting"),
-    bedroomDetail: value("bedroom-detail"),
-    identityNotes: value("identity-notes"),
-    activity: value("activity"),
-    environmentNote: value("environment-note"),
-    hasReference
+    scene:value("scene"), city:value("city"), time:value("time"), mode:value("mode"),
+    clothing:value("clothing"), clothingCustom:value("clothing-custom"), hair:value("hair"), skin:value("skin"),
+    expression:value("expression"), composition:value("composition"), selfieAngle:value("selfie-angle"),
+    messiness:value("messiness"), lighting:value("lighting"), bedroomPosition:value("bedroom-position"),
+    bedroomWindow:value("bedroom-window"), bedroomLighting:value("bedroom-lighting"), bedroomDetail:value("bedroom-detail"),
+    identityNotes:value("identity-notes"), activity:value("activity"), environmentNote:value("environment-note"), hasReference
   };
 }
 
@@ -118,9 +125,7 @@ function refreshDynamicFields() {
   populateSelect(bedroomLightingSelect, getBedroomLightingOptions(time), currentBedroomLighting);
 
   const isBedroom = isBedroomScene(scene);
-  const positionRequirements = isBedroom
-    ? getBedroomPositionRequirements(bedroomPositionSelect.value, time)
-    : null;
+  const positionRequirements = isBedroom ? getBedroomPositionRequirements(bedroomPositionSelect.value, time) : null;
   if (positionRequirements) {
     mode = positionRequirements.mode;
     document.querySelector("#mode").value = mode;
@@ -132,7 +137,6 @@ function refreshDynamicFields() {
   bedroomOptionsPanel.hidden = !isBedroom;
   generalLightingField.hidden = isBedroom;
   selfieAngleField.hidden = mode !== "selfie";
-
   const pack = buildPromptPack(readState());
   templateHint.textContent = `القالب النشط: ${pack.template.title}`;
 }
@@ -147,21 +151,39 @@ function renderQa(items) {
   });
 }
 
+function localStatus(pack) {
+  return isTextRoomReference(pack.state.scene)
+    ? hasReference
+      ? "تم تثبيت وصف غرفتك النصي؛ لا يلزم IMAGE B، وصورة الهوية تبقى المرجع الوحيد للشخص."
+      : "وصف غرفتك النصي ثابت؛ لا يلزم IMAGE B. أرفق فقط صورة الهوية عند الاستخدام."
+    : hasReference
+      ? "تم بناء البرومبت مع قيد المرجع الواحد."
+      : "البرومبت جاهز؛ أرفق صورة هوية واحدة مع مولّد الصور عند الاستخدام.";
+}
+
 function renderPrompt() {
   const pack = buildPromptPack(readState());
-  positivePrompt.value = pack.positive;
+  const config = wikiConfig(pack.state);
+  const cachedGuidance = wikiPromptService.getCachedGuidance(config);
+  positivePrompt.value = appendWikiGuidance(pack.positive, cachedGuidance);
   negativePrompt.value = pack.negative;
   resultMeta.textContent = `${pack.template.title} · ${pack.state.mode === "selfie" ? "كاميرا أمامية" : "كاميرا خلفية رئيسية"} · ${pack.state.time === "night" ? "ليلي" : "نهاري"}`;
-  renderQa(pack.qa);
-  setStatus(
-    isTextRoomReference(pack.state.scene)
-      ? hasReference
-        ? "تم تثبيت وصف غرفتك النصي؛ لا يلزم IMAGE B، وصورة الهوية تبقى المرجع الوحيد للشخص."
-        : "وصف غرفتك النصي ثابت؛ لا يلزم IMAGE B. أرفق فقط صورة الهوية عند الاستخدام."
-      : hasReference
-      ? "تم بناء البرومبت مع قيد المرجع الواحد."
-      : "البرومبت جاهز؛ أرفق صورة هوية واحدة مع مولّد الصور عند الاستخدام."
-  );
+  renderQa([...pack.qa, { label:"WikiPrompt", value:cachedGuidance ? "متصل — إرشادات الواقعية مضافة" : "جارٍ التحقق من الاتصال" }]);
+  setStatus(`${localStatus(pack)} · ${cachedGuidance ? wikiStatusText({ state:"cache" }) : "🟡 WikiPrompt: جارٍ الفحص"}`);
+
+  const syncId = ++wikiSyncId;
+  void wikiPromptService.sync(config).then((guidance) => {
+    if (syncId !== wikiSyncId) return;
+    const status = wikiPromptService.getStatus();
+    if (guidance) {
+      positivePrompt.value = appendWikiGuidance(pack.positive, guidance);
+      renderQa([...pack.qa, { label:"WikiPrompt", value:"متصل — إرشادات الواقعية مضافة" }]);
+    } else {
+      positivePrompt.value = pack.positive;
+      renderQa([...pack.qa, { label:"WikiPrompt", value:wikiStatusText(status).replace(/^\S+\sWikiPrompt:\s*/, "") }]);
+    }
+    setStatus(`${localStatus(pack)} · ${wikiStatusText(status)}`);
+  });
 }
 
 function clearReference() {
@@ -176,10 +198,7 @@ function clearReference() {
 function setReference(file) {
   clearReference();
   if (!file) return;
-  if (!file.type.startsWith("image/")) {
-    setStatus("اختر ملف صورة صالحاً فقط.");
-    return;
-  }
+  if (!file.type.startsWith("image/")) { setStatus("اختر ملف صورة صالحاً فقط."); return; }
   referenceObjectUrl = URL.createObjectURL(file);
   referencePreview.src = referenceObjectUrl;
   referencePreviewWrap.hidden = false;
@@ -188,9 +207,8 @@ function setReference(file) {
 }
 
 async function copyText(text, label) {
-  try {
-    await navigator.clipboard.writeText(text);
-  } catch {
+  try { await navigator.clipboard.writeText(text); }
+  catch {
     const fallback = document.createElement("textarea");
     fallback.value = text;
     fallback.setAttribute("readonly", "");
@@ -201,20 +219,12 @@ async function copyText(text, label) {
     document.execCommand("copy");
     fallback.remove();
   }
-  setStatus(`${label} تم نسخه.`);
+  setStatus(`${label} تم نسخه. · ${wikiStatusText()}`);
 }
 
 function downloadPrompt() {
-  const pack = [
-    "PHYSICS PROMPT STUDIO",
-    "",
-    "POSITIVE PROMPT",
-    positivePrompt.value,
-    "",
-    "NEGATIVE PROMPT",
-    negativePrompt.value
-  ].join("\n");
-  const blob = new Blob([pack], { type: "text/plain;charset=utf-8" });
+  const pack = ["PHYSICS PROMPT STUDIO", "", "POSITIVE PROMPT", positivePrompt.value, "", "NEGATIVE PROMPT", negativePrompt.value].join("\n");
+  const blob = new Blob([pack], { type:"text/plain;charset=utf-8" });
   const href = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = href;
@@ -223,7 +233,7 @@ function downloadPrompt() {
   link.click();
   link.remove();
   URL.revokeObjectURL(href);
-  setStatus("تم تنزيل ملف البرومبت.");
+  setStatus(`تم تنزيل ملف البرومبت. · ${wikiStatusText()}`);
 }
 
 function resetForm() {
@@ -245,40 +255,17 @@ function resetForm() {
   persistSelectedScene();
   refreshDynamicFields();
   renderPrompt();
-  setStatus("عادت الخيارات إلى الإعدادات الافتراضية.");
 }
 
-referenceImage.addEventListener("change", (event) => {
-  setReference(event.target.files?.[0]);
-});
-
-removeReferenceButton.addEventListener("click", () => {
-  clearReference();
-  setStatus("أزيلت معاينة المرجع من الجهاز.");
-});
-
-document.querySelector("#scene").addEventListener("change", () => {
-  persistSelectedScene();
-  refreshDynamicFields();
-});
-
-["time", "mode", "bedroom-position"].forEach((id) => {
-  document.querySelector(`#${id}`).addEventListener("change", refreshDynamicFields);
-});
-
-form.addEventListener("submit", (event) => {
-  event.preventDefault();
-  refreshDynamicFields();
-  renderPrompt();
-});
-
+referenceImage.addEventListener("change", (event) => setReference(event.target.files?.[0]));
+removeReferenceButton.addEventListener("click", () => { clearReference(); setStatus("أزيلت معاينة المرجع من الجهاز."); });
+document.querySelector("#scene").addEventListener("change", () => { persistSelectedScene(); refreshDynamicFields(); });
+["time", "mode", "bedroom-position"].forEach((id) => document.querySelector(`#${id}`).addEventListener("change", refreshDynamicFields));
+form.addEventListener("submit", (event) => { event.preventDefault(); refreshDynamicFields(); renderPrompt(); });
 document.querySelector("#reset-form").addEventListener("click", resetForm);
 document.querySelector("#copy-positive").addEventListener("click", () => copyText(positivePrompt.value, "البرومبت"));
 document.querySelector("#copy-negative").addEventListener("click", () => copyText(negativePrompt.value, "البرومبت السلبي"));
-document.querySelector("#copy-pack").addEventListener("click", () => {
-  const fullPack = `POSITIVE PROMPT\n${positivePrompt.value}\n\nNEGATIVE PROMPT\n${negativePrompt.value}`;
-  copyText(fullPack, "الحزمة الكاملة");
-});
+document.querySelector("#copy-pack").addEventListener("click", () => copyText(`POSITIVE PROMPT\n${positivePrompt.value}\n\nNEGATIVE PROMPT\n${negativePrompt.value}`, "الحزمة الكاملة"));
 document.querySelector("#download-prompt").addEventListener("click", downloadPrompt);
 
 restoreSelectedScene();
