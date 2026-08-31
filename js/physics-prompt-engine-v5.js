@@ -2,7 +2,6 @@ import {
   BASE_NEGATIVE,
   CAMERA_SELFIE_LOCK,
   CITIES,
-  CLOTHING_OPTIONS,
   COMPOSITION_OPTIONS,
   EXPRESSION_OPTIONS,
   HAIR_DENSITY_LOCK,
@@ -22,6 +21,18 @@ import {
   BEDROOM_WINDOW_OPTIONS,
   sceneFamily
 } from "./wiki-selfie-data-v1.js";
+import {
+  CLOTHING_NEGATIVE_RULES,
+  buildClothingPhysicsText,
+  clothingQaText,
+  getClothingFitOptions,
+  getExpandedClothingOptions,
+  getFabricOptions,
+  getFabricWeightOptions,
+  getIronStateOptions,
+  getWearStateOptions,
+  normalizeClothingPhysicsState
+} from "./clothing-physics-v1.js";
 
 const clean = (value) => String(value ?? "").replace(/\s+/g, " ").trim();
 const sentence = (value) => {
@@ -159,6 +170,11 @@ export const DEFAULT_STATE = Object.freeze({
   carSeat:"driver-left",
   clothing:"sleep-cotton-short",
   clothingCustom:"",
+  fabric:"cotton-jersey",
+  fabricWeight:"light",
+  ironState:"lightly-unpressed",
+  wearState:"home-used",
+  clothingFit:"relaxed",
   hair:"natural",
   skin:"neutral",
   expression:"neutral",
@@ -210,10 +226,10 @@ export function getCityOptions() {
 }
 
 export function getClothingOptions(sceneId) {
-  if (isCustomScene(sceneId)) return CLOTHING_OPTIONS;
-  const options = CLOTHING_OPTIONS.filter((item) => item.scenes.includes(sceneId));
-  return options.length ? options : CLOTHING_OPTIONS;
+  return getExpandedClothingOptions(sceneId, isCustomScene(sceneId));
 }
+
+export { getFabricOptions, getFabricWeightOptions, getIronStateOptions, getWearStateOptions, getClothingFitOptions };
 
 export function getHairOptions() {
   return HAIR_OPTIONS;
@@ -326,6 +342,7 @@ export function normalizeState(rawState = {}) {
   if (!clothingOptions.some((item) => item.value === state.clothing)) {
     state.clothing = clothingOptions[0]?.value ?? "";
   }
+  Object.assign(state, normalizeClothingPhysicsState(state));
 
   if (!HAIR_OPTIONS.some((item) => item.value === state.hair)) state.hair = DEFAULT_STATE.hair;
   if (!SKIN_OPTIONS.some((item) => item.value === state.skin)) state.skin = DEFAULT_STATE.skin;
@@ -397,7 +414,7 @@ function buildAppearanceSection(state) {
   const skin = optionText(SKIN_OPTIONS, state.skin);
   const expression = optionText(EXPRESSION_OPTIONS, state.expression);
   const custom = clothingCustom
-    ? `Optional clothing modifier: ${clothingCustom}. Apply only if it does not replace or contradict the selected garment structure, pose physics or scene practicality.`
+    ? `Optional clothing modifier: ${clothingCustom}. Apply only if it does not replace or contradict the selected garment structure, selected fabric, pose physics or scene practicality.`
     : "";
   const cropRule = ["tight","close"].includes(state.composition)
     ? "Describe only garment portions that naturally enter the selected crop; lower-body clothing may remain outside frame and must not be forced into view."
@@ -411,6 +428,10 @@ function buildAppearanceSection(state) {
     cropRule,
     "Do not turn ordinary clothing or grooming into fashion-editorial styling."
   ].filter(Boolean).join(" ");
+}
+
+function buildClothingPhysicsSection(state) {
+  return buildClothingPhysicsText(state);
 }
 
 function buildExposureConsequence(lighting) {
@@ -671,6 +692,7 @@ export function buildPositivePrompt(rawState = {}) {
     buildCarSeatSection(state),
     buildHairSection(state),
     buildAppearanceSection(state),
+    buildClothingPhysicsSection(state),
     buildLightingSection(state),
     buildRoomAuthority(state),
     buildCustomSceneAuthority(state),
@@ -679,14 +701,14 @@ export function buildPositivePrompt(rawState = {}) {
     buildSceneSpecificSafety(state),
     `[PHONE REALISM] ${SMARTPHONE_REALISM}`,
     `[CONFLICT RESOLUTION] ${REALISM_ORDER}`,
-    "[FINAL QA] One identity, one subject-held phone, one front camera, one lens, one physically possible arm reach, one coherent pose, one lighting setup and one exposure strategy. For car scenes, preserve the selected seat position and cabin side mapping. Background activity may appear only where the selected front-camera angle and crop physically reveal it. For a custom scene, preserve the user's requested place while omitting lower-priority details that do not fit the real field of view. Do not add full-body requirements to a tight crop. Omit secondary details rather than forcing them into the frame."
+    "[FINAL QA] One identity, one subject-held phone, one front camera, one lens, one physically possible arm reach, one coherent pose, one clothing material system, one lighting setup and one exposure strategy. The selected fabric, weight, ironing, wear state and fit must remain mutually compatible and must produce folds only where the pose and crop physically permit them. For car scenes, preserve the selected seat position and cabin side mapping. Background activity may appear only where the selected front-camera angle and crop physically reveal it. For a custom scene, preserve the user's requested place while omitting lower-priority details that do not fit the real field of view. Do not add full-body requirements to a tight crop. Omit secondary details rather than forcing them into the frame."
   ];
   return sections.filter(Boolean).join("\n\n");
 }
 
 export function buildNegativePrompt(rawState = {}) {
   const state = normalizeState(rawState);
-  const contextual = [];
+  const contextual = [...CLOTHING_NEGATIVE_RULES];
 
   if (isBedroomScene(state.scene)) {
     contextual.push(
@@ -755,6 +777,7 @@ export function buildRealismQa(rawState = {}) {
     { label:"الوضعية", value:`${pose?.label ?? state.pose} — الزاوية والتكوين مقيدان بها` },
     ...(seat ? [{ label:"المقعد", value:`${seat.label} — منظور المقصورة مقفل على هذا الموضع` }] : []),
     ...(isCustomScene(state.scene) ? [{ label:"المشهد", value:state.customScene || "مشهد مخصص — أضف وصف المكان" }] : []),
+    { label:"الملابس", value:clothingQaText(state) },
     { label:"الإضاءة", value:lighting?.label ?? state.lighting },
     { label:"الخلفية", value:backgroundQa },
     { label:"التناقضات", value:"تُحذف التفاصيل الأقل أولوية تلقائياً عند التعارض" }
