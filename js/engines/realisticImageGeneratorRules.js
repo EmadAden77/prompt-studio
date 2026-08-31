@@ -1,3 +1,5 @@
+import "../services/wikiPromptService.js";
+
 // REALISTIC IMAGE GENERATOR — global photographic realism layer
 // Applied as a base reasoning contract before the app's stricter identity,
 // anatomy, contact, camera, lighting and sensor rules.
