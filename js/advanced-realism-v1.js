@@ -93,7 +93,7 @@ const ACCESSORY_PROFILES = Object.freeze({
 
 const OBJECT_PROFILES = Object.freeze({
   none:{ label:"بدون جسم محدد", text:"Do not force a handheld object into the frame." },
-  "held-eyeglasses":{ label:"نظارة ممسوكة", text:"A pair of eyeglasses is held by the free hand at a realistic hinge, bridge or temple grip. The frame keeps rigid geometry, lenses remain thin and coherent, and fingers occlude the frame according to depth instead of passing through it." },
+  "held-eyeglasses":{ label:"نظارة ممسوكة", text:"A single pair of eyeglasses is casually held by the subject's free hand at a realistic temple, hinge or bridge grip. These eyeglasses are NOT worn on the face. The rigid frame keeps coherent geometry, the lenses remain thin and physically plausible, and fingers correctly occlude the frame according to depth instead of passing through it. Do not create a second pair of eyeglasses." },
   "coffee-cup":{ label:"كوب قهوة", text:"A coffee cup has believable diameter, wall thickness and upright gravity. The free hand uses a plausible side-wall or handle grip, with finger spacing and contact shadows matching the cup geometry. Do not tilt liquid-bearing geometry implausibly." },
   "car-keys":{ label:"مفتاح سيارة", text:"A small car key or key fob rests naturally between fingers or in the palm with realistic scale and weight. It must not become oversized, merge with fingers or require a second free hand." },
   laptop:{ label:"لابتوب", text:"A laptop must be physically supported by the lap, mattress, table or another real surface. Its hinge angle, screen plane, keyboard plane, weight and fabric compression must agree. Never let a laptop float or balance on an impossible fingertip grip." },
@@ -174,6 +174,15 @@ export function resolveAdvancedRealismState(rawState = {}) {
   if (state.accessoryProfile === "auto") state.accessoryProfile = inferAccessory(state.accessoryDetail);
   if (state.objectProfile === "auto") state.objectProfile = inferObject(state.interactionObject);
 
+  if (state.objectProfile === "held-eyeglasses" && state.accessoryProfile === "eyeglasses") {
+    conflicts.push({
+      code:"held-worn-eyeglasses-conflict",
+      qa:"تم منع تعارض النظارة: عند اختيار «نظارة ممسوكة باليد» لن تُلبس النظارة نفسها على الوجه ولن تُنشأ نسخة ثانية.",
+      prompt:"The held-eyeglasses Object Profile overrides worn-eyeglasses accessory behavior for the same physical pair. Keep one pair only, held in the free hand and not worn on the face."
+    });
+    state.accessoryProfile = "none";
+  }
+
   if (isTight(state) && ["laptop","shopping-bag"].includes(state.objectProfile)) {
     conflicts.push({
       code:"large-object-tight-crop",
@@ -193,6 +202,9 @@ function buildSceneProfileRule(state) {
 }
 
 function buildAccessoryRule(state) {
+  if (state.objectProfile === "held-eyeglasses" && state.accessoryProfile === "eyeglasses") {
+    return "[ACCESSORY PHYSICS] Do not generate worn eyeglasses because the selected eyeglasses are assigned exclusively to the handheld Object Profile. Do not create a second pair.";
+  }
   const profile = ACCESSORY_PROFILES[state.accessoryProfile] ?? ACCESSORY_PROFILES.none;
   const detail = state.accessoryDetail ? ` User detail: ${state.accessoryDetail}. Apply it only if it remains physically compatible with this accessory.` : "";
   return `[ACCESSORY PHYSICS] ${profile.text}${detail}`;
@@ -350,6 +362,8 @@ export const ADVANCED_REALISM_NEGATIVE_RULES = Object.freeze([
   "accessory floating above skin",
   "eyeglasses intersecting face",
   "eyeglass temples missing ear support",
+  "same eyeglasses simultaneously worn and held",
+  "duplicated eyeglasses pair",
   "watch floating above wrist",
   "ring merging fingers",
   "duplicated accessory",
