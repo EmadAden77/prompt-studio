@@ -24,8 +24,36 @@ import {
 } from "./wiki-selfie-data-v1.js";
 
 const clean = (value) => String(value ?? "").replace(/\s+/g, " ").trim();
+const sentence = (value) => {
+  const text = clean(value);
+  if (!text) return "";
+  return /[.!?]$/u.test(text) ? text : `${text}.`;
+};
 const optionByValue = (options, value) => options.find((item) => item.value === value) ?? null;
 const optionText = (options, value, fallback = "") => optionByValue(options, value)?.text ?? fallback;
+
+const CAR_SEAT_OPTIONS = Object.freeze([
+  {
+    value:"driver-left",
+    label:"مقعد السائق الأمامي الأيسر",
+    text:"LEFT FRONT DRIVER'S SEAT LOCK: the subject's hips and torso are centered on the left-front driver-seat cushion and seatback of the left-hand-drive vehicle. The driver door and side window are on the subject's left, the center console is on the subject's right, and the steering wheel is physically directly in front of the driver even when it falls outside the selfie crop"
+  },
+  {
+    value:"passenger-front-right",
+    label:"مقعد الراكب الأمامي الأيمن",
+    text:"RIGHT FRONT PASSENGER SEAT LOCK: the subject's hips and torso are centered on the right-front passenger-seat cushion and seatback. The passenger door and side window are on the subject's right, the center console is on the subject's left, and the steering wheel belongs across the cabin on the driver side rather than directly in front of the subject"
+  },
+  {
+    value:"rear-left",
+    label:"المقعد الخلفي الأيسر",
+    text:"LEFT REAR SEAT LOCK: the subject is seated behind the driver position, with the left rear door and window on the subject's left and the driver seat physically ahead. The camera origin must remain in the rear-left seating position and must not drift into either front seat"
+  },
+  {
+    value:"rear-right",
+    label:"المقعد الخلفي الأيمن",
+    text:"RIGHT REAR SEAT LOCK: the subject is seated behind the front passenger position, with the right rear door and window on the subject's right and the passenger seat physically ahead. The camera origin must remain in the rear-right seating position and must not drift into either front seat"
+  }
+]);
 
 export const DEFAULT_STATE = Object.freeze({
   scene:"my_bedroom_text",
@@ -34,6 +62,7 @@ export const DEFAULT_STATE = Object.freeze({
   mode:"selfie",
   poseFamily:"lying",
   pose:"lying-right-close",
+  carSeat:"driver-left",
   clothing:"sleep-cotton-short",
   clothingCustom:"",
   hair:"natural",
@@ -53,8 +82,22 @@ export function isBedroomScene(sceneId) {
   return sceneFamily(sceneId) === "bedroom";
 }
 
+export function isCarScene(sceneId) {
+  return sceneFamily(sceneId) === "car";
+}
+
 export function isTextRoomReference(sceneId) {
   return Boolean(SCENES[sceneId]?.text_reference);
+}
+
+function isDriverLockedPose(poseId) {
+  return /^car-driver-/u.test(String(poseId ?? "")) || poseId === "car-roof-context";
+}
+
+export function getCarSeatOptions(sceneId, poseId = "") {
+  if (!isCarScene(sceneId)) return [];
+  if (isDriverLockedPose(poseId)) return CAR_SEAT_OPTIONS.filter((item) => item.value === "driver-left");
+  return CAR_SEAT_OPTIONS.map((item) => ({ ...item }));
 }
 
 export function getSceneOptions() {
@@ -134,6 +177,13 @@ function normalizeBedroomWindow(state, lighting) {
   return allowedIds.find((id) => windows.some((item) => item.value === id)) ?? windows[0]?.value ?? "";
 }
 
+function normalizeCarSeat(state) {
+  if (!isCarScene(state.scene)) return "";
+  const options = getCarSeatOptions(state.scene, state.pose);
+  if (options.some((item) => item.value === state.carSeat)) return state.carSeat;
+  return options[0]?.value ?? "driver-left";
+}
+
 export function normalizeState(rawState = {}) {
   const state = { ...DEFAULT_STATE, ...rawState, mode:"selfie" };
 
@@ -150,6 +200,8 @@ export function normalizeState(rawState = {}) {
   if (!poseOptions.some((item) => item.value === state.pose)) {
     state.pose = poseOptions[0]?.value ?? getPoseOptions(state.scene)[0]?.value ?? "relaxed-close";
   }
+
+  state.carSeat = normalizeCarSeat(state);
 
   const angleOptions = getSelfieAngleOptions(state.pose);
   if (!angleOptions.some((item) => item.value === state.selfieAngle)) {
@@ -195,10 +247,10 @@ function buildReferenceSection(state) {
   const notes = clean(state.identityNotes);
   return [
     "[IDENTITY]",
-    IDENTITY_LOCK,
-    referenceInstruction,
-    buildVisibleBodyInstruction(state),
-    notes ? `Reference-specific observations to preserve if compatible: ${notes}` : ""
+    sentence(IDENTITY_LOCK),
+    sentence(referenceInstruction),
+    sentence(buildVisibleBodyInstruction(state)),
+    notes ? sentence(`Reference-specific observations to preserve if compatible: ${notes}`) : ""
   ].filter(Boolean).join(" ");
 }
 
@@ -206,7 +258,23 @@ function buildPoseSection(state) {
   const pose = getPoseById(state.pose);
   const angle = optionText(getSelfieAngleOptions(state.pose), state.selfieAngle);
   const composition = optionText(getCompositionOptions(state.pose), state.composition);
-  return `[SELFIE POSE] ${pose?.text ?? "a natural subject-held selfie pose"}. ${angle}. ${composition}. The pose, crop and phone position must describe the same single instant. Do not force the holding hand, phone body or steering wheel into view when the selected crop naturally excludes them.`;
+  const cropRule = isCarScene(state.scene)
+    ? "Do not force the holding hand, phone body, steering wheel, dashboard or console into view when the selected crop naturally excludes them."
+    : "Do not force the holding hand or phone body into view when the selected crop naturally excludes them.";
+  return [
+    "[SELFIE POSE]",
+    sentence(pose?.text ?? "a natural subject-held selfie pose"),
+    sentence(angle),
+    sentence(composition),
+    "The pose, crop and phone position must describe the same single instant.",
+    cropRule
+  ].filter(Boolean).join(" ");
+}
+
+function buildCarSeatSection(state) {
+  if (!isCarScene(state.scene)) return "";
+  const seat = optionByValue(CAR_SEAT_OPTIONS, state.carSeat) ?? CAR_SEAT_OPTIONS[0];
+  return `[CAR SEAT POSITION] ${sentence(seat.text)} The front-camera viewpoint originates from this exact seat position. Do not mirror, swap or reinterpret the subject's seat.`;
 }
 
 function buildHairSection(state) {
@@ -222,7 +290,18 @@ function buildAppearanceSection(state) {
   const custom = clothingCustom
     ? `Optional clothing modifier: ${clothingCustom}. Apply only if it does not replace or contradict the selected garment structure, pose physics or scene practicality.`
     : "";
-  return `[APPEARANCE] ${clothing}. ${custom} ${skin}. ${expression}. Do not turn ordinary clothing or grooming into fashion-editorial styling.`;
+  const cropRule = ["tight","close"].includes(state.composition)
+    ? "Describe only garment portions that naturally enter the selected crop; lower-body clothing may remain outside frame and must not be forced into view."
+    : "";
+  return [
+    "[APPEARANCE]",
+    sentence(clothing),
+    custom,
+    sentence(skin),
+    sentence(expression),
+    cropRule,
+    "Do not turn ordinary clothing or grooming into fashion-editorial styling."
+  ].filter(Boolean).join(" ");
 }
 
 function buildExposureConsequence(lighting) {
@@ -240,9 +319,9 @@ function buildLightingSection(state) {
     : "";
   return [
     "[PRACTICAL LIGHTING]",
-    lighting?.text ?? "use only physically present practical light",
-    windowText,
-    buildExposureConsequence(lighting),
+    sentence(lighting?.text ?? "use only physically present practical light"),
+    sentence(windowText),
+    sentence(buildExposureConsequence(lighting)),
     "All face highlights, cast shadows, eye catchlights, fabric sheen, glass reflections and material speculars must agree with the selected source geometry. No hidden fill light."
   ].filter(Boolean).join(" ");
 }
@@ -255,10 +334,10 @@ function buildRoomAuthority(state) {
 
 function buildContextDensity(state) {
   const base = optionText(MESSINESS_OPTIONS, state.messiness);
-  if (sceneFamily(state.scene) === "car" && state.messiness === "busy") {
+  if (isCarScene(state.scene) && state.messiness === "busy") {
     return "Show slightly more naturally visible cabin detail and parked exterior context, but do not invent loose clutter, duplicate controls or extra interior objects merely to make the background look busy.";
   }
-  if (sceneFamily(state.scene) === "car" && state.messiness === "minimal") {
+  if (isCarScene(state.scene) && state.messiness === "minimal") {
     return "Keep the visible cabin context sparse and natural; show only the few interior elements that the selected front-camera crop actually reaches.";
   }
   return base;
@@ -270,15 +349,15 @@ function buildContextSection(state) {
   const note = clean(state.environmentNote);
   return [
     "[OPTIONAL CONTEXT]",
-    `${scene.environment}; ${city}.`,
-    buildContextDensity(state),
-    note ? `Optional context note: ${note}. Use it only if physically compatible with the selected pose, crop and lighting.` : "",
+    sentence(`${scene.environment}; ${city}`),
+    sentence(buildContextDensity(state)),
+    note ? sentence(`Optional context note: ${note}. Use it only if physically compatible with the selected pose, crop and lighting`) : "",
     SCENE_PRIORITY_RULE
   ].filter(Boolean).join(" ");
 }
 
 function buildSceneSpecificSafety(state) {
-  if (sceneFamily(state.scene) === "car") {
+  if (isCarScene(state.scene)) {
     return "The vehicle is fully stationary and safely parked. Preserve left-hand-drive cabin geometry. Steering wheel, dashboard, console and mirrors appear only if they naturally enter the front-camera crop; if visible, keep their geometry coherent and never duplicate controls. Do not imply driving, steering motion or road travel.";
   }
   if (sceneFamily(state.scene) === "gym") {
@@ -293,11 +372,43 @@ function buildSceneSpecificSafety(state) {
   return "";
 }
 
+function carSeatNegativeRules(state) {
+  if (!isCarScene(state.scene)) return [];
+  if (state.carSeat === "driver-left") {
+    return [
+      "subject seated in front passenger seat",
+      "passenger-side subject position",
+      "subject in right-front seat",
+      "mirrored cabin",
+      "swapped driver and passenger positions",
+      "center console on driver's left"
+    ];
+  }
+  if (state.carSeat === "passenger-front-right") {
+    return [
+      "subject seated in driver seat",
+      "steering wheel directly in front of passenger",
+      "subject in left-front seat",
+      "mirrored cabin",
+      "swapped driver and passenger positions",
+      "center console on passenger's right"
+    ];
+  }
+  if (state.carSeat === "rear-left") {
+    return ["subject in front seat", "front-passenger viewpoint", "driver-seat viewpoint", "mirrored cabin", "camera origin in front row"];
+  }
+  if (state.carSeat === "rear-right") {
+    return ["subject in front seat", "front-passenger viewpoint", "driver-seat viewpoint", "mirrored cabin", "camera origin in front row"];
+  }
+  return [];
+}
+
 export function getTemplate(rawState = {}) {
   const state = normalizeState(rawState);
   const pose = getPoseById(state.pose);
+  const seat = isCarScene(state.scene) ? optionByValue(CAR_SEAT_OPTIONS, state.carSeat)?.label : "";
   return {
-    title:`${pose?.label ?? "سيلفي"} · ${state.time === "night" ? "ليلاً" : "نهاراً"}`,
+    title:[pose?.label ?? "سيلفي", seat, state.time === "night" ? "ليلاً" : "نهاراً"].filter(Boolean).join(" · "),
     text:"WikiPrompt-first subject-held smartphone selfie"
   };
 }
@@ -309,6 +420,7 @@ export function buildPositivePrompt(rawState = {}) {
     buildReferenceSection(state),
     `[CAMERA] ${CAMERA_SELFIE_LOCK}`,
     buildPoseSection(state),
+    buildCarSeatSection(state),
     buildHairSection(state),
     buildAppearanceSection(state),
     buildLightingSection(state),
@@ -317,7 +429,7 @@ export function buildPositivePrompt(rawState = {}) {
     buildSceneSpecificSafety(state),
     `[PHONE REALISM] ${SMARTPHONE_REALISM}`,
     `[CONFLICT RESOLUTION] ${REALISM_ORDER}`,
-    "[FINAL QA] One identity, one subject-held phone, one front camera, one lens, one physically possible arm reach, one coherent pose, one lighting setup and one exposure strategy. Do not add full-body requirements to a tight crop. Omit secondary details rather than forcing them into the frame."
+    "[FINAL QA] One identity, one subject-held phone, one front camera, one lens, one physically possible arm reach, one coherent pose, one lighting setup and one exposure strategy. For car scenes, preserve the selected seat position and cabin side mapping. Do not add full-body requirements to a tight crop. Omit secondary details rather than forcing them into the frame."
   ];
   return sections.filter(Boolean).join("\n\n");
 }
@@ -340,7 +452,7 @@ export function buildNegativePrompt(rawState = {}) {
     );
   }
 
-  if (sceneFamily(state.scene) === "car") {
+  if (isCarScene(state.scene)) {
     contextual.push(
       "moving vehicle",
       "driving action",
@@ -350,7 +462,8 @@ export function buildNegativePrompt(rawState = {}) {
       "duplicated controls",
       "invented cabin clutter",
       "impossible windshield reflection",
-      "forced full-car interior"
+      "forced full-car interior",
+      ...carSeatNegativeRules(state)
     );
   }
 
@@ -369,11 +482,13 @@ export function buildRealismQa(rawState = {}) {
   const state = normalizeState(rawState);
   const pose = getPoseById(state.pose);
   const lighting = optionByValue(getLightingOptions(state.scene, state.time), state.lighting);
+  const seat = isCarScene(state.scene) ? optionByValue(CAR_SEAT_OPTIONS, state.carSeat) : null;
   return [
     { label:"الأساس", value:"WikiPrompt أولاً — واقعية سيلفي هاتف عفوية" },
     { label:"الهوية", value:"مرجع شخص واحد فقط؛ الوجه وكثافة الشعر مقفلان" },
     { label:"السيلفي", value:"الشخص يمسك الهاتف بنفسه؛ لا توجد كاميرا مراقب" },
     { label:"الوضعية", value:`${pose?.label ?? state.pose} — الزاوية والتكوين مقيدان بها` },
+    ...(seat ? [{ label:"المقعد", value:`${seat.label} — منظور المقصورة مقفل على هذا الموضع` }] : []),
     { label:"الإضاءة", value:lighting?.label ?? state.lighting },
     { label:"الخلفية", value:"سياق مساعد فقط؛ لا يلزم ظهور كل التفاصيل" },
     { label:"التناقضات", value:"تُحذف التفاصيل الأقل أولوية تلقائياً عند التعارض" }
