@@ -181,6 +181,13 @@ export function normalizeState(rawState = {}) {
   return state;
 }
 
+function buildVisibleBodyInstruction(state) {
+  if (["tight","close"].includes(state.composition)) {
+    return "Describe only anatomy that naturally enters this crop. Do not force height, weight, hands, legs or full-body visibility into a tight head-and-shoulders selfie. Any visible hand must remain anatomically plausible with exactly five fingers.";
+  }
+  return SUBJECT_BODY;
+}
+
 function buildReferenceSection(state) {
   const referenceInstruction = state.hasReference
     ? "the attached reference image is the sole identity source"
@@ -190,7 +197,7 @@ function buildReferenceSection(state) {
     "[IDENTITY]",
     IDENTITY_LOCK,
     referenceInstruction,
-    SUBJECT_BODY,
+    buildVisibleBodyInstruction(state),
     notes ? `Reference-specific observations to preserve if compatible: ${notes}` : ""
   ].filter(Boolean).join(" ");
 }
@@ -199,7 +206,7 @@ function buildPoseSection(state) {
   const pose = getPoseById(state.pose);
   const angle = optionText(getSelfieAngleOptions(state.pose), state.selfieAngle);
   const composition = optionText(getCompositionOptions(state.pose), state.composition);
-  return `[SELFIE POSE] ${pose?.text ?? "a natural subject-held selfie pose"}. ${angle}. ${composition}. The pose, crop and phone position must describe the same single instant.`;
+  return `[SELFIE POSE] ${pose?.text ?? "a natural subject-held selfie pose"}. ${angle}. ${composition}. The pose, crop and phone position must describe the same single instant. Do not force the holding hand, phone body or steering wheel into view when the selected crop naturally excludes them.`;
 }
 
 function buildHairSection(state) {
@@ -218,6 +225,14 @@ function buildAppearanceSection(state) {
   return `[APPEARANCE] ${clothing}. ${custom} ${skin}. ${expression}. Do not turn ordinary clothing or grooming into fashion-editorial styling.`;
 }
 
+function buildExposureConsequence(lighting) {
+  const id = lighting?.value ?? "";
+  if (/direct-sun/i.test(id)) {
+    return "Expose like a real phone under hard sunlight: the directly lit facial region may approach clipping, the shaded side may fall noticeably darker, and exterior highlights may clip. Do not flatten the contrast with HDR, brighten the shadow side using hidden fill, or make both sides of the face equally exposed.";
+  }
+  return "";
+}
+
 function buildLightingSection(state) {
   const lighting = optionByValue(getLightingOptions(state.scene, state.time), state.lighting);
   const windowText = isBedroomScene(state.scene)
@@ -227,6 +242,7 @@ function buildLightingSection(state) {
     "[PRACTICAL LIGHTING]",
     lighting?.text ?? "use only physically present practical light",
     windowText,
+    buildExposureConsequence(lighting),
     "All face highlights, cast shadows, eye catchlights, fabric sheen, glass reflections and material speculars must agree with the selected source geometry. No hidden fill light."
   ].filter(Boolean).join(" ");
 }
@@ -237,15 +253,25 @@ function buildRoomAuthority(state) {
   return `[TEXT ROOM AUTHORITY] ${room.description_en} This description fixes room identity only. It does NOT require every listed item to appear in the selfie. Never invent a second room reference image.`;
 }
 
+function buildContextDensity(state) {
+  const base = optionText(MESSINESS_OPTIONS, state.messiness);
+  if (sceneFamily(state.scene) === "car" && state.messiness === "busy") {
+    return "Show slightly more naturally visible cabin detail and parked exterior context, but do not invent loose clutter, duplicate controls or extra interior objects merely to make the background look busy.";
+  }
+  if (sceneFamily(state.scene) === "car" && state.messiness === "minimal") {
+    return "Keep the visible cabin context sparse and natural; show only the few interior elements that the selected front-camera crop actually reaches.";
+  }
+  return base;
+}
+
 function buildContextSection(state) {
   const scene = SCENES[state.scene];
   const city = optionText(CITIES, state.city, "a plausible Saudi Arabian location");
-  const messiness = optionText(MESSINESS_OPTIONS, state.messiness);
   const note = clean(state.environmentNote);
   return [
     "[OPTIONAL CONTEXT]",
     `${scene.environment}; ${city}.`,
-    messiness,
+    buildContextDensity(state),
     note ? `Optional context note: ${note}. Use it only if physically compatible with the selected pose, crop and lighting.` : "",
     SCENE_PRIORITY_RULE
   ].filter(Boolean).join(" ");
@@ -253,7 +279,7 @@ function buildContextSection(state) {
 
 function buildSceneSpecificSafety(state) {
   if (sceneFamily(state.scene) === "car") {
-    return "The vehicle is fully stationary and safely parked. Preserve left-hand-drive cabin geometry. Do not imply driving, steering motion or road travel.";
+    return "The vehicle is fully stationary and safely parked. Preserve left-hand-drive cabin geometry. Steering wheel, dashboard, console and mirrors appear only if they naturally enter the front-camera crop; if visible, keep their geometry coherent and never duplicate controls. Do not imply driving, steering motion or road travel.";
   }
   if (sceneFamily(state.scene) === "gym") {
     return "Gym equipment, mirrors and people are secondary context. Do not force mirrors or full machines into the crop.";
@@ -291,7 +317,7 @@ export function buildPositivePrompt(rawState = {}) {
     buildSceneSpecificSafety(state),
     `[PHONE REALISM] ${SMARTPHONE_REALISM}`,
     `[CONFLICT RESOLUTION] ${REALISM_ORDER}`,
-    "[FINAL QA] One identity, one subject-held phone, one front camera, one lens, one physically possible arm reach, one coherent pose, one lighting setup and one exposure strategy. Omit secondary details rather than forcing them into the frame."
+    "[FINAL QA] One identity, one subject-held phone, one front camera, one lens, one physically possible arm reach, one coherent pose, one lighting setup and one exposure strategy. Do not add full-body requirements to a tight crop. Omit secondary details rather than forcing them into the frame."
   ];
   return sections.filter(Boolean).join("\n\n");
 }
@@ -321,6 +347,8 @@ export function buildNegativePrompt(rawState = {}) {
       "wrong steering side",
       "warped dashboard",
       "duplicated steering wheel",
+      "duplicated controls",
+      "invented cabin clutter",
       "impossible windshield reflection",
       "forced full-car interior"
     );
