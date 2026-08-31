@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {
   DEFAULT_STATE,
   buildPromptPack,
+  getBackgroundVisibility,
   getCarSeatOptions,
   getClothingOptions,
   getCompatibleBedroomWindowOptions,
@@ -81,6 +82,8 @@ assert.match(rightSidePack.positive, /sole identity source\. Describe only anato
 assert.doesNotMatch(rightSidePack.positive, /183 cm and 82 kg/u, "Close crops must not carry irrelevant full-body dimensions");
 assert.doesNotMatch(rightSidePack.positive, /Leica Authentic|23mm-equivalent|sheer white curtains|phone and person visible in reflection/u);
 assert.doesNotMatch(rightSidePack.positive, /rug pile compressed where seated|overhead shots cast the phone's shadow/u);
+assert.doesNotMatch(rightSidePack.positive, /\[BACKGROUND REALISM\]/u, "Bedroom prompts must not inject street realism");
+assert.equal(getBackgroundVisibility(rightSidePack.state), "none");
 assert.equal(rightSidePack.state.carSeat, "", "Non-car scenes must clear car-seat state");
 
 const carPoses = getPoseOptions("rangeRover", "car");
@@ -115,11 +118,18 @@ assert.match(carPack.positive, /left-hand-drive/u);
 assert.match(carPack.positive, /supporting context only/u);
 assert.match(carPack.positive, /do not invent loose clutter/u);
 assert.match(carPack.positive, /never duplicate controls/u);
+assert.match(carPack.positive, /\[BACKGROUND REALISM\]/u);
+assert.match(carPack.positive, /Saudi street or parking slice/u);
+assert.match(carPack.positive, /Sparse pedestrians may appear only where the angle truly exposes public space/u);
+assert.match(carPack.positive, /localized parking or street-light pools/u);
 assert.match(carPack.negative, /moving vehicle/u);
 assert.match(carPack.negative, /invented cabin clutter/u);
 assert.match(carPack.negative, /subject seated in front passenger seat/u);
 assert.match(carPack.negative, /swapped driver and passenger positions/u);
+assert.match(carPack.negative, /staged crowd/u);
+assert.match(carPack.negative, /identical duplicated cars/u);
 assert.ok(carPack.qa.some((item) => item.label === "المقعد" && /السائق الأمامي الأيسر/u.test(item.value)));
+assert.ok(carPack.qa.some((item) => item.label === "الخلفية" && /سيارات أو أشخاص/u.test(item.value)));
 
 const waitingDriverPack = buildPromptPack({
   ...DEFAULT_STATE,
@@ -130,12 +140,34 @@ const waitingDriverPack = buildPromptPack({
   carSeat:"driver-left",
   lighting:"car-day-roof-light",
   clothing:"work-blue-navy",
-  composition:"close"
+  composition:"close",
+  selfieAngle:"eye"
 });
 assert.match(waitingDriverPack.positive, /LEFT FRONT DRIVER'S SEAT LOCK/u);
 assert.match(waitingDriverPack.positive, /The front-camera viewpoint originates from this exact seat position/u);
 assert.match(waitingDriverPack.positive, /lower-body clothing may remain outside frame/u);
+assert.match(waitingDriverPack.positive, /Use the selected selfie angle to decide whether a side window/u);
+assert.match(waitingDriverPack.positive, /varied everyday vehicles/u);
 assert.match(waitingDriverPack.negative, /passenger-side subject position/u);
+assert.equal(getBackgroundVisibility(waitingDriverPack.state), "conditional");
+
+const wideDriverPack = buildPromptPack({
+  ...DEFAULT_STATE,
+  scene:"rangeRover",
+  time:"day",
+  poseFamily:"car",
+  pose:"car-driver-side",
+  carSeat:"driver-left",
+  lighting:"car-day-open-shade",
+  clothing:"tee-black",
+  composition:"upper",
+  selfieAngle:"three-quarter"
+});
+assert.equal(getBackgroundVisibility(wideDriverPack.state), "open");
+assert.match(wideDriverPack.positive, /wider or more lateral selfie angle can support meaningful exterior context/u);
+assert.match(wideDriverPack.positive, /ordinary atmospheric haze/u);
+assert.match(wideDriverPack.positive, /correctly scaled and unaware of the selfie/u);
+assert.match(wideDriverPack.positive, /background activity may appear only where the selected front-camera angle and crop physically reveal it/i);
 
 const waitingPassengerPack = buildPromptPack({
   ...DEFAULT_STATE,
@@ -153,6 +185,39 @@ assert.match(waitingPassengerPack.positive, /RIGHT FRONT PASSENGER SEAT LOCK/u);
 assert.match(waitingPassengerPack.positive, /center console is on the subject's left/u);
 assert.match(waitingPassengerPack.negative, /subject seated in driver seat/u);
 assert.match(waitingPassengerPack.negative, /steering wheel directly in front of passenger/u);
+
+const tightCarPack = buildPromptPack({
+  ...DEFAULT_STATE,
+  scene:"rangeRover",
+  time:"day",
+  poseFamily:"car",
+  pose:"car-driver-close",
+  carSeat:"driver-left",
+  lighting:"car-day-window",
+  clothing:"tee-black",
+  composition:"tight",
+  selfieAngle:"eye"
+});
+assert.equal(getBackgroundVisibility(tightCarPack.state), "minimal");
+assert.match(tightCarPack.positive, /Do not force an exterior view/u);
+assert.match(tightCarPack.positive, /If a real side, rear or windshield slice naturally enters the frame/u);
+
+const streetPack = buildPromptPack({
+  ...DEFAULT_STATE,
+  scene:"street",
+  time:"day",
+  poseFamily:"street",
+  pose:"street-standing",
+  lighting:"street-day-open-shade",
+  clothing:"tee-black",
+  composition:"medium",
+  selfieAngle:"three-quarter"
+});
+assert.equal(getBackgroundVisibility(streetPack.state), "open");
+assert.match(streetPack.positive, /richer but still secondary real-world background/u);
+assert.match(streetPack.positive, /varied cars and sparse people only where geometry supports them/u);
+assert.match(streetPack.negative, /pedestrians staring at selfie camera/u);
+assert.match(streetPack.negative, /background vehicles at impossible scale/u);
 
 const carDirectSun = getLightingOptions("rangeRover", "day").find((item) => /direct sun/i.test(item.text));
 assert.ok(carDirectSun, "Car daylight options must include direct sun");
@@ -228,5 +293,6 @@ console.log("✓ WikiPrompt-first selfie engine passed");
 console.log("✓ expanded clothing, hair, lighting and pose catalogs passed");
 console.log("✓ pose/angle/composition/window contradiction guards passed");
 console.log("✓ car seat selection and driver/passenger geometry locks passed");
+console.log("✓ angle-aware Saudi street, car and pedestrian background realism passed");
 console.log("✓ close-crop pruning and hard-light exposure guards passed");
 console.log("✓ WikiPrompt local + fallback integration passed");
