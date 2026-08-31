@@ -61,6 +61,19 @@ const compact = (parts) =>
     .filter(Boolean)
     .join(", ");
 
+const XIAOMI_15_ULTRA_FRONT_CAMERA = [
+  "Xiaomi 15 Ultra front camera only",
+  "32MP OV32B",
+  "21mm-equivalent f/2.0 perspective",
+  "approximately 90-degree field of view",
+  "natural Xiaomi front-camera color rendering",
+  "restrained saturation",
+  "realistic automatic white balance",
+  "phone held at a physically possible 40–70 cm arm reach",
+  "no floating camera",
+  "no impossible selfie geometry"
+];
+
 const PHONE_CAMERA_SKIN_REALISM = [
   "raw unedited photo",
   "natural phone-camera skin rendering",
@@ -207,7 +220,7 @@ function buildCameraGeometry(state) {
   const composition = optionText(COMPOSITION_OPTIONS, state.composition);
   if (state.mode === "selfie") {
     return compact([
-      CAMERA.selfie,
+      XIAOMI_15_ULTRA_FRONT_CAMERA,
       optionText(SELFIE_ANGLE_OPTIONS, state.selfieAngle),
       composition,
       "front-camera perspective must match the stated arm reach; the phone and arm may be outside the frame only when their geometry remains physically possible"
@@ -220,6 +233,15 @@ function buildCameraGeometry(state) {
   ]);
 }
 
+function buildBedroomWindowCue(state) {
+  const selected = optionText(getBedroomWindowOptions(state.time), state.bedroomWindow);
+  if (!isTextRoomReference(state.scene)) return selected;
+  if (state.bedroomWindow === "day-sheer") {
+    return "the existing charcoal floor-to-ceiling curtains are partly drawn at the window, allowing daylight to diffuse into broad soft gradients across the bedding and floor; preserve the fixed charcoal curtain material and do not invent white sheer curtains";
+  }
+  return selected;
+}
+
 function buildContextPhysics(state) {
   const city = optionText(CITIES, state.city, "Saudi Arabia");
   const scene = getScene(state.scene);
@@ -229,7 +251,7 @@ function buildContextPhysics(state) {
   const activity = cleanText(state.activity);
   const bedroomSpecific = isBedroomScene(state.scene)
     ? compact([
-      optionText(getBedroomWindowOptions(state.time), state.bedroomWindow),
+      buildBedroomWindowCue(state),
       cleanText(state.bedroomDetail) && `bedroom-specific detail: ${cleanText(state.bedroomDetail)}`
     ])
     : "";
