@@ -72,6 +72,8 @@ assert.match(rightSidePack.positive, /subject physically holds the phone/u);
 assert.match(rightSidePack.positive, /21mm-equivalent f\/2\.0/u);
 assert.match(rightSidePack.positive, /SELFIE PRIORITY/u);
 assert.match(rightSidePack.positive, /does NOT require every listed item to appear/u);
+assert.match(rightSidePack.positive, /Do not force height, weight, hands, legs or full-body visibility/u);
+assert.doesNotMatch(rightSidePack.positive, /183 cm and 82 kg/u, "Close crops must not carry irrelevant full-body dimensions");
 assert.doesNotMatch(rightSidePack.positive, /Leica Authentic|23mm-equivalent|sheer white curtains|phone and person visible in reflection/u);
 assert.doesNotMatch(rightSidePack.positive, /rug pile compressed where seated|overhead shots cast the phone's shadow/u);
 
@@ -86,12 +88,32 @@ const carPack = buildPromptPack({
   poseFamily:"car",
   pose:"car-driver-side",
   lighting:"car-night-parking-led",
-  clothing:"thobe-white"
+  clothing:"thobe-white",
+  messiness:"busy"
 });
 assert.match(carPack.positive, /fully stationary and safely parked/u);
 assert.match(carPack.positive, /left-hand-drive/u);
 assert.match(carPack.positive, /supporting context only/u);
+assert.match(carPack.positive, /do not invent loose clutter/u);
+assert.match(carPack.positive, /never duplicate controls/u);
 assert.match(carPack.negative, /moving vehicle/u);
+assert.match(carPack.negative, /invented cabin clutter/u);
+
+const carDirectSun = getLightingOptions("rangeRover", "day").find((item) => /direct sun/i.test(item.text));
+assert.ok(carDirectSun, "Car daylight options must include direct sun");
+const carDirectSunPack = buildPromptPack({
+  ...DEFAULT_STATE,
+  scene:"rangeRover",
+  time:"day",
+  poseFamily:"car",
+  pose:"car-driver-close",
+  lighting:carDirectSun.value,
+  clothing:"tee-black",
+  composition:"close"
+});
+assert.match(carDirectSunPack.positive, /Do not flatten the contrast with HDR/u);
+assert.match(carDirectSunPack.positive, /exterior highlights may clip/u);
+assert.doesNotMatch(carDirectSunPack.positive, /183 cm and 82 kg/u);
 
 const localRecords = [
   {
@@ -128,9 +150,9 @@ const guidance = await wiki.sync({
   composition:"close",
   selfieAngle:"eye"
 });
-assert.match(guidance, /^Apply physically compatible candid-smartphone realism cues:/u);
+assert.match(guidance, /^Use WikiPrompt only as a realism calibration layer:/u);
 assert.doesNotMatch(guidance, /Cinematic 16K studio render/u);
-assert.ok(guidance.length < 600);
+assert.ok(guidance.length < 400);
 assert.equal(wiki.getStatus().state, "synced");
 
 const blockedFetch = async () => { throw new TypeError("Failed to fetch"); };
@@ -143,10 +165,11 @@ const fallbackGuidance = await fallbackWiki.sync({
   pose:{ id:"lying-right-close" },
   lighting:{ id:"day-soft-window" }
 });
-assert.match(fallbackGuidance, /^Apply physically compatible candid-smartphone realism cues:/u);
+assert.match(fallbackGuidance, /^Use WikiPrompt only as a realism calibration layer:/u);
 assert.equal(fallbackWiki.getStatus().state, "synced-fallback");
 
 console.log("✓ WikiPrompt-first selfie engine passed");
 console.log("✓ expanded clothing, hair, lighting and pose catalogs passed");
 console.log("✓ pose/angle/composition/window contradiction guards passed");
+console.log("✓ close-crop pruning and hard-light exposure guards passed");
 console.log("✓ WikiPrompt local + fallback integration passed");
