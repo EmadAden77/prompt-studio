@@ -3,10 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="WikiPrompt Selfie Studio: مولّد برومبتات سيلفي واقعية بمرجع هوية واحد."
-    />
+    <meta name="description" content="WikiPrompt Selfie Studio: مولّد برومبتات سيلفي واقعية بمرجع هوية واحد." />
     <meta name="theme-color" content="#0b1020" />
     <title>WikiPrompt Selfie Studio</title>
     <link rel="stylesheet" href="styles-v2.css" />
@@ -18,10 +15,7 @@
         <div>
           <p class="eyebrow">WIKIPROMPT FIRST · SELFIE FIRST · SINGLE REFERENCE</p>
           <h1>WikiPrompt Selfie Studio</h1>
-          <p class="hero-copy">
-            مولّد برومبتات يضع واقعية WikiPrompt في الأساس، ثم يثبت الهوية وهندسة السيلفي
-            والوضعية والإضاءة. الخلفية مجرد سياق مساعد ولا يُجبر أي عنصر خارج الكادر على الظهور.
-          </p>
+          <p class="hero-copy">مولّد برومبتات يضع واقعية WikiPrompt في الأساس، ثم يثبت الهوية وهندسة السيلفي والوضعية والإضاءة. الخلفية مجرد سياق مساعد ولا يُجبر أي عنصر خارج الكادر على الظهور.</p>
         </div>
         <div class="privacy-card">
           <span class="privacy-icon" aria-hidden="true">◉</span>
@@ -36,263 +30,95 @@
         <input id="mode" name="mode" type="hidden" value="selfie" />
 
         <section class="panel reference-panel" aria-labelledby="reference-title">
-          <div class="section-heading">
-            <div>
-              <span class="section-number">01</span>
-              <h2 id="reference-title">الهوية المرجعية</h2>
-            </div>
-            <p>صورة شخص واحدة هي المرجع الوحيد للوجه وخط الشعر وكثافته واللحية والعمر الظاهر.</p>
-          </div>
-
+          <div class="section-heading"><div><span class="section-number">01</span><h2 id="reference-title">الهوية المرجعية</h2></div><p>صورة شخص واحدة هي المرجع الوحيد للوجه وخط الشعر وكثافته واللحية والعمر الظاهر.</p></div>
           <div class="reference-layout">
             <label class="drop-zone" for="reference-image">
               <input id="reference-image" type="file" accept="image/*" />
               <span class="drop-zone-icon" aria-hidden="true">+</span>
-              <strong>اختر صورة الهوية</strong>
-              <small>مرجع واحد فقط.</small>
+              <strong>اختر صورة الهوية</strong><small>مرجع واحد فقط.</small>
             </label>
-
             <div class="reference-preview-wrap" id="reference-preview-wrap" hidden>
               <img id="reference-preview" alt="معاينة الصورة المرجعية" />
-              <button class="secondary-button compact-button" type="button" id="remove-reference">
-                إزالة الصورة
-              </button>
+              <button class="secondary-button compact-button" type="button" id="remove-reference">إزالة الصورة</button>
             </div>
-
             <label class="field field-wide" for="identity-notes">
               <span>ملاحظات هوية اختيارية</span>
-              <textarea
-                id="identity-notes"
-                rows="4"
-                placeholder="مثال: فروة الرأس ظاهرة قليلًا، لا تزد كثافة الشعر، حافظ على فراغات اللحية وعدم تماثل الوجه الطبيعي."
-              ></textarea>
+              <textarea id="identity-notes" rows="4" placeholder="مثال: فروة الرأس ظاهرة قليلًا، لا تزد كثافة الشعر، حافظ على فراغات اللحية وعدم تماثل الوجه الطبيعي."></textarea>
               <small>الملاحظة تقيد المرجع ولا تستبدله.</small>
             </label>
           </div>
         </section>
 
         <section class="panel priority-panel" aria-labelledby="selfie-title">
-          <div class="section-heading">
-            <div>
-              <span class="section-number">02</span>
-              <h2 id="selfie-title">السيلفي والوضعية</h2>
-            </div>
-            <p id="template-hint" aria-live="polite"></p>
-          </div>
-
-          <div class="selfie-guidance" role="note">
-            هذه هي الطبقة الأعلى أولوية بعد الهوية. كل الخيارات هنا مترابطة: المكان يرشّح عائلة الوضعية،
-            والوضعية تقيد زاوية الهاتف والتكوين حتى تبقى مسافة الذراع والمنظور ممكنين فعلياً.
-          </div>
-
+          <div class="section-heading"><div><span class="section-number">02</span><h2 id="selfie-title">السيلفي والوضعية</h2></div><p id="template-hint" aria-live="polite"></p></div>
+          <div class="selfie-guidance" role="note">هذه هي الطبقة الأعلى أولوية بعد الهوية. كل الخيارات هنا مترابطة: المكان يرشّح عائلة الوضعية، والوضعية تقيد زاوية الهاتف والتكوين حتى تبقى مسافة الذراع والمنظور ممكنين فعلياً.</div>
           <div class="form-grid">
-            <label class="field" for="scene">
-              <span>السياق</span>
-              <select id="scene" name="scene"></select>
+            <label class="field" for="scene"><span>السياق</span><select id="scene" name="scene"></select></label>
+
+            <label class="field field-span-2" id="custom-scene-field" for="custom-scene" hidden>
+              <span>وصف المشهد المخصص</span>
+              <textarea id="custom-scene" name="customScene" rows="3" placeholder="مثال: داخل محل نظارات طبي حديث في السعودية، أو داخل بقالة صغيرة في حي سكني."></textarea>
+              <small>اكتب المكان نفسه. المحرك يحوله إلى بيئة واقعية ويحافظ على السيلفي كعنصر أساسي.</small>
             </label>
 
-            <label class="field" for="pose-family">
-              <span>عائلة الوضعية</span>
-              <select id="pose-family" name="poseFamily"></select>
+            <label class="field field-span-2" id="custom-scene-details-field" for="custom-scene-details" hidden>
+              <span>تفاصيل مطلوبة إذا سمحت الزاوية</span>
+              <input id="custom-scene-details" name="customSceneDetails" type="text" placeholder="اختياري: رف نظارات، مرآة صغيرة، موظف واحد بالخلفية." />
+              <small>لا تُجبر هذه العناصر على الظهور إذا لم يسمح الكادر أو المنظور.</small>
             </label>
 
-            <label class="field field-span-2" for="pose">
-              <span>الوضعية</span>
-              <select id="pose" name="pose"></select>
-              <small>لا يُطلب من الخلفية أكثر مما يحتاجه هذا السيلفي.</small>
-            </label>
-
-            <label class="field field-span-2" id="car-seat-field" for="car-seat" hidden>
-              <span>موضع الجلوس داخل السيارة</span>
-              <select id="car-seat" name="carSeat"></select>
-              <small>يربط موضع الجسم بمنظور المقصورة فعلياً. وضعيات «السائق» تقفل تلقائياً على مقعد السائق الأيسر.</small>
-            </label>
-
-            <label class="field" for="selfie-angle">
-              <span>زاوية السيلفي المتوافقة</span>
-              <select id="selfie-angle" name="selfieAngle"></select>
-            </label>
-
-            <label class="field" for="composition">
-              <span>التكوين المتوافق</span>
-              <select id="composition" name="composition"></select>
-            </label>
-
-            <div class="field field-span-2 selfie-camera-lock" aria-label="قفل الكاميرا">
-              <span>الكاميرا</span>
-              <div class="readonly-card">
-                Xiaomi 15 Ultra · Front Camera · 21mm eq · f/2.0 · subject-held only
-              </div>
-              <small>لا توجد كاميرا مراقب أو تصوير عادي في المسار الرئيسي.</small>
-            </div>
+            <label class="field" for="pose-family"><span>عائلة الوضعية</span><select id="pose-family" name="poseFamily"></select></label>
+            <label class="field field-span-2" for="pose"><span>الوضعية</span><select id="pose" name="pose"></select><small>لا يُطلب من الخلفية أكثر مما يحتاجه هذا السيلفي.</small></label>
+            <label class="field field-span-2" id="car-seat-field" for="car-seat" hidden><span>موضع الجلوس داخل السيارة</span><select id="car-seat" name="carSeat"></select><small>يربط موضع الجسم بمنظور المقصورة فعلياً. وضعيات «السائق» تقفل تلقائياً على مقعد السائق الأيسر.</small></label>
+            <label class="field" for="selfie-angle"><span>زاوية السيلفي المتوافقة</span><select id="selfie-angle" name="selfieAngle"></select></label>
+            <label class="field" for="composition"><span>التكوين المتوافق</span><select id="composition" name="composition"></select></label>
+            <div class="field field-span-2 selfie-camera-lock" aria-label="قفل الكاميرا"><span>الكاميرا</span><div class="readonly-card">Xiaomi 15 Ultra · Front Camera · 21mm eq · f/2.0 · subject-held only</div><small>لا توجد كاميرا مراقب أو تصوير عادي في المسار الرئيسي.</small></div>
           </div>
         </section>
 
         <section class="panel" aria-labelledby="appearance-title">
-          <div class="section-heading">
-            <div>
-              <span class="section-number">03</span>
-              <h2 id="appearance-title">الملابس والشعر والمظهر</h2>
-            </div>
-            <p>تتغير التسريحة بإعادة ترتيب الشعر الموجود فقط. لا زيادة للكثافة ولا ملء للفراغات.</p>
-          </div>
-
+          <div class="section-heading"><div><span class="section-number">03</span><h2 id="appearance-title">الملابس والشعر والمظهر</h2></div><p>تتغير التسريحة بإعادة ترتيب الشعر الموجود فقط. لا زيادة للكثافة ولا ملء للفراغات.</p></div>
           <div class="form-grid">
-            <label class="field field-span-2" for="clothing">
-              <span>الملابس</span>
-              <select id="clothing" name="clothing"></select>
-            </label>
-
-            <label class="field field-span-2" for="clothing-custom">
-              <span>تفصيل إضافي للملابس</span>
-              <input
-                id="clothing-custom"
-                name="clothingCustom"
-                type="text"
-                placeholder="اختياري: لون أو تفصيل بسيط فقط، مثال: بدون شعارات، قماش أسود مطفي."
-              />
-              <small>إذا تعارض التفصيل مع نوع اللباس أو الوضعية يتجاهله المحرك.</small>
-            </label>
-
-            <label class="field field-span-2" for="hair">
-              <span>تسريحة الشعر مع تثبيت الكثافة الأصلية</span>
-              <select id="hair" name="hair"></select>
-            </label>
-
-            <label class="field" for="skin">
-              <span>حالة البشرة</span>
-              <select id="skin" name="skin"></select>
-            </label>
-
-            <label class="field" for="expression">
-              <span>التعبير</span>
-              <select id="expression" name="expression"></select>
-            </label>
+            <label class="field field-span-2" for="clothing"><span>الملابس</span><select id="clothing" name="clothing"></select></label>
+            <label class="field field-span-2" for="clothing-custom"><span>تفصيل إضافي للملابس</span><input id="clothing-custom" name="clothingCustom" type="text" placeholder="اختياري: لون أو تفصيل بسيط فقط، مثال: بدون شعارات، قماش أسود مطفي." /><small>إذا تعارض التفصيل مع نوع اللباس أو الوضعية يتجاهله المحرك.</small></label>
+            <label class="field field-span-2" for="hair"><span>تسريحة الشعر مع تثبيت الكثافة الأصلية</span><select id="hair" name="hair"></select></label>
+            <label class="field" for="skin"><span>حالة البشرة</span><select id="skin" name="skin"></select></label>
+            <label class="field" for="expression"><span>التعبير</span><select id="expression" name="expression"></select></label>
           </div>
         </section>
 
         <section class="panel lighting-panel" aria-labelledby="lighting-title">
-          <div class="section-heading">
-            <div>
-              <span class="section-number">04</span>
-              <h2 id="lighting-title">الإضاءة الفيزيائية</h2>
-            </div>
-            <p>الليل والنهار لهما خيارات منفصلة. مصدر الضوء المختار هو الذي يحكم الظلال والـcatchlights والتعريض.</p>
-          </div>
-
+          <div class="section-heading"><div><span class="section-number">04</span><h2 id="lighting-title">الإضاءة الفيزيائية</h2></div><p>الليل والنهار لهما خيارات منفصلة. مصدر الضوء المختار هو الذي يحكم الظلال والـcatchlights والتعريض.</p></div>
           <div class="form-grid">
-            <label class="field" for="time">
-              <span>الوقت</span>
-              <select id="time" name="time">
-                <option value="night">ليلاً</option>
-                <option value="day">نهاراً</option>
-              </select>
-            </label>
-
-            <label class="field field-span-2" for="lighting">
-              <span>الإضاءة</span>
-              <select id="lighting" name="lighting"></select>
-            </label>
-
-            <label class="field" id="bedroom-window-field" for="bedroom-window" hidden>
-              <span>النافذة / الستائر</span>
-              <select id="bedroom-window" name="bedroomWindow"></select>
-            </label>
+            <label class="field" for="time"><span>الوقت</span><select id="time" name="time"><option value="night">ليلاً</option><option value="day">نهاراً</option></select></label>
+            <label class="field field-span-2" for="lighting"><span>الإضاءة</span><select id="lighting" name="lighting"></select></label>
+            <label class="field" id="bedroom-window-field" for="bedroom-window" hidden><span>النافذة / الستائر</span><select id="bedroom-window" name="bedroomWindow"></select></label>
           </div>
         </section>
 
         <section class="panel context-secondary-panel" aria-labelledby="context-title">
-          <div class="section-heading">
-            <div>
-              <span class="section-number">05</span>
-              <h2 id="context-title">الخلفية الاختيارية</h2>
-            </div>
-            <p>هذه التفاصيل أقل أولوية. يكفي أن تلمّح للمكان؛ ليس مطلوباً إظهار كامل الغرفة أو السيارة أو الشارع.</p>
-          </div>
-
+          <div class="section-heading"><div><span class="section-number">05</span><h2 id="context-title">الخلفية الاختيارية</h2></div><p>هذه التفاصيل أقل أولوية. يكفي أن تلمّح للمكان؛ ليس مطلوباً إظهار كامل الغرفة أو السيارة أو الشارع.</p></div>
           <div class="form-grid">
-            <label class="field" for="city">
-              <span>المدينة</span>
-              <select id="city" name="city">
-                <option value="riyadh">الرياض</option>
-                <option value="jeddah">جدة</option>
-                <option value="dammam">الدمام</option>
-                <option value="other">مدينة سعودية أخرى</option>
-              </select>
-            </label>
-
-            <label class="field" for="messiness">
-              <span>كثافة تفاصيل الخلفية</span>
-              <select id="messiness" name="messiness">
-                <option value="minimal">بسيطة</option>
-                <option value="natural" selected>طبيعية</option>
-                <option value="busy">أكثر ازدحاماً</option>
-              </select>
-            </label>
-
-            <label class="field field-span-2" for="environment-note">
-              <span>ملاحظة سياق اختيارية</span>
-              <input
-                id="environment-note"
-                name="environmentNote"
-                type="text"
-                placeholder="مثال: قرب النافذة، موقف مول، جانب السرير. تُطبق فقط إذا كانت متوافقة مع الوضعية والإضاءة."
-              />
-            </label>
+            <label class="field" for="city"><span>المدينة</span><select id="city" name="city"><option value="riyadh">الرياض</option><option value="jeddah">جدة</option><option value="dammam">الدمام</option><option value="other">مدينة سعودية أخرى</option></select></label>
+            <label class="field" for="messiness"><span>كثافة تفاصيل الخلفية</span><select id="messiness" name="messiness"><option value="minimal">بسيطة</option><option value="natural" selected>طبيعية</option><option value="busy">أكثر ازدحاماً</option></select></label>
+            <label class="field field-span-2" for="environment-note"><span>ملاحظة سياق اختيارية</span><input id="environment-note" name="environmentNote" type="text" placeholder="مثال: قرب النافذة، موقف مول، جانب السرير. تُطبق فقط إذا كانت متوافقة مع الوضعية والإضاءة." /></label>
           </div>
         </section>
 
-        <div class="action-row">
-          <button class="primary-button" type="submit">توليد برومبت WikiPrompt Selfie</button>
-          <button class="secondary-button" type="button" id="reset-form">إعادة الضبط</button>
-          <span class="form-status" id="form-status" role="status" aria-live="polite"></span>
-        </div>
+        <div class="action-row"><button class="primary-button" type="submit">توليد برومبت WikiPrompt Selfie</button><button class="secondary-button" type="button" id="reset-form">إعادة الضبط</button><span class="form-status" id="form-status" role="status" aria-live="polite"></span></div>
       </form>
 
       <section class="result-panel" id="result-panel" aria-labelledby="result-title">
-        <div class="result-heading">
-          <div>
-            <p class="eyebrow">WIKIPROMPT-FIRST OUTPUT</p>
-            <h2 id="result-title">البرومبت النهائي</h2>
-            <p id="result-meta"></p>
-          </div>
-          <div class="result-actions">
-            <button class="secondary-button" type="button" id="copy-pack">نسخ الحزمة</button>
-            <button class="secondary-button" type="button" id="download-prompt">تنزيل TXT</button>
-          </div>
-        </div>
-
+        <div class="result-heading"><div><p class="eyebrow">WIKIPROMPT-FIRST OUTPUT</p><h2 id="result-title">البرومبت النهائي</h2><p id="result-meta"></p></div><div class="result-actions"><button class="secondary-button" type="button" id="copy-pack">نسخ الحزمة</button><button class="secondary-button" type="button" id="download-prompt">تنزيل TXT</button></div></div>
         <div class="output-grid">
-          <label class="output-field" for="positive-prompt">
-            <span>POSITIVE PROMPT</span>
-            <textarea id="positive-prompt" rows="22" readonly></textarea>
-            <button class="secondary-button output-copy" type="button" id="copy-positive">نسخ</button>
-          </label>
-
-          <label class="output-field" for="negative-prompt">
-            <span>NEGATIVE PROMPT</span>
-            <textarea id="negative-prompt" rows="12" readonly></textarea>
-            <button class="secondary-button output-copy" type="button" id="copy-negative">نسخ</button>
-          </label>
+          <label class="output-field" for="positive-prompt"><span>POSITIVE PROMPT</span><textarea id="positive-prompt" rows="22" readonly></textarea><button class="secondary-button output-copy" type="button" id="copy-positive">نسخ</button></label>
+          <label class="output-field" for="negative-prompt"><span>NEGATIVE PROMPT</span><textarea id="negative-prompt" rows="12" readonly></textarea><button class="secondary-button output-copy" type="button" id="copy-negative">نسخ</button></label>
         </div>
-
-        <div class="qa-block">
-          <div class="qa-heading">
-            <div>
-              <p class="eyebrow">REALISM QA</p>
-              <h3>فحص الترابط</h3>
-            </div>
-            <small>الهوية والسيلفي والوضعية والإضاءة أعلى من الخلفية.</small>
-          </div>
-          <ul id="qa-list"></ul>
-        </div>
+        <div class="qa-block"><div class="qa-heading"><div><p class="eyebrow">REALISM QA</p><h3>فحص الترابط</h3></div><small>الهوية والسيلفي والوضعية والإضاءة أعلى من الخلفية.</small></div><ul id="qa-list"></ul></div>
       </section>
 
-      <template id="qa-item-template">
-        <li><strong></strong><span></span></li>
-      </template>
+      <template id="qa-item-template"><li><strong></strong><span></span></li></template>
     </main>
-
     <script type="module" src="js/physics-app-v5.js"></script>
   </body>
 </html>
