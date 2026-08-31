@@ -32,6 +32,16 @@ export class WikiPromptService {
     this.fetchImpl = fetchImpl;
     this.cache = new Map();
     this.pending = new Map();
+    this.lastStatus = { state:"idle", message:"WikiPrompt not checked yet", at:null };
+  }
+
+  setStatus(state, message, details = null) {
+    this.lastStatus = { state, message, details, at:new Date().toISOString() };
+    return this.lastStatus;
+  }
+
+  getStatus() {
+    return { ...this.lastStatus };
   }
 
   buildQueries(config = {}) {
@@ -67,27 +77,49 @@ export class WikiPromptService {
 
   normalizePayload(payload) {
     if (Array.isArray(payload)) return payload;
-    return payload?.prompts || payload?.results || payload?.data || payload?.items || [];
+    const candidates = [payload?.prompts, payload?.results, payload?.data, payload?.items];
+    for (const candidate of candidates) {
+      if (Array.isArray(candidate)) return candidate;
+      if (Array.isArray(candidate?.prompts)) return candidate.prompts;
+      if (Array.isArray(candidate?.results)) return candidate.results;
+      if (Array.isArray(candidate?.items)) return candidate.items;
+    }
+    return [];
   }
 
   async search(query, { limit = DEFAULT_LIMIT } = {}) {
-    if (!this.fetchImpl || !query) return [];
+    if (!this.fetchImpl || !query) {
+      this.setStatus("unavailable", "WikiPrompt fetch is unavailable");
+      return [];
+    }
+
     const url = `${this.baseUrl}/api/search?q=${encodeURIComponent(query)}&limit=${Math.min(Math.max(limit, 1), 20)}`;
     try {
-      const response = await this.fetchImpl(url, { headers: { Accept: "application/json" } });
-      if (!response.ok) return [];
+      const response = await this.fetchImpl(url, { headers:{ Accept:"application/json" } });
+      if (!response.ok) {
+        this.setStatus("http-error", `WikiPrompt HTTP ${response.status}`, { url, status:response.status });
+        console.warn("[WikiPrompt] HTTP error", response.status, url);
+        return [];
+      }
+
       const payload = await response.json();
-      return this.normalizePayload(payload)
-        .map((record) => ({ ...record, _realismScore: this.score(record) }))
+      const records = this.normalizePayload(payload)
+        .map((record) => ({ ...record, _realismScore:this.score(record) }))
         .filter((record) => record._realismScore > 0)
         .sort((a, b) => b._realismScore - a._realismScore);
-    } catch {
+
+      this.setStatus(records.length ? "ok" : "empty", records.length ? `WikiPrompt returned ${records.length} usable matches` : "WikiPrompt returned no usable realism matches", { url, count:records.length });
+      return records;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.setStatus("network-error", `WikiPrompt request failed: ${message}`, { url });
+      console.warn("[WikiPrompt] request failed", error, url);
       return [];
     }
   }
 
   async discover(config = {}, { perQuery = 5, maxResults = 8 } = {}) {
-    const batches = await Promise.all(this.buildQueries(config).map((query) => this.search(query, { limit: perQuery })));
+    const batches = await Promise.all(this.buildQueries(config).map((query) => this.search(query, { limit:perQuery })));
     const byKey = new Map();
     for (const record of batches.flat()) {
       const key = record.slug || record.id || record.url || record.title;
@@ -95,7 +127,9 @@ export class WikiPromptService {
       const previous = byKey.get(key);
       if (!previous || (record._realismScore ?? 0) > (previous._realismScore ?? 0)) byKey.set(key, record);
     }
-    return [...byKey.values()].sort((a, b) => b._realismScore - a._realismScore).slice(0, maxResults);
+    const records = [...byKey.values()].sort((a, b) => b._realismScore - a._realismScore).slice(0, maxResults);
+    if (records.length) this.setStatus("ok", `WikiPrompt discovery ready: ${records.length} matches`, { count:records.length });
+    return records;
   }
 
   buildGuidance(records = []) {
@@ -116,20 +150,30 @@ export class WikiPromptService {
     return item.guidance || "";
   }
 
-  sync(config = {}, { onReady } = {}) {
+  sync(config = {}) {
     const key = this.cacheKey(config);
     const cached = this.getCachedGuidance(config);
-    if (cached) return Promise.resolve(cached);
+    if (cached) {
+      this.setStatus("cache", "WikiPrompt guidance loaded from cache", { key });
+      return Promise.resolve(cached);
+    }
     if (this.pending.has(key)) return this.pending.get(key);
 
+    this.setStatus("loading", "Checking WikiPrompt", { key });
     const task = this.discover(config)
       .then((records) => {
         const guidance = this.buildGuidance(records);
-        this.cache.set(key, { guidance, savedAt: Date.now() });
-        if (guidance && typeof onReady === "function") onReady(guidance, records);
+        this.cache.set(key, { guidance, savedAt:Date.now() });
+        if (guidance) this.setStatus("synced", "WikiPrompt guidance synchronized", { key, count:records.length });
+        else if (this.lastStatus.state === "loading") this.setStatus("empty", "WikiPrompt produced no guidance", { key });
         return guidance;
       })
-      .catch(() => "")
+      .catch((error) => {
+        const message = error instanceof Error ? error.message : String(error);
+        this.setStatus("error", `WikiPrompt synchronization failed: ${message}`, { key });
+        console.warn("[WikiPrompt] synchronization failed", error);
+        return "";
+      })
       .finally(() => this.pending.delete(key));
 
     this.pending.set(key, task);
@@ -138,51 +182,3 @@ export class WikiPromptService {
 }
 
 export const wikiPromptService = new WikiPromptService();
-
-// Automatic bridge: patch App.engineer before the App instance is created.
-// First render is immediate/local. WikiPrompt then refreshes the same prompt
-// asynchronously only when the scene/pose/lighting selection is still current.
-function installAutomaticBridge() {
-  const AppClass = globalThis.App;
-  if (!AppClass?.prototype || AppClass.prototype.__wikiPromptBridgeInstalled) return;
-
-  const originalEngineer = AppClass.prototype.engineer;
-  if (typeof originalEngineer !== "function") return;
-
-  Object.defineProperty(AppClass.prototype, "__wikiPromptBridgeInstalled", { value:true });
-
-  AppClass.prototype.engineer = function wikiPromptAwareEngineer(options = {}) {
-    const result = originalEngineer.call(this, options);
-    const config = this.currentConfig;
-    if (!config || !this.promptEngine) return result;
-
-    const expectedKey = wikiPromptService.cacheKey(config);
-    const cached = wikiPromptService.getCachedGuidance(config);
-    if (cached) {
-      config.wikiPromptGuidance = cached;
-      this.currentPrompt = this.promptEngine.generateV2(config);
-      this.renderPrompt?.(this.currentPrompt);
-      if (options.persistHistory !== false) this.saveToHistory?.(this.currentPrompt);
-      return this.currentPrompt;
-    }
-
-    wikiPromptService.sync(config, {
-      onReady: (guidance) => {
-        if (!guidance || !this.currentConfig) return;
-        if (wikiPromptService.cacheKey(this.currentConfig) !== expectedKey) return;
-        this.currentConfig.wikiPromptGuidance = guidance;
-        this.currentPrompt = this.promptEngine.generateV2(this.currentConfig);
-        this.renderPrompt?.(this.currentPrompt);
-        this.renderFavoriteState?.();
-        if (options.persistHistory !== false) this.saveToHistory?.(this.currentPrompt);
-        this.setStatus?.("تم تحديث البرومبت بقواعد WikiPrompt الواقعية");
-      }
-    });
-
-    return result;
-  };
-}
-
-if (typeof document !== "undefined") {
-  document.addEventListener("DOMContentLoaded", installAutomaticBridge, { once:true });
-}
