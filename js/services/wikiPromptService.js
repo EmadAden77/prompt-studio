@@ -161,7 +161,7 @@ export class WikiPromptService {
 
   buildGuidance(records = []) {
     if (!records.length) return "";
-    return "Apply physically compatible candid-smartphone realism cues: natural arm-length front-camera perspective, slight handheld imperfection, realistic auto-exposure behavior, subtle sensor noise, ordinary skin texture, minor natural asymmetry, plausible fabric folds, and natural practical-light response. Do not alter identity, scene, camera geometry, vehicle or room geometry, or lighting.";
+    return "Use WikiPrompt only as a realism calibration layer: favor candid front-camera behavior, ordinary imperfection and physically coherent context. Do not restate or override the engine's identity, camera, pose, lighting, vehicle, room or anatomy rules.";
   }
 
   getCachedGuidance(config = {}) {
