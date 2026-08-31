@@ -56,37 +56,39 @@ assert.match(phonePrompt, /UNLIT decorative prop emitting ZERO light/u);
 assert.deepEqual(Object.keys(QUICK_FIXES), ["face_drift","arm_leak","light_leak","seat_mess","bg_cleaner"]);
 for (const value of Object.values(QUICK_FIXES)) assert.ok(value.length > 80, "Every quick fix must contain an actionable correction block");
 
+// Deployment contract for the currently active GitHub Pages application.
 const index = readFileSync(resolve(root, "index.html"), "utf8");
-assert.doesNotMatch(index, /SMART QUAD GUIDE|SINGLE MASTER GUIDE|id="helpDialog"|class="brand"|brand__mark/u);
-assert.match(index, /id="poseFirstBtn"/u);
-assert.match(index, /id="refFirstBtn"/u);
-assert.match(index, /id="attachChip"/u);
-assert.match(index, /id="confBadge"/u);
-assert.match(index, /id="strictLine"/u);
-assert.match(index, /data-fix="face_drift"/u);
-assert.match(index, /data-fix="arm_leak"/u);
-assert.match(index, /data-fix="light_leak"/u);
-assert.match(index, /data-fix="seat_mess"/u);
-assert.match(index, /data-fix="bg_cleaner"/u);
-assert.match(index, /id="sessionBtn"/u);
-assert.match(index, /id="historyBtn"/u);
-assert.match(index, /id="favBtn"/u);
-assert.match(index, /لا تزوير EXIF، لا إزالة C2PA، ولا محاكاة PRNU/u);
-assert.ok(index.indexOf("js/engines/realismLocks.js") < index.indexOf("js/app.js"), "realismLocks must load before the controller");
+assert.match(index, /id="prompt-form"/u);
+assert.match(index, /id="reference-image"/u);
+assert.match(index, /id="scene"/u);
+assert.match(index, /id="time"/u);
+assert.match(index, /id="mode"/u);
+assert.match(index, /id="composition"/u);
+assert.match(index, /id="selfie-angle"/u);
+assert.match(index, /id="positive-prompt"/u);
+assert.match(index, /id="negative-prompt"/u);
+assert.match(index, /id="qa-list"/u);
+assert.match(index, /id="form-status"/u);
+assert.match(index, /<script type="module" src="js\/physics-app-v5\.js"><\/script>/u);
+assert.doesNotMatch(index, /src="js\/app\.js"/u, "The retired controller must not be the live root entrypoint");
 
-const app = readFileSync(resolve(root, "js/app.js"), "utf8");
-for (const key of ["prompt_history", "prompt_favorites", "prompt_last5", "SESSION BREAK", "quickFix", "buildSession", "toggleFavorite", "showHistory", "referenceFirst", "poseFirst"]) {
-  assert.match(app, new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "u"));
+const physicsApp = readFileSync(resolve(root, "js/physics-app-v5.js"), "utf8");
+assert.match(physicsApp, /wikiPromptService/u);
+assert.match(physicsApp, /wikiPromptService\.sync\(config\)/u);
+assert.match(physicsApp, /appendWikiGuidance/u);
+assert.match(physicsApp, /wikiStatusText/u);
+
+const wikiService = readFileSync(resolve(root, "js/services/wikiPromptService.js"), "utf8");
+assert.match(wikiService, /new URL\("\.\.\/\.\.\/data\/wikiprompt-realism\.json", import\.meta\.url\)\.href/u);
+assert.doesNotMatch(wikiService, /document\.baseURI/u, "WikiPrompt service must remain import-safe in Node tests");
+assert.match(wikiService, /same-origin-local-json/u);
+
+const wikiDataset = JSON.parse(readFileSync(resolve(root, "data/wikiprompt-realism.json"), "utf8"));
+assert.ok(Array.isArray(wikiDataset.records) && wikiDataset.records.length > 0, "WikiPrompt local realism cache must contain records");
+for (const record of wikiDataset.records) {
+  assert.ok(record.title, "Every WikiPrompt metadata record needs a title");
+  assert.ok(Array.isArray(record.tags), "Every WikiPrompt metadata record needs tags");
 }
-assert.match(app, /if \(key === "n"\)/u);
-assert.match(app, /else if \(key === "c"\)/u);
-assert.match(app, /else if \(key === "r"\)/u);
-assert.match(app, /else if \(key === "f"\)/u);
-assert.match(app, /else if \(key === "h"\)/u);
-assert.match(app, /\^\[1-5\]\$/u);
-assert.match(app, /slice\(0, 50\)/u);
-assert.match(app, /renderAttachChip/u);
-assert.match(app, /renderConfidence/u);
 
 const changelog = readFileSync(resolve(root, "CHANGELOG.md"), "utf8");
 assert.match(changelog, /## v2\.0-personal — 2026-08-28/u);
@@ -94,4 +96,4 @@ assert.match(changelog, /## v2\.0-personal — 2026-08-28/u);
 const car = readFileSync(resolve(root, "car.html"), "utf8");
 assert.doesNotMatch(car, /prompt_personal_flow|historyDialog|quickFix/u, "Personal home tooling must not leak into frozen car.html");
 
-console.log("✓ prompt-studio v2.0-personal deployment contract passed");
+console.log("✓ prompt-studio active Physics v5 deployment contract passed");
