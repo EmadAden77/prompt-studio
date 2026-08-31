@@ -90,7 +90,7 @@ const carPack = buildPromptPack({
 });
 assert.match(carPack.positive, /fully stationary and safely parked/u);
 assert.match(carPack.positive, /left-hand-drive/u);
-assert.match(carPack.positive, /secondary context/u);
+assert.match(carPack.positive, /supporting context only/u);
 assert.match(carPack.negative, /moving vehicle/u);
 
 const localRecords = [
