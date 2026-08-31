@@ -1,0 +1,29 @@
+{
+  "source": "Wikiprompt",
+  "source_url": "https://www.wikiprompt.org/",
+  "updated_at": "2026-08-31",
+  "note": "Local metadata-only realism cache. Prompt bodies are intentionally not redistributed.",
+  "records": [
+    {
+      "slug": "realistic-selfie-image-prompt-generator-system-prompt",
+      "title": "Realistic selfie image-prompt generator system prompt",
+      "description": "Activity-driven realistic smartphone and lifestyle prompt methodology emphasizing contextual consistency, authentic imperfections, natural actions, simple camera language and physically appropriate scene details.",
+      "tags": ["realistic-photography", "selfie-prompts", "lifestyle-photography", "authenticity", "smartphone", "activity-driven", "natural"],
+      "url": "https://www.wikiprompt.org/realistic-selfie-image-prompt-generator-system-prompt"
+    },
+    {
+      "slug": "casual-living-room-selfie-identity-preserving-prompt",
+      "title": "Casual living-room selfie identity-preserving prompt",
+      "description": "Identity-preserving candid smartphone selfie guidance using relaxed posture, eye-level arm-length perspective, natural daylight, realistic skin texture, fabric folds and subtle imperfections.",
+      "tags": ["photography", "selfie", "identity-reference", "natural-light", "candid", "smartphone", "photorealistic"],
+      "url": "https://www.wikiprompt.org/casual-living-room-selfie-identity-preserving-prompt"
+    },
+    {
+      "slug": "authentic-handheld-selfie-vlog-day-off-video-with-korean-dia",
+      "title": "Authentic handheld selfie-vlog day-off",
+      "description": "Handheld front-camera realism reference emphasizing identity consistency, everyday casual context, natural light and deliberately imperfect camera behavior.",
+      "tags": ["selfie-vlog", "handheld-camera", "authentic", "photorealistic", "natural-light", "identity"],
+      "url": "https://www.wikiprompt.org/authentic-handheld-selfie-vlog-day-off-video-with-korean-dia"
+    }
+  ]
+}
