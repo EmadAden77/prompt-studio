@@ -15,6 +15,7 @@ import {
   getSkinOptions,
   isBedroomScene,
   isCarScene,
+  isCustomScene,
   isTextRoomReference,
   normalizeState
 } from "./physics-prompt-engine-v5.js";
@@ -26,6 +27,8 @@ const referencePreview = document.querySelector("#reference-preview");
 const referencePreviewWrap = document.querySelector("#reference-preview-wrap");
 const removeReferenceButton = document.querySelector("#remove-reference");
 const sceneSelect = document.querySelector("#scene");
+const customSceneField = document.querySelector("#custom-scene-field");
+const customSceneDetailsField = document.querySelector("#custom-scene-details-field");
 const poseFamilySelect = document.querySelector("#pose-family");
 const poseSelect = document.querySelector("#pose");
 const carSeatSelect = document.querySelector("#car-seat");
@@ -72,7 +75,7 @@ function populateSelect(select, options, preferredValue) {
 
 function wikiConfig(state) {
   return {
-    scene:{ id:state.scene, name_en:state.scene },
+    scene:{ id:state.scene, name_en:state.customScene || state.scene },
     pose:{ id:state.pose, name_en:state.pose },
     lighting:{ id:state.lighting, name_en:state.lighting },
     mode:"selfie",
@@ -104,9 +107,7 @@ function composeWikiFirstPrompt(basePrompt, guidance) {
 function restoreSelectedScene() {
   try {
     const savedScene = localStorage.getItem(SELECTED_SCENE_STORAGE_KEY);
-    if ([...sceneSelect.options].some((option) => option.value === savedScene)) {
-      sceneSelect.value = savedScene;
-    }
+    if ([...sceneSelect.options].some((option) => option.value === savedScene)) sceneSelect.value = savedScene;
   } catch {}
 }
 
@@ -117,6 +118,8 @@ function persistSelectedScene() {
 function readState() {
   return {
     scene:value("scene"),
+    customScene:value("custom-scene"),
+    customSceneDetails:value("custom-scene-details"),
     city:value("city"),
     time:value("time"),
     mode:"selfie",
@@ -141,70 +144,40 @@ function readState() {
 
 function syncUiToNormalizedState(state) {
   const pairs = [
-    [sceneSelect, state.scene],
-    [poseFamilySelect, state.poseFamily],
-    [poseSelect, state.pose],
-    [carSeatSelect, state.carSeat],
-    [selfieAngleSelect, state.selfieAngle],
-    [compositionSelect, state.composition],
-    [clothingSelect, state.clothing],
-    [hairSelect, state.hair],
-    [skinSelect, state.skin],
-    [expressionSelect, state.expression],
-    [lightingSelect, state.lighting],
-    [bedroomWindowSelect, state.bedroomWindow]
+    [sceneSelect, state.scene], [poseFamilySelect, state.poseFamily], [poseSelect, state.pose],
+    [carSeatSelect, state.carSeat], [selfieAngleSelect, state.selfieAngle], [compositionSelect, state.composition],
+    [clothingSelect, state.clothing], [hairSelect, state.hair], [skinSelect, state.skin],
+    [expressionSelect, state.expression], [lightingSelect, state.lighting], [bedroomWindowSelect, state.bedroomWindow]
   ];
   pairs.forEach(([select, selectedValue]) => {
-    if (select && [...select.options].some((option) => option.value === selectedValue)) {
-      select.value = selectedValue;
-    }
+    if (select && [...select.options].some((option) => option.value === selectedValue)) select.value = selectedValue;
   });
 }
 
 function refreshDynamicFields() {
   const scene = sceneSelect.value || DEFAULT_STATE.scene;
   const time = value("time") || DEFAULT_STATE.time;
+  const custom = isCustomScene(scene);
+  customSceneField.hidden = !custom;
+  customSceneDetailsField.hidden = !custom;
 
   populateSelect(poseFamilySelect, getPoseFamilyOptions(scene), poseFamilySelect.value || DEFAULT_STATE.poseFamily);
   populateSelect(poseSelect, getPoseOptions(scene, poseFamilySelect.value), poseSelect.value || DEFAULT_STATE.pose);
 
   const car = isCarScene(scene);
   carSeatField.hidden = !car;
-  if (car) {
-    populateSelect(
-      carSeatSelect,
-      getCarSeatOptions(scene, poseSelect.value),
-      carSeatSelect.value || DEFAULT_STATE.carSeat
-    );
-  } else {
-    carSeatSelect.replaceChildren();
-  }
+  if (car) populateSelect(carSeatSelect, getCarSeatOptions(scene, poseSelect.value), carSeatSelect.value || DEFAULT_STATE.carSeat);
+  else carSeatSelect.replaceChildren();
 
-  populateSelect(
-    selfieAngleSelect,
-    getSelfieAngleOptions(poseSelect.value),
-    selfieAngleSelect.value || DEFAULT_STATE.selfieAngle
-  );
-  populateSelect(
-    compositionSelect,
-    getCompositionOptions(poseSelect.value),
-    compositionSelect.value || DEFAULT_STATE.composition
-  );
-
+  populateSelect(selfieAngleSelect, getSelfieAngleOptions(poseSelect.value), selfieAngleSelect.value || DEFAULT_STATE.selfieAngle);
+  populateSelect(compositionSelect, getCompositionOptions(poseSelect.value), compositionSelect.value || DEFAULT_STATE.composition);
   populateSelect(clothingSelect, getClothingOptions(scene), clothingSelect.value || DEFAULT_STATE.clothing);
   populateSelect(lightingSelect, getLightingOptions(scene, time), lightingSelect.value || DEFAULT_STATE.lighting);
 
   const bedroom = isBedroomScene(scene);
   bedroomWindowField.hidden = !bedroom;
-  if (bedroom) {
-    populateSelect(
-      bedroomWindowSelect,
-      getCompatibleBedroomWindowOptions(time, lightingSelect.value),
-      bedroomWindowSelect.value || DEFAULT_STATE.bedroomWindow
-    );
-  } else {
-    bedroomWindowSelect.replaceChildren();
-  }
+  if (bedroom) populateSelect(bedroomWindowSelect, getCompatibleBedroomWindowOptions(time, lightingSelect.value), bedroomWindowSelect.value || DEFAULT_STATE.bedroomWindow);
+  else bedroomWindowSelect.replaceChildren();
 
   const normalized = normalizeState(readState());
 
@@ -227,11 +200,7 @@ function refreshDynamicFields() {
   populateSelect(lightingSelect, getLightingOptions(normalized.scene, normalized.time), normalized.lighting);
 
   if (isBedroomScene(normalized.scene)) {
-    populateSelect(
-      bedroomWindowSelect,
-      getCompatibleBedroomWindowOptions(normalized.time, normalized.lighting),
-      normalized.bedroomWindow
-    );
+    populateSelect(bedroomWindowSelect, getCompatibleBedroomWindowOptions(normalized.time, normalized.lighting), normalized.bedroomWindow);
   }
 
   syncUiToNormalizedState(normalized);
@@ -251,18 +220,16 @@ function renderQa(items) {
 
 function localStatus(pack) {
   if (isTextRoomReference(pack.state.scene)) {
-    return hasReference
-      ? "هوية واحدة مثبتة؛ وصف الغرفة سياق اختياري ولا يلزم IMAGE B."
-      : "الغرفة وصف نصي مساعد؛ أرفق صورة هوية واحدة فقط عند الاستخدام.";
+    return hasReference ? "هوية واحدة مثبتة؛ وصف الغرفة سياق اختياري ولا يلزم IMAGE B." : "الغرفة وصف نصي مساعد؛ أرفق صورة هوية واحدة فقط عند الاستخدام.";
   }
   if (isCarScene(pack.state.scene)) {
-    return hasReference
-      ? "تم تثبيت الهوية وموضع الجلوس داخل السيارة؛ الخلفية غير إجبارية."
-      : "موضع الجلوس داخل السيارة مقفل؛ أرفق صورة هوية واحدة فقط عند الاستخدام.";
+    return hasReference ? "تم تثبيت الهوية وموضع الجلوس داخل السيارة؛ الخلفية غير إجبارية." : "موضع الجلوس داخل السيارة مقفل؛ أرفق صورة هوية واحدة فقط عند الاستخدام.";
   }
-  return hasReference
-    ? "تم تثبيت مرجع الهوية الواحد؛ الخلفية غير إجبارية."
-    : "البرومبت جاهز؛ أرفق صورة هوية واحدة فقط عند الاستخدام.";
+  if (isCustomScene(pack.state.scene)) {
+    if (!pack.state.customScene) return "اكتب وصف المشهد المخصص أولاً؛ المحرك لن يخترع المكان بدلاً منك.";
+    return hasReference ? "تم تثبيت الهوية والمشهد المخصص؛ التفاصيل الثانوية مرتبطة بزاوية السيلفي." : "المشهد المخصص جاهز؛ أرفق صورة هوية واحدة فقط عند الاستخدام.";
+  }
+  return hasReference ? "تم تثبيت مرجع الهوية الواحد؛ الخلفية غير إجبارية." : "البرومبت جاهز؛ أرفق صورة هوية واحدة فقط عند الاستخدام.";
 }
 
 function renderPrompt() {
@@ -270,14 +237,10 @@ function renderPrompt() {
   const pack = buildPromptPack(readState());
   const config = wikiConfig(pack.state);
   const cachedGuidance = wikiPromptService.getCachedGuidance(config);
-
   positivePrompt.value = composeWikiFirstPrompt(pack.positive, cachedGuidance);
   negativePrompt.value = pack.negative;
   resultMeta.textContent = `${pack.template.title} · Xiaomi 15 Ultra Front · ${pack.state.time === "night" ? "ليلي" : "نهاري"}`;
-  renderQa([
-    ...pack.qa,
-    { label:"WikiPrompt", value:cachedGuidance ? "هو أساس البرومبت الحالي" : "جارٍ تحميل أساس الواقعية" }
-  ]);
+  renderQa([...pack.qa, { label:"WikiPrompt", value:cachedGuidance ? "هو أساس البرومبت الحالي" : "جارٍ تحميل أساس الواقعية" }]);
   setStatus(`${localStatus(pack)} · ${cachedGuidance ? wikiStatusText({ state:"cache" }) : "🟡 WikiPrompt: جارٍ الفحص"}`);
 
   const syncId = ++wikiSyncId;
@@ -285,17 +248,10 @@ function renderPrompt() {
     if (syncId !== wikiSyncId) return;
     const status = wikiPromptService.getStatus();
     positivePrompt.value = composeWikiFirstPrompt(pack.positive, guidance);
-    renderQa([
-      ...pack.qa,
-      {
-        label:"WikiPrompt",
-        value:guidance
-          ? (status.state === "synced-fallback"
-              ? "الأساس الواقعي مضاف عبر النسخة الاحتياطية"
-              : "الأساس الواقعي مضاف أول البرومبت")
-          : wikiStatusText(status).replace(/^\S+\sWikiPrompt:\s*/, "")
-      }
-    ]);
+    renderQa([...pack.qa, {
+      label:"WikiPrompt",
+      value:guidance ? (status.state === "synced-fallback" ? "الأساس الواقعي مضاف عبر النسخة الاحتياطية" : "الأساس الواقعي مضاف أول البرومبت") : wikiStatusText(status).replace(/^\S+\sWikiPrompt:\s*/, "")
+    }]);
     setStatus(`${localStatus(pack)} · ${wikiStatusText(status)}`);
   });
 }
@@ -312,10 +268,7 @@ function clearReference() {
 function setReference(file) {
   clearReference();
   if (!file) return;
-  if (!file.type.startsWith("image/")) {
-    setStatus("اختر ملف صورة صالحاً فقط.");
-    return;
-  }
+  if (!file.type.startsWith("image/")) { setStatus("اختر ملف صورة صالحاً فقط."); return; }
   referenceObjectUrl = URL.createObjectURL(file);
   referencePreview.src = referenceObjectUrl;
   referencePreviewWrap.hidden = false;
@@ -324,41 +277,22 @@ function setReference(file) {
 }
 
 async function copyText(text, label) {
-  try {
-    await navigator.clipboard.writeText(text);
-  } catch {
+  try { await navigator.clipboard.writeText(text); }
+  catch {
     const fallback = document.createElement("textarea");
-    fallback.value = text;
-    fallback.setAttribute("readonly", "");
-    fallback.style.position = "fixed";
-    fallback.style.opacity = "0";
-    document.body.append(fallback);
-    fallback.select();
-    document.execCommand("copy");
-    fallback.remove();
+    fallback.value = text; fallback.setAttribute("readonly", "");
+    fallback.style.position = "fixed"; fallback.style.opacity = "0";
+    document.body.append(fallback); fallback.select(); document.execCommand("copy"); fallback.remove();
   }
   setStatus(`${label} تم نسخه. · ${wikiStatusText()}`);
 }
 
 function downloadPrompt() {
-  const pack = [
-    "WIKIPROMPT SELFIE STUDIO",
-    "",
-    "POSITIVE PROMPT",
-    positivePrompt.value,
-    "",
-    "NEGATIVE PROMPT",
-    negativePrompt.value
-  ].join("\n");
+  const pack = ["WIKIPROMPT SELFIE STUDIO", "", "POSITIVE PROMPT", positivePrompt.value, "", "NEGATIVE PROMPT", negativePrompt.value].join("\n");
   const blob = new Blob([pack], { type:"text/plain;charset=utf-8" });
   const href = URL.createObjectURL(blob);
   const link = document.createElement("a");
-  link.href = href;
-  link.download = "wikiprompt-selfie.txt";
-  document.body.append(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(href);
+  link.href = href; link.download = "wikiprompt-selfie.txt"; document.body.append(link); link.click(); link.remove(); URL.revokeObjectURL(href);
   setStatus(`تم تنزيل ملف البرومبت. · ${wikiStatusText()}`);
 }
 
@@ -368,11 +302,7 @@ function resetForm() {
   document.querySelector("#city").value = DEFAULT_STATE.city;
   document.querySelector("#time").value = DEFAULT_STATE.time;
   document.querySelector("#messiness").value = DEFAULT_STATE.messiness;
-  clearReference();
-  refreshDynamicFields();
-  syncUiToNormalizedState(DEFAULT_STATE);
-  persistSelectedScene();
-  renderPrompt();
+  clearReference(); refreshDynamicFields(); syncUiToNormalizedState(DEFAULT_STATE); persistSelectedScene(); renderPrompt();
 }
 
 function initializeStaticSelects() {
@@ -383,31 +313,14 @@ function initializeStaticSelects() {
 }
 
 referenceImage.addEventListener("change", (event) => setReference(event.target.files?.[0]));
-removeReferenceButton.addEventListener("click", () => {
-  clearReference();
-  setStatus("أزيلت معاينة المرجع من الجهاز.");
-});
-
-sceneSelect.addEventListener("change", () => {
-  persistSelectedScene();
-  refreshDynamicFields();
-});
-
-["time","pose-family","pose","car-seat","lighting"].forEach((id) => {
-  document.querySelector(`#${id}`).addEventListener("change", refreshDynamicFields);
-});
-
-form.addEventListener("submit", (event) => {
-  event.preventDefault();
-  renderPrompt();
-});
-
+removeReferenceButton.addEventListener("click", () => { clearReference(); setStatus("أزيلت معاينة المرجع من الجهاز."); });
+sceneSelect.addEventListener("change", () => { persistSelectedScene(); refreshDynamicFields(); });
+["time","pose-family","pose","car-seat","lighting"].forEach((id) => document.querySelector(`#${id}`).addEventListener("change", refreshDynamicFields));
+form.addEventListener("submit", (event) => { event.preventDefault(); renderPrompt(); });
 document.querySelector("#reset-form").addEventListener("click", resetForm);
 document.querySelector("#copy-positive").addEventListener("click", () => copyText(positivePrompt.value, "البرومبت"));
 document.querySelector("#copy-negative").addEventListener("click", () => copyText(negativePrompt.value, "البرومبت السلبي"));
-document.querySelector("#copy-pack").addEventListener("click", () =>
-  copyText(`POSITIVE PROMPT\n${positivePrompt.value}\n\nNEGATIVE PROMPT\n${negativePrompt.value}`, "الحزمة الكاملة")
-);
+document.querySelector("#copy-pack").addEventListener("click", () => copyText(`POSITIVE PROMPT\n${positivePrompt.value}\n\nNEGATIVE PROMPT\n${negativePrompt.value}`, "الحزمة الكاملة"));
 document.querySelector("#download-prompt").addEventListener("click", downloadPrompt);
 
 initializeStaticSelects();
