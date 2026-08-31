@@ -47,6 +47,11 @@ assert.match(workPack.positive, /\[POSE\]/u);
 assert.match(workPack.positive, /\[BEDROOM PHYSICS\]/u);
 assert.match(workPack.positive, /\[LIGHTING\]/u);
 assert.match(workPack.positive, /front-camera/u);
+assert.match(workPack.positive, /21mm-equivalent f\/2\.0 perspective/u);
+assert.match(workPack.positive, /32MP OV32B/u);
+assert.match(workPack.positive, /90-degree field of view/u);
+assert.match(workPack.positive, /natural Xiaomi front-camera color rendering/u);
+assert.doesNotMatch(workPack.positive, /23mm-equivalent|Leica Authentic/u);
 assert.match(workPack.positive, /natural phone-camera skin rendering/u);
 assert.doesNotMatch(workPack.positive, /microscopic pores|subsurface scattering|hyper-realistic anatomical accuracy/u);
 assert.match(workPack.negative, /floating laptop/u);
@@ -58,16 +63,20 @@ const daylightLyingPack = buildPromptPack({
   time:"day",
   mode:"selfie",
   bedroomPosition:"bed-lying",
-  bedroomWindow:"day-open-window",
+  bedroomWindow:"day-sheer",
   bedroomLighting:"soft-window-6200"
 });
 assert.match(daylightLyingPack.positive, /bedside lamp present but switched off/u, "Daylight-only bedroom prompt must explicitly keep the bedside lamp off");
 assert.doesNotMatch(daylightLyingPack.positive, /nightstand with a lit lamp/u, "Fixed room description must not contradict daylight-only lighting");
+assert.match(daylightLyingPack.positive, /existing charcoal floor-to-ceiling curtains are partly drawn/u, "Daylight window cue must preserve the fixed charcoal curtains");
+assert.doesNotMatch(daylightLyingPack.positive, /sheer white curtains/u, "Fixed charcoal curtain material must not be replaced with invented white sheers");
 assert.doesNotMatch(daylightLyingPack.positive, /phone and person visible in reflection/u, "Non-mirror selfie must never force phone/person into a wardrobe reflection");
 assert.doesNotMatch(daylightLyingPack.positive, /rug pile compressed where seated/u, "Lying pose must not inherit seated rug compression");
 assert.doesNotMatch(daylightLyingPack.positive, /overhead shots cast the phone's shadow/u, "Eye-level lying selfie must not inherit overhead phone-shadow rules");
 assert.match(daylightLyingPack.positive, /Never force the phone or subject to appear in a mirror/u);
 assert.match(daylightLyingPack.positive, /obey only the currently selected bedroom-lighting setup/u);
+assert.match(daylightLyingPack.positive, /21mm-equivalent f\/2\.0 perspective/u);
+assert.doesNotMatch(daylightLyingPack.positive, /23mm-equivalent|Leica Authentic/u);
 
 const bedsideLyingPack = buildPromptPack({
   ...DEFAULT_STATE,
@@ -90,6 +99,9 @@ const carPack = buildPromptPack({
 });
 assert.match(carPack.positive, /fully stationary and safely parked/u);
 assert.match(carPack.positive, /candid daytime front-camera selfie from the driver's seat/u);
+assert.match(carPack.positive, /21mm-equivalent f\/2\.0 perspective/u);
+assert.match(carPack.positive, /32MP OV32B/u);
+assert.doesNotMatch(carPack.positive, /23mm-equivalent|Leica Authentic/u);
 assert.match(carPack.positive, /natural phone-camera skin rendering/u);
 assert.doesNotMatch(carPack.positive, /microscopic pores|subsurface scattering|hyper-realistic anatomical accuracy/u);
 assert.equal((carPack.positive.match(/stationary white 2022 Range Rover Sport/gu) ?? []).length, 1, "Vehicle identity should be stated once, not duplicated by the capture template");
@@ -156,6 +168,8 @@ assert.equal(fallbackWiki.getStatus().state, "synced-fallback", "Mobile/network 
 assert.equal(fallbackWiki.getStatus().details?.source, "embedded-fallback");
 
 console.log("✓ active Physics v5 prompt engine passed");
+console.log("✓ Xiaomi 15 Ultra front-camera contract passed");
+console.log("✓ fixed-room curtain consistency passed");
 console.log("✓ bedroom physics contradiction guards passed");
 console.log("✓ compact WikiPrompt realism cue passed");
 console.log("✓ WikiPrompt embedded fallback passed");
