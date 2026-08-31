@@ -246,7 +246,21 @@ function buildBedroomPoseSection(state) {
 
 function buildRoomDescription(state) {
   if (!isTextRoomReference(state.scene)) return "";
-  return `[ROOM DESCRIPTION — PERMANENT TEXT REFERENCE] ${getScene(state.scene).description_en} This fixed text-only room description is the sole room authority. IMAGE B is intentionally absent: do not request an environment image, substitute another room, or raise a missing-reference conflict.`;
+  const activeBedsideLampIds = new Set([
+    "bedside-2700",
+    "bedside-3000",
+    "lamp-screen-mix",
+    "lamp-street-sodium",
+    "laptop-lamp"
+  ]);
+  const bedsideLampText = activeBedsideLampIds.has(state.bedroomLighting)
+    ? "dark wood nightstand with the selected visible bedside lamp active"
+    : "dark wood nightstand with a bedside lamp present but switched off";
+  const description = getScene(state.scene).description_en.replace(
+    /dark wood nightstand with a lit lamp/iu,
+    bedsideLampText
+  );
+  return `[ROOM DESCRIPTION — PERMANENT TEXT REFERENCE] ${description} This fixed text-only room description is the sole room authority. IMAGE B is intentionally absent: do not request an environment image, substitute another room, or raise a missing-reference conflict.`;
 }
 
 function buildStyling(state) {
