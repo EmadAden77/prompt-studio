@@ -34,3 +34,5 @@ jobs:
         run: node tests/clothing-physics.mjs
       - name: Run Realism Core tests
         run: node tests/realism-core.mjs
+      - name: Run Advanced Realism tests
+        run: node tests/advanced-realism.mjs
