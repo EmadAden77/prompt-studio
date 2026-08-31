@@ -1,6 +1,7 @@
 import {
   DEFAULT_STATE,
   buildPromptPack,
+  getCarSeatOptions,
   getClothingOptions,
   getCompatibleBedroomWindowOptions,
   getCompositionOptions,
@@ -13,6 +14,7 @@ import {
   getSelfieAngleOptions,
   getSkinOptions,
   isBedroomScene,
+  isCarScene,
   isTextRoomReference,
   normalizeState
 } from "./physics-prompt-engine-v5.js";
@@ -26,6 +28,8 @@ const removeReferenceButton = document.querySelector("#remove-reference");
 const sceneSelect = document.querySelector("#scene");
 const poseFamilySelect = document.querySelector("#pose-family");
 const poseSelect = document.querySelector("#pose");
+const carSeatSelect = document.querySelector("#car-seat");
+const carSeatField = document.querySelector("#car-seat-field");
 const selfieAngleSelect = document.querySelector("#selfie-angle");
 const compositionSelect = document.querySelector("#composition");
 const clothingSelect = document.querySelector("#clothing");
@@ -118,6 +122,7 @@ function readState() {
     mode:"selfie",
     poseFamily:value("pose-family"),
     pose:value("pose"),
+    carSeat:value("car-seat"),
     clothing:value("clothing"),
     clothingCustom:value("clothing-custom"),
     hair:value("hair"),
@@ -139,6 +144,7 @@ function syncUiToNormalizedState(state) {
     [sceneSelect, state.scene],
     [poseFamilySelect, state.poseFamily],
     [poseSelect, state.pose],
+    [carSeatSelect, state.carSeat],
     [selfieAngleSelect, state.selfieAngle],
     [compositionSelect, state.composition],
     [clothingSelect, state.clothing],
@@ -161,6 +167,18 @@ function refreshDynamicFields() {
 
   populateSelect(poseFamilySelect, getPoseFamilyOptions(scene), poseFamilySelect.value || DEFAULT_STATE.poseFamily);
   populateSelect(poseSelect, getPoseOptions(scene, poseFamilySelect.value), poseSelect.value || DEFAULT_STATE.pose);
+
+  const car = isCarScene(scene);
+  carSeatField.hidden = !car;
+  if (car) {
+    populateSelect(
+      carSeatSelect,
+      getCarSeatOptions(scene, poseSelect.value),
+      carSeatSelect.value || DEFAULT_STATE.carSeat
+    );
+  } else {
+    carSeatSelect.replaceChildren();
+  }
 
   populateSelect(
     selfieAngleSelect,
@@ -194,6 +212,15 @@ function refreshDynamicFields() {
     populateSelect(poseFamilySelect, getPoseFamilyOptions(normalized.scene), normalized.poseFamily);
     populateSelect(poseSelect, getPoseOptions(normalized.scene, normalized.poseFamily), normalized.pose);
   }
+
+  if (isCarScene(normalized.scene)) {
+    carSeatField.hidden = false;
+    populateSelect(carSeatSelect, getCarSeatOptions(normalized.scene, normalized.pose), normalized.carSeat);
+  } else {
+    carSeatField.hidden = true;
+    carSeatSelect.replaceChildren();
+  }
+
   populateSelect(selfieAngleSelect, getSelfieAngleOptions(normalized.pose), normalized.selfieAngle);
   populateSelect(compositionSelect, getCompositionOptions(normalized.pose), normalized.composition);
   populateSelect(clothingSelect, getClothingOptions(normalized.scene), normalized.clothing);
@@ -227,6 +254,11 @@ function localStatus(pack) {
     return hasReference
       ? "هوية واحدة مثبتة؛ وصف الغرفة سياق اختياري ولا يلزم IMAGE B."
       : "الغرفة وصف نصي مساعد؛ أرفق صورة هوية واحدة فقط عند الاستخدام.";
+  }
+  if (isCarScene(pack.state.scene)) {
+    return hasReference
+      ? "تم تثبيت الهوية وموضع الجلوس داخل السيارة؛ الخلفية غير إجبارية."
+      : "موضع الجلوس داخل السيارة مقفل؛ أرفق صورة هوية واحدة فقط عند الاستخدام.";
   }
   return hasReference
     ? "تم تثبيت مرجع الهوية الواحد؛ الخلفية غير إجبارية."
@@ -361,7 +393,7 @@ sceneSelect.addEventListener("change", () => {
   refreshDynamicFields();
 });
 
-["time","pose-family","pose","lighting"].forEach((id) => {
+["time","pose-family","pose","car-seat","lighting"].forEach((id) => {
   document.querySelector(`#${id}`).addEventListener("change", refreshDynamicFields);
 });
 
