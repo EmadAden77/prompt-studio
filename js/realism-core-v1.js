@@ -40,7 +40,7 @@ const isTight = (state) => state.composition === "tight" || state.composition ==
 const isMovingPose = (state) => /walk|browsing|activity/i.test(`${state.poseFamily} ${state.pose}`);
 
 function hasWindowlessSignal(state) {
-  return /(?:windowless|no window|without windows|بدون نافذ|بلا نافذ|لا توجد نافذ)/iu.test(`${state.customScene} ${state.customSceneDetails}`);
+  return /(?:windowless|no window|without windows|بدون (?:نافذ|نوافذ)|بلا (?:نافذ|نوافذ)|لا توجد (?:نافذ|نوافذ))/iu.test(`${state.customScene} ${state.customSceneDetails}`);
 }
 
 function hasReflectiveSignal(state) {
