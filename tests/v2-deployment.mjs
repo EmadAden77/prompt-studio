@@ -39,8 +39,8 @@ assert.doesNotMatch(app, /activity:value/u, "Free-form pose activity must not co
 
 const engine = readFileSync(resolve(root, "js/physics-prompt-engine-v5.js"), "utf8");
 assert.match(engine, /wiki-selfie-data-v1\.js/u);
-assert.match(engine, /SELFIE PRIORITY/u);
-assert.match(engine, /CONFLICT ORDER/u);
+assert.match(engine, /SCENE_PRIORITY_RULE/u, "Engine must consume the selfie-priority policy from the modular data source");
+assert.match(engine, /REALISM_ORDER/u, "Engine must consume the conflict-order policy from the modular data source");
 assert.match(engine, /getCompatibleBedroomWindowOptions/u);
 assert.doesNotMatch(engine, /physics-data-v4\.js/u, "Old contradictory data source must be detached from the live engine");
 assert.doesNotMatch(engine, /physicsPolicy\.js/u, "Old generic physics contract must be detached from the live engine");
