@@ -11,6 +11,18 @@ const STANDING_GROUNDING = `STANDING GROUNDING — FULL WEIGHT ON THE FLOOR
 
 ANTI-MANNEQUIN TRIAD: contact shadows + real weight support + gravity-driven clothing folds + natural left/right asymmetry must all agree in one body solution.`;
 
+const CROUCHING_GROUNDING = `CROUCHING / KNEELING GROUNDING — LOW BODY, REAL FLOOR SUPPORT
+1) SUPPORT FIRST: lower the pelvis through real hip, knee, and ankle flexion. The body is supported only by the feet and any explicitly selected knee or hand contact; there is no invisible stool or hidden chair.
+2) FOOT / KNEE CONTACT: every loaded sole, forefoot, heel, or knee meets the floor with a tight contact shadow. A knee touches the floor only when the selected pose explicitly requires it.
+3) BALANCE: the torso may lean slightly forward or sideways to keep the center of mass over the support polygon. No impossible backward hover, fused knees, twisted ankles, or weightless squat.
+4) CLOTHING RESPONSE: trousers compress and crease behind bent knees and at the hips; shirt fabric gathers naturally near the waist. Folds follow joint flexion and gravity, not decorative symmetry.
+5) NATURAL ASYMMETRY: knees, shoulders, and pelvis are never perfectly mirrored. One side may sit a little higher or carry more weight.
+6) CAMERA CONSISTENCY: the selfie camera moves with the crouched subject. It stays near the subject's actual lowered head height or slightly above it, never at standing-height observer level unless the holding arm is visibly and physically raised.
+7) FRAMING: prioritize face, shoulders, upper torso, and enough bent-leg/floor geometry to prove the low pose. A casual 10–25° phone roll is allowed when selected.
+8) FORBIDDEN: standing upright while described as crouching, sitting on an invisible object, floating feet or knee, third-person camera, duplicated limbs, or a crop that erases all evidence of the low body position.
+
+ANTI-MANNEQUIN TRIAD: believable support + bent-joint anatomy + contact shadows + gravity-driven clothing folds must all agree in one low-body solution.`;
+
 export class PoseEngine {
   constructor(poses = []) {
     this.poses = [...poses];
@@ -62,6 +74,8 @@ export class PoseEngine {
   }
 
   familyOf(poseOrId) {
+    const pose = typeof poseOrId === "string" ? this.getById(poseOrId) : poseOrId;
+    if (pose?.family) return pose.family;
     const poseId = typeof poseOrId === "string" ? poseOrId : poseOrId?.id;
     if (!poseId) return "other";
     if (poseId.startsWith("sitting")) return "sitting";
@@ -148,7 +162,7 @@ export class PoseEngine {
 
   buildPosePhysics(pose, autoEngineering = null) {
     const family = this.familyOf(pose);
-    const universal = family === "sitting" || family === "standing"
+    const universal = family === "sitting" || family === "standing" || family === "crouching"
       ? "Body placement must be solved before camera placement. Preserve natural spinal alignment, gravity, real support/load response, fabric displacement, contact shadows, and natural asymmetry. No body part may intersect the torso, floor, seat, armrest, backrest, or nearby furniture."
       : "Body placement must be solved before camera placement. Preserve natural spinal alignment, gravity, local pressure, mattress/pillow deformation, fabric displacement, and contact shadows. No body part may intersect the torso, mattress, pillow, headboard, or nearby furniture.";
     return `POSE & PHYSICS\n${this.buildPhysicsText(pose)}\n${autoEngineering?.physicsFine ?? ""}\n${universal}`.trim();
@@ -159,6 +173,7 @@ export class PoseEngine {
     if (family === "lying") return this._buildGroundingSection(pose);
     if (family === "sitting") return this._buildSittingGrounding(pose);
     if (family === "standing") return STANDING_GROUNDING;
+    if (family === "crouching") return CROUCHING_GROUNDING;
     return null;
   }
 
@@ -215,6 +230,15 @@ ANTI-MANNEQUIN TRIAD: contact shadows + real support/compression + gravity-drive
 
   _buildFamilyCameraArm(pose) {
     const family = this.familyOf(pose);
+    if (family === "crouching") {
+      return `CROUCHING SELFIE CAMERA & ARM — FAMILY OVERRIDE
+- Front-camera distance: 35–60 cm from the face.
+- Camera height/angle: derived from the subject's ACTUAL crouched head height. Eye-level to mildly high-angle is preferred; the phone may rise about 10–25 cm above the eyes for an informal overhead diagonal selfie.
+- Framing: face + shoulders + upper torso + enough bent-knee/floor geometry to prove the crouch or kneel. Do not crop away every support cue.
+- Phone roll: a casual 10–25° diagonal roll is allowed when the pose calls for it; keep room geometry physically coherent rather than rotating the body independently of the camera.
+- Holding arm: naturally extended from one shoulder within normal reach; keep the phone, hand, and most of the forearm outside frame unless their visibility is required by the selected composition.
+- Other arm: may rest naturally on a thigh or knee, hang loosely, or remain outside frame. It must not float, duplicate, or cross through the torso.`;
+    }
     if (family === "sitting") {
       const height = pose.id === "sitting_floor"
         ? "the subject's true floor-seated eye height (lower than chair/sofa height)"
@@ -239,6 +263,16 @@ ANTI-MANNEQUIN TRIAD: contact shadows + real support/compression + gravity-drive
 
   getFamilyNegativePrompt(pose) {
     const family = this.familyOf(pose);
+    if (family === "crouching") {
+      return [
+        "standing upright instead of crouching",
+        "sitting on invisible chair",
+        "floating foot or knee",
+        "fused knees or twisted ankles",
+        "standing-height observer camera",
+        "third-person camera"
+      ];
+    }
     if (family === "sitting") {
       return [
         "floating above cushion",
