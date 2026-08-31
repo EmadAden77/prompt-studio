@@ -32,3 +32,5 @@ jobs:
         run: node tests/custom-scene.mjs
       - name: Run clothing material physics tests
         run: node tests/clothing-physics.mjs
+      - name: Run Realism Core tests
+        run: node tests/realism-core.mjs
