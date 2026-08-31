@@ -28,3 +28,5 @@ jobs:
         run: node tests/v2-deployment.mjs
       - name: Run WikiPrompt selfie engine tests
         run: node tests/physics-v5-wikiprompt.mjs
+      - name: Run custom scene realism tests
+        run: node tests/custom-scene.mjs
