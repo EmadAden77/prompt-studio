@@ -37,6 +37,17 @@ function unique(items = []) {
   return [...new Set(items.filter(Boolean))];
 }
 
+function isCandidStandingPoseId(poseId) {
+  return typeof poseId === "string" && poseId.startsWith("standing_candid_");
+}
+
+function sceneSupportsPose(scene, poseId) {
+  if ((scene?.supported_poses ?? []).includes(poseId)) return true;
+  // Candid crouching/leaning poses use the same readable floor zone as standing_center.
+  // This keeps existing room-reference metadata valid without duplicating every new pose ID into every scene.
+  return isCandidStandingPoseId(poseId) && (scene?.supported_poses ?? []).includes("standing_center");
+}
+
 export class SceneEngine {
   constructor(scenes = []) {
     this.scenes = [...scenes];
@@ -51,7 +62,7 @@ export class SceneEngine {
     if (!scene) return [];
     const allowed = [...allowedPoseIds];
     if (!allowed.length) return [...(scene.supported_poses ?? [])];
-    return allowed.filter((poseId) => (scene.supported_poses ?? []).includes(poseId));
+    return allowed.filter((poseId) => sceneSupportsPose(scene, poseId));
   }
 
   getSuggestedPoseId(sceneOrId, allowedPoseIds = []) {
@@ -63,7 +74,10 @@ export class SceneEngine {
   }
 
   getRequirement(poseId, extraRequiredFeatures = []) {
-    const defined = POSE_REQUIREMENTS[poseId] ?? { required_features_all: [], preferred_region: null };
+    const candidDefault = isCandidStandingPoseId(poseId)
+      ? { required_features_all: ["floor"], preferred_region: "center" }
+      : null;
+    const defined = POSE_REQUIREMENTS[poseId] ?? candidDefault ?? { required_features_all: [], preferred_region: null };
     return {
       required_features_all: unique([...(defined.required_features_all ?? []), ...extraRequiredFeatures]),
       preferred_region: defined.preferred_region ?? null
@@ -121,7 +135,7 @@ export class SceneEngine {
     }
 
     if (scene.text_reference) {
-      const poseMatch = scene.supported_poses.includes(poseId);
+      const poseMatch = sceneSupportsPose(scene, poseId);
       return {
         pass: poseMatch,
         poseMatch,
@@ -136,7 +150,7 @@ export class SceneEngine {
       };
     }
 
-    const poseMatch = scene.supported_poses.includes(poseId);
+    const poseMatch = sceneSupportsPose(scene, poseId);
     const missingFeatures = requirement.required_features_all.filter(
       (feature) => !scene.visible_features.includes(feature)
     );
