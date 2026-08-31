@@ -52,6 +52,34 @@ assert.doesNotMatch(workPack.positive, /microscopic pores|subsurface scattering|
 assert.match(workPack.negative, /floating laptop/u);
 assert.ok(workPack.qa.length >= 6, "Active prompt pack must expose realism QA");
 
+const daylightLyingPack = buildPromptPack({
+  ...DEFAULT_STATE,
+  scene:"my_bedroom_text",
+  time:"day",
+  mode:"selfie",
+  bedroomPosition:"bed-lying",
+  bedroomWindow:"day-open-window",
+  bedroomLighting:"soft-window-6200"
+});
+assert.match(daylightLyingPack.positive, /bedside lamp present but switched off/u, "Daylight-only bedroom prompt must explicitly keep the bedside lamp off");
+assert.doesNotMatch(daylightLyingPack.positive, /nightstand with a lit lamp/u, "Fixed room description must not contradict daylight-only lighting");
+assert.doesNotMatch(daylightLyingPack.positive, /phone and person visible in reflection/u, "Non-mirror selfie must never force phone/person into a wardrobe reflection");
+assert.doesNotMatch(daylightLyingPack.positive, /rug pile compressed where seated/u, "Lying pose must not inherit seated rug compression");
+assert.doesNotMatch(daylightLyingPack.positive, /overhead shots cast the phone's shadow/u, "Eye-level lying selfie must not inherit overhead phone-shadow rules");
+assert.match(daylightLyingPack.positive, /Never force the phone or subject to appear in a mirror/u);
+assert.match(daylightLyingPack.positive, /obey only the currently selected bedroom-lighting setup/u);
+
+const bedsideLyingPack = buildPromptPack({
+  ...DEFAULT_STATE,
+  scene:"my_bedroom_text",
+  time:"night",
+  mode:"selfie",
+  bedroomPosition:"bed-lying",
+  bedroomWindow:"night-blackout",
+  bedroomLighting:"bedside-3000"
+});
+assert.match(bedsideLyingPack.positive, /selected visible bedside lamp active/u, "Bedside-lamp lighting must activate the fixed room lamp instead of treating it as permanently lit or permanently off");
+
 const carPack = buildPromptPack({
   ...DEFAULT_STATE,
   scene:"rangeRover",
@@ -128,5 +156,6 @@ assert.equal(fallbackWiki.getStatus().state, "synced-fallback", "Mobile/network 
 assert.equal(fallbackWiki.getStatus().details?.source, "embedded-fallback");
 
 console.log("✓ active Physics v5 prompt engine passed");
+console.log("✓ bedroom physics contradiction guards passed");
 console.log("✓ compact WikiPrompt realism cue passed");
 console.log("✓ WikiPrompt embedded fallback passed");
