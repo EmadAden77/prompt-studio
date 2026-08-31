@@ -52,7 +52,8 @@ export class WikiPromptService {
       record.description,
       ...(Array.isArray(record.tags) ? record.tags : []),
       record.metadata?.style,
-      record.metadata?.keywords
+      record.metadata?.keywords,
+      clean(record.content).slice(0, 1200)
     ].filter(Boolean).join(" "));
     let score = 0;
     if (PREFER_TERMS.test(text)) score += 4;
@@ -137,3 +138,51 @@ export class WikiPromptService {
 }
 
 export const wikiPromptService = new WikiPromptService();
+
+// Automatic bridge: patch App.engineer before the App instance is created.
+// First render is immediate/local. WikiPrompt then refreshes the same prompt
+// asynchronously only when the scene/pose/lighting selection is still current.
+function installAutomaticBridge() {
+  const AppClass = globalThis.App;
+  if (!AppClass?.prototype || AppClass.prototype.__wikiPromptBridgeInstalled) return;
+
+  const originalEngineer = AppClass.prototype.engineer;
+  if (typeof originalEngineer !== "function") return;
+
+  Object.defineProperty(AppClass.prototype, "__wikiPromptBridgeInstalled", { value:true });
+
+  AppClass.prototype.engineer = function wikiPromptAwareEngineer(options = {}) {
+    const result = originalEngineer.call(this, options);
+    const config = this.currentConfig;
+    if (!config || !this.promptEngine) return result;
+
+    const expectedKey = wikiPromptService.cacheKey(config);
+    const cached = wikiPromptService.getCachedGuidance(config);
+    if (cached) {
+      config.wikiPromptGuidance = cached;
+      this.currentPrompt = this.promptEngine.generateV2(config);
+      this.renderPrompt?.(this.currentPrompt);
+      if (options.persistHistory !== false) this.saveToHistory?.(this.currentPrompt);
+      return this.currentPrompt;
+    }
+
+    wikiPromptService.sync(config, {
+      onReady: (guidance) => {
+        if (!guidance || !this.currentConfig) return;
+        if (wikiPromptService.cacheKey(this.currentConfig) !== expectedKey) return;
+        this.currentConfig.wikiPromptGuidance = guidance;
+        this.currentPrompt = this.promptEngine.generateV2(this.currentConfig);
+        this.renderPrompt?.(this.currentPrompt);
+        this.renderFavoriteState?.();
+        if (options.persistHistory !== false) this.saveToHistory?.(this.currentPrompt);
+        this.setStatus?.("تم تحديث البرومبت بقواعد WikiPrompt الواقعية");
+      }
+    });
+
+    return result;
+  };
+}
+
+if (typeof document !== "undefined") {
+  document.addEventListener("DOMContentLoaded", installAutomaticBridge, { once:true });
+}
