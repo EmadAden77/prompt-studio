@@ -108,5 +108,16 @@ const second = await wiki.sync(config);
 assert.equal(second, guidance);
 assert.equal(wiki.getStatus().state, "cache");
 
+const blockedFetch = async () => {
+  throw new TypeError("Failed to fetch");
+};
+const fallbackWiki = new WikiPromptService({ fetchImpl:blockedFetch, localUrl:"https://example.test/data/wikiprompt-realism.json" });
+const fallbackGuidance = await fallbackWiki.sync(config);
+assert.match(fallbackGuidance, /Realistic selfie image-prompt generator system prompt/u);
+assert.match(fallbackGuidance, /embedded WikiPrompt metadata/u);
+assert.equal(fallbackWiki.getStatus().state, "synced-fallback", "Mobile/network JSON fetch failures must still produce WikiPrompt guidance");
+assert.equal(fallbackWiki.getStatus().details?.source, "embedded-fallback");
+
 console.log("✓ active Physics v5 prompt engine passed");
 console.log("✓ local WikiPrompt same-origin integration passed");
+console.log("✓ WikiPrompt embedded fallback passed");
