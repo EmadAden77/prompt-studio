@@ -2,7 +2,10 @@
 // Uses a same-origin metadata cache to avoid CORS failures.
 // Third-party prompt bodies are not redistributed by this module.
 
-const LOCAL_DATASET_URL = "./data/wikiprompt-realism.json";
+// IMPORTANT: fetch() resolves relative URLs against the DOCUMENT URL, not this
+// module's folder. An absolute URL derived from document.baseURI keeps GitHub
+// Pages project paths correct and makes the local cache location explicit.
+const LOCAL_DATASET_URL = new URL("data/wikiprompt-realism.json", document.baseURI).href;
 const CACHE_TTL_MS = 30 * 60 * 1000;
 
 const REJECT_TERMS = /\b(8k|16k|ultra[- ]?hd|masterpiece|cinematic lighting|studio lighting|beauty retouch|perfect skin|razor sharp|extreme hdr|unreal engine|octane render)\b/i;
@@ -90,7 +93,7 @@ export class WikiPromptService {
       const payload = await response.json();
       const records = Array.isArray(payload?.records) ? payload.records : [];
       this.localRecords = records;
-      this.setStatus(records.length ? "local-ready" : "empty", records.length ? `WikiPrompt local cache ready: ${records.length} records` : "WikiPrompt local cache is empty", { count:records.length, updated_at:payload?.updated_at || null });
+      this.setStatus(records.length ? "local-ready" : "empty", records.length ? `WikiPrompt local cache ready: ${records.length} records` : "WikiPrompt local cache is empty", { count:records.length, updated_at:payload?.updated_at || null, url:this.localUrl });
       return records;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -102,10 +105,7 @@ export class WikiPromptService {
 
   async discover(config = {}, { maxResults = 8 } = {}) {
     const records = await this.loadLocalRecords();
-    if (!records.length) {
-      this.setStatus("empty", "WikiPrompt local cache is empty", { count:0 });
-      return [];
-    }
+    if (!records.length) return [];
 
     const scored = records
       .map((record) => ({ ...record, _realismScore:this.score(record, config) }))
@@ -113,23 +113,15 @@ export class WikiPromptService {
 
     let ranked = scored.filter((record) => record._realismScore > 0).slice(0, maxResults);
     let fallback = false;
-
-    // The local file is intentionally a small, realism-curated cache. If a very
-    // specific scene name has no lexical overlap, use the curated general records
-    // instead of incorrectly reporting that WikiPrompt has no suitable evidence.
     if (!ranked.length) {
       fallback = true;
-      ranked = scored
-        .filter((record) => !REJECT_TERMS.test(recordText(record)))
-        .slice(0, Math.min(maxResults, 5));
+      ranked = scored.filter((record) => !REJECT_TERMS.test(recordText(record))).slice(0, Math.min(maxResults, 5));
     }
 
     this.setStatus(
       ranked.length ? "local-ready" : "empty",
-      ranked.length
-        ? `WikiPrompt local discovery ready: ${ranked.length} matches${fallback ? " (general realism fallback)" : ""}`
-        : "WikiPrompt local cache produced no usable matches",
-      { count:ranked.length, fallback }
+      ranked.length ? `WikiPrompt local discovery ready: ${ranked.length} matches${fallback ? " (general realism fallback)" : ""}` : "WikiPrompt local cache produced no usable matches",
+      { count:ranked.length, fallback, source:"same-origin-local-json" }
     );
     return ranked;
   }
@@ -159,18 +151,17 @@ export class WikiPromptService {
       return Promise.resolve(cached);
     }
     if (this.pending.has(key)) return this.pending.get(key);
-    this.setStatus("loading", "Loading same-origin WikiPrompt cache", { key });
+    this.setStatus("loading", "Loading same-origin WikiPrompt cache", { key, url:this.localUrl });
     const task = this.discover(config)
       .then((records) => {
         const guidance = this.buildGuidance(records);
         this.cache.set(key, { guidance, savedAt:Date.now() });
-        if (guidance) this.setStatus("synced", "WikiPrompt local guidance synchronized", { key, count:records.length });
-        else this.setStatus("empty", "WikiPrompt local cache produced no guidance", { key, count:0 });
+        if (guidance) this.setStatus("synced", "WikiPrompt local guidance synchronized", { key, count:records.length, source:"same-origin-local-json" });
         return guidance;
       })
       .catch((error) => {
         const message = error instanceof Error ? error.message : String(error);
-        this.setStatus("error", `WikiPrompt local synchronization failed: ${message}`, { key });
+        this.setStatus("error", `WikiPrompt local synchronization failed: ${message}`, { key, url:this.localUrl });
         console.warn("[WikiPrompt] local synchronization failed", error);
         return "";
       })
