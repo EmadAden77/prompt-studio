@@ -2,10 +2,9 @@
 // Uses a same-origin metadata cache to avoid CORS failures.
 // Third-party prompt bodies are not redistributed by this module.
 
-// IMPORTANT: fetch() resolves relative URLs against the DOCUMENT URL, not this
-// module's folder. An absolute URL derived from document.baseURI keeps GitHub
-// Pages project paths correct and makes the local cache location explicit.
-const LOCAL_DATASET_URL = new URL("data/wikiprompt-realism.json", document.baseURI).href;
+// Resolve from this module instead of document.baseURI so the file imports
+// safely in both browsers and Node-based regression tests.
+const LOCAL_DATASET_URL = new URL("../../data/wikiprompt-realism.json", import.meta.url).href;
 const CACHE_TTL_MS = 30 * 60 * 1000;
 
 const REJECT_TERMS = /\b(8k|16k|ultra[- ]?hd|masterpiece|cinematic lighting|studio lighting|beauty retouch|perfect skin|razor sharp|extreme hdr|unreal engine|octane render)\b/i;
