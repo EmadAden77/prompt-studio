@@ -2,17 +2,22 @@ import {
   DEFAULT_STATE,
   buildPromptPack,
   getCarSeatOptions,
+  getClothingFitOptions,
   getClothingOptions,
   getCompatibleBedroomWindowOptions,
   getCompositionOptions,
   getExpressionOptions,
+  getFabricOptions,
+  getFabricWeightOptions,
   getHairOptions,
+  getIronStateOptions,
   getLightingOptions,
   getPoseFamilyOptions,
   getPoseOptions,
   getSceneOptions,
   getSelfieAngleOptions,
   getSkinOptions,
+  getWearStateOptions,
   isBedroomScene,
   isCarScene,
   isCustomScene,
@@ -36,6 +41,11 @@ const carSeatField = document.querySelector("#car-seat-field");
 const selfieAngleSelect = document.querySelector("#selfie-angle");
 const compositionSelect = document.querySelector("#composition");
 const clothingSelect = document.querySelector("#clothing");
+const fabricSelect = document.querySelector("#fabric");
+const fabricWeightSelect = document.querySelector("#fabric-weight");
+const ironStateSelect = document.querySelector("#iron-state");
+const wearStateSelect = document.querySelector("#wear-state");
+const clothingFitSelect = document.querySelector("#clothing-fit");
 const hairSelect = document.querySelector("#hair");
 const skinSelect = document.querySelector("#skin");
 const expressionSelect = document.querySelector("#expression");
@@ -128,6 +138,11 @@ function readState() {
     carSeat:value("car-seat"),
     clothing:value("clothing"),
     clothingCustom:value("clothing-custom"),
+    fabric:value("fabric"),
+    fabricWeight:value("fabric-weight"),
+    ironState:value("iron-state"),
+    wearState:value("wear-state"),
+    clothingFit:value("clothing-fit"),
     hair:value("hair"),
     skin:value("skin"),
     expression:value("expression"),
@@ -146,12 +161,23 @@ function syncUiToNormalizedState(state) {
   const pairs = [
     [sceneSelect, state.scene], [poseFamilySelect, state.poseFamily], [poseSelect, state.pose],
     [carSeatSelect, state.carSeat], [selfieAngleSelect, state.selfieAngle], [compositionSelect, state.composition],
-    [clothingSelect, state.clothing], [hairSelect, state.hair], [skinSelect, state.skin],
-    [expressionSelect, state.expression], [lightingSelect, state.lighting], [bedroomWindowSelect, state.bedroomWindow]
+    [clothingSelect, state.clothing], [fabricSelect, state.fabric], [fabricWeightSelect, state.fabricWeight],
+    [ironStateSelect, state.ironState], [wearStateSelect, state.wearState], [clothingFitSelect, state.clothingFit],
+    [hairSelect, state.hair], [skinSelect, state.skin], [expressionSelect, state.expression],
+    [lightingSelect, state.lighting], [bedroomWindowSelect, state.bedroomWindow]
   ];
   pairs.forEach(([select, selectedValue]) => {
     if (select && [...select.options].some((option) => option.value === selectedValue)) select.value = selectedValue;
   });
+}
+
+function populateClothingPhysics(preferred = {}) {
+  const clothing = clothingSelect.value;
+  populateSelect(fabricSelect, getFabricOptions(clothing), preferred.fabric || fabricSelect.value || DEFAULT_STATE.fabric);
+  populateSelect(fabricWeightSelect, getFabricWeightOptions(clothing, fabricSelect.value), preferred.fabricWeight || fabricWeightSelect.value || DEFAULT_STATE.fabricWeight);
+  populateSelect(ironStateSelect, getIronStateOptions(clothing), preferred.ironState || ironStateSelect.value || DEFAULT_STATE.ironState);
+  populateSelect(wearStateSelect, getWearStateOptions(clothing), preferred.wearState || wearStateSelect.value || DEFAULT_STATE.wearState);
+  populateSelect(clothingFitSelect, getClothingFitOptions(clothing), preferred.clothingFit || clothingFitSelect.value || DEFAULT_STATE.clothingFit);
 }
 
 function refreshDynamicFields() {
@@ -172,6 +198,7 @@ function refreshDynamicFields() {
   populateSelect(selfieAngleSelect, getSelfieAngleOptions(poseSelect.value), selfieAngleSelect.value || DEFAULT_STATE.selfieAngle);
   populateSelect(compositionSelect, getCompositionOptions(poseSelect.value), compositionSelect.value || DEFAULT_STATE.composition);
   populateSelect(clothingSelect, getClothingOptions(scene), clothingSelect.value || DEFAULT_STATE.clothing);
+  populateClothingPhysics();
   populateSelect(lightingSelect, getLightingOptions(scene, time), lightingSelect.value || DEFAULT_STATE.lighting);
 
   const bedroom = isBedroomScene(scene);
@@ -197,6 +224,7 @@ function refreshDynamicFields() {
   populateSelect(selfieAngleSelect, getSelfieAngleOptions(normalized.pose), normalized.selfieAngle);
   populateSelect(compositionSelect, getCompositionOptions(normalized.pose), normalized.composition);
   populateSelect(clothingSelect, getClothingOptions(normalized.scene), normalized.clothing);
+  populateClothingPhysics(normalized);
   populateSelect(lightingSelect, getLightingOptions(normalized.scene, normalized.time), normalized.lighting);
 
   if (isBedroomScene(normalized.scene)) {
@@ -315,7 +343,7 @@ function initializeStaticSelects() {
 referenceImage.addEventListener("change", (event) => setReference(event.target.files?.[0]));
 removeReferenceButton.addEventListener("click", () => { clearReference(); setStatus("أزيلت معاينة المرجع من الجهاز."); });
 sceneSelect.addEventListener("change", () => { persistSelectedScene(); refreshDynamicFields(); });
-["time","pose-family","pose","car-seat","lighting"].forEach((id) => document.querySelector(`#${id}`).addEventListener("change", refreshDynamicFields));
+["time","pose-family","pose","car-seat","lighting","clothing","fabric"].forEach((id) => document.querySelector(`#${id}`).addEventListener("change", refreshDynamicFields));
 form.addEventListener("submit", (event) => { event.preventDefault(); renderPrompt(); });
 document.querySelector("#reset-form").addEventListener("click", resetForm);
 document.querySelector("#copy-positive").addEventListener("click", () => copyText(positivePrompt.value, "البرومبت"));
