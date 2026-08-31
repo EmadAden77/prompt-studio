@@ -90,12 +90,9 @@ export function getPoseFamilyOptions(sceneId) {
 }
 
 export function getPoseOptions(sceneId, family) {
-  const options = SELFIE_POSES.filter(
-    (pose) => pose.scenes.includes(sceneId) && (!family || pose.family === family)
-  );
-  return options.length
-    ? options
-    : SELFIE_POSES.filter((pose) => pose.scenes.includes(sceneId));
+  const scenePoses = SELFIE_POSES.filter((pose) => pose.scenes.includes(sceneId));
+  if (!family) return scenePoses;
+  return scenePoses.filter((pose) => pose.family === family);
 }
 
 export function getPoseById(poseId) {
