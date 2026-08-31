@@ -226,8 +226,8 @@ function buildAppearanceSection(state) {
 }
 
 function buildExposureConsequence(lighting) {
-  const id = lighting?.value ?? "";
-  if (/direct-sun/i.test(id)) {
+  const signal = `${lighting?.value ?? ""} ${lighting?.text ?? ""}`;
+  if (/direct sun|hard sunlight|hard light|side-sun/i.test(signal)) {
     return "Expose like a real phone under hard sunlight: the directly lit facial region may approach clipping, the shaded side may fall noticeably darker, and exterior highlights may clip. Do not flatten the contrast with HDR, brighten the shadow side using hidden fill, or make both sides of the face equally exposed.";
   }
   return "";
