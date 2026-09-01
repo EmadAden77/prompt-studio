@@ -5,6 +5,7 @@ import {
   mountVisualSelfieAngleMonitor,
   normalizeVisualSelfieState,
   readVisualSelfieUiState,
+  selfieAnglePreset,
   visualSelfieQa
 } from "./visual-selfie-angle-monitor-v1.js";
 
@@ -62,7 +63,13 @@ function optionValue(map, value, fallback) {
 }
 
 export function normalizeAutoRealismState(rawState = {}) {
-  const visual = normalizeVisualSelfieState(rawState);
+  let visual = normalizeVisualSelfieState(rawState);
+  const variationMode = optionValue(VARIATION_RULES, rawState.variationMode, AUTO_REALISM_DEFAULTS.variationMode);
+  const variationAngles = { eye_level:"eye", slight_high:"slight-high", three_quarter:"three-quarter", slight_low:"slight-low" };
+  if (visual.visualMonitorSync === "on" && variationAngles[variationMode]) {
+    const preset = selfieAnglePreset(variationAngles[variationMode]);
+    visual = normalizeVisualSelfieState({ ...visual, selfieDistanceCm:preset.distance, selfieYawDeg:preset.yaw, selfiePitchDeg:preset.pitch, selfieRollDeg:preset.roll, faceYawDeg:preset.faceYaw });
+  }
   return {
     ...visual,
     autoRealism:boolValue(rawState.autoRealism, AUTO_REALISM_DEFAULTS.autoRealism),
@@ -70,7 +77,7 @@ export function normalizeAutoRealismState(rawState = {}) {
     generatorProfile:optionValue(GENERATOR_RULES, rawState.generatorProfile, AUTO_REALISM_DEFAULTS.generatorProfile),
     promptCompression:["full","compact","ultra"].includes(rawState.promptCompression) ? rawState.promptCompression : AUTO_REALISM_DEFAULTS.promptCompression,
     continuityMode:boolValue(rawState.continuityMode, AUTO_REALISM_DEFAULTS.continuityMode),
-    variationMode:optionValue(VARIATION_RULES, rawState.variationMode, AUTO_REALISM_DEFAULTS.variationMode),
+    variationMode,
     lockIdentity:boolValue(rawState.lockIdentity, AUTO_REALISM_DEFAULTS.lockIdentity),
     lockScene:boolValue(rawState.lockScene, AUTO_REALISM_DEFAULTS.lockScene),
     lockClothing:boolValue(rawState.lockClothing, AUTO_REALISM_DEFAULTS.lockClothing),
