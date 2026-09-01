@@ -1,0 +1,11 @@
+import assert from "node:assert/strict";
+import { buildGroupSelfieEnhancement, evaluateGroupRealism, normalizeGroupSelfieState } from "../js/group-selfie-engine-v1.js";
+const normalized = normalizeGroupSelfieState({ groupMode:"group", groupCount:"9", cameraHolder:"wrong" });
+assert.equal(normalized.groupCount, "3"); assert.equal(normalized.cameraHolder, "A");
+const pack = buildGroupSelfieEnhancement({ groupMode:"group", groupCount:"4", cameraHolder:"B", groupArrangement:"mixed-depth", groupInteraction:"friends" });
+assert.match(pack.positive, /Exactly 4 people/u); assert.match(pack.positive, /Person B is the only camera holder/u); assert.match(pack.positive, /Never normalize head or face sizes/u);
+assert.ok(pack.negative.includes("arm attached to wrong person")); assert.equal(pack.qa[0].label, "السيلفي الجماعي");
+const five = evaluateGroupRealism({ groupMode:"group", groupCount:"5", groupArrangement:"shoulder", cameraHolder:"auto" });
+assert.ok(five.score < 75); assert.equal(five.action, "auto-fix");
+const single = buildGroupSelfieEnhancement({ groupMode:"single" }); assert.equal(single.positive, ""); assert.deepEqual(single.negative, []);
+console.log("group selfie engine tests passed");
