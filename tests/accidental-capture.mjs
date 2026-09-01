@@ -1,0 +1,10 @@
+import assert from "node:assert/strict";
+import { applyAccidentalDeviceAuthority, buildAccidentalCaptureEnhancement, normalizeAccidentalState } from "../js/accidental-capture-engine-v1.js";
+const state = normalizeAccidentalState({ captureMode:"accidental", accidentalTrigger:"bad", accidentalDevice:"iphone" });
+assert.equal(state.accidentalTrigger, "pocket"); assert.equal(state.accidentalDevice, "iphone");
+const pack = buildAccidentalCaptureEnhancement(state);
+assert.match(pack.positive, /front camera was already open/u); assert.match(pack.positive, /wrist has not finished rotating/u);
+assert.match(pack.positive, /same single camera pipeline/u); assert.ok(pack.negative.includes("deliberately staged bad photo"));
+assert.match(applyAccidentalDeviceAuthority("Xiaomi 15 Ultra · 21mm eq · f\/2.0", state), /iPhone 15 Pro Max/u);
+const normal = buildAccidentalCaptureEnhancement({ captureMode:"normal" }); assert.equal(normal.positive, "");
+console.log("accidental capture engine tests passed");
