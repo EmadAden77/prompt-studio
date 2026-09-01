@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import { buildStudioSectionLock, normalizeStudioSectionState } from "../js/studio-section-engine-v1.js";
 
 const group = normalizeStudioSectionState({ studioSection:"group", scene:"rangeRover", groupMode:"single" });
-assert.equal(group.groupMode, "group"); assert.equal(group.scene, "custom"); assert.equal(group.captureMode, "normal");
+assert.equal(group.groupMode, "group"); assert.equal(group.scene, "my_bedroom_text"); assert.equal(group.captureMode, "normal");
+assert.equal(normalizeStudioSectionState({ studioSection:"group", scene:"gym" }).scene, "gym");
+assert.equal(normalizeStudioSectionState({ studioSection:"group", scene:"street" }).scene, "street");
+assert.equal(normalizeStudioSectionState({ studioSection:"bedroom", scene:"gym" }).scene, "my_bedroom_text");
 
 const car = normalizeStudioSectionState({ studioSection:"car", scene:"my_bedroom_text", groupMode:"group", captureMode:"accidental" });
 assert.equal(car.scene, "rangeRover"); assert.equal(car.scenarioMode, "car"); assert.equal(car.groupMode, "single"); assert.equal(car.captureMode, "normal");
