@@ -85,6 +85,7 @@ const studioWorkspace = document.querySelector("#studio-workspace");
 const studioSectionGrid = document.querySelector("#studio-section-grid");
 const activeStudioSectionTitle = document.querySelector("#active-studio-section-title");
 const backToSectionsButton = document.querySelector("#back-to-sections");
+const sceneField = document.querySelector("#scene-field");
 const customSceneField = document.querySelector("#custom-scene-field");
 const customSceneDetailsField = document.querySelector("#custom-scene-details-field");
 const poseFamilySelect = document.querySelector("#pose-family");
@@ -347,7 +348,7 @@ function populateClothingPhysics(preferred = {}) {
 function refreshDynamicFields() {
   const studioSection = studioSectionSelect.value || STUDIO_SECTION_DEFAULTS.studioSection;
   const studioOption = STUDIO_SECTION_OPTIONS.find((item) => item.value === studioSection) || STUDIO_SECTION_OPTIONS[0];
-  const studioResolved = normalizeStudioSectionState({ studioSection, customScene:value("custom-scene") });
+  const studioResolved = normalizeStudioSectionState({ studioSection, scene:value("scene"), customScene:value("custom-scene") });
   scenarioModeSelect.value = studioResolved.scenarioMode;
   groupModeSelect.value = studioResolved.groupMode;
   captureModeSelect.value = studioResolved.captureMode;
@@ -362,6 +363,7 @@ function refreshDynamicFields() {
   const custom = isCustomScene(scene);
   const groupState = normalizeGroupSelfieState(readState());
   groupSelfieFields.hidden = studioSection !== "group";
+  sceneField.hidden = studioSection !== "group";
   const accidentalState = normalizeAccidentalState(readState());
   accidentalCaptureFields.hidden = studioSection !== "accidental";
   if (groupScorePreview) { const groupRisk = evaluateGroupRealism(groupState); groupScorePreview.textContent = `${groupRisk.score}/100 · ${groupRisk.level}`; }
