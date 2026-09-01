@@ -2,6 +2,7 @@ import { SCENES, sceneFamily } from "./wiki-selfie-data-v1.js";
 
 export const SCENARIO_DEFAULTS = Object.freeze({ scenarioMode:"bedroom" });
 export const SCENARIO_OPTIONS = Object.freeze([
+  { value:"group", label:"👥 أماكن السيلفي الجماعي", description:"غرفة النوم أو النادي أو الشارع داخل قسم السيلفي الجماعي فقط" },
   { value:"bedroom", label:"🏠 غرفة النوم", description:"السرير والاستلقاء والملابس المنزلية وإضاءة الغرفة" },
   { value:"car", label:"🚙 السيارة", description:"المقاعد والمقصورة ووضعيات وإضاءة السيارة" },
   { value:"street", label:"🌆 الخارج والشارع", description:"الوقوف والمشي والمواقف والإضاءة الخارجية" },
@@ -9,8 +10,8 @@ export const SCENARIO_OPTIONS = Object.freeze([
   { value:"custom", label:"✍️ مشهد مخصص", description:"مكان يكتبه المستخدم مع قواعد مستقلة" }
 ]);
 
-const DEFAULT_SCENES = Object.freeze({ bedroom:"my_bedroom_text", car:"rangeRover", street:"street", gym:"gym", custom:"custom" });
-const FAMILY_LABELS = Object.freeze({ bedroom:"غرفة النوم", car:"السيارة", street:"الخارج والشارع", gym:"الجيم", custom:"المشهد المخصص" });
+const DEFAULT_SCENES = Object.freeze({ group:"my_bedroom_text", bedroom:"my_bedroom_text", car:"rangeRover", street:"street", gym:"gym", custom:"custom" });
+const FAMILY_LABELS = Object.freeze({ group:"أماكن السيلفي الجماعي", bedroom:"غرفة النوم", car:"السيارة", street:"الخارج والشارع", gym:"الجيم", custom:"المشهد المخصص" });
 
 export function scenarioForScene(scene = "") {
   if (scene === "custom") return "custom";
@@ -19,6 +20,11 @@ export function scenarioForScene(scene = "") {
 }
 
 export function getScenarioSceneOptions(scenarioMode = "bedroom") {
+  if (scenarioMode === "group") return [
+    { value:"my_bedroom_text", label:"🏠 سيلفي جماعي في غرفة النوم" },
+    { value:"gym", label:"🏋️ سيلفي جماعي في النادي" },
+    { value:"street", label:"🌆 سيلفي جماعي في الشارع" }
+  ];
   if (scenarioMode === "custom") return [{ value:"custom", label:"✍️ مشهد مخصص" }];
   return Object.entries(SCENES)
     .filter(([, scene]) => scene.family === scenarioMode)
