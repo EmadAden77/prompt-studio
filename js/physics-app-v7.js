@@ -198,6 +198,11 @@ function persistSelectedScene() { try { localStorage.setItem(SELECTED_STUDIO_SEC
 function openStudioSection(sectionId) {
   studioSectionSelect.value = sectionId;
   persistSelectedScene();
+  if (!history.state?.studioSection) {
+    history.pushState({ ...(history.state || {}), studioSection:sectionId }, "", `#section=${sectionId}`);
+  } else {
+    history.replaceState({ ...(history.state || {}), studioSection:sectionId }, "", `#section=${sectionId}`);
+  }
   studioHub.hidden = true;
   studioWorkspace.hidden = false;
   resultPanel.hidden = true;
@@ -210,6 +215,11 @@ function closeStudioSection() {
   resultPanel.hidden = true;
   studioHub.hidden = false;
   studioHub.scrollIntoView({ behavior:"smooth", block:"start" });
+}
+
+function returnToStudioHub() {
+  if (history.state?.studioSection) history.back();
+  else closeStudioSection();
 }
 
 function renderStudioSectionCards() {
@@ -545,7 +555,8 @@ referenceImage.addEventListener("change", (event) => setReference(event.target.f
 removeReferenceButton.addEventListener("click", () => { clearReference(); setStatus("أزيلت معاينة المرجع من الجهاز."); });
 sceneSelect.addEventListener("change", () => { persistSelectedScene(); refreshDynamicFields(); });
 studioSectionSelect.addEventListener("change", () => { persistSelectedScene(); refreshDynamicFields(); });
-backToSectionsButton.addEventListener("click", closeStudioSection);
+backToSectionsButton.addEventListener("click", returnToStudioHub);
+window.addEventListener("popstate", () => closeStudioSection());
 ["time","pose-family","pose","car-seat","lighting","clothing","fabric","composition","selfie-angle","place-state","people-density","subject-moment","scene-profile","accessory-profile","object-profile","group-mode","group-count","camera-holder","group-arrangement","group-interaction","group-auto-fix","capture-mode","accidental-trigger","accidental-device","accidental-position","accidental-motion","accidental-tilt","accidental-focus","accidental-exposure","accidental-intensity"].forEach((id) => {
   document.querySelector(`#${id}`)?.addEventListener("change", refreshDynamicFields);
 });
