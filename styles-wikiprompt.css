@@ -60,6 +60,10 @@
 .studio-section-card small { line-height:1.65; opacity:.75; }
 .studio-workspace-header { display:grid; grid-template-columns:auto 1fr; gap:16px; align-items:center; }
 .studio-workspace-header .readonly-card { grid-column:1/-1; }
+.effect-choice-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; margin-bottom:14px; }
+.effect-choice { display:flex; align-items:center; gap:10px; min-height:58px; padding:12px 14px; border:1px solid rgba(127,127,127,.28); border-radius:14px; background:rgba(127,127,127,.06); cursor:pointer; }
+.effect-choice:has(input:checked) { border-color:#6f7cff; background:rgba(111,124,255,.12); }
+.effect-choice input { width:20px; height:20px; accent-color:#6f7cff; }
 
 @media (max-width: 760px) {
   .studio-section-grid,.studio-workspace-header { grid-template-columns:1fr; }
