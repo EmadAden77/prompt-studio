@@ -39,6 +39,18 @@
           <div class="section-heading"><div><span class="section-number">02</span><h2 id="selfie-title">السيلفي والوضعية</h2></div><p id="template-hint" aria-live="polite"></p></div>
           <div class="selfie-guidance" role="note">هذه هي الطبقة الأعلى أولوية بعد الهوية. المكان يرشّح الوضعية، والوضعية تقيد زاوية الهاتف والتكوين حتى تبقى مسافة الذراع والمنظور ممكنين فعلياً.</div>
           <div class="form-grid">
+            <label class="field field-span-2" for="group-mode"><span>نوع السيلفي</span><select id="group-mode" name="groupMode"><option value="single">سيلفي فردي</option><option value="group">👥 سيلفي جماعي — Group Selfie</option></select><small>السيلفي الجماعي يفعّل محرك هندسة وعمق وأذرع وسلوك اجتماعي مستقل.</small></label>
+            <div class="field field-span-2" id="group-selfie-fields" hidden>
+              <span>إعدادات السيلفي الجماعي</span>
+              <div class="form-grid">
+                <label class="field" for="group-count"><span>عدد الأشخاص</span><select id="group-count" name="groupCount"></select></label>
+                <label class="field" for="camera-holder"><span>صاحب الهاتف</span><select id="camera-holder" name="cameraHolder"></select></label>
+                <label class="field" for="group-arrangement"><span>توزيع المجموعة</span><select id="group-arrangement" name="groupArrangement"></select></label>
+                <label class="field" for="group-interaction"><span>التفاعل</span><select id="group-interaction" name="groupInteraction"></select></label>
+                <label class="field" for="group-auto-fix"><span>التصحيح التلقائي</span><select id="group-auto-fix" name="groupAutoFix"><option value="on">مفعّل — أقل من 75</option><option value="off">متوقف</option></select></label>
+                <div class="field"><span>Group Realism Score</span><div class="readonly-card" id="group-score-preview">100/100</div><small>أقل من 75: Auto Fix · أقل من 60: Block Generation.</small></div>
+              </div>
+            </div>
             <label class="field" for="scene"><span>السياق</span><select id="scene" name="scene"></select></label>
             <label class="field field-span-2" id="custom-scene-field" for="custom-scene" hidden><span>وصف المشهد المخصص</span><textarea id="custom-scene" name="customScene" rows="3" placeholder="مثال: داخل محل نظارات طبي حديث في السعودية، أو داخل بقالة صغيرة في حي سكني."></textarea><small>اكتب المكان نفسه. المحرك يحوله إلى بيئة واقعية ويحافظ على السيلفي كعنصر أساسي.</small></label>
             <label class="field field-span-2" id="custom-scene-details-field" for="custom-scene-details" hidden><span>تفاصيل مطلوبة إذا سمحت الزاوية</span><input id="custom-scene-details" name="customSceneDetails" type="text" placeholder="اختياري: رف نظارات، مرآة صغيرة، موظف واحد بالخلفية." /><small>لا تُجبر هذه العناصر على الظهور إذا لم يسمح الكادر أو المنظور.</small></label>
