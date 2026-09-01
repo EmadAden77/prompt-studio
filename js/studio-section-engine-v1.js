@@ -1,7 +1,7 @@
 export const STUDIO_SECTION_DEFAULTS = Object.freeze({ studioSection:"solo" });
 export const STUDIO_SECTION_OPTIONS = Object.freeze([
   { value:"solo", label:"🤳 السيلفي الفردي", description:"شخص واحد، وضعيات وزوايا وملابس وإضاءة خاصة بالسيلفي الفردي" },
-  { value:"group", label:"👥 السيلفي الجماعي", description:"عدد الأشخاص وصاحب الهاتف وتوزيع المجموعة والتفاعل" },
+  { value:"group", label:"👥 السيلفي الجماعي", description:"قسم مستقل لعدد الأشخاص وصاحب الهاتف وتوزيع المجموعة، مع اختيار غرفة النوم أو النادي أو الشارع" },
   { value:"car", label:"🚙 التصوير داخل السيارة", description:"مقاعد السيارة والمقصورة ووضعيات وإضاءة السيارة فقط" },
   { value:"bedroom", label:"🏠 التصوير في غرفة النوم", description:"السرير والاستلقاء والأريكة وملابس وإضاءة الغرفة فقط" },
   { value:"gym", label:"🏋️ التصوير في الجيم", description:"وضعيات وملابس وإضاءة الجيم فقط" },
@@ -12,7 +12,7 @@ export const STUDIO_SECTION_OPTIONS = Object.freeze([
 
 const CONFIG = Object.freeze({
   solo:{ scenarioMode:"custom", scene:"custom", groupMode:"single", captureMode:"normal", customFallback:"an ordinary everyday location used only as minimal supporting context" },
-  group:{ scenarioMode:"custom", scene:"custom", groupMode:"group", captureMode:"normal", customFallback:"an ordinary everyday social setting with enough physical space for the selected group" },
+  group:{ scenarioMode:"group", scene:"my_bedroom_text", groupMode:"group", captureMode:"normal" },
   car:{ scenarioMode:"car", scene:"rangeRover", groupMode:"single", captureMode:"normal" },
   bedroom:{ scenarioMode:"bedroom", scene:"my_bedroom_text", groupMode:"single", captureMode:"normal" },
   gym:{ scenarioMode:"gym", scene:"gym", groupMode:"single", captureMode:"normal" },
@@ -24,7 +24,9 @@ const CONFIG = Object.freeze({
 export function normalizeStudioSectionState(raw = {}) {
   const studioSection = STUDIO_SECTION_OPTIONS.some((item) => item.value === raw.studioSection) ? raw.studioSection : STUDIO_SECTION_DEFAULTS.studioSection;
   const config = CONFIG[studioSection];
-  const state = { ...raw, studioSection, scenarioMode:config.scenarioMode, scene:config.scene, groupMode:config.groupMode, captureMode:config.captureMode };
+  const groupScenes = ["my_bedroom_text", "gym", "street"];
+  const sectionScene = studioSection === "group" && groupScenes.includes(raw.scene) ? raw.scene : config.scene;
+  const state = { ...raw, studioSection, scenarioMode:config.scenarioMode, scene:sectionScene, groupMode:config.groupMode, captureMode:config.captureMode };
   if (config.customFallback && !String(state.customScene || "").trim()) state.customScene = config.customFallback;
   if (studioSection !== "group") {
     state.groupCount = "3"; state.cameraHolder = "A"; state.groupArrangement = "natural-auto"; state.groupInteraction = "casual"; state.groupAutoFix = "on";
