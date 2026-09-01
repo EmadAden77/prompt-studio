@@ -40,6 +40,20 @@
           <div class="selfie-guidance" role="note">هذه هي الطبقة الأعلى أولوية بعد الهوية. المكان يرشّح الوضعية، والوضعية تقيد زاوية الهاتف والتكوين حتى تبقى مسافة الذراع والمنظور ممكنين فعلياً.</div>
           <div class="form-grid">
             <label class="field field-span-2" for="group-mode"><span>نوع السيلفي</span><select id="group-mode" name="groupMode"><option value="single">سيلفي فردي</option><option value="group">👥 سيلفي جماعي — Group Selfie</option></select><small>السيلفي الجماعي يفعّل محرك هندسة وعمق وأذرع وسلوك اجتماعي مستقل.</small></label>
+            <label class="field field-span-2" for="capture-mode"><span>طريقة التقاط الصورة</span><select id="capture-mode" name="captureMode"><option value="normal">التقاط سيلفي طبيعي</option><option value="accidental">📱 لقطة عفوية بالخطأ</option></select><small>يغيّر سلوك الكاميرا والحركة والتركيز فقط، ولا يغيّر الهوية أو المشهد.</small></label>
+            <div class="field field-span-2" id="accidental-capture-fields" hidden>
+              <span>إعدادات اللقطة العفوية بالخطأ</span>
+              <div class="form-grid">
+                <label class="field" for="accidental-trigger"><span>سبب حدوث اللقطة</span><select id="accidental-trigger" name="accidentalTrigger"></select></label>
+                <label class="field" for="accidental-device"><span>الهاتف</span><select id="accidental-device" name="accidentalDevice"></select></label>
+                <label class="field" for="accidental-position"><span>موضع الهاتف</span><select id="accidental-position" name="accidentalPhonePosition"></select></label>
+                <label class="field" for="accidental-motion"><span>شدة الحركة</span><select id="accidental-motion" name="accidentalMotion"></select></label>
+                <label class="field" for="accidental-tilt"><span>اتجاه الميل</span><select id="accidental-tilt" name="accidentalTilt"></select></label>
+                <label class="field" for="accidental-focus"><span>حالة التركيز</span><select id="accidental-focus" name="accidentalFocus"></select></label>
+                <label class="field" for="accidental-exposure"><span>التعريض التلقائي</span><select id="accidental-exposure" name="accidentalExposure"></select></label>
+                <label class="field" for="accidental-intensity"><span>درجة العفوية</span><select id="accidental-intensity" name="accidentalIntensity"></select></label>
+              </div>
+            </div>
             <div class="field field-span-2" id="group-selfie-fields" hidden>
               <span>إعدادات السيلفي الجماعي</span>
               <div class="form-grid">
