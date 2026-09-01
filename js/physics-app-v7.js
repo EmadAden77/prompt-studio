@@ -55,6 +55,7 @@ import {
 } from "./auto-realism-suite-v1.js";
 import { CAMERA_HOLDER_OPTIONS, GROUP_ARRANGEMENT_OPTIONS, GROUP_COUNT_OPTIONS, GROUP_INTERACTION_OPTIONS, GROUP_SELFIE_DEFAULTS, buildGroupSelfieEnhancement, evaluateGroupRealism, isGroupSelfie, normalizeGroupSelfieState } from "./group-selfie-engine-v1.js";
 import { ACCIDENTAL_DEFAULTS, ACCIDENTAL_DEVICE_OPTIONS, ACCIDENTAL_EXPOSURE_OPTIONS, ACCIDENTAL_FOCUS_OPTIONS, ACCIDENTAL_INTENSITY_OPTIONS, ACCIDENTAL_MOTION_OPTIONS, ACCIDENTAL_POSITION_OPTIONS, ACCIDENTAL_TILT_OPTIONS, ACCIDENTAL_TRIGGER_OPTIONS, applyAccidentalDeviceAuthority, buildAccidentalCaptureEnhancement, isAccidentalCapture, normalizeAccidentalState } from "./accidental-capture-engine-v1.js";
+import { SCENARIO_DEFAULTS, SCENARIO_OPTIONS, buildScenarioLock, getScenarioSceneOptions, normalizeScenarioState, scenarioForScene } from "./scenario-section-engine-v1.js";
 
 const REALISM_DEFAULTS = Object.freeze({
   placeState:"auto",
@@ -74,6 +75,9 @@ const referencePreview = document.querySelector("#reference-preview");
 const referencePreviewWrap = document.querySelector("#reference-preview-wrap");
 const removeReferenceButton = document.querySelector("#remove-reference");
 const sceneSelect = document.querySelector("#scene");
+const scenarioModeSelect = document.querySelector("#scenario-mode");
+const scenarioModeDescription = document.querySelector("#scenario-mode-description");
+const scenarioLockStatus = document.querySelector("#scenario-lock-status");
 const customSceneField = document.querySelector("#custom-scene-field");
 const customSceneDetailsField = document.querySelector("#custom-scene-details-field");
 const poseFamilySelect = document.querySelector("#pose-family");
@@ -131,6 +135,7 @@ let referenceObjectUrl = "";
 let hasReference = false;
 let wikiSyncId = 0;
 const SELECTED_SCENE_STORAGE_KEY = "wikiprompt-selfie-studio:selected-scene";
+const SELECTED_SCENARIO_STORAGE_KEY = "wikiprompt-selfie-studio:selected-scenario";
 const value = (id) => document.querySelector(`#${id}`)?.value ?? "";
 
 function setStatus(message) { formStatus.textContent = message; }
@@ -176,14 +181,16 @@ function composeWikiFirstPrompt(basePrompt, guidance) {
 function restoreSelectedScene() {
   try {
     const savedScene = localStorage.getItem(SELECTED_SCENE_STORAGE_KEY);
-    if ([...sceneSelect.options].some((option) => option.value === savedScene)) sceneSelect.value = savedScene;
+    const savedScenario = localStorage.getItem(SELECTED_SCENARIO_STORAGE_KEY) || scenarioForScene(savedScene);
+    if ([...scenarioModeSelect.options].some((option) => option.value === savedScenario)) scenarioModeSelect.value = savedScenario;
+    populateSelect(sceneSelect, getScenarioSceneOptions(scenarioModeSelect.value), savedScene);
   } catch {}
 }
-function persistSelectedScene() { try { localStorage.setItem(SELECTED_SCENE_STORAGE_KEY, sceneSelect.value); } catch {} }
+function persistSelectedScene() { try { localStorage.setItem(SELECTED_SCENE_STORAGE_KEY, sceneSelect.value); localStorage.setItem(SELECTED_SCENARIO_STORAGE_KEY, scenarioModeSelect.value); } catch {} }
 
 function readState() {
   return {
-    scene:value("scene"), customScene:value("custom-scene"), customSceneDetails:value("custom-scene-details"),
+    scenarioMode:value("scenario-mode"), scene:value("scene"), customScene:value("custom-scene"), customSceneDetails:value("custom-scene-details"),
     city:value("city"), time:value("time"), mode:"selfie", poseFamily:value("pose-family"), pose:value("pose"),
     carSeat:value("car-seat"), clothing:value("clothing"), clothingCustom:value("clothing-custom"),
     fabric:value("fabric"), fabricWeight:value("fabric-weight"), ironState:value("iron-state"), wearState:value("wear-state"),
@@ -201,7 +208,8 @@ function readState() {
 }
 
 function normalizeEnhancedState(rawState = {}) {
-  const base = normalizeState({ ...REALISM_DEFAULTS, ...AUTO_REALISM_DEFAULTS, ...rawState });
+  const scenarioState = normalizeScenarioState({ ...REALISM_DEFAULTS, ...AUTO_REALISM_DEFAULTS, ...rawState });
+  const base = normalizeState(scenarioState);
   const core = resolveRealismCoreState(base);
   const coreNormalized = normalizeState(core.state);
   const coreState = { ...coreNormalized, ...core.state };
@@ -235,10 +243,12 @@ function buildEnhancedPack(rawState = {}) {
   const suite = applyAutoRealismSuite({ positive:optimized.prompt, negative, state:{ ...base.state, ...state }, risk, conflicts });
   const group = buildGroupSelfieEnhancement(state);
   const accidental = buildAccidentalCaptureEnhancement(state);
+  const scenario = buildScenarioLock(state);
   const baseWithDevice = applyAccidentalDeviceAuthority(suite.positive, accidental.state);
-  const groupPositive = group.positive ? `${baseWithDevice}\n\n${group.positive}` : baseWithDevice;
+  const scenarioPositive = `${baseWithDevice}\n\n${scenario.positive}`;
+  const groupPositive = group.positive ? `${scenarioPositive}\n\n${group.positive}` : scenarioPositive;
   const enhancedPositive = accidental.positive ? `${groupPositive}\n\n${accidental.positive}` : groupPositive;
-  const groupNegative = [...new Set([...suite.negative.split(/,\s*/), ...group.negative, ...accidental.negative])].join(", ");
+  const groupNegative = [...new Set([...suite.negative.split(/,\s*/), ...scenario.negative, ...group.negative, ...accidental.negative])].join(", ");
   return {
     ...base,
     state:suite.state,
@@ -248,7 +258,7 @@ function buildEnhancedPack(rawState = {}) {
       ...base.qa,
       ...realismCoreQaItems(base.state, conflicts),
       ...advancedRealismQaItems(base.state, conflicts, optimized.stats),
-      ...suite.qa, ...group.qa, ...accidental.qa
+      ...suite.qa, ...scenario.qa, ...group.qa, ...accidental.qa
     ],
     conflicts,
     optimizerStats:optimized.stats,
@@ -282,7 +292,13 @@ function populateClothingPhysics(preferred = {}) {
 }
 
 function refreshDynamicFields() {
-  const scene = sceneSelect.value || DEFAULT_STATE.scene;
+  const scenarioMode = scenarioModeSelect.value || SCENARIO_DEFAULTS.scenarioMode;
+  const scenarioOption = SCENARIO_OPTIONS.find((item) => item.value === scenarioMode) || SCENARIO_OPTIONS[0];
+  const allowedSceneOptions = getScenarioSceneOptions(scenarioMode);
+  if (!allowedSceneOptions.some((item) => item.value === sceneSelect.value)) populateSelect(sceneSelect, allowedSceneOptions, allowedSceneOptions[0]?.value);
+  scenarioModeDescription.textContent = scenarioOption.description;
+  scenarioLockStatus.textContent = `${scenarioOption.label} نشط · بقية الأقسام مقفلة`;
+  const scene = sceneSelect.value || allowedSceneOptions[0]?.value || DEFAULT_STATE.scene;
   const time = value("time") || DEFAULT_STATE.time;
   const custom = isCustomScene(scene);
   const groupState = normalizeGroupSelfieState(readState());
@@ -423,6 +439,8 @@ function downloadPrompt() {
 
 function resetForm() {
   form.reset(); sceneSelect.value = DEFAULT_STATE.scene;
+  scenarioModeSelect.value = SCENARIO_DEFAULTS.scenarioMode;
+  populateSelect(sceneSelect, getScenarioSceneOptions(scenarioModeSelect.value), DEFAULT_STATE.scene);
   document.querySelector("#city").value = DEFAULT_STATE.city; document.querySelector("#time").value = DEFAULT_STATE.time;
   document.querySelector("#messiness").value = DEFAULT_STATE.messiness;
   placeStateSelect.value = REALISM_DEFAULTS.placeState; peopleDensitySelect.value = REALISM_DEFAULTS.peopleDensity; subjectMomentSelect.value = REALISM_DEFAULTS.subjectMoment;
@@ -451,7 +469,8 @@ function resetForm() {
 function initializeStaticSelects() {
   groupModeSelect.value = GROUP_SELFIE_DEFAULTS.groupMode;
   captureModeSelect.value = ACCIDENTAL_DEFAULTS.captureMode;
-  populateSelect(sceneSelect, getSceneOptions(), DEFAULT_STATE.scene);
+  populateSelect(scenarioModeSelect, SCENARIO_OPTIONS, SCENARIO_DEFAULTS.scenarioMode);
+  populateSelect(sceneSelect, getScenarioSceneOptions(SCENARIO_DEFAULTS.scenarioMode), DEFAULT_STATE.scene);
   populateSelect(hairSelect, getHairOptions(), DEFAULT_STATE.hair);
   populateSelect(skinSelect, getSkinOptions(), DEFAULT_STATE.skin);
   populateSelect(expressionSelect, getExpressionOptions(), DEFAULT_STATE.expression);
@@ -478,6 +497,7 @@ function initializeStaticSelects() {
 referenceImage.addEventListener("change", (event) => setReference(event.target.files?.[0]));
 removeReferenceButton.addEventListener("click", () => { clearReference(); setStatus("أزيلت معاينة المرجع من الجهاز."); });
 sceneSelect.addEventListener("change", () => { persistSelectedScene(); refreshDynamicFields(); });
+scenarioModeSelect.addEventListener("change", () => { populateSelect(sceneSelect, getScenarioSceneOptions(scenarioModeSelect.value), ""); persistSelectedScene(); refreshDynamicFields(); });
 ["time","pose-family","pose","car-seat","lighting","clothing","fabric","composition","selfie-angle","place-state","people-density","subject-moment","scene-profile","accessory-profile","object-profile","group-mode","group-count","camera-holder","group-arrangement","group-interaction","group-auto-fix","capture-mode","accidental-trigger","accidental-device","accidental-position","accidental-motion","accidental-tilt","accidental-focus","accidental-exposure","accidental-intensity"].forEach((id) => {
   document.querySelector(`#${id}`)?.addEventListener("change", refreshDynamicFields);
 });
