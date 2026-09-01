@@ -125,6 +125,21 @@
           </div>
         </section>
 
+        <section class="panel" id="post-processing-panel" aria-labelledby="post-processing-title">
+          <div class="section-heading"><div><span class="section-number">04A</span><h2 id="post-processing-title">الملمس والمعالجة اللاحقة</h2></div><p>اختيارية في جميع الأقسام. اتركها فارغة لعدم إضافة أي معالجة، أو اختر تأثيرين كحد أقصى.</p></div>
+          <div class="effect-choice-grid" id="post-processing-options">
+            <label class="effect-choice"><input type="checkbox" name="postProcessing" value="film-burn" /><span>حرق الفيلم</span></label>
+            <label class="effect-choice"><input type="checkbox" name="postProcessing" value="film-grain" /><span>حبيبات الفيلم</span></label>
+            <label class="effect-choice"><input type="checkbox" name="postProcessing" value="digital-clean" /><span>كلين ديجيتال</span></label>
+            <label class="effect-choice"><input type="checkbox" name="postProcessing" value="chromatic-aberration" /><span>الانحراف اللوني</span></label>
+            <label class="effect-choice"><input type="checkbox" name="postProcessing" value="bloom" /><span>بلوم</span></label>
+            <label class="effect-choice"><input type="checkbox" name="postProcessing" value="vhs" /><span>VHS</span></label>
+            <label class="effect-choice"><input type="checkbox" name="postProcessing" value="miniature" /><span>صورة مصغّرة</span></label>
+            <label class="effect-choice"><input type="checkbox" name="postProcessing" value="motion-blur" /><span>ضبابية الحركة</span></label>
+          </div>
+          <div class="readonly-card" id="post-processing-status">بدون معالجة إضافية</div>
+        </section>
+
         <section class="panel priority-panel" aria-labelledby="realism-core-title">
           <div class="section-heading"><div><span class="section-number">05</span><h2 id="realism-core-title">Realism Core</h2></div><p>طبقة ذكية تمنع التناقضات وتربط الشخص بالمكان والكاميرا بدل زيادة ديكور عشوائي.</p></div>
           <div class="selfie-guidance" role="note">التلامس، سلوك كاميرا الهاتف، الانعكاسات والزجاج وفحص التناقضات تعمل تلقائياً. أنت تتحكم فقط في الأشياء التي لها معنى بصري حقيقي.</div>
@@ -174,6 +189,6 @@
 
       <template id="qa-item-template"><li><strong></strong><span></span></li></template>
     </main>
-    <script type="module" src="js/physics-app-v7.js?v=20260902-bedroom-topology1"></script>
+    <script type="module" src="js/physics-app-v7.js?v=20260902-post-processing1"></script>
   </body>
 </html>
