@@ -52,7 +52,7 @@ import {
   mountAutoRealismSuite,
   normalizeAutoRealismState,
   readAutoRealismUiState
-} from "./auto-realism-suite-v1.js?v=20260901-fix1";
+} from "./auto-realism-suite-v1.js?v=20260901-fix2";
 import { CAMERA_HOLDER_OPTIONS, GROUP_ARRANGEMENT_OPTIONS, GROUP_COUNT_OPTIONS, GROUP_INTERACTION_OPTIONS, GROUP_SELFIE_DEFAULTS, buildGroupSelfieEnhancement, evaluateGroupRealism, isGroupSelfie, normalizeGroupSelfieState } from "./group-selfie-engine-v1.js";
 import { ACCIDENTAL_DEFAULTS, ACCIDENTAL_DEVICE_OPTIONS, ACCIDENTAL_EXPOSURE_OPTIONS, ACCIDENTAL_FOCUS_OPTIONS, ACCIDENTAL_INTENSITY_OPTIONS, ACCIDENTAL_MOTION_OPTIONS, ACCIDENTAL_POSITION_OPTIONS, ACCIDENTAL_TILT_OPTIONS, ACCIDENTAL_TRIGGER_OPTIONS, applyAccidentalDeviceAuthority, buildAccidentalCaptureEnhancement, isAccidentalCapture, normalizeAccidentalState } from "./accidental-capture-engine-v1.js";
 import { SCENARIO_DEFAULTS, SCENARIO_OPTIONS, buildScenarioLock, getScenarioSceneOptions, normalizeScenarioState, scenarioForScene } from "./scenario-section-engine-v1.js";
