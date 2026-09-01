@@ -57,6 +57,7 @@ import { CAMERA_HOLDER_OPTIONS, GROUP_ARRANGEMENT_OPTIONS, GROUP_COUNT_OPTIONS, 
 import { ACCIDENTAL_DEFAULTS, ACCIDENTAL_DEVICE_OPTIONS, ACCIDENTAL_EXPOSURE_OPTIONS, ACCIDENTAL_FOCUS_OPTIONS, ACCIDENTAL_INTENSITY_OPTIONS, ACCIDENTAL_MOTION_OPTIONS, ACCIDENTAL_POSITION_OPTIONS, ACCIDENTAL_TILT_OPTIONS, ACCIDENTAL_TRIGGER_OPTIONS, applyAccidentalDeviceAuthority, buildAccidentalCaptureEnhancement, isAccidentalCapture, normalizeAccidentalState } from "./accidental-capture-engine-v1.js";
 import { SCENARIO_DEFAULTS, SCENARIO_OPTIONS, buildScenarioLock, getScenarioSceneOptions, normalizeScenarioState, scenarioForScene } from "./scenario-section-engine-v1.js";
 import { STUDIO_SECTION_DEFAULTS, STUDIO_SECTION_OPTIONS, buildStudioSectionLock, normalizeStudioSectionState } from "./studio-section-engine-v1.js";
+import { buildPostProcessingEnhancement, normalizePostProcessingState } from "./post-processing-engine-v1.js";
 
 const REALISM_DEFAULTS = Object.freeze({
   placeState:"auto",
@@ -139,6 +140,8 @@ const resultMeta = document.querySelector("#result-meta");
 const qaList = document.querySelector("#qa-list");
 const qaItemTemplate = document.querySelector("#qa-item-template");
 const formStatus = document.querySelector("#form-status");
+const postProcessingInputs = [...document.querySelectorAll('input[name="postProcessing"]')];
+const postProcessingStatus = document.querySelector("#post-processing-status");
 
 let referenceObjectUrl = "";
 let hasReference = false;
@@ -253,6 +256,7 @@ function readState() {
     subjectMoment:value("subject-moment"), interactionObject:value("interaction-object"),
     sceneProfile:value("scene-profile"), accessoryProfile:value("accessory-profile"), accessoryDetail:value("accessory-detail"),
     objectProfile:value("object-profile"), hasReference,
+    postProcessing:postProcessingInputs.filter((input) => input.checked).map((input) => input.value),
     groupMode:value("group-mode"), groupCount:value("group-count"), cameraHolder:value("camera-holder"), groupArrangement:value("group-arrangement"), groupInteraction:value("group-interaction"), groupAutoFix:value("group-auto-fix"),
     captureMode:value("capture-mode"), accidentalTrigger:value("accidental-trigger"), accidentalDevice:value("accidental-device"), accidentalPhonePosition:value("accidental-position"), accidentalMotion:value("accidental-motion"), accidentalTilt:value("accidental-tilt"), accidentalFocus:value("accidental-focus"), accidentalExposure:value("accidental-exposure"), accidentalIntensity:value("accidental-intensity"),
     ...readAutoRealismUiState()
@@ -271,8 +275,9 @@ function normalizeEnhancedState(rawState = {}) {
   const suiteState = normalizeAutoRealismState({ ...finalNormalized, ...advanced.state });
   const groupState = normalizeGroupSelfieState(suiteState);
   const accidentalState = normalizeAccidentalState(groupState);
+  const postProcessingState = normalizePostProcessingState(accidentalState);
   return {
-    state:{ ...suiteState, ...groupState, ...accidentalState },
+    state:{ ...suiteState, ...groupState, ...accidentalState, ...postProcessingState },
     conflicts:[...core.conflicts, ...advanced.conflicts]
   };
 }
@@ -298,21 +303,23 @@ function buildEnhancedPack(rawState = {}) {
   const accidental = buildAccidentalCaptureEnhancement(state);
   const scenario = buildScenarioLock(state);
   const studio = buildStudioSectionLock(state);
+  const postProcessing = buildPostProcessingEnhancement(state);
   const baseWithDevice = applyAccidentalDeviceAuthority(suite.positive, accidental.state);
   const scenarioPositive = `${baseWithDevice}\n\n${studio.positive}`;
   const groupPositive = group.positive ? `${scenarioPositive}\n\n${group.positive}` : scenarioPositive;
-  const enhancedPositive = accidental.positive ? `${groupPositive}\n\n${accidental.positive}` : groupPositive;
-  const groupNegative = [...new Set([...suite.negative.split(/,\s*/), ...studio.negative, ...group.negative, ...accidental.negative])].join(", ");
+  const capturePositive = accidental.positive ? `${groupPositive}\n\n${accidental.positive}` : groupPositive;
+  const enhancedPositive = postProcessing.positive ? `${capturePositive}\n\n${postProcessing.positive}` : capturePositive;
+  const groupNegative = [...new Set([...suite.negative.split(/,\s*/), ...studio.negative, ...group.negative, ...accidental.negative, ...postProcessing.negative])].join(", ");
   return {
     ...base,
-    state:suite.state,
+    state:{ ...suite.state, postProcessing:postProcessing.state.postProcessing },
     positive:enhancedPositive,
     negative:groupNegative,
     qa:[
       ...base.qa,
       ...realismCoreQaItems(base.state, conflicts),
       ...advancedRealismQaItems(base.state, conflicts, optimized.stats),
-      ...suite.qa, ...studio.qa, ...group.qa, ...accidental.qa
+      ...suite.qa, ...studio.qa, ...group.qa, ...accidental.qa, ...postProcessing.qa
     ],
     conflicts,
     optimizerStats:optimized.stats,
@@ -334,6 +341,24 @@ function syncUiToNormalizedState(state) {
   pairs.forEach(([select, selectedValue]) => {
     if (select && [...select.options].some((option) => option.value === selectedValue)) select.value = selectedValue;
   });
+  const selectedEffects = new Set(state.postProcessing || []);
+  postProcessingInputs.forEach((input) => { input.checked = selectedEffects.has(input.value); });
+  postProcessingStatus.textContent = selectedEffects.size
+    ? `${[...selectedEffects].map((value) => inputEffectLabel(value)).join(" + ")} · ${selectedEffects.size}/2`
+    : "بدون معالجة إضافية";
+}
+
+function inputEffectLabel(value) {
+  return postProcessingInputs.find((input) => input.value === value)?.parentElement?.innerText?.trim() || value;
+}
+
+function refreshPostProcessingSelection() {
+  const normalized = normalizePostProcessingState({ postProcessing:postProcessingInputs.filter((input) => input.checked).map((input) => input.value) });
+  const selected = new Set(normalized.postProcessing);
+  postProcessingInputs.forEach((input) => { input.checked = selected.has(input.value); });
+  postProcessingStatus.textContent = selected.size
+    ? `${[...selected].map((value) => inputEffectLabel(value)).join(" + ")} · ${selected.size}/2`
+    : "بدون معالجة إضافية";
 }
 
 function populateClothingPhysics(preferred = {}) {
@@ -523,6 +548,8 @@ function resetForm() {
     "lock-lighting":AUTO_REALISM_DEFAULTS.lockLighting,
     "lock-expression":AUTO_REALISM_DEFAULTS.lockExpression
   }).forEach(([id, selected]) => { const el = document.querySelector(`#${id}`); if (el) el.value = selected; });
+  postProcessingInputs.forEach((input) => { input.checked = false; });
+  refreshPostProcessingSelection();
   clearReference(); refreshDynamicFields(); persistSelectedScene(); renderPrompt();
 }
 
@@ -560,6 +587,7 @@ sceneSelect.addEventListener("change", () => { persistSelectedScene(); refreshDy
 studioSectionSelect.addEventListener("change", () => { persistSelectedScene(); refreshDynamicFields(); });
 backToSectionsButton.addEventListener("click", returnToStudioHub);
 window.addEventListener("popstate", () => closeStudioSection());
+postProcessingInputs.forEach((input) => input.addEventListener("change", () => { refreshPostProcessingSelection(); refreshDynamicFields(); }));
 ["time","pose-family","pose","car-seat","lighting","clothing","fabric","composition","selfie-angle","place-state","people-density","subject-moment","scene-profile","accessory-profile","object-profile","group-mode","group-count","camera-holder","group-arrangement","group-interaction","group-auto-fix","capture-mode","accidental-trigger","accidental-device","accidental-position","accidental-motion","accidental-tilt","accidental-focus","accidental-exposure","accidental-intensity"].forEach((id) => {
   document.querySelector(`#${id}`)?.addEventListener("change", refreshDynamicFields);
 });
