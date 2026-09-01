@@ -54,7 +54,10 @@ export function evaluateGroupRealism(raw = {}) {
 
 export function buildGroupSelfieEnhancement(raw = {}) {
   const state = normalizeGroupSelfieState(raw);
-  if (!isGroupSelfie(state)) return { state, positive:"", negative:[], qa:[], score:evaluateGroupRealism(state) };
+  if (!isGroupSelfie(state)) {
+    const soloGate = state.peopleDensity === "none" ? "[SOLO SUBJECT GATE] Exactly one person is present in the entire photograph. Do not add companions, group members or background people. Group-selfie geometry is disabled." : "";
+    return { state, positive:soloGate, negative:[], qa:[], score:evaluateGroupRealism(state) };
+  }
   const count = Number(state.groupCount);
   const holder = state.cameraHolder === "auto" ? "resolve exactly one camera holder before assigning any arm" : `Person ${state.cameraHolder} is the only camera holder`;
   const arrangement = option(GROUP_ARRANGEMENT_OPTIONS, state.groupArrangement);
