@@ -64,7 +64,7 @@ const REALISM_DEFAULTS = Object.freeze({
   sceneProfile:"auto",
   accessoryProfile:"auto",
   accessoryDetail:"",
-  objectProfile:""
+  objectProfile:"none"
 });
 
 const form = document.querySelector("#prompt-form");
@@ -103,6 +103,8 @@ const accessoryProfileSelect = document.querySelector("#accessory-profile");
 const objectProfileSelect = document.querySelector("#object-profile");
 const realismScorePreview = document.querySelector("#realism-score-preview");
 const groupSelfieFields = document.querySelector("#group-selfie-fields");
+const groupModeSelect = document.querySelector("#group-mode");
+const captureModeSelect = document.querySelector("#capture-mode");
 const groupCountSelect = document.querySelector("#group-count");
 const cameraHolderSelect = document.querySelector("#camera-holder");
 const groupArrangementSelect = document.querySelector("#group-arrangement");
@@ -447,6 +449,8 @@ function resetForm() {
 }
 
 function initializeStaticSelects() {
+  groupModeSelect.value = GROUP_SELFIE_DEFAULTS.groupMode;
+  captureModeSelect.value = ACCIDENTAL_DEFAULTS.captureMode;
   populateSelect(sceneSelect, getSceneOptions(), DEFAULT_STATE.scene);
   populateSelect(hairSelect, getHairOptions(), DEFAULT_STATE.hair);
   populateSelect(skinSelect, getSkinOptions(), DEFAULT_STATE.skin);
