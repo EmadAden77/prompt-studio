@@ -6,8 +6,8 @@
     <meta name="description" content="WikiPrompt Selfie Studio: مولّد برومبتات سيلفي واقعية بمرجع هوية واحد ومحركات Realism Core وAdvanced Realism." />
     <meta name="theme-color" content="#0b1020" />
     <title>WikiPrompt Selfie Studio</title>
-    <link rel="stylesheet" href="styles-v2.css" />
-    <link rel="stylesheet" href="styles-wikiprompt.css" />
+    <link rel="stylesheet" href="styles-v2.css?v=20260901-nav2" />
+    <link rel="stylesheet" href="styles-wikiprompt.css?v=20260901-nav2" />
   </head>
   <body>
     <main class="app-shell">
@@ -30,7 +30,16 @@
           <div class="section-heading"><div><span class="section-number">00</span><h2 id="studio-section-title">اختر قسم التصوير</h2></div><p>عند اختيار قسم تختفي إعدادات الأقسام الأخرى وتتوقف محركاتها بالكامل.</p></div>
           <select id="studio-section" name="studioSection" hidden aria-hidden="true"></select>
           <input id="scenario-mode" name="scenarioMode" type="hidden" value="custom" />
-          <div class="studio-section-grid" id="studio-section-grid"></div>
+          <div class="studio-section-grid" id="studio-section-grid">
+            <button class="studio-section-card" type="button" data-studio-section="solo"><strong>🤳 السيلفي الفردي</strong><small>شخص واحد، وضعيات وزوايا وملابس وإضاءة خاصة بالسيلفي الفردي</small></button>
+            <button class="studio-section-card" type="button" data-studio-section="group"><strong>👥 السيلفي الجماعي</strong><small>عدد الأشخاص وصاحب الهاتف وتوزيع المجموعة والتفاعل</small></button>
+            <button class="studio-section-card" type="button" data-studio-section="car"><strong>🚙 التصوير داخل السيارة</strong><small>مقاعد السيارة والمقصورة ووضعيات وإضاءة السيارة فقط</small></button>
+            <button class="studio-section-card" type="button" data-studio-section="bedroom"><strong>🏠 التصوير في غرفة النوم</strong><small>السرير والاستلقاء والأريكة وملابس وإضاءة الغرفة فقط</small></button>
+            <button class="studio-section-card" type="button" data-studio-section="gym"><strong>🏋️ التصوير في الجيم</strong><small>وضعيات وملابس وإضاءة الجيم فقط</small></button>
+            <button class="studio-section-card" type="button" data-studio-section="street"><strong>🌆 التصوير الخارجي والشارع</strong><small>الوقوف والمشي والمواقف والإضاءة الخارجية فقط</small></button>
+            <button class="studio-section-card" type="button" data-studio-section="accidental"><strong>📱 اللقطة العفوية بالخطأ</strong><small>حركة الهاتف والتركيز والتعريض العرضي داخل مشهد يومي</small></button>
+            <button class="studio-section-card" type="button" data-studio-section="custom"><strong>✍️ مشهد مخصص</strong><small>قسم مستقل لمكان يكتبه المستخدم</small></button>
+          </div>
         </section>
 
         <div id="studio-workspace" hidden>
@@ -165,6 +174,6 @@
 
       <template id="qa-item-template"><li><strong></strong><span></span></li></template>
     </main>
-    <script type="module" src="js/physics-app-v7.js"></script>
+    <script type="module" src="js/physics-app-v7.js?v=20260901-nav2"></script>
   </body>
 </html>
