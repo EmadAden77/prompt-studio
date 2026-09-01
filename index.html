@@ -6,8 +6,8 @@
     <meta name="description" content="WikiPrompt Selfie Studio: مولّد برومبتات سيلفي واقعية بمرجع هوية واحد ومحركات Realism Core وAdvanced Realism." />
     <meta name="theme-color" content="#0b1020" />
     <title>WikiPrompt Selfie Studio</title>
-    <link rel="stylesheet" href="styles-v2.css?v=20260901-nav3" />
-    <link rel="stylesheet" href="styles-wikiprompt.css?v=20260901-nav3" />
+    <link rel="stylesheet" href="styles-v2.css?v=20260901-nav2" />
+    <link rel="stylesheet" href="styles-wikiprompt.css?v=20260901-nav2" />
   </head>
   <body>
     <main class="app-shell">
@@ -88,7 +88,7 @@
                 <div class="field"><span>Group Realism Score</span><div class="readonly-card" id="group-score-preview">100/100</div><small>أقل من 75: Auto Fix · أقل من 60: Block Generation.</small></div>
               </div>
             </div>
-            <label class="field" id="scene-field" for="scene" hidden><span>السياق الداخلي</span><select id="scene" name="scene"></select></label>
+            <label class="field field-span-2" id="scene-field" for="scene" hidden><span>مكان تصوير السيلفي الجماعي</span><select id="scene" name="scene"></select><small>هذا الاختيار يعمل داخل قسم السيلفي الجماعي فقط.</small></label>
             <label class="field field-span-2" id="custom-scene-field" for="custom-scene" hidden><span>وصف المشهد المخصص</span><textarea id="custom-scene" name="customScene" rows="3" placeholder="مثال: داخل محل نظارات طبي حديث في السعودية، أو داخل بقالة صغيرة في حي سكني."></textarea><small>اكتب المكان نفسه. المحرك يحوله إلى بيئة واقعية ويحافظ على السيلفي كعنصر أساسي.</small></label>
             <label class="field field-span-2" id="custom-scene-details-field" for="custom-scene-details" hidden><span>تفاصيل مطلوبة إذا سمحت الزاوية</span><input id="custom-scene-details" name="customSceneDetails" type="text" placeholder="اختياري: رف نظارات، مرآة صغيرة، موظف واحد بالخلفية." /><small>لا تُجبر هذه العناصر على الظهور إذا لم يسمح الكادر أو المنظور.</small></label>
             <label class="field" for="pose-family"><span>عائلة الوضعية</span><select id="pose-family" name="poseFamily"></select></label>
@@ -173,6 +173,7 @@
       </section>
 
       <template id="qa-item-template"><li><strong></strong><span></span></li></template>
-    </main>    <script type="module" src="js/physics-app-v7.js?v=20260901-fix4"></script>
+    </main>
+    <script type="module" src="js/physics-app-v7.js?v=20260901-group-locations1"></script>
   </body>
 </html>
