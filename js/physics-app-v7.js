@@ -218,8 +218,9 @@ function closeStudioSection() {
 }
 
 function returnToStudioHub() {
-  if (history.state?.studioSection) history.back();
-  else closeStudioSection();
+  const sectionHistoryActive = Boolean(history.state?.studioSection);
+  closeStudioSection();
+  if (sectionHistoryActive) history.back();
 }
 
 function renderStudioSectionCards() {
