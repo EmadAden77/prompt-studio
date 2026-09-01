@@ -23,7 +23,7 @@ import {
   isCustomScene,
   isTextRoomReference,
   normalizeState
-} from "./physics-prompt-engine-v5.js";
+} from "./physics-prompt-engine-v5.js?v=20260902-bedroom-topology1";
 import {
   REALISM_CORE_NEGATIVE_RULES,
   buildRealismCoreSections,
