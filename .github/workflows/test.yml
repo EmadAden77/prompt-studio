@@ -36,3 +36,5 @@ jobs:
         run: node tests/realism-core.mjs
       - name: Run Advanced Realism tests
         run: node tests/advanced-realism.mjs
+      - name: Run AUTO REALISM suite tests
+        run: node tests/auto-realism-suite.mjs
