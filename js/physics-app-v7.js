@@ -54,6 +54,7 @@ import {
   readAutoRealismUiState
 } from "./auto-realism-suite-v1.js";
 import { CAMERA_HOLDER_OPTIONS, GROUP_ARRANGEMENT_OPTIONS, GROUP_COUNT_OPTIONS, GROUP_INTERACTION_OPTIONS, GROUP_SELFIE_DEFAULTS, buildGroupSelfieEnhancement, evaluateGroupRealism, isGroupSelfie, normalizeGroupSelfieState } from "./group-selfie-engine-v1.js";
+import { ACCIDENTAL_DEFAULTS, ACCIDENTAL_DEVICE_OPTIONS, ACCIDENTAL_EXPOSURE_OPTIONS, ACCIDENTAL_FOCUS_OPTIONS, ACCIDENTAL_INTENSITY_OPTIONS, ACCIDENTAL_MOTION_OPTIONS, ACCIDENTAL_POSITION_OPTIONS, ACCIDENTAL_TILT_OPTIONS, ACCIDENTAL_TRIGGER_OPTIONS, applyAccidentalDeviceAuthority, buildAccidentalCaptureEnhancement, isAccidentalCapture, normalizeAccidentalState } from "./accidental-capture-engine-v1.js";
 
 const REALISM_DEFAULTS = Object.freeze({
   placeState:"auto",
@@ -107,6 +108,15 @@ const cameraHolderSelect = document.querySelector("#camera-holder");
 const groupArrangementSelect = document.querySelector("#group-arrangement");
 const groupInteractionSelect = document.querySelector("#group-interaction");
 const groupScorePreview = document.querySelector("#group-score-preview");
+const accidentalCaptureFields = document.querySelector("#accidental-capture-fields");
+const accidentalTriggerSelect = document.querySelector("#accidental-trigger");
+const accidentalDeviceSelect = document.querySelector("#accidental-device");
+const accidentalPositionSelect = document.querySelector("#accidental-position");
+const accidentalMotionSelect = document.querySelector("#accidental-motion");
+const accidentalTiltSelect = document.querySelector("#accidental-tilt");
+const accidentalFocusSelect = document.querySelector("#accidental-focus");
+const accidentalExposureSelect = document.querySelector("#accidental-exposure");
+const accidentalIntensitySelect = document.querySelector("#accidental-intensity");
 const templateHint = document.querySelector("#template-hint");
 const positivePrompt = document.querySelector("#positive-prompt");
 const negativePrompt = document.querySelector("#negative-prompt");
@@ -183,6 +193,7 @@ function readState() {
     sceneProfile:value("scene-profile"), accessoryProfile:value("accessory-profile"), accessoryDetail:value("accessory-detail"),
     objectProfile:value("object-profile"), hasReference,
     groupMode:value("group-mode"), groupCount:value("group-count"), cameraHolder:value("camera-holder"), groupArrangement:value("group-arrangement"), groupInteraction:value("group-interaction"), groupAutoFix:value("group-auto-fix"),
+    captureMode:value("capture-mode"), accidentalTrigger:value("accidental-trigger"), accidentalDevice:value("accidental-device"), accidentalPhonePosition:value("accidental-position"), accidentalMotion:value("accidental-motion"), accidentalTilt:value("accidental-tilt"), accidentalFocus:value("accidental-focus"), accidentalExposure:value("accidental-exposure"), accidentalIntensity:value("accidental-intensity"),
     ...readAutoRealismUiState()
   };
 }
@@ -196,8 +207,9 @@ function normalizeEnhancedState(rawState = {}) {
   const finalNormalized = normalizeState(advanced.state);
   const suiteState = normalizeAutoRealismState({ ...finalNormalized, ...advanced.state });
   const groupState = normalizeGroupSelfieState(suiteState);
+  const accidentalState = normalizeAccidentalState(groupState);
   return {
-    state:{ ...suiteState, ...groupState },
+    state:{ ...suiteState, ...groupState, ...accidentalState },
     conflicts:[...core.conflicts, ...advanced.conflicts]
   };
 }
@@ -220,18 +232,21 @@ function buildEnhancedPack(rawState = {}) {
   const risk = evaluateRealismRisk(base.state, conflicts);
   const suite = applyAutoRealismSuite({ positive:optimized.prompt, negative, state:{ ...base.state, ...state }, risk, conflicts });
   const group = buildGroupSelfieEnhancement(state);
-  const groupPositive = group.positive ? `${suite.positive}\n\n${group.positive}` : suite.positive;
-  const groupNegative = [...new Set([...suite.negative.split(/,\s*/), ...group.negative])].join(", ");
+  const accidental = buildAccidentalCaptureEnhancement(state);
+  const baseWithDevice = applyAccidentalDeviceAuthority(suite.positive, accidental.state);
+  const groupPositive = group.positive ? `${baseWithDevice}\n\n${group.positive}` : baseWithDevice;
+  const enhancedPositive = accidental.positive ? `${groupPositive}\n\n${accidental.positive}` : groupPositive;
+  const groupNegative = [...new Set([...suite.negative.split(/,\s*/), ...group.negative, ...accidental.negative])].join(", ");
   return {
     ...base,
     state:suite.state,
-    positive:groupPositive,
+    positive:enhancedPositive,
     negative:groupNegative,
     qa:[
       ...base.qa,
       ...realismCoreQaItems(base.state, conflicts),
       ...advancedRealismQaItems(base.state, conflicts, optimized.stats),
-      ...suite.qa, ...group.qa
+      ...suite.qa, ...group.qa, ...accidental.qa
     ],
     conflicts,
     optimizerStats:optimized.stats,
@@ -270,6 +285,8 @@ function refreshDynamicFields() {
   const custom = isCustomScene(scene);
   const groupState = normalizeGroupSelfieState(readState());
   groupSelfieFields.hidden = !isGroupSelfie(groupState);
+  const accidentalState = normalizeAccidentalState(readState());
+  accidentalCaptureFields.hidden = !isAccidentalCapture(accidentalState);
   if (groupScorePreview) { const groupRisk = evaluateGroupRealism(groupState); groupScorePreview.textContent = `${groupRisk.score}/100 · ${groupRisk.level}`; }
   customSceneField.hidden = !custom;
   customSceneDetailsField.hidden = !custom;
@@ -354,6 +371,7 @@ function renderPrompt() {
   negativePrompt.value = pack.negative;
   resultMeta.textContent = `${pack.template.title} · Xiaomi 15 Ultra Front · AUTO REALISM · ${pack.suiteMeta.generator} · ${pack.suiteMeta.compression} · ${pack.risk.score}/100 · ${pack.state.time === "night" ? "ليلي" : "نهاري"}`;
   if (isGroupSelfie(pack.state)) resultMeta.textContent += ` · GROUP ${pack.state.groupCount} · ${pack.groupScore.score}/100`;
+  if (isAccidentalCapture(pack.state)) resultMeta.textContent += ` · ACCIDENTAL CAPTURE · ${pack.state.accidentalDevice === "iphone" ? "iPhone 15 Pro Max" : "Xiaomi 15 Ultra"}`;
   renderQa([...pack.qa, { label:"WikiPrompt", value:cachedGuidance ? "هو أساس البرومبت الحالي" : "جارٍ تحميل أساس الواقعية" }]);
   setStatus(`${localStatus(pack)} · ${cachedGuidance ? wikiStatusText({ state:"cache" }) : "🟡 WikiPrompt: جارٍ الفحص"}`);
 
@@ -410,6 +428,9 @@ function resetForm() {
   Object.entries({
     "group-mode":GROUP_SELFIE_DEFAULTS.groupMode, "group-count":GROUP_SELFIE_DEFAULTS.groupCount, "camera-holder":GROUP_SELFIE_DEFAULTS.cameraHolder,
     "group-arrangement":GROUP_SELFIE_DEFAULTS.groupArrangement, "group-interaction":GROUP_SELFIE_DEFAULTS.groupInteraction, "group-auto-fix":GROUP_SELFIE_DEFAULTS.groupAutoFix,
+    "capture-mode":ACCIDENTAL_DEFAULTS.captureMode, "accidental-trigger":ACCIDENTAL_DEFAULTS.accidentalTrigger, "accidental-device":ACCIDENTAL_DEFAULTS.accidentalDevice,
+    "accidental-position":ACCIDENTAL_DEFAULTS.accidentalPhonePosition, "accidental-motion":ACCIDENTAL_DEFAULTS.accidentalMotion, "accidental-tilt":ACCIDENTAL_DEFAULTS.accidentalTilt,
+    "accidental-focus":ACCIDENTAL_DEFAULTS.accidentalFocus, "accidental-exposure":ACCIDENTAL_DEFAULTS.accidentalExposure, "accidental-intensity":ACCIDENTAL_DEFAULTS.accidentalIntensity,
     "auto-realism":AUTO_REALISM_DEFAULTS.autoRealism,
     "realism-preset":AUTO_REALISM_DEFAULTS.realismPreset,
     "generator-profile":AUTO_REALISM_DEFAULTS.generatorProfile,
@@ -440,12 +461,20 @@ function initializeStaticSelects() {
   populateSelect(cameraHolderSelect, CAMERA_HOLDER_OPTIONS, GROUP_SELFIE_DEFAULTS.cameraHolder);
   populateSelect(groupArrangementSelect, GROUP_ARRANGEMENT_OPTIONS, GROUP_SELFIE_DEFAULTS.groupArrangement);
   populateSelect(groupInteractionSelect, GROUP_INTERACTION_OPTIONS, GROUP_SELFIE_DEFAULTS.groupInteraction);
+  populateSelect(accidentalTriggerSelect, ACCIDENTAL_TRIGGER_OPTIONS, ACCIDENTAL_DEFAULTS.accidentalTrigger);
+  populateSelect(accidentalDeviceSelect, ACCIDENTAL_DEVICE_OPTIONS, ACCIDENTAL_DEFAULTS.accidentalDevice);
+  populateSelect(accidentalPositionSelect, ACCIDENTAL_POSITION_OPTIONS, ACCIDENTAL_DEFAULTS.accidentalPhonePosition);
+  populateSelect(accidentalMotionSelect, ACCIDENTAL_MOTION_OPTIONS, ACCIDENTAL_DEFAULTS.accidentalMotion);
+  populateSelect(accidentalTiltSelect, ACCIDENTAL_TILT_OPTIONS, ACCIDENTAL_DEFAULTS.accidentalTilt);
+  populateSelect(accidentalFocusSelect, ACCIDENTAL_FOCUS_OPTIONS, ACCIDENTAL_DEFAULTS.accidentalFocus);
+  populateSelect(accidentalExposureSelect, ACCIDENTAL_EXPOSURE_OPTIONS, ACCIDENTAL_DEFAULTS.accidentalExposure);
+  populateSelect(accidentalIntensitySelect, ACCIDENTAL_INTENSITY_OPTIONS, ACCIDENTAL_DEFAULTS.accidentalIntensity);
 }
 
 referenceImage.addEventListener("change", (event) => setReference(event.target.files?.[0]));
 removeReferenceButton.addEventListener("click", () => { clearReference(); setStatus("أزيلت معاينة المرجع من الجهاز."); });
 sceneSelect.addEventListener("change", () => { persistSelectedScene(); refreshDynamicFields(); });
-["time","pose-family","pose","car-seat","lighting","clothing","fabric","composition","selfie-angle","place-state","people-density","subject-moment","scene-profile","accessory-profile","object-profile","group-mode","group-count","camera-holder","group-arrangement","group-interaction","group-auto-fix"].forEach((id) => {
+["time","pose-family","pose","car-seat","lighting","clothing","fabric","composition","selfie-angle","place-state","people-density","subject-moment","scene-profile","accessory-profile","object-profile","group-mode","group-count","camera-holder","group-arrangement","group-interaction","group-auto-fix","capture-mode","accidental-trigger","accidental-device","accidental-position","accidental-motion","accidental-tilt","accidental-focus","accidental-exposure","accidental-intensity"].forEach((id) => {
   document.querySelector(`#${id}`)?.addEventListener("change", refreshDynamicFields);
 });
 form.addEventListener("submit", (event) => { event.preventDefault(); renderPrompt(); });
