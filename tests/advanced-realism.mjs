@@ -62,7 +62,7 @@ assert.match(joined, /\[ENVIRONMENT MICROPHYSICS\]/u);
 assert.match(joined, /\[REALISM RISK CHECK\]/u);
 assert.match(joined, /at most two subtle cues/u);
 assert.match(joined, /Do not generate worn eyeglasses/u, "Held-eyeglasses Object Profile must suppress a duplicate worn pair");
-assert.match(joined, /fingers occlude the frame according to depth/u);
+assert.match(joined, /fingers correctly occlude the frame according to depth/u);
 
 const risk = evaluateRealismRisk(advancedState, []);
 assert.equal(risk.score, 100);
