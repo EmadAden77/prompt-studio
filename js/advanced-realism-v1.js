@@ -211,6 +211,7 @@ function buildAccessoryRule(state) {
 }
 
 function buildObjectRule(state) {
+  if (!state.objectProfile || state.objectProfile === "none") return "";
   const profile = OBJECT_PROFILES[state.objectProfile] ?? OBJECT_PROFILES.none;
   const custom = clean(state.interactionObject);
   const detail = custom ? ` User interaction wording: ${custom}.` : "";
