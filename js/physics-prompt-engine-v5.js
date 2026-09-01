@@ -20,7 +20,7 @@ import {
   SUBJECT_BODY,
   BEDROOM_WINDOW_OPTIONS,
   sceneFamily
-} from "./wiki-selfie-data-v1.js";
+} from "./wiki-selfie-data-v1.js?v=20260902-bedroom-topology1";
 import {
   CLOTHING_NEGATIVE_RULES,
   buildClothingPhysicsText,
@@ -460,7 +460,7 @@ function buildLightingSection(state) {
 function buildRoomAuthority(state) {
   if (!isTextRoomReference(state.scene)) return "";
   const room = SCENES[state.scene];
-  return `[TEXT ROOM AUTHORITY] ${room.description_en} This description fixes room identity only. It does NOT require every listed item to appear in the selfie. Never invent a second room reference image.`;
+  return `[TEXT ROOM AUTHORITY] ${room.description_en} ${room.topology_lock_en || ""} This fixes both room identity and furniture topology. It does NOT require every listed item to appear in the selfie. Cropping and occlusion are preferred over moving furniture. Never invent a second room reference image.`;
 }
 
 function buildContextDensity(state) {
@@ -721,7 +721,16 @@ export function buildNegativePrompt(rawState = {}) {
       "unrelated rug compression",
       "floating bedding",
       "impossible mattress compression",
-      "extra bedroom light source"
+      "extra bedroom light source",
+      "moved bedroom furniture",
+      "mirrored bedroom layout",
+      "swapped left and right walls",
+      "relocated bed or headboard",
+      "relocated wardrobe or dresser",
+      "curtains moved to another wall",
+      "rug moved or rotated",
+      "invented bedroom sofa",
+      "furniture pulled into frame for visibility"
     );
   }
 
