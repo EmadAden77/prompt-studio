@@ -26,6 +26,14 @@
       <form id="prompt-form" novalidate autocomplete="off">
         <input id="mode" name="mode" type="hidden" value="selfie" />
 
+        <section class="panel priority-panel" aria-labelledby="scenario-mode-title">
+          <div class="section-heading"><div><span class="section-number">00</span><h2 id="scenario-mode-title">اختر القسم الرئيسي</h2></div><p>قسم واحد فقط يعمل في كل برومبت، وتُقفل محركات الأقسام الأخرى بالكامل.</p></div>
+          <div class="form-grid">
+            <label class="field field-span-2" for="scenario-mode"><span>القسم النشط</span><select id="scenario-mode" name="scenarioMode"></select><small id="scenario-mode-description"></small></label>
+            <div class="field field-span-2 selfie-camera-lock"><span>قفل الأقسام</span><div class="readonly-card" id="scenario-lock-status">غرفة النوم نشطة · بقية الأقسام مقفلة</div><small>السيلفي الجماعي واللقطة العفوية أنماط تصوير داخل القسم النشط وليسا مكانين مستقلين.</small></div>
+          </div>
+        </section>
+
         <section class="panel reference-panel" aria-labelledby="reference-title">
           <div class="section-heading"><div><span class="section-number">01</span><h2 id="reference-title">الهوية المرجعية</h2></div><p>صورة شخص واحدة هي المرجع الوحيد للوجه وخط الشعر وكثافته واللحية والعمر الظاهر.</p></div>
           <div class="reference-layout">
