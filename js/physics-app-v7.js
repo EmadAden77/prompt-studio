@@ -80,6 +80,11 @@ const scenarioModeSelect = document.querySelector("#scenario-mode");
 const studioSectionSelect = document.querySelector("#studio-section");
 const studioSectionDescription = document.querySelector("#studio-section-description");
 const studioSectionStatus = document.querySelector("#studio-section-status");
+const studioHub = document.querySelector("#studio-hub");
+const studioWorkspace = document.querySelector("#studio-workspace");
+const studioSectionGrid = document.querySelector("#studio-section-grid");
+const activeStudioSectionTitle = document.querySelector("#active-studio-section-title");
+const backToSectionsButton = document.querySelector("#back-to-sections");
 const customSceneField = document.querySelector("#custom-scene-field");
 const customSceneDetailsField = document.querySelector("#custom-scene-details-field");
 const poseFamilySelect = document.querySelector("#pose-family");
@@ -126,6 +131,7 @@ const accidentalFocusSelect = document.querySelector("#accidental-focus");
 const accidentalExposureSelect = document.querySelector("#accidental-exposure");
 const accidentalIntensitySelect = document.querySelector("#accidental-intensity");
 const templateHint = document.querySelector("#template-hint");
+const resultPanel = document.querySelector("#result-panel");
 const positivePrompt = document.querySelector("#positive-prompt");
 const negativePrompt = document.querySelector("#negative-prompt");
 const resultMeta = document.querySelector("#result-meta");
@@ -188,6 +194,39 @@ function restoreSelectedScene() {
   } catch {}
 }
 function persistSelectedScene() { try { localStorage.setItem(SELECTED_STUDIO_SECTION_STORAGE_KEY, studioSectionSelect.value); } catch {} }
+
+function openStudioSection(sectionId) {
+  studioSectionSelect.value = sectionId;
+  persistSelectedScene();
+  studioHub.hidden = true;
+  studioWorkspace.hidden = false;
+  resultPanel.hidden = true;
+  refreshDynamicFields();
+  studioWorkspace.scrollIntoView({ behavior:"smooth", block:"start" });
+}
+
+function closeStudioSection() {
+  studioWorkspace.hidden = true;
+  resultPanel.hidden = true;
+  studioHub.hidden = false;
+  studioHub.scrollIntoView({ behavior:"smooth", block:"start" });
+}
+
+function renderStudioSectionCards() {
+  studioSectionGrid.replaceChildren();
+  STUDIO_SECTION_OPTIONS.forEach((section) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "studio-section-card";
+    const title = document.createElement("strong");
+    const description = document.createElement("small");
+    title.textContent = section.label;
+    description.textContent = section.description;
+    button.append(title, description);
+    button.addEventListener("click", () => openStudioSection(section.value));
+    studioSectionGrid.append(button);
+  });
+}
 
 function readState() {
   return {
@@ -305,6 +344,7 @@ function refreshDynamicFields() {
   const allowedSceneOptions = getScenarioSceneOptions(scenarioMode);
   populateSelect(sceneSelect, allowedSceneOptions, studioResolved.scene);
   studioSectionDescription.textContent = studioOption.description;
+  activeStudioSectionTitle.textContent = studioOption.label;
   studioSectionStatus.textContent = `${studioOption.label} يعمل · بقية الأقسام مخفية ومقفلة`;
   const scene = sceneSelect.value || allowedSceneOptions[0]?.value || DEFAULT_STATE.scene;
   const time = value("time") || DEFAULT_STATE.time;
@@ -505,10 +545,11 @@ referenceImage.addEventListener("change", (event) => setReference(event.target.f
 removeReferenceButton.addEventListener("click", () => { clearReference(); setStatus("أزيلت معاينة المرجع من الجهاز."); });
 sceneSelect.addEventListener("change", () => { persistSelectedScene(); refreshDynamicFields(); });
 studioSectionSelect.addEventListener("change", () => { persistSelectedScene(); refreshDynamicFields(); });
+backToSectionsButton.addEventListener("click", closeStudioSection);
 ["time","pose-family","pose","car-seat","lighting","clothing","fabric","composition","selfie-angle","place-state","people-density","subject-moment","scene-profile","accessory-profile","object-profile","group-mode","group-count","camera-holder","group-arrangement","group-interaction","group-auto-fix","capture-mode","accidental-trigger","accidental-device","accidental-position","accidental-motion","accidental-tilt","accidental-focus","accidental-exposure","accidental-intensity"].forEach((id) => {
   document.querySelector(`#${id}`)?.addEventListener("change", refreshDynamicFields);
 });
-form.addEventListener("submit", (event) => { event.preventDefault(); renderPrompt(); });
+form.addEventListener("submit", (event) => { event.preventDefault(); renderPrompt(); resultPanel.hidden = false; resultPanel.scrollIntoView({ behavior:"smooth", block:"start" }); });
 document.querySelector("#reset-form").addEventListener("click", resetForm);
 document.querySelector("#copy-positive").addEventListener("click", () => copyText(positivePrompt.value, "البرومبت"));
 document.querySelector("#copy-negative").addEventListener("click", () => copyText(negativePrompt.value, "البرومبت السلبي"));
@@ -516,4 +557,4 @@ document.querySelector("#copy-pack").addEventListener("click", () => copyText(`P
 document.querySelector("#download-prompt").addEventListener("click", downloadPrompt);
 bindAutoRealismSuite(renderPrompt);
 
-initializeStaticSelects(); restoreSelectedScene(); refreshDynamicFields(); renderPrompt();
+initializeStaticSelects(); renderStudioSectionCards(); restoreSelectedScene(); refreshDynamicFields(); renderPrompt(); closeStudioSection();
