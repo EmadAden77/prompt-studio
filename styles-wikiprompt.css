@@ -37,6 +37,10 @@
   opacity: 0.96;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 .context-secondary-panel .section-number {
   color: var(--muted);
   border-color: var(--border);
