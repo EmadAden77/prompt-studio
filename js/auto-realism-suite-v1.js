@@ -7,7 +7,7 @@ import {
   readVisualSelfieUiState,
   selfieAnglePreset,
   visualSelfieQa
-} from "./visual-selfie-angle-monitor-v1.js";
+} from "./visual-selfie-angle-monitor-v1.js?v=20260901-fix1";
 
 // AUTO REALISM SUITE v1
 // High-level orchestration layer for the existing physical realism engines.
