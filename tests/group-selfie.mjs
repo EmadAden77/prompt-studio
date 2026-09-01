@@ -7,5 +7,5 @@ assert.match(pack.positive, /Exactly 4 people/u); assert.match(pack.positive, /P
 assert.ok(pack.negative.includes("arm attached to wrong person")); assert.equal(pack.qa[0].label, "السيلفي الجماعي");
 const five = evaluateGroupRealism({ groupMode:"group", groupCount:"5", groupArrangement:"shoulder", cameraHolder:"auto" });
 assert.ok(five.score < 75); assert.equal(five.action, "auto-fix");
-const single = buildGroupSelfieEnhancement({ groupMode:"single" }); assert.equal(single.positive, ""); assert.deepEqual(single.negative, []);
+const single = buildGroupSelfieEnhancement({ groupMode:"single", peopleDensity:"none" }); assert.match(single.positive, /Exactly one person/u); assert.deepEqual(single.negative, []);
 console.log("group selfie engine tests passed");
