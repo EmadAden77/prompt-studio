@@ -6,8 +6,8 @@
     <meta name="description" content="WikiPrompt Selfie Studio: مولّد برومبتات سيلفي واقعية بمرجع هوية واحد ومحركات Realism Core وAdvanced Realism." />
     <meta name="theme-color" content="#0b1020" />
     <title>WikiPrompt Selfie Studio</title>
-    <link rel="stylesheet" href="styles-v2.css?v=20260901-nav2" />
-    <link rel="stylesheet" href="styles-wikiprompt.css?v=20260901-nav2" />
+    <link rel="stylesheet" href="styles-v2.css?v=20260901-nav3" />
+    <link rel="stylesheet" href="styles-wikiprompt.css?v=20260901-nav3" />
   </head>
   <body>
     <main class="app-shell">
@@ -31,20 +31,20 @@
           <select id="studio-section" name="studioSection" hidden aria-hidden="true"></select>
           <input id="scenario-mode" name="scenarioMode" type="hidden" value="custom" />
           <div class="studio-section-grid" id="studio-section-grid">
-            <button class="studio-section-card" type="button" data-studio-section="solo"><strong>🤳 السيلفي الفردي</strong><small>شخص واحد، وضعيات وزوايا وملابس وإضاءة خاصة بالسيلفي الفردي</small></button>
-            <button class="studio-section-card" type="button" data-studio-section="group"><strong>👥 السيلفي الجماعي</strong><small>عدد الأشخاص وصاحب الهاتف وتوزيع المجموعة والتفاعل</small></button>
-            <button class="studio-section-card" type="button" data-studio-section="car"><strong>🚙 التصوير داخل السيارة</strong><small>مقاعد السيارة والمقصورة ووضعيات وإضاءة السيارة فقط</small></button>
-            <button class="studio-section-card" type="button" data-studio-section="bedroom"><strong>🏠 التصوير في غرفة النوم</strong><small>السرير والاستلقاء والأريكة وملابس وإضاءة الغرفة فقط</small></button>
-            <button class="studio-section-card" type="button" data-studio-section="gym"><strong>🏋️ التصوير في الجيم</strong><small>وضعيات وملابس وإضاءة الجيم فقط</small></button>
-            <button class="studio-section-card" type="button" data-studio-section="street"><strong>🌆 التصوير الخارجي والشارع</strong><small>الوقوف والمشي والمواقف والإضاءة الخارجية فقط</small></button>
-            <button class="studio-section-card" type="button" data-studio-section="accidental"><strong>📱 اللقطة العفوية بالخطأ</strong><small>حركة الهاتف والتركيز والتعريض العرضي داخل مشهد يومي</small></button>
-            <button class="studio-section-card" type="button" data-studio-section="custom"><strong>✍️ مشهد مخصص</strong><small>قسم مستقل لمكان يكتبه المستخدم</small></button>
+            <button class="studio-section-card" type="button" data-studio-section="solo" onclick="openStudioSectionFallback('solo')"><strong>🤳 السيلفي الفردي</strong><small>شخص واحد، وضعيات وزوايا وملابس وإضاءة خاصة بالسيلفي الفردي</small></button>
+            <button class="studio-section-card" type="button" data-studio-section="group" onclick="openStudioSectionFallback('group')"><strong>👥 السيلفي الجماعي</strong><small>عدد الأشخاص وصاحب الهاتف وتوزيع المجموعة والتفاعل</small></button>
+            <button class="studio-section-card" type="button" data-studio-section="car" onclick="openStudioSectionFallback('car')"><strong>🚙 التصوير داخل السيارة</strong><small>مقاعد السيارة والمقصورة ووضعيات وإضاءة السيارة فقط</small></button>
+            <button class="studio-section-card" type="button" data-studio-section="bedroom" onclick="openStudioSectionFallback('bedroom')"><strong>🏠 التصوير في غرفة النوم</strong><small>السرير والاستلقاء والأريكة وملابس وإضاءة الغرفة فقط</small></button>
+            <button class="studio-section-card" type="button" data-studio-section="gym" onclick="openStudioSectionFallback('gym')"><strong>🏋️ التصوير في الجيم</strong><small>وضعيات وملابس وإضاءة الجيم فقط</small></button>
+            <button class="studio-section-card" type="button" data-studio-section="street" onclick="openStudioSectionFallback('street')"><strong>🌆 التصوير الخارجي والشارع</strong><small>الوقوف والمشي والمواقف والإضاءة الخارجية فقط</small></button>
+            <button class="studio-section-card" type="button" data-studio-section="accidental" onclick="openStudioSectionFallback('accidental')"><strong>📱 اللقطة العفوية بالخطأ</strong><small>حركة الهاتف والتركيز والتعريض العرضي داخل مشهد يومي</small></button>
+            <button class="studio-section-card" type="button" data-studio-section="custom" onclick="openStudioSectionFallback('custom')"><strong>✍️ مشهد مخصص</strong><small>قسم مستقل لمكان يكتبه المستخدم</small></button>
           </div>
         </section>
 
         <div id="studio-workspace" hidden>
           <section class="panel studio-workspace-header" aria-labelledby="active-studio-section-title">
-            <button class="secondary-button compact-button" type="button" id="back-to-sections">← الرجوع إلى الأقسام</button>
+            <button class="secondary-button compact-button" type="button" id="back-to-sections" onclick="closeStudioSectionFallback()">← الرجوع إلى الأقسام</button>
             <div><p class="eyebrow">القسم المفتوح فقط</p><h2 id="active-studio-section-title"></h2><p id="studio-section-description"></p></div>
             <div class="readonly-card" id="studio-section-status"></div>
           </section>
@@ -174,6 +174,36 @@
 
       <template id="qa-item-template"><li><strong></strong><span></span></li></template>
     </main>
-    <script type="module" src="js/physics-app-v7.js?v=20260901-nav2"></script>
+    <script>
+      function openStudioSectionFallback(sectionId) {
+        var select = document.getElementById("studio-section");
+        var hub = document.getElementById("studio-hub");
+        var workspace = document.getElementById("studio-workspace");
+        var result = document.getElementById("result-panel");
+        if (select) {
+          select.value = sectionId;
+          select.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+        if (hub) hub.hidden = true;
+        if (workspace) workspace.hidden = false;
+        if (result) result.hidden = true;
+        try { localStorage.setItem("wikiprompt-selfie-studio:active-section", sectionId); } catch (error) {}
+        requestAnimationFrame(function () {
+          if (workspace) workspace.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      }
+      function closeStudioSectionFallback() {
+        var hub = document.getElementById("studio-hub");
+        var workspace = document.getElementById("studio-workspace");
+        var result = document.getElementById("result-panel");
+        if (workspace) workspace.hidden = true;
+        if (result) result.hidden = true;
+        if (hub) {
+          hub.hidden = false;
+          hub.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }
+    </script>
+    <script type="module" src="js/physics-app-v7.js?v=20260901-nav3"></script>
   </body>
 </html>
