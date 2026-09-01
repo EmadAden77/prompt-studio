@@ -296,8 +296,7 @@ export function mountVisualSelfieAngleMonitor(form) {
   section.setAttribute("aria-labelledby","visual-selfie-monitor-title");
   section.innerHTML = monitorMarkup();
   const selfieSection = form.querySelector("#selfie-title")?.closest("section");
-  if (selfieSection?.nextSibling) form.insertBefore(section, selfieSection.nextSibling);
-  else if (selfieSection) selfieSection.insertAdjacentElement("afterend", section);
+  if (selfieSection?.parentNode) selfieSection.parentNode.insertBefore(section, selfieSection.nextSibling);
   else form.prepend(section);
 
   if (!document.querySelector("#visual-selfie-angle-monitor-style")) {
