@@ -376,6 +376,7 @@ function buildReferenceSection(state) {
     sentence(IDENTITY_LOCK),
     sentence(referenceInstruction),
     sentence(buildVisibleBodyInstruction(state)),
+    "If eyeglasses are visibly worn in the identity reference, preserve that same pair as part of identity: the same frame shape, color character, proportions and ordinary fit, with both temples physically supported by the ears. Do not remove, replace or redesign visible reference eyewear.",
     notes ? sentence(`Reference-specific observations to preserve if compatible: ${notes}`) : ""
   ].filter(Boolean).join(" ");
 }
