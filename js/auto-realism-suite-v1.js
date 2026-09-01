@@ -247,7 +247,7 @@ export function mountAutoRealismSuite(form) {
     </div>`;
 
   const contextPanel = form.querySelector(".context-secondary-panel");
-  if (contextPanel) form.insertBefore(section, contextPanel);
+  if (contextPanel?.parentNode) contextPanel.parentNode.insertBefore(section, contextPanel);
   else form.append(section);
 
   if (!document.querySelector("#auto-realism-suite-style")) {
