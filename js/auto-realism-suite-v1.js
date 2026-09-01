@@ -1,8 +1,19 @@
+import {
+  VISUAL_SELFIE_DEFAULTS,
+  bindVisualSelfieAngleMonitor,
+  buildVisualSelfieGeometrySection,
+  mountVisualSelfieAngleMonitor,
+  normalizeVisualSelfieState,
+  readVisualSelfieUiState,
+  visualSelfieQa
+} from "./visual-selfie-angle-monitor-v1.js";
+
 // AUTO REALISM SUITE v1
 // High-level orchestration layer for the existing physical realism engines.
 // It does not replace identity, anatomy, camera, lighting, WikiPrompt, or scene rules.
 
 export const AUTO_REALISM_DEFAULTS = Object.freeze({
+  ...VISUAL_SELFIE_DEFAULTS,
   autoRealism:"on",
   realismPreset:"raw-smartphone",
   generatorProfile:"chatgpt",
@@ -51,8 +62,9 @@ function optionValue(map, value, fallback) {
 }
 
 export function normalizeAutoRealismState(rawState = {}) {
+  const visual = normalizeVisualSelfieState(rawState);
   return {
-    ...rawState,
+    ...visual,
     autoRealism:boolValue(rawState.autoRealism, AUTO_REALISM_DEFAULTS.autoRealism),
     realismPreset:optionValue(PRESET_RULES, rawState.realismPreset, AUTO_REALISM_DEFAULTS.realismPreset),
     generatorProfile:optionValue(GENERATOR_RULES, rawState.generatorProfile, AUTO_REALISM_DEFAULTS.generatorProfile),
@@ -142,6 +154,7 @@ export function applyAutoRealismSuite({ positive = "", negative = "", state:rawS
   const sections = [
     buildReferenceAuthorityMap(state),
     buildAutoRealismRule(state),
+    buildVisualSelfieGeometrySection(state),
     PRESET_RULES[state.realismPreset] ? `[REALISM PRESET]\n${PRESET_RULES[state.realismPreset]}` : "",
     buildLockRule(state),
     buildContinuityRule(state),
@@ -156,7 +169,10 @@ export function applyAutoRealismSuite({ positive = "", negative = "", state:rawS
     "locked-field drift",
     "continuity break between variants",
     "third-person viewpoint replacing subject-held selfie",
-    "decorative imperfection without physical cause"
+    "decorative imperfection without physical cause",
+    "camera outside natural arm reach",
+    "visual selfie monitor geometry ignored",
+    "impossible selfie yaw pitch or roll"
   ];
   const finalNegative = [...new Set([...String(negative || "").split(/,\s*/).filter(Boolean), ...negativeExtras])].join(", ");
 
@@ -167,6 +183,7 @@ export function applyAutoRealismSuite({ positive = "", negative = "", state:rawS
     qa:[
       { label:"AUTO REALISM", value:state.autoRealism === "on" ? "مفعّل؛ يحل التفاصيل غير المحددة بالفيزياء" : "متوقف" },
       { label:"Reference Mapper", value:"IMAGE A للهوية فقط؛ المشهد/الملابس/الإضاءة سلطات مستقلة" },
+      ...visualSelfieQa(state),
       { label:"Generator", value:state.generatorProfile },
       { label:"Prompt Compression", value:`${state.promptCompression} · ضغط آمن لا يحذف أقفال الهوية والكاميرا والإضاءة` },
       { label:"Continuity", value:state.continuityMode === "on" ? "مقفل عبر التنويعات" : "غير مقفل" },
@@ -175,7 +192,13 @@ export function applyAutoRealismSuite({ positive = "", negative = "", state:rawS
       { label:"Auto Fix", value:conflicts.length ? `تم تمرير ${conflicts.length} تعارض مصحح من المحركات الأساسية` : "لا توجد تعارضات أساسية متبقية" },
       { label:"Realism Score", value:risk ? `${risk.score}/100 · ${risk.level}` : "يحسبه محرك Advanced Realism" }
     ],
-    meta:{ preset:state.realismPreset, generator:state.generatorProfile, compression:state.promptCompression, variation:state.variationMode }
+    meta:{
+      preset:state.realismPreset,
+      generator:state.generatorProfile,
+      compression:state.promptCompression,
+      variation:state.variationMode,
+      selfieGeometry:`${state.selfieDistanceCm}cm/Y${state.selfieYawDeg}/P${state.selfiePitchDeg}/R${state.selfieRollDeg}`
+    }
   };
 }
 
@@ -189,7 +212,9 @@ function toggleField(id, label, value, hint = "") {
 }
 
 export function mountAutoRealismSuite(form) {
-  if (!form || document.querySelector("#auto-realism-suite")) return;
+  if (!form || typeof document === "undefined") return;
+  mountVisualSelfieAngleMonitor(form);
+  if (document.querySelector("#auto-realism-suite")) return;
   const section = document.createElement("section");
   section.className = "panel priority-panel";
   section.id = "auto-realism-suite";
@@ -211,7 +236,7 @@ export function mountAutoRealismSuite(form) {
       ${toggleField("lock-lighting", "🔒 الإضاءة", AUTO_REALISM_DEFAULTS.lockLighting)}
       ${toggleField("lock-expression", "🔒 التعبير", AUTO_REALISM_DEFAULTS.lockExpression)}
       <div class="field"><span>التنويعات</span><button type="button" class="secondary-button compact-button" id="next-realism-variation">التنويع التالي</button><small>يبدل زاوية واحدة فقط ويحافظ على الحقول المقفلة.</small></div>
-      <div class="field field-span-2"><span>الطبقات المعاد استخدامها</span><div class="readonly-card">WikiPrompt · Selfie Geometry · Contact Physics · Lighting Physics · Advanced Realism · Realism Score</div><small>لا ازدواجية: AUTO REALISM ينسق المحركات الموجودة بدل تكرارها.</small></div>
+      <div class="field field-span-2"><span>الطبقات المعاد استخدامها</span><div class="readonly-card">WikiPrompt · Visual Selfie Angle Monitor · Selfie Geometry · Contact Physics · Lighting Physics · Advanced Realism · Realism Score</div><small>لا ازدواجية: AUTO REALISM ينسق المحركات الموجودة بدل تكرارها.</small></div>
     </div>`;
 
   const contextPanel = form.querySelector(".context-secondary-panel");
@@ -229,6 +254,7 @@ export function mountAutoRealismSuite(form) {
 export function readAutoRealismUiState(root = document) {
   const read = (id, fallback) => root.querySelector(`#${id}`)?.value ?? fallback;
   return normalizeAutoRealismState({
+    ...readVisualSelfieUiState(root),
     autoRealism:read("auto-realism", AUTO_REALISM_DEFAULTS.autoRealism),
     realismPreset:read("realism-preset", AUTO_REALISM_DEFAULTS.realismPreset),
     generatorProfile:read("generator-profile", AUTO_REALISM_DEFAULTS.generatorProfile),
@@ -244,6 +270,7 @@ export function readAutoRealismUiState(root = document) {
 }
 
 export function bindAutoRealismSuite(onChange) {
+  if (typeof document === "undefined") return;
   const ids = ["auto-realism","realism-preset","generator-profile","prompt-compression","continuity-mode","variation-mode","lock-identity","lock-scene","lock-clothing","lock-lighting","lock-expression"];
   ids.forEach((id) => document.querySelector(`#${id}`)?.addEventListener("change", () => onChange?.()));
   document.querySelector("#next-realism-variation")?.addEventListener("click", () => {
@@ -253,4 +280,5 @@ export function bindAutoRealismSuite(onChange) {
     select.value = values[(values.indexOf(select.value) + 1) % values.length];
     onChange?.();
   });
+  bindVisualSelfieAngleMonitor(onChange,document);
 }
