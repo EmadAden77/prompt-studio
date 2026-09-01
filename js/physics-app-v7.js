@@ -45,6 +45,14 @@ import {
   resolveAdvancedRealismState
 } from "./advanced-realism-v1.js";
 import { wikiPromptService } from "./services/wikiPromptService.js";
+import {
+  AUTO_REALISM_DEFAULTS,
+  applyAutoRealismSuite,
+  bindAutoRealismSuite,
+  mountAutoRealismSuite,
+  normalizeAutoRealismState,
+  readAutoRealismUiState
+} from "./auto-realism-suite-v1.js";
 
 const REALISM_DEFAULTS = Object.freeze({
   placeState:"auto",
@@ -54,10 +62,11 @@ const REALISM_DEFAULTS = Object.freeze({
   sceneProfile:"auto",
   accessoryProfile:"auto",
   accessoryDetail:"",
-  objectProfile:"auto"
+  objectProfile:""
 });
 
 const form = document.querySelector("#prompt-form");
+mountAutoRealismSuite(form);
 const referenceImage = document.querySelector("#reference-image");
 const referencePreview = document.querySelector("#reference-preview");
 const referencePreviewWrap = document.querySelector("#reference-preview-wrap");
@@ -165,19 +174,21 @@ function readState() {
     environmentNote:value("environment-note"), placeState:value("place-state"), peopleDensity:value("people-density"),
     subjectMoment:value("subject-moment"), interactionObject:value("interaction-object"),
     sceneProfile:value("scene-profile"), accessoryProfile:value("accessory-profile"), accessoryDetail:value("accessory-detail"),
-    objectProfile:value("object-profile"), hasReference
+    objectProfile:value("object-profile"), hasReference,
+    ...readAutoRealismUiState()
   };
 }
 
 function normalizeEnhancedState(rawState = {}) {
-  const base = normalizeState({ ...REALISM_DEFAULTS, ...rawState });
+  const base = normalizeState({ ...REALISM_DEFAULTS, ...AUTO_REALISM_DEFAULTS, ...rawState });
   const core = resolveRealismCoreState(base);
   const coreNormalized = normalizeState(core.state);
   const coreState = { ...coreNormalized, ...core.state };
   const advanced = resolveAdvancedRealismState(coreState);
   const finalNormalized = normalizeState(advanced.state);
+  const suiteState = normalizeAutoRealismState({ ...finalNormalized, ...advanced.state });
   return {
-    state:{ ...finalNormalized, ...advanced.state },
+    state:suiteState,
     conflicts:[...core.conflicts, ...advanced.conflicts]
   };
 }
@@ -198,19 +209,22 @@ function buildEnhancedPack(rawState = {}) {
     ...ADVANCED_REALISM_NEGATIVE_RULES
   ])].join(", ");
   const risk = evaluateRealismRisk(base.state, conflicts);
+  const suite = applyAutoRealismSuite({ positive:optimized.prompt, negative, state:{ ...base.state, ...state }, risk, conflicts });
   return {
     ...base,
-    state:base.state,
-    positive:optimized.prompt,
-    negative,
+    state:suite.state,
+    positive:suite.positive,
+    negative:suite.negative,
     qa:[
       ...base.qa,
       ...realismCoreQaItems(base.state, conflicts),
-      ...advancedRealismQaItems(base.state, conflicts, optimized.stats)
+      ...advancedRealismQaItems(base.state, conflicts, optimized.stats),
+      ...suite.qa
     ],
     conflicts,
     optimizerStats:optimized.stats,
-    risk
+    risk,
+    suiteMeta:suite.meta
   };
 }
 
@@ -311,7 +325,7 @@ function localStatus(pack) {
     if (!pack.state.customScene) base = "اكتب وصف المشهد المخصص أولاً؛ المحرك لن يخترع المكان بدلاً منك.";
     else base = hasReference ? "تم تثبيت الهوية والمشهد المخصص؛ التفاصيل الثانوية مرتبطة بزاوية السيلفي." : "المشهد المخصص جاهز؛ أرفق صورة هوية واحدة فقط عند الاستخدام.";
   } else base = hasReference ? "تم تثبيت مرجع الهوية الواحد؛ الخلفية غير إجبارية." : "البرومبت جاهز؛ أرفق صورة هوية واحدة فقط عند الاستخدام.";
-  return `${base}${conflict} · مؤشر الواقعية ${pack.risk.score}/100`;
+  return `${base}${conflict} · مؤشر الواقعية ${pack.risk.score}/100 · ${pack.suiteMeta.generator}/${pack.suiteMeta.compression}`;
 }
 
 function renderPrompt() {
@@ -323,7 +337,7 @@ function renderPrompt() {
   const cachedGuidance = wikiPromptService.getCachedGuidance(config);
   positivePrompt.value = composeWikiFirstPrompt(pack.positive, cachedGuidance);
   negativePrompt.value = pack.negative;
-  resultMeta.textContent = `${pack.template.title} · Xiaomi 15 Ultra Front · ADVANCED REALISM · ${pack.risk.score}/100 · ${pack.state.time === "night" ? "ليلي" : "نهاري"}`;
+  resultMeta.textContent = `${pack.template.title} · Xiaomi 15 Ultra Front · AUTO REALISM · ${pack.suiteMeta.generator} · ${pack.suiteMeta.compression} · ${pack.risk.score}/100 · ${pack.state.time === "night" ? "ليلي" : "نهاري"}`;
   renderQa([...pack.qa, { label:"WikiPrompt", value:cachedGuidance ? "هو أساس البرومبت الحالي" : "جارٍ تحميل أساس الواقعية" }]);
   setStatus(`${localStatus(pack)} · ${cachedGuidance ? wikiStatusText({ state:"cache" }) : "🟡 WikiPrompt: جارٍ الفحص"}`);
 
@@ -364,10 +378,10 @@ async function copyText(text, label) {
 }
 
 function downloadPrompt() {
-  const pack = ["WIKIPROMPT SELFIE STUDIO · ADVANCED REALISM", "", "POSITIVE PROMPT", positivePrompt.value, "", "NEGATIVE PROMPT", negativePrompt.value].join("\n");
+  const pack = ["WIKIPROMPT SELFIE STUDIO · AUTO REALISM · ADVANCED REALISM", "", "POSITIVE PROMPT", positivePrompt.value, "", "NEGATIVE PROMPT", negativePrompt.value].join("\n");
   const blob = new Blob([pack], { type:"text/plain;charset=utf-8" });
   const href = URL.createObjectURL(blob); const link = document.createElement("a");
-  link.href = href; link.download = "wikiprompt-selfie-advanced-realism.txt"; document.body.append(link); link.click(); link.remove(); URL.revokeObjectURL(href);
+  link.href = href; link.download = "wikiprompt-selfie-auto-realism.txt"; document.body.append(link); link.click(); link.remove(); URL.revokeObjectURL(href);
   setStatus(`تم تنزيل ملف البرومبت. · ${wikiStatusText()}`);
 }
 
@@ -377,6 +391,19 @@ function resetForm() {
   document.querySelector("#messiness").value = DEFAULT_STATE.messiness;
   placeStateSelect.value = REALISM_DEFAULTS.placeState; peopleDensitySelect.value = REALISM_DEFAULTS.peopleDensity; subjectMomentSelect.value = REALISM_DEFAULTS.subjectMoment;
   sceneProfileSelect.value = REALISM_DEFAULTS.sceneProfile; accessoryProfileSelect.value = REALISM_DEFAULTS.accessoryProfile; objectProfileSelect.value = REALISM_DEFAULTS.objectProfile;
+  Object.entries({
+    "auto-realism":AUTO_REALISM_DEFAULTS.autoRealism,
+    "realism-preset":AUTO_REALISM_DEFAULTS.realismPreset,
+    "generator-profile":AUTO_REALISM_DEFAULTS.generatorProfile,
+    "prompt-compression":AUTO_REALISM_DEFAULTS.promptCompression,
+    "continuity-mode":AUTO_REALISM_DEFAULTS.continuityMode,
+    "variation-mode":AUTO_REALISM_DEFAULTS.variationMode,
+    "lock-identity":AUTO_REALISM_DEFAULTS.lockIdentity,
+    "lock-scene":AUTO_REALISM_DEFAULTS.lockScene,
+    "lock-clothing":AUTO_REALISM_DEFAULTS.lockClothing,
+    "lock-lighting":AUTO_REALISM_DEFAULTS.lockLighting,
+    "lock-expression":AUTO_REALISM_DEFAULTS.lockExpression
+  }).forEach(([id, selected]) => { const el = document.querySelector(`#${id}`); if (el) el.value = selected; });
   clearReference(); refreshDynamicFields(); persistSelectedScene(); renderPrompt();
 }
 
@@ -405,5 +432,6 @@ document.querySelector("#copy-positive").addEventListener("click", () => copyTex
 document.querySelector("#copy-negative").addEventListener("click", () => copyText(negativePrompt.value, "البرومبت السلبي"));
 document.querySelector("#copy-pack").addEventListener("click", () => copyText(`POSITIVE PROMPT\n${positivePrompt.value}\n\nNEGATIVE PROMPT\n${negativePrompt.value}`, "الحزمة الكاملة"));
 document.querySelector("#download-prompt").addEventListener("click", downloadPrompt);
+bindAutoRealismSuite(renderPrompt);
 
 initializeStaticSelects(); restoreSelectedScene(); refreshDynamicFields(); renderPrompt();
