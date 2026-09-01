@@ -258,8 +258,33 @@ function monitorStyle() {
 .visual-monitor-presets{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .visual-monitor-presets button{min-height:40px;border:1px solid rgba(250,198,42,.25);border-radius:10px;background:rgba(250,198,42,.07);color:inherit;font-weight:700;cursor:pointer}
 .visual-monitor-presets button:hover,.visual-monitor-presets button:focus-visible{background:rgba(250,198,42,.14);outline:none;border-color:rgba(250,198,42,.55)}
-@media(max-width:760px){.visual-monitor-layout{grid-template-columns:1fr}.visual-monitor-toolbar{grid-template-columns:1fr 1fr}.visual-monitor-presets{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:430px){.visual-monitor-toolbar{grid-template-columns:1fr}.visual-monitor-readout{font-size:.76rem}}
+@media(max-width:760px){
+  #visual-selfie-angle-monitor{overflow:visible}
+  .visual-monitor-layout{grid-template-columns:1fr;gap:10px}
+  .visual-monitor-preview-wrap{position:sticky;top:6px;z-index:20;padding:5px;border-radius:14px;background:rgba(6,13,23,.96);box-shadow:0 10px 26px rgba(0,0,0,.3);backdrop-filter:blur(10px)}
+  .visual-monitor-preview{border-radius:12px;padding:5px}
+  #visual-selfie-svg{height:154px;max-height:154px}
+  .visual-monitor-score-row{gap:7px;padding-top:2px;font-size:.76rem;line-height:1.2}
+  .visual-monitor-readout{margin-top:4px;border-radius:9px;padding:5px 7px;font-size:.66rem;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .visual-monitor-warning{margin-top:4px;padding:5px 7px;border-radius:8px;font-size:.68rem;line-height:1.3;max-height:42px;overflow:auto}
+  .visual-monitor-toolbar{grid-template-columns:1fr 1fr;gap:7px}
+  .visual-monitor-controls{gap:7px}
+  .visual-monitor-control{gap:4px;padding:7px 9px;border-radius:10px}
+  .visual-monitor-control>span{font-size:.78rem}
+  .visual-monitor-presets{grid-template-columns:repeat(4,1fr);gap:5px}
+  .visual-monitor-presets button{min-height:34px;padding:5px 3px;font-size:.72rem}
+}
+@media(max-width:430px){
+  .visual-monitor-preview-wrap{top:4px;padding:4px}
+  #visual-selfie-svg{height:138px;max-height:138px}
+  .visual-monitor-score-row{font-size:.72rem}
+  .visual-monitor-readout{font-size:.62rem}
+  .visual-monitor-toolbar{grid-template-columns:1fr 1fr}
+  .visual-monitor-toolbar .field{padding:7px 8px}
+  .visual-monitor-toolbar .field span{font-size:.74rem}
+  .visual-monitor-toolbar select{font-size:.78rem}
+  .visual-monitor-presets{grid-template-columns:repeat(2,1fr)}
+}
 `;
 }
 
