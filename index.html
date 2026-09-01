@@ -26,14 +26,19 @@
       <form id="prompt-form" novalidate autocomplete="off">
         <input id="mode" name="mode" type="hidden" value="selfie" />
 
-        <section class="panel priority-panel" aria-labelledby="studio-section-title">
+        <section class="panel priority-panel" id="studio-hub" aria-labelledby="studio-section-title">
           <div class="section-heading"><div><span class="section-number">00</span><h2 id="studio-section-title">اختر قسم التصوير</h2></div><p>عند اختيار قسم تختفي إعدادات الأقسام الأخرى وتتوقف محركاتها بالكامل.</p></div>
-          <div class="form-grid">
-            <label class="field field-span-2" for="studio-section"><span>القسم النشط</span><select id="studio-section" name="studioSection"></select><small id="studio-section-description"></small></label>
-            <input id="scenario-mode" name="scenarioMode" type="hidden" value="custom" />
-            <div class="field field-span-2 selfie-camera-lock"><span>قفل الأقسام</span><div class="readonly-card" id="studio-section-status">السيلفي الفردي يعمل · بقية الأقسام مخفية ومقفلة</div><small>كل قسم يحمل وضعياته وملابسه وإضاءته ومحركاته الخاصة فقط.</small></div>
-          </div>
+          <select id="studio-section" name="studioSection" hidden aria-hidden="true"></select>
+          <input id="scenario-mode" name="scenarioMode" type="hidden" value="custom" />
+          <div class="studio-section-grid" id="studio-section-grid"></div>
         </section>
+
+        <div id="studio-workspace" hidden>
+          <section class="panel studio-workspace-header" aria-labelledby="active-studio-section-title">
+            <button class="secondary-button compact-button" type="button" id="back-to-sections">← الرجوع إلى الأقسام</button>
+            <div><p class="eyebrow">القسم المفتوح فقط</p><h2 id="active-studio-section-title"></h2><p id="studio-section-description"></p></div>
+            <div class="readonly-card" id="studio-section-status"></div>
+          </section>
 
         <section class="panel reference-panel" aria-labelledby="reference-title">
           <div class="section-heading"><div><span class="section-number">01</span><h2 id="reference-title">الهوية المرجعية</h2></div><p>صورة شخص واحدة هي المرجع الوحيد للوجه وخط الشعر وكثافته واللحية والعمر الظاهر.</p></div>
@@ -146,9 +151,10 @@
         </section>
 
         <div class="action-row"><button class="primary-button" type="submit">توليد برومبت WikiPrompt Selfie</button><button class="secondary-button" type="button" id="reset-form">إعادة الضبط</button><span class="form-status" id="form-status" role="status" aria-live="polite"></span></div>
+        </div>
       </form>
 
-      <section class="result-panel" id="result-panel" aria-labelledby="result-title">
+      <section class="result-panel" id="result-panel" aria-labelledby="result-title" hidden>
         <div class="result-heading"><div><p class="eyebrow">WIKIPROMPT-FIRST · REALISM CORE · ADVANCED REALISM</p><h2 id="result-title">البرومبت النهائي</h2><p id="result-meta"></p></div><div class="result-actions"><button class="secondary-button" type="button" id="copy-pack">نسخ الحزمة</button><button class="secondary-button" type="button" id="download-prompt">تنزيل TXT</button></div></div>
         <div class="output-grid">
           <label class="output-field" for="positive-prompt"><span>POSITIVE PROMPT</span><textarea id="positive-prompt" rows="26" readonly></textarea><button class="secondary-button output-copy" type="button" id="copy-positive">نسخ</button></label>
