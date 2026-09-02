@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {
   AUTO_REALISM_DEFAULTS,
   applyAutoRealismSuite,
+  getExternalGeneratorSetup,
   normalizeAutoRealismState
 } from "../js/auto-realism-suite-v1.js";
 
@@ -12,6 +13,13 @@ assert.equal(normalized.generatorProfile, "chatgpt");
 assert.equal(normalized.promptCompression, "full");
 assert.equal(normalized.lockIdentity, "on");
 assert.equal(normalized.lockScene, "on");
+
+const fluxSetup = getExternalGeneratorSetup("flux");
+assert.equal(fluxSetup?.label, "FLUX — إعدادات خارج البرومبت");
+assert.match(fluxSetup?.copyText ?? "", /Guidance/u);
+assert.equal(getExternalGeneratorSetup("chatgpt"), null, "ChatGPT Image should not receive external workflow settings");
+const stableSetup = getExternalGeneratorSetup("stable-diffusion");
+assert.match(stableSetup?.copyText ?? "", /ADetailer/u);
 
 const suite = applyAutoRealismSuite({
   positive:`[IDENTITY LOCK]\nPreserve IMAGE A.\n\n[REALISM RISK CHECK] temporary diagnostic line\n\n[PHONE REALISM]\nSubject-held front camera only.`,
@@ -62,6 +70,7 @@ assert.match(suite.negative, /locked-field drift/u);
 assert.match(suite.negative, /background context forced outside the selfie field of view/u);
 assert.match(suite.negative, /invented generic accessory or product prop/u);
 assert.equal(suite.meta.generator, "gemini");
+assert.equal(suite.meta.generatorSetup, "", "Gemini settings must remain outside the prompt and hidden when unsupported");
 assert.equal(suite.meta.compression, "compact");
 assert.equal(suite.qa.find((item) => item.label === "Realism Score")?.value, "97/100 · LOW");
 assert.equal(suite.qa.find((item) => item.label === "Auto Fix")?.value, "تم تمرير 1 تعارض مصحح من المحركات الأساسية");
@@ -82,6 +91,16 @@ assert.match(driverSuite.positive, /dedicated driver geometry/u);
 assert.match(driverSuite.positive, /unmirrored left-hand-drive mapping/u);
 assert.match(driverSuite.positive, /steering-wheel anchor without exception/u);
 assert.match(driverSuite.positive, /Do not invent accessories, jewelry, fitness trackers/u);
+
+const fluxSuite = applyAutoRealismSuite({ positive:"BASE", state:{ generatorProfile:"flux" } });
+assert.match(fluxSuite.positive, /FLUX ADAPTER/u);
+assert.doesNotMatch(fluxSuite.positive, /Steps: 28–36/u, "External FLUX settings must not be appended to the image prompt");
+assert.match(fluxSuite.meta.generatorSetup, /FLUX — إعدادات خارج البرومبت/u);
+assert.ok(fluxSuite.qa.some((item) => item.label === "Generator Setup"));
+
+const stableSuite = applyAutoRealismSuite({ positive:"BASE", state:{ generatorProfile:"stable-diffusion" } });
+assert.match(stableSuite.positive, /STABLE DIFFUSION ADAPTER/u);
+assert.match(stableSuite.meta.generatorSetup, /Stable Diffusion — إعدادات خارج البرومبت/u);
 
 const off = applyAutoRealismSuite({ positive:"BASE", state:{ autoRealism:"off", continuityMode:"off" } });
 assert.doesNotMatch(off.positive, /\[AUTO REALISM\]/u);
