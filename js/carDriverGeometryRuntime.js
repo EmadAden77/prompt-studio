@@ -23,52 +23,43 @@ const CAR_ARM_GEOMETRY = Object.freeze({
 - LEFT hand holds the phone at roughly 35–50cm, near eye level; the left elbow uses the real center-console/armrest or another reachable support surface.
 - A small portion of the left forearm/phone-side shoulder may enter an extreme edge and appear modestly enlarged by near-field perspective.
 - Gaze goes into the front-camera lens. Use about 3 degrees of natural handheld roll.`,
-
   driver_low_angle: `LOW-ANGLE CABIN ARM GEOMETRY
 - Phone sits around lower-chest to chest level within normal cabin reach and points upward roughly 30–40 degrees only if anatomy and dashboard clearance allow it.
 - Chin lowers slightly toward the lens; headliner may enter the upper edge.
 - The holding forearm may occupy a small lower-edge foreground area with modest near-field enlargement and mild micro-motion softness.
 - Elbow is supported on thigh/console where physically reachable. Gaze goes into the lens.`,
-
   driver_high_angle: `HIGH-ANGLE CABIN ARM GEOMETRY
 - Phone is raised above eye level within a real confined-cabin reach. Target about 45–55cm; if the requested composition would require more reach, loosen the crop or reduce the angle instead of lengthening the arm.
 - Holding-side shoulder rises visibly but naturally; elbow may open toward roughly 145–165 degrees without locking or intersecting the roof/A-pillar.
 - Dashboard and wheel become more prominent below; face can sit in the upper third. Gaze goes upward into the lens.`,
-
   driver_side_angle: `SIDE-ANGLE CABIN ARM GEOMETRY
 - Phone approaches from a side-biased angle, roughly 35–45 degrees off frontal, at about 40–55cm only if reachable.
 - Holding elbow is supported on the real center console/armrest when possible.
 - Passenger-seat context may appear behind the subject according to the real cabin geometry.
 - Face remains three-quarter, pelvis stays planted in the driver seat, and gaze goes into the lens.`,
-
   driver_mirror_check: `MIRROR-CHECK CABIN ARM GEOMETRY
 - Head turns only about 30–40 degrees toward the REAL rearview mirror while torso/pelvis remain seat-aligned.
 - Phone stays lower, around chest level, within natural reach; holding elbow supported on a real cabin surface.
 - CANDID GAZE EXCEPTION: eyes look at the rearview mirror, not the lens.
 - Rearview mirror shows ONLY the rear cabin/rear scene consistent with the vehicle; it must never show the selfie phone or invent a second camera.`,
-
   driver_window_lean: `WINDOW-SIDE LEAN CABIN ARM GEOMETRY
 - Preserve the exact window state shown by IMAGE B. Do NOT open, close, lower, raise, or remove glass to accommodate the pose.
 - The free LEFT forearm may rest on the real door armrest/window-side support surface only where that surface exists.
 - RIGHT hand holds the phone about 35–50cm from the face; right elbow uses console/thigh support when reachable.
 - Outside context is seen only through the real window state. Gaze goes into the lens.`,
-
   driver_two_hand_wheel: `TWO-HAND PHONE ABOVE WHEEL — PARKED ONLY
 - Vehicle remains fully parked and stationary.
 - Both forearms/elbows may lightly brace on the top region of the real steering wheel if the wheel height and body geometry permit.
 - BOTH hands hold the phone just above the wheel rim; the phone itself is behind the front-camera optical center and therefore not directly visible.
 - No hand is simultaneously gripping the wheel and phone. Do not duplicate hands. Zero arm stretch; gaze goes into the lens.`,
-
   driver_wheel_prominent: `WHEEL-PROMINENT PARKED SELFIE
 - Keep the real steering wheel large and readable in the lower foreground while the phone remains subject-held and physically reachable.
 - If both forearms can lightly brace near the wheel top without intersecting the rim, allow that support; otherwise use one camera hand and one relaxed free hand on the wheel.
 - Never convert this into a mounted-phone, dashcam, or third-person view.`,
-
   driver_relaxed_recline: `RELAXED SEAT SELFIE
 - Preserve the exact seatback recline shown by IMAGE B. Do NOT change the seatback to 15–20 degrees unless that is already the real reference state.
 - Head may rest naturally against the real headrest; phone sits above chest within natural reach and may look down about 15–20 degrees.
 - Holding elbow uses a real armrest/console/thigh support where reachable. Gaze goes up into the lens.`,
-
   car_driver_relaxed: `RELAXED PARKED DRIVER
 - Preserve seat-wheel-body alignment. One hand holds the phone within 35–50cm; the other rests on thigh, console, or wheel.
 - Allow only a small edge-near portion of the camera-side forearm/shoulder when composition requires it.`,
@@ -102,63 +93,78 @@ function list(value) {
 function buildDriverSeatSolver(pose) {
   if (!pose || pose.category !== "car") return "";
 
-  return `DRIVER SEAT ANATOMY LOCK — HIGHEST PRIORITY
-Solve the driver's body in this exact order. Seat and vehicle geometry are solved BEFORE pose styling and BEFORE camera placement.
+  return `DRIVER OCCUPANCY LOCK — HARD SPATIAL AUTHORITY
+The subject is physically occupying the actual LEFT-FRONT DRIVER SEAT of a LEFT-HAND-DRIVE vehicle. This is a 3D occupancy constraint, not merely a left/right labeling rule. Solve seat and vehicle geometry BEFORE pose styling and BEFORE camera placement.
 
 DRIVER SEAT SOLVER — CAMERA LAST
-1. SEAT–WHEEL AXIS FIRST
-- Define the driver seat from the real steering-wheel centerline in IMAGE B.
-- Hips remain centered on the real driver-seat cushion so pelvis, sternum, and chest stay broadly aligned with the steering-wheel axis.
-- The steering wheel must read physically in front of the driver's lower chest/upper abdomen region according to the reference perspective, never displaced beside the torso as if it belonged to another seat.
-- Never move the seat, steering wheel, steering column, dashboard, or camera viewpoint to fake this alignment.
+1. DRIVER-SEAT OCCUPANCY FIRST
+- The driver's pelvis is centered on the actual left-front driver-seat cushion.
+- The driver's spine, sternum and torso rise from that same driver-seat centerline.
+- The seatback and headrest supporting the subject belong to this same driver seat, never the passenger seat.
+- The passenger seat is across the center console and must never visually support the subject.
 
-2. LEGS BEFORE TORSO
+2. STEERING SYSTEM AXIS
+- The steering-column axis projects toward the centerline of the driver's torso.
+- The steering wheel is physically in front of the driver's lower chest/upper abdomen, never beside the body.
+- The instrument cluster is farther forward, directly behind the steering wheel.
+- Never use a detached or floating steering-wheel fragment as proof of driver occupancy.
+- Any visible steering-wheel arc must belong to the real wheel/column/dashboard depth chain.
+
+3. LATERAL CABIN ANCHORS
+- The center console begins immediately beside the driver's RIGHT hip and continues forward on the driver's RIGHT side.
+- The driver door, driver window and driver-side A-pillar are immediately beside the driver's LEFT shoulder.
+- Do not infer seat position from screen-left or screen-right. Construct the unmirrored LHD cabin in physical vehicle coordinates first.
+
+4. LEGS BEFORE TORSO
 - Solve pelvis, thighs, knees, and footwell direction before rotating the upper body.
 - Thighs project forward/downward toward the real pedal area beneath the steering wheel.
 - Knees remain directionally consistent with the hips and vehicle centerline; they must not stretch sideways toward the passenger seat or door.
-- If legs are partially cropped, their hidden continuation must still point toward the real footwell.
+- If legs are cropped, their hidden continuation must still point toward the driver footwell.
 
-3. TORSO ROTATION LIMIT
+5. TORSO / HEAD
 - Torso rotation toward the selfie camera is limited to a natural approximately 20–30 degrees at the waist/ribcage, with additional small neck/eye turn as needed.
-- A 90-degree chest rotation while the pelvis and legs remain driving-forward is forbidden.
-- Preserve seated spinal support, natural ribcage orientation, and plausible shoulder asymmetry.
+- A 90-degree chest rotation while the pelvis remains driving-forward is forbidden.
+- The real driver headrest stays centered behind the subject's head/upper neck on the same seat centerline.
+- Never move the headrest to make an incorrect seat look plausible.
 
-4. HEAD & HEADREST
-- The real headrest stays centered behind the subject's head/upper neck on the seat centerline.
-- Maintain a plausible small gap or light contact, roughly 2–5cm when geometry permits.
-- The head may tilt or turn toward the camera, but it must not drift laterally so far that the headrest appears attached to another seat.
-- Never move, widen, narrow, rotate, or reposition the headrest.
+6. CAMERA ORIGIN
+- The smartphone front camera is held by the driver himself and must remain inside the reachable arm-volume originating from the shoulder of the body seated in this exact driver seat.
+- The camera must NOT originate from the passenger seat, center console, dashboard, windshield, outside the vehicle, a mount, or a third-person photographer.
+- Camera placement adapts to solved driver occupancy. Driver occupancy never adapts to a prettier camera angle.
 
-5. ARMS FROM SHOULDER
-- Every arm originates anatomically from the shoulder joint with a continuous shoulder→upper-arm→elbow→forearm→wrist→hand path.
-- In active car templates, a physically continuous portion of the camera-side shoulder and/or forearm MAY enter an extreme frame edge when the selected pose requires it. The phone itself remains directly invisible behind the front-camera optical center.
-- Do not let the camera arm appear to grow from the chest, ribs, abdomen, or mid-torso.
-- The non-camera arm may rest naturally on the real center console, thigh, door armrest, or steering wheel only where a real contact surface exists.
+7. ARMS / CONTACT / CLOTHING
+- Every arm follows one continuous shoulder→upper-arm→elbow→forearm→wrist→hand path.
+- The non-camera arm may rest on the real console, thigh, door armrest, or steering wheel only where a real contact surface exists.
+- Both sleeves retain the same intentional garment state; folds differ only because of pose/contact.
+- Seat cushion and seatback show subtle body-weight compression only.
 
-6. CLOTHING CONSISTENCY & CONTACT
-- Both sleeves must remain in the identical intentional state: same roll height, cuff state, button state, and garment construction. Natural fold shapes may differ only because the arms bend differently.
-- No sleeve may randomly become shorter, tighter, rolled higher, or buttoned differently from the other unless the selected clothing itself is intentionally asymmetric.
-- Preserve seated shirt bunching at the waist/abdomen, fabric tension at bent elbows, and compression/contact folds where clothing meets the seat or console.
-- Seat cushion and seatback show only subtle physically plausible body-weight compression; never reshape the seat.
+MANDATORY DRIVER PROOF — TWO-ANCHOR RULE
+The crop must contain enough connected geometry to prove the subject is behind the steering system, not merely next to a wheel.
+A. Required: steering wheel / steering-column geometry physically centered in front of the subject's torso.
+B. Plus at least one coherent lateral anchor: center-console boundary immediately beside the subject's right side OR driver-door/window/A-pillar geometry immediately beside the subject's left shoulder.
+A steering-wheel rim alone is NOT sufficient proof.
+If a tight crop cannot preserve these anchors, slightly widen or lower the crop while preserving the same subject-held camera origin. Correct driver occupancy outranks an artificially tight crop.
 
-7. KSA LEFT-HAND-DRIVE GEOMETRY
-- Treat this reference as left-hand drive: driver seat on the vehicle's left side, steering wheel in front of the driver, center console to the driver's right.
-- Keep door, console, wheel, seat, pedals, mirrors, and dashboard mutually consistent with that left-hand-drive layout.
+FINAL SPATIAL CHAIN
+The following must exist as one continuous 3D relationship:
+DRIVER SEAT → SUBJECT PELVIS → SUBJECT TORSO → STEERING WHEEL → STEERING COLUMN → INSTRUMENT CLUSTER.
+The center console must remain beside the driver's right hip and the driver door beside the driver's left shoulder.
 
-FORBIDDEN — REJECT AND CORRECT
-- steering wheel visibly off-axis beside the driver's body;
+HARD FAIL — REJECT AND RECONSTRUCT
+- subject visually supported by the passenger seat;
+- center console separates the subject from the steering wheel;
+- steering wheel beside the subject instead of in front;
+- steering wheel appears only as an unrelated foreground fragment;
 - pelvis centered in one seat while chest aligns to another seat's wheel;
-- knees or thighs pointing in a direction inconsistent with the hips/footwell;
-- 90-degree torso twist;
-- headrest offset sideways behind the wrong shoulder;
-- mismatched sleeve roll/cuff/button state;
-- arm emerging from mid-torso;
-- floating pelvis, back, thigh, elbow, or forearm contact;
-- any seat, wheel, console, headrest, door, or window state changed to accommodate the pose;
-- camera geometry that can only work by breaking the solved seated anatomy.
+- headrest belongs visually to the wrong seat;
+- right-hand-drive or horizontally mirrored cabin geometry;
+- camera viewpoint requiring the phone to originate from the passenger side;
+- knees/thighs inconsistent with driver footwell;
+- arm emerging from mid-torso or passing through cabin geometry;
+- any seat, wheel, console, headrest, door, or window moved to accommodate the pose.
 
 PRIORITY RULE
-If the selected car pose or camera angle conflicts with this solver, preserve DRIVER SEAT ANATOMY LOCK and reduce/modify the pose or camera angle. Never sacrifice seat-wheel-body anatomy to preserve a more dramatic selfie angle.`;
+DRIVER OCCUPANCY is a hard constraint. If the selected pose, close crop, variation, camera angle or aesthetic preference conflicts with it, modify the lower-priority element. Never sacrifice the driver-seat/body/steering-system chain.`;
 }
 
 function buildCabinSelfieLock(pose) {
@@ -209,18 +215,16 @@ ${specific}`;
 
 function buildDriverSelfieGeometry(pose) {
   if (!pose || pose.category !== "car" || !pose.camera_geometry || !pose.arm_strategy) return "";
-
   const anti = pose.anti_distortion ?? {};
   const arm = pose.arm_strategy ?? {};
   const camera = pose.camera_geometry ?? {};
   const physics = pose.physics ?? {};
-
   const elbowSupport = anti.elbow_must_be_supported
     ? "MUST be physically supported by the specified real surface when that surface is reachable"
     : "may be unsupported only where the pose explicitly requires a reachable upward arm extension";
 
   return `DRIVER SELFIE GEOMETRY — XIAOMI 15 ULTRA FRONT CAMERA
-IMPORTANT: apply this camera geometry only AFTER the DRIVER SEAT ANATOMY LOCK and CABIN SELFIE LOCK have been solved. Camera placement must adapt to the solved body, not the reverse.
+IMPORTANT: apply this camera geometry only AFTER DRIVER OCCUPANCY LOCK and CABIN SELFIE LOCK have been solved. Camera placement must adapt to the solved body, not the reverse.
 - Template: ${pose.name_en ?? pose.name_ar}.
 - Camera: Xiaomi 15 Ultra front-facing camera only; app optical model ${camera.focal_length ?? "22-24mm equivalent"}, ${camera.aperture ?? "approximately f/2.0"}.
 - Selfie distance: ${camera.distance ?? "35-55cm"}. If this conflicts with the cabin reach lock, obey the cabin reach lock and loosen crop rather than lengthen the arm.
@@ -239,37 +243,32 @@ ARM DISTORTION PREVENTION — NON-NEGOTIABLE
 - A small, continuous camera-side shoulder/forearm/hand segment may enter an extreme edge only when the selected car pose physically requires it. The phone itself remains directly invisible.
 - Never use bone elongation, rubber-arm deformation, an extra shoulder, duplicated hands, or global fisheye warp to create near-field perspective.
 - No arm may pass through steering wheel, dashboard, seat, console, door, glass, headrest, roof, A-pillar, or the subject's torso.
-- No impossible wrist reversal, fused fingers, duplicated hands, floating elbows, or shoulder dislocation.
 
 CAR CONTACT PHYSICS
-- Weight distribution: ${physics.weight_distribution ?? "pelvis and upper thighs supported by the real seat"}.
+- Weight distribution: ${physics.weight_distribution ?? "pelvis and upper thighs supported by the real driver seat"}.
 - Seat response: ${physics.seat_compression ?? "subtle natural body-weight compression only"}.
 - Spine/neck/torso behavior: ${physics.spine ?? physics.neck ?? physics.torso_rotation ?? "natural and supported by the selected pose"}.
 - Seatbelt: ${physics.seatbelt ?? "do not invent or reposition; use only when supported by IMAGE B or explicitly requested"}.
 - Seat, headrest, window, door, mirror, sunroof, steering wheel, dashboard, console, and controls remain in the exact state shown by IMAGE B.
-- Any visible free-hand or forearm contact produces believable finger placement, tiny pressure, and contact shadow on a real surface.
 
-FINAL DRIVER-GEOMETRY GATE
-Reject and correct the image if the phone position cannot be reached by a normal human arm from the seated shoulder location; if the holding arm would have to cross solid vehicle geometry; if elbow support contradicts the real interior; if the seat/window/door state changes to accommodate the pose; if a directly visible phone appears; or if the result becomes a third-person, mounted-camera, outside-camera, or passenger-held photograph.`;
+FINAL DRIVER-OCCUPANCY GATE — HARD FAIL
+Before accepting the composition, verify the continuous chain DRIVER SEAT → PELVIS → TORSO → STEERING WHEEL → STEERING COLUMN → INSTRUMENT CLUSTER and preserve at least one lateral anchor: console beside the driver's right hip or driver door/window/A-pillar beside the left shoulder. A visible steering-wheel fragment by itself does not pass validation. Reject and reconstruct any passenger-seat occupancy, wheel-beside-body geometry, mirrored/RHD mapping, passenger-origin camera, or disconnected steering-wheel token. If occupancy cannot be proved in the selected crop, loosen/lower the crop rather than faking a wheel fragment.`;
 }
 
 function patchPromptEngine() {
   const proto = PromptEngine?.prototype;
   if (!proto || proto[patchFlag] || typeof proto.generate !== "function") return;
-
   const originalGenerate = proto.generate;
   proto.generate = function generateWithDriverGeometry(config = {}) {
     const result = originalGenerate.call(this, config);
     const pose = getActiveCarTemplate();
     if (!pose || pose.category !== "car" || typeof result !== "string") return result;
-
     const normalizedResult = result.replaceAll(LEGACY_CAR_REFERENCE_FILENAME, CURRENT_CAR_REFERENCE_FILENAME);
     const seatSolver = buildDriverSeatSolver(pose);
     const cabinLock = buildCabinSelfieLock(pose);
     const cameraGeometry = buildDriverSelfieGeometry(pose);
     return `${normalizedResult}\n\n${seatSolver}\n\n${cabinLock}${cameraGeometry ? `\n\n${cameraGeometry}` : ""}\n\n${NATURAL_PHOTOGRAPHIC_REALISM}`.trim();
   };
-
   proto[patchFlag] = true;
 }
 
