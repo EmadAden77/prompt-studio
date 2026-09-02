@@ -62,6 +62,13 @@ function optionValue(map, value, fallback) {
   return Object.prototype.hasOwnProperty.call(map, value) ? value : fallback;
 }
 
+function isDriverCarState(state = {}) {
+  const section = String(state.studioSection || "").toLowerCase();
+  const scene = String(state.scene || "").toLowerCase();
+  return String(state.carSeat || "") === "driver-left"
+    && (section === "car" || /range.?rover|(?:^|[-_])car(?:[-_]|$)/u.test(scene));
+}
+
 export function normalizeAutoRealismState(rawState = {}) {
   let visual = normalizeVisualSelfieState(rawState);
   const variationMode = optionValue(VARIATION_RULES, rawState.variationMode, AUTO_REALISM_DEFAULTS.variationMode);
@@ -88,10 +95,13 @@ export function normalizeAutoRealismState(rawState = {}) {
 
 function buildReferenceAuthorityMap(state) {
   const sceneAuthority = state.customScene ? `user custom scene description (${state.customScene})` : `selected scene (${state.scene})`;
+  const poseCameraAuthority = isDriverCarState(state)
+    ? `car-driver geometry resolver: selected angle (${state.selfieAngle}) + composition (${state.composition}), with one reachable numeric vector and a mandatory steering-wheel anchor`
+    : `selected pose (${state.pose}) + selfie angle (${state.selfieAngle}) + composition (${state.composition})`;
   return `[REFERENCE AUTHORITY MAP]
 - IMAGE A = identity only: facial structure, apparent age, skin identity, hairline/density and facial-hair pattern. Never borrow scene, clothing or lighting from IMAGE A unless explicitly selected elsewhere.
 - Environment authority = ${sceneAuthority}.
-- Pose/camera authority = selected pose (${state.pose}) + selfie angle (${state.selfieAngle}) + composition (${state.composition}).
+- Pose/camera authority = ${poseCameraAuthority}.
 - Clothing authority = selected clothing (${state.clothing}) and its fabric/fit controls.
 - Lighting authority = selected lighting (${state.lighting}) at ${state.time}.
 - Vehicle/room geometry, when applicable, remains subordinate to the selected scene-specific physical engine and must never rewrite identity.`;

@@ -69,6 +69,26 @@ assert.ok(qa.some((item) => item.label === "Visual Selfie Monitor"));
 assert.ok(qa.some((item) => item.label === "Selfie Geometry"));
 assert.ok(qa.some((item) => item.label === "Arm-Reach Check"));
 
+const driverLocked = normalizeVisualSelfieState({
+  studioSection:"car", scene:"rangeRover", carSeat:"driver-left", selfieAngle:"eye", composition:"tight",
+  selfieDistanceCm:76, selfieYawDeg:0, selfiePitchDeg:18, selfieRollDeg:2, faceYawDeg:0, monitorComposition:"tight"
+});
+assert.equal(driverLocked.driverCarGeometryLocked,true, "Driver selfies must resolve through the car-driver geometry lock");
+assert.equal(driverLocked.selfieDistanceCm,40, "A tight driver selfie must reject a long 76cm arm vector");
+assert.equal(driverLocked.selfiePitchDeg,-3, "Eye-level driver capture must use one resolved, slightly high camera vector");
+assert.equal(driverLocked.monitorComposition,"auto", "Driver monitor crop must follow the selected composition only");
+
+const driverSection = buildVisualSelfieGeometrySection(driverLocked);
+assert.match(driverSection,/\[CAR DRIVER SELFIE GEOMETRY — SOLE AUTHORITY\]/u);
+assert.doesNotMatch(driverSection,/\[VISUAL SELFIE ANGLE MONITOR\]/u);
+assert.match(driverSection,/40 cm/u);
+assert.match(driverSection,/thin, physically attached upper steering-wheel arc/u);
+assert.match(driverSection,/Never introduce a second camera distance/u);
+
+const driverQa = visualSelfieQa(driverLocked);
+assert.ok(driverQa.some((item) => item.label === "Car Driver Geometry"));
+assert.ok(driverQa.some((item) => item.label === "Driver Anchor"));
+
 const suite = applyAutoRealismSuite({
   positive:"[PHONE REALISM]\nSubject-held front camera only.",
   state:{
@@ -80,5 +100,18 @@ assert.match(suite.positive,/\[VISUAL SELFIE ANGLE MONITOR\]/u);
 assert.match(suite.negative,/camera outside natural arm reach/u);
 assert.match(suite.negative,/visual selfie monitor geometry ignored/u);
 assert.match(suite.meta.selfieGeometry,/50cm\/Y24\/P-2\/R2/u);
+
+const driverSuite = applyAutoRealismSuite({
+  positive:"[PHONE REALISM]\nSubject-held front camera only.",
+  state:{
+    studioSection:"car", scene:"rangeRover", carSeat:"driver-left", pose:"car-driver-close", selfieAngle:"eye", composition:"tight", clothing:"work-blue-navy", lighting:"car-night-parking-led", time:"night",
+    selfieDistanceCm:76, selfieYawDeg:0, selfiePitchDeg:18, selfieRollDeg:2, faceYawDeg:0, monitorComposition:"tight"
+  }
+});
+assert.match(driverSuite.positive,/\[CAR DRIVER SELFIE GEOMETRY — SOLE AUTHORITY\]/u);
+assert.doesNotMatch(driverSuite.positive,/\[VISUAL SELFIE ANGLE MONITOR\]/u);
+assert.match(driverSuite.positive,/40 cm/u);
+assert.match(driverSuite.positive,/mandatory steering-wheel anchor/u);
+assert.match(driverSuite.meta.selfieGeometry,/40cm\/Y0\/P-3\/R2/u);
 
 console.log("Visual Selfie Angle Monitor tests passed");

@@ -208,6 +208,10 @@ function isDriverLockedPose(poseId) {
   return /^car-driver-/u.test(String(poseId ?? "")) || poseId === "car-roof-context";
 }
 
+function isDriverCarState(state) {
+  return isCarScene(state.scene) && state.carSeat === "driver-left";
+}
+
 export function getCarSeatOptions(sceneId, poseId = "") {
   if (!isCarScene(sceneId)) return [];
   if (isDriverLockedPose(poseId)) return CAR_SEAT_OPTIONS.filter((item) => item.value === "driver-left");
@@ -381,17 +385,27 @@ function buildReferenceSection(state) {
   ].filter(Boolean).join(" ");
 }
 
+function buildCameraSection(state) {
+  if (!isDriverCarState(state)) return `[CAMERA] ${CAMERA_SELFIE_LOCK}`;
+  return `[CAMERA] SUBJECT-HELD DRIVER SELFIE CAMERA: Xiaomi 15 Ultra FRONT camera only, with one ordinary front-camera viewpoint, one lens and one exposure pipeline. The exact phone distance, yaw, pitch, roll and face yaw are declared only in [CAR DRIVER SELFIE GEOMETRY — SOLE AUTHORITY]. Do not import a generic broad reach range, a second eye-height rule, or an alternative camera vector into this driver scene.`;
+}
+
 function buildPoseSection(state) {
   const pose = getPoseById(state.pose);
   const angle = optionText(getSelfieAngleOptions(state.pose), state.selfieAngle);
   const composition = optionText(getCompositionOptions(state.pose), state.composition);
-  const cropRule = isCarScene(state.scene)
-    ? "Do not force the holding hand, phone body, steering wheel, dashboard or console into view when the selected crop naturally excludes them."
+  const driverCar = isDriverCarState(state);
+  const cropRule = driverCar
+    ? "Keep the selected close selfie crop, but retain only a thin natural upper steering-wheel arc at the lower edge as the mandatory proof of the driver position. Do not force a full wheel, dashboard or console into view."
+    : isCarScene(state.scene)
+      ? "Do not force the holding hand, phone body, steering wheel, dashboard or console into view when the selected crop naturally excludes them."
     : "Do not force the holding hand or phone body into view when the selected crop naturally excludes them.";
   return [
     "[SELFIE POSE]",
     sentence(pose?.text ?? "a natural subject-held selfie pose"),
-    sentence(angle),
+    driverCar
+      ? sentence(`Selected angle intent: ${angle}. The numeric camera vector remains exclusively controlled by the car-driver geometry lock`)
+      : sentence(angle),
     sentence(composition),
     "The pose, crop and phone position must describe the same single instant.",
     cropRule
@@ -401,7 +415,10 @@ function buildPoseSection(state) {
 function buildCarSeatSection(state) {
   if (!isCarScene(state.scene)) return "";
   const seat = optionByValue(CAR_SEAT_OPTIONS, state.carSeat) ?? CAR_SEAT_OPTIONS[0];
-  return `[CAR SEAT POSITION] ${sentence(seat.text)} The front-camera viewpoint originates from this exact seat position. Do not mirror, swap or reinterpret the subject's seat.`;
+  if (!isDriverCarState(state)) {
+    return `[CAR SEAT POSITION] ${sentence(seat.text)} The front-camera viewpoint originates from this exact seat position. Do not mirror, swap or reinterpret the subject's seat.`;
+  }
+  return `[CAR SEAT POSITION] ${sentence(seat.text)} The front-camera viewpoint originates from this exact seat position. The steering wheel is physically in front of the driver's lower chest/upper abdomen, with the instrument cluster directly behind it. A thin upper steering-wheel arc is mandatory in the lower foreground, attached to the real steering column and aligned with the driver's torso. If the close crop initially misses that arc, lower the crop slightly without changing the phone origin, arm reach, seat, wheel, dashboard or cabin orientation. Do not mirror, swap or reinterpret the subject's seat.`;
 }
 
 function buildHairSection(state) {
@@ -465,6 +482,9 @@ function buildRoomAuthority(state) {
 
 function buildContextDensity(state) {
   const base = optionText(MESSINESS_OPTIONS, state.messiness);
+  if (isDriverCarState(state)) {
+    return "DRIVER SELFIE DETAIL BUDGET: keep the face primary and preserve only the required thin steering-wheel arc plus one small coherent driver-side cabin cue. The messiness setting must never widen the close selfie, demand extra exterior context, or turn the cabin into a showcase; do not invent loose clutter, duplicate controls or extra interior objects merely to make the background look busy.";
+  }
   if (isCarScene(state.scene) && state.messiness === "busy") {
     return "Show slightly more naturally visible cabin detail and parked exterior context, but do not invent loose clutter, duplicate controls or extra interior objects merely to make the background look busy.";
   }
@@ -594,6 +614,9 @@ function buildSceneSpecificSafety(state) {
     return "Keep the custom location internally consistent as one real place. Do not mix unrelated scene types. Shelves, counters, mirrors, doors, windows, products, staff, customers and exterior openings appear only where the selected front-camera crop can physically reach them; omit them rather than breaking perspective or scene logic.";
   }
   if (isCarScene(state.scene)) {
+    if (isDriverCarState(state)) {
+      return "The vehicle is fully stationary and safely parked. Preserve unmirrored left-hand-drive cabin geometry. Keep the thin upper steering-wheel arc visibly in front of the driver while leaving the rest of the dashboard and cabin subordinate to the close selfie crop. The driver door/window and A-pillar stay on the subject's real left; the center console stays on the subject's real right; never duplicate controls, imply driving, steering motion or road travel.";
+    }
     return "The vehicle is fully stationary and safely parked. Preserve left-hand-drive cabin geometry. Steering wheel, dashboard, console and mirrors appear only if they naturally enter the front-camera crop; if visible, keep their geometry coherent and never duplicate controls. Do not imply driving, steering motion or road travel.";
   }
   if (sceneFamily(state.scene) === "gym") {
@@ -688,7 +711,7 @@ export function buildPositivePrompt(rawState = {}) {
   const sections = [
     "[SELFIE TASK] Create a candid, physically plausible smartphone selfie taken by the subject himself. The person and the act of taking the selfie are the primary visual event.",
     buildReferenceSection(state),
-    `[CAMERA] ${CAMERA_SELFIE_LOCK}`,
+    buildCameraSection(state),
     buildPoseSection(state),
     buildCarSeatSection(state),
     buildHairSection(state),
@@ -745,6 +768,11 @@ export function buildNegativePrompt(rawState = {}) {
       "invented cabin clutter",
       "impossible windshield reflection",
       "forced full-car interior",
+      ...(isDriverCarState(state) ? [
+        "missing steering-wheel arc in a driver selfie",
+        "steering wheel beside the driver's torso instead of in front",
+        "driver-seat proof replaced by passenger-seat framing"
+      ] : []),
       ...carSeatNegativeRules(state)
     );
   }

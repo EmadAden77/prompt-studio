@@ -23,6 +23,29 @@ const LIMITS = Object.freeze({
 
 const COMPOSITIONS = new Set(["auto","tight","close","upper","full"]);
 
+function isDriverCarState(rawState = {}) {
+  const section = String(rawState.studioSection || "").toLowerCase();
+  const scene = String(rawState.scene || "").toLowerCase();
+  return String(rawState.carSeat || "") === "driver-left"
+    && (section === "car" || /range.?rover|(?:^|[-_])car(?:[-_]|$)/u.test(scene));
+}
+
+function driverCarGeometry(rawState = {}) {
+  const angle = String(rawState.selfieAngle || "eye").toLowerCase().replace(/_/g,"-");
+  const composition = String(rawState.composition || rawState.monitorComposition || "close").toLowerCase();
+  const byAngle = /(three-quarter|threequarter|3\/4)/u.test(angle)
+    ? { distance:44, yaw:12, pitch:-4, roll:2, faceYaw:6 }
+    : /(side-close|side|lateral)/u.test(angle)
+      ? { distance:44, yaw:16, pitch:-3, roll:2, faceYaw:8 }
+      : /(slight-high|high|above|overhead)/u.test(angle)
+        ? { distance:45, yaw:0, pitch:-9, roll:2, faceYaw:0 }
+        : /(slight-low|low|below)/u.test(angle)
+          ? { distance:43, yaw:0, pitch:6, roll:2, faceYaw:0 }
+          : { distance:42, yaw:0, pitch:-3, roll:2, faceYaw:0 };
+  const cropAdjustment = composition === "tight" ? -2 : composition === "upper" ? 4 : composition === "full" ? 7 : 0;
+  return { ...byAngle, distance:Math.max(40, byAngle.distance + cropAdjustment) };
+}
+
 function numberValue(value, fallback) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
@@ -39,7 +62,7 @@ function onOff(value, fallback = "on") {
 }
 
 export function normalizeVisualSelfieState(rawState = {}) {
-  return {
+  const normalized = {
     ...rawState,
     visualSelfieMonitor:onOff(rawState.visualSelfieMonitor, VISUAL_SELFIE_DEFAULTS.visualSelfieMonitor),
     visualMonitorSync:onOff(rawState.visualMonitorSync, VISUAL_SELFIE_DEFAULTS.visualMonitorSync),
@@ -48,7 +71,23 @@ export function normalizeVisualSelfieState(rawState = {}) {
     selfiePitchDeg:clamp(numberValue(rawState.selfiePitchDeg, VISUAL_SELFIE_DEFAULTS.selfiePitchDeg), LIMITS.pitch),
     selfieRollDeg:clamp(numberValue(rawState.selfieRollDeg, VISUAL_SELFIE_DEFAULTS.selfieRollDeg), LIMITS.roll),
     faceYawDeg:clamp(numberValue(rawState.faceYawDeg, VISUAL_SELFIE_DEFAULTS.faceYawDeg), LIMITS.faceYaw),
-    monitorComposition:COMPOSITIONS.has(rawState.monitorComposition) ? rawState.monitorComposition : VISUAL_SELFIE_DEFAULTS.monitorComposition
+    monitorComposition:COMPOSITIONS.has(rawState.monitorComposition) ? rawState.monitorComposition : VISUAL_SELFIE_DEFAULTS.monitorComposition,
+    driverCarGeometryLocked:false
+  };
+  if (!isDriverCarState(rawState)) return normalized;
+
+  const geometry = driverCarGeometry(rawState);
+  return {
+    ...normalized,
+    visualSelfieMonitor:"on",
+    visualMonitorSync:"on",
+    selfieDistanceCm:geometry.distance,
+    selfieYawDeg:geometry.yaw,
+    selfiePitchDeg:geometry.pitch,
+    selfieRollDeg:geometry.roll,
+    faceYawDeg:geometry.faceYaw,
+    monitorComposition:"auto",
+    driverCarGeometryLocked:true
   };
 }
 
@@ -127,6 +166,20 @@ export function buildVisualSelfieGeometrySection(rawState = {}) {
   const result = evaluateSelfieGeometry(rawState);
   if (result.state.visualSelfieMonitor !== "on") return "";
   const composition = resolveMonitorComposition(result.state);
+  if (result.state.driverCarGeometryLocked) {
+    return `[CAR DRIVER SELFIE GEOMETRY — SOLE AUTHORITY]
+This is the only numeric camera geometry for a left-front driver selfie. It overrides incompatible manual monitor values and any generic camera-distance wording elsewhere in the prompt.
+- Device: Xiaomi 15 Ultra FRONT camera, held by the seated driver himself.
+- Camera-to-face distance: ${result.state.selfieDistanceCm} cm.
+- Phone yaw: ${signed(result.state.selfieYawDeg)}; ${yawMeaning(result.state.selfieYawDeg)}.
+- Phone pitch: ${signed(result.state.selfiePitchDeg)}; ${pitchMeaning(result.state.selfiePitchDeg)}.
+- Phone roll: ${signed(result.state.selfieRollDeg)}; ${rollMeaning(result.state.selfieRollDeg)}.
+- Face yaw relative to the vehicle-forward axis: ${signed(result.state.faceYawDeg)}. Keep the torso broadly aligned with the steering-wheel axis; only the head and eyes make the small camera correction.
+- Framing target: ${composition}. Keep the face primary while preserving a thin, physically attached upper steering-wheel arc in the lower foreground directly in front of the driver's torso.
+- Driver mapping: real vehicle-left driver door/window and A-pillar remain on the subject's left; the center console remains on the subject's right; the instrument cluster stays behind the steering wheel.
+- Feasibility diagnostic: ${result.score}/100 (${result.level}). This geometry is intentionally constrained to a reachable confined-cabin selfie and may not be widened, mirrored, moved to the passenger seat, or replaced with a mounted/third-person camera.
+Never introduce a second camera distance, a competing eye-height statement, or an alternative seat mapping.`;
+  }
   const correction = result.reachable
     ? "Preserve these monitor values as the numeric refinement of the selected selfie angle, unless the active pose physically requires a smaller adjustment."
     : "These values exceed a comfortable selfie envelope. Clamp only the conflicting value(s) to the nearest physically reachable geometry while preserving the intended direction and composition.";
@@ -148,6 +201,14 @@ export function visualSelfieQa(rawState = {}) {
   const result = evaluateSelfieGeometry(rawState);
   if (result.state.visualSelfieMonitor !== "on") return [{ label:"Visual Selfie Monitor", value:"متوقف" }];
   const vector = `D ${result.state.selfieDistanceCm}cm · Y ${signed(result.state.selfieYawDeg)} · P ${signed(result.state.selfiePitchDeg)} · R ${signed(result.state.selfieRollDeg)} · Face ${signed(result.state.faceYawDeg)}`;
+  if (result.state.driverCarGeometryLocked) {
+    return [
+      { label:"Car Driver Geometry", value:`${result.score}/100 · مقفل على مقعد السائق خلف المقود` },
+      { label:"Selfie Geometry", value:vector },
+      { label:"Monitor Crop", value:resolveMonitorComposition(result.state) },
+      { label:"Driver Anchor", value:"قوس علوي رفيع من المقود ظاهر أمام الجذع؛ الباب يسار والكونسول يمين" }
+    ];
+  }
   return [
     { label:"Visual Selfie Monitor", value:`${result.score}/100 · ${result.level}` },
     { label:"Selfie Geometry", value:vector },
@@ -311,6 +372,11 @@ export function mountVisualSelfieAngleMonitor(form) {
 export function readVisualSelfieUiState(root = document) {
   const value = (id, fallback) => root.querySelector(`#${id}`)?.value ?? fallback;
   return normalizeVisualSelfieState({
+    studioSection:value("studio-section", ""),
+    scene:value("scene", ""),
+    carSeat:value("car-seat", ""),
+    selfieAngle:value("selfie-angle", "eye"),
+    composition:value("composition", "close"),
     visualSelfieMonitor:root.querySelector("#visual-selfie-angle-monitor") ? "on" : "off",
     visualMonitorSync:value("visual-monitor-sync", VISUAL_SELFIE_DEFAULTS.visualMonitorSync),
     selfieDistanceCm:value("visual-selfie-distance", VISUAL_SELFIE_DEFAULTS.selfieDistanceCm),
@@ -325,6 +391,41 @@ export function readVisualSelfieUiState(root = document) {
 function setRangeValue(root, id, value) {
   const input = root.querySelector(`#${id}`);
   if (input) input.value = String(value);
+}
+
+function syncDriverGeometryUiLock(root = document) {
+  const raw = {
+    studioSection:root.querySelector("#studio-section")?.value || "",
+    scene:root.querySelector("#scene")?.value || "",
+    carSeat:root.querySelector("#car-seat")?.value || "",
+    selfieAngle:root.querySelector("#selfie-angle")?.value || "eye",
+    composition:root.querySelector("#composition")?.value || "close"
+  };
+  const locked = isDriverCarState(raw);
+  const section = root.querySelector("#visual-selfie-angle-monitor");
+  section?.classList.toggle("is-driver-locked", locked);
+  const numericIds = ["visual-selfie-distance","visual-selfie-yaw","visual-selfie-pitch","visual-selfie-roll","visual-face-yaw"];
+  const sync = root.querySelector("#visual-monitor-sync");
+  const monitorComposition = root.querySelector("#visual-monitor-composition");
+
+  if (locked) {
+    const geometry = driverCarGeometry(raw);
+    setRangeValue(root,"visual-selfie-distance",geometry.distance);
+    setRangeValue(root,"visual-selfie-yaw",geometry.yaw);
+    setRangeValue(root,"visual-selfie-pitch",geometry.pitch);
+    setRangeValue(root,"visual-selfie-roll",geometry.roll);
+    setRangeValue(root,"visual-face-yaw",geometry.faceYaw);
+    if (sync) { sync.value = "on"; sync.disabled = true; }
+    if (monitorComposition) { monitorComposition.value = "auto"; monitorComposition.disabled = true; }
+  } else {
+    if (sync) sync.disabled = false;
+    if (monitorComposition) monitorComposition.disabled = false;
+  }
+  numericIds.forEach((id) => {
+    const input = root.querySelector(`#${id}`);
+    if (input) input.disabled = locked;
+  });
+  return locked;
 }
 
 function closestMainAngleValue(select, presetName) {
@@ -351,10 +452,15 @@ export function applyVisualSelfiePreset(presetName, root = document, { updatePri
     const mapped = closestMainAngleValue(main,presetName);
     if (mapped && main.value !== mapped) main.value = mapped;
   }
+  syncDriverGeometryUiLock(root);
   updateVisualSelfieAnglePreview(root);
 }
 
 export function syncVisualMonitorFromPrimaryControls(root = document) {
+  if (syncDriverGeometryUiLock(root)) {
+    updateVisualSelfieAnglePreview(root);
+    return true;
+  }
   const sync = root.querySelector("#visual-monitor-sync")?.value ?? "on";
   if (sync !== "on") return false;
   const mainAngle = root.querySelector("#selfie-angle")?.value || "eye";
@@ -382,6 +488,7 @@ function cropRect(composition) {
 
 export function updateVisualSelfieAnglePreview(root = document) {
   if (typeof document === "undefined") return null;
+  syncDriverGeometryUiLock(root);
   const state = readVisualSelfieUiState(root);
   const result = evaluateSelfieGeometry({ ...state, composition:root.querySelector("#composition")?.value || "close" });
   const composition = resolveMonitorComposition({ ...state, composition:root.querySelector("#composition")?.value || "close" });
@@ -428,8 +535,10 @@ export function updateVisualSelfieAnglePreview(root = document) {
   if (level) level.textContent = result.level;
   if (readout) readout.textContent = `Xiaomi 15 Ultra Front · ${state.selfieDistanceCm} cm · Y ${signed(state.selfieYawDeg)} · P ${signed(state.selfiePitchDeg)} · R ${signed(state.selfieRollDeg)} · Face ${signed(state.faceYawDeg)} · ${composition}`;
   if (warning) {
-    warning.hidden = !result.issues.length;
-    warning.textContent = result.issues.length ? `⚠ ${result.issues.join(" · ")}` : "";
+    warning.hidden = !(state.driverCarGeometryLocked || result.issues.length);
+    warning.textContent = state.driverCarGeometryLocked
+      ? "🔒 قفل السائق: القيم تُحل تلقائياً من زاوية السيلفي والكادر لإبقاء الشخص خلف المقود."
+      : result.issues.length ? `⚠ ${result.issues.join(" · ")}` : "";
   }
   return result;
 }
@@ -442,7 +551,7 @@ export function bindVisualSelfieAngleMonitor(onChange, root = document) {
     input?.addEventListener("input",() => updateVisualSelfieAnglePreview(root));
     input?.addEventListener("change",() => onChange?.());
   });
-  root.querySelector("#visual-monitor-composition")?.addEventListener("change",() => { updateVisualSelfieAnglePreview(root); onChange?.(); });
+  root.querySelector("#visual-monitor-composition")?.addEventListener("change",() => { syncVisualMonitorFromPrimaryControls(root); updateVisualSelfieAnglePreview(root); onChange?.(); });
   root.querySelector("#visual-monitor-sync")?.addEventListener("change",() => {
     syncVisualMonitorFromPrimaryControls(root);
     updateVisualSelfieAnglePreview(root);
@@ -456,7 +565,12 @@ export function bindVisualSelfieAngleMonitor(onChange, root = document) {
   primaryAngle?.addEventListener("change",() => {
     if (syncVisualMonitorFromPrimaryControls(root)) onChange?.();
   });
-  root.querySelector("#composition")?.addEventListener("change",() => updateVisualSelfieAnglePreview(root));
+  root.querySelector("#composition")?.addEventListener("change",() => { syncVisualMonitorFromPrimaryControls(root); updateVisualSelfieAnglePreview(root); });
+  ["#studio-section", "#scene", "#car-seat"].forEach((selector) => root.querySelector(selector)?.addEventListener("change",() => {
+    syncVisualMonitorFromPrimaryControls(root);
+    updateVisualSelfieAnglePreview(root);
+    onChange?.();
+  }));
   queueMicrotask(() => {
     syncVisualMonitorFromPrimaryControls(root);
     updateVisualSelfieAnglePreview(root);

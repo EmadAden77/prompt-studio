@@ -89,13 +89,13 @@ assert.match(driverSections, /\[CAR ORIENTATION LOCK\]/u, "Car scene must lock f
 assert.match(driverSections, /unmirrored physical camera geometry/u);
 assert.match(driverSections, /Do not horizontally flip, selfie-mirror, swap or reinterpret the cabin/u);
 assert.match(driverSections, /\[DRIVER SEAT VISUAL VERIFICATION\]/u, "Driver seat must receive visual verification rules");
-assert.match(driverSections, /preserve at least one unmistakable driver-side anchor/u);
+assert.match(driverSections, /upper steering-wheel rim or column edge is mandatory/u);
 assert.match(driverSections, /center-console edge on the subject's right/u);
 assert.match(driverSections, /driver-door \/ A-pillar \/ side-window geometry on the subject's left/u);
 
 const driverCloseRisk = evaluateRealismRisk(driverCloseState, []);
 assert.ok(driverCloseRisk.score < 100, "Close driver selfie must not receive a perfect score because seat verification is visually ambiguous");
-assert.ok(driverCloseRisk.issues.some((item) => /مقعد راكب|دليل بصري/u.test(item)), "Driver risk must explain the missing visual anchor risk");
+assert.ok(driverCloseRisk.issues.some((item) => /قوس مقود/u.test(item)), "Driver risk must explain the required steering-wheel anchor");
 
 const driverWideRisk = evaluateRealismRisk({ ...driverCloseState, composition:"upper" }, []);
 assert.ok(driverWideRisk.score > driverCloseRisk.score, "A wider driver crop should have lower seat-verification risk");
