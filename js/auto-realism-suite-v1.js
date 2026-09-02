@@ -109,8 +109,26 @@ function buildReferenceAuthorityMap(state) {
 
 function buildAutoRealismRule(state) {
   if (state.autoRealism !== "on") return "";
+  const accessoryRule = state.accessoryProfile && state.accessoryProfile !== "none"
+    ? "Keep only the selected accessory or object secondary and physically supported; never add a second styling accessory, product prop, free hand or duplicate item."
+    : "Do not invent accessories, jewelry, fitness trackers, products, handheld props or a second free hand merely to make the image feel styled or active.";
+  const driverRule = isDriverCarState(state)
+    ? "For a car-driver selfie, preserve the dedicated driver geometry, the unmirrored left-hand-drive mapping and the steering-wheel anchor without exception."
+    : "";
   return `[AUTO REALISM]
-Resolve every unspecified detail through physical causality instead of decorative invention. Camera reach determines viewpoint; body support determines posture; gravity/contact determine fabric and tissue displacement; selected light determines every highlight, shadow and reflection; distance determines visible detail. If a requested secondary detail conflicts with identity, anatomy, selfie geometry, scene authority or lighting, omit or correct the secondary detail automatically.`;
+Resolve every unspecified detail through physical causality instead of decorative invention. Camera reach determines viewpoint; body support determines posture; gravity/contact determine fabric and tissue displacement; selected light determines every highlight, shadow and reflection; distance determines visible detail. If a requested secondary detail conflicts with identity, anatomy, selfie geometry, scene authority or lighting, omit or correct the secondary detail automatically.
+
+CONTEXT RESOLUTION: Use contextual defaults only for unspecified secondary detail. Never replace selected clothing, lighting, expression, scene, camera geometry, seat position or reference identity with generic assumptions such as a hoodie, window light, a hand near the face, gym styling or a product display.
+
+VISIBILITY GATE: Add a background object, person, exterior slice or scene cue only when it belongs to the selected location and the real selfie crop can physically reveal it. Keep the face primary; omit secondary context instead of widening the camera, changing the pose or forcing a complete room, vehicle or street view.
+
+ACCESSORY GATE: ${accessoryRule}
+
+IMPERFECTION BUDGET: Use at most two subtle, physically caused imperfections that are visible at this distance. Never stack sweat, dust, fingerprints, haze, moisture, wind, clutter and wrinkles as decorative effects.
+
+MIRROR / TEXT SAFETY: If a mirror naturally enters the crop, use one coherent reflection path and keep all reflected geometry physically consistent. Do not force clothing text to be readable; omit incidental typography when reflection legibility would create a contradiction.
+
+${driverRule}`.replace(/\n\n$/u, "");
 }
 
 function buildLockRule(state) {
@@ -187,6 +205,10 @@ export function applyAutoRealismSuite({ positive = "", negative = "", state:rawS
     "continuity break between variants",
     "third-person viewpoint replacing subject-held selfie",
     "decorative imperfection without physical cause",
+    "decorative imperfection checklist",
+    "background context forced outside the selfie field of view",
+    "invented generic accessory or product prop",
+    "forced readable clothing text in a mirror reflection",
     "camera outside natural arm reach",
     "visual selfie monitor geometry ignored",
     "impossible selfie yaw pitch or roll"
@@ -200,6 +222,10 @@ export function applyAutoRealismSuite({ positive = "", negative = "", state:rawS
     qa:[
       { label:"AUTO REALISM", value:state.autoRealism === "on" ? "مفعّل؛ يحل التفاصيل غير المحددة بالفيزياء" : "متوقف" },
       { label:"Reference Mapper", value:"IMAGE A للهوية فقط؛ المشهد/الملابس/الإضاءة سلطات مستقلة" },
+      { label:"Context Resolver", value:"يفترض التفاصيل الثانوية فقط؛ لا يبدّل الاختيارات المقفلة أو يضيف قوالب جاهزة" },
+      { label:"Visibility Gate", value:"الخلفية والعناصر تظهر فقط عندما يسمح الكادر الحقيقي؛ الوجه أولوية" },
+      { label:"Accessory Gate", value:state.accessoryProfile && state.accessoryProfile !== "none" ? "الإكسسوار المختار فقط؛ بلا نسخ أو إضافات تلقائية" : "لا إكسسوارات أو أدوات تلقائية" },
+      { label:"Imperfection Budget", value:"حد أقصى أثرين واقعيين بسيطين حسب المسافة والإضاءة" },
       ...visualSelfieQa(state),
       { label:"Generator", value:state.generatorProfile },
       { label:"Prompt Compression", value:`${state.promptCompression} · ضغط آمن لا يحذف أقفال الهوية والكاميرا والإضاءة` },
