@@ -293,3 +293,10 @@
 6. Selected lighting
 7. STREET LIFE + GLASS & REFLECTION + SINGLE PIPELINE + IMPERFECTION MANIFEST
 8. CHOICES
+## 2026-09-02 — MASTER REALISM POLICY
+
+- Added a permanent top-level realism authority before all aesthetic enhancement.
+- Priority is now: reference identity → explicit instructions → capture type → physical/anatomical plausibility → environment locks → camera behavior → WikiPrompt calibration → aesthetics.
+- WikiPrompt remains a calibration layer rather than the controlling authority.
+- Added QA visibility and negative guards against beautification or cinematic polish overriding physical plausibility.
+

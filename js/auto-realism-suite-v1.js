@@ -76,7 +76,7 @@ const VARIATION_RULES = Object.freeze({
   slight_low:`VARIATION DELTA: keep every locked field unchanged. Use a mildly lower phone position with plausible upward pitch; avoid exaggerated low-angle distortion.`
 });
 
-const ESSENTIAL_LINE = /(IDENTITY|REFERENCE|AUTHORITY|SELFIE|CAMERA|ANATOM|LIGHT|CONTACT|GRAVITY|POSE|PHONE|LOCK|PRIORITY|DRIVER|STEERING|MIRROR|WIKIPROMPT)/i;
+const ESSENTIAL_LINE = /(IDENTITY|REFERENCE|AUTHORITY|SELFIE|CAMERA|ANATOM|LIGHT|CONTACT|GRAVITY|POSE|PHONE|LOCK|PRIORITY|DRIVER|STEERING|MIRROR|WIKIPROMPT|MASTER REALISM|PHOTOGRAPHIC REALISM|PHYSICAL PLAUSIBILITY|CONFLICT RESOLUTION)/i;
 
 function boolValue(value, fallback = "off") {
   return value === "on" || value === true ? "on" : value === "off" || value === false ? "off" : fallback;
@@ -126,6 +126,32 @@ export function normalizeAutoRealismState(rawState = {}) {
     lockLighting:boolValue(rawState.lockLighting, AUTO_REALISM_DEFAULTS.lockLighting),
     lockExpression:boolValue(rawState.lockExpression, AUTO_REALISM_DEFAULTS.lockExpression)
   };
+}
+
+function buildMasterRealismPolicy() {
+  return `[MASTER REALISM POLICY]
+PHOTOGRAPHIC REALISM HAS PRIORITY OVER VISUAL PERFECTION.
+
+Every generated scene must represent one physically possible moment captured by a real camera operated from a physically possible position.
+
+Do not improve realism by exaggerating pores, sharpness, HDR, contrast, bokeh, skin texture, facial symmetry, hair detail or cinematic lighting.
+
+Realism must come from identity preservation, camera geometry, human anatomy, gravity, physical contact, material behavior, environment continuity, practical lighting, smartphone sensor limitations, ordinary image processing, natural imperfection and contextually believable human behavior.
+
+CONFLICT RESOLUTION: If a requested detail conflicts with physical plausibility, preserve the user's intended scene and automatically correct only the physically impossible component.
+
+PRIORITY ORDER:
+1. Reference identity
+2. Explicit user instructions
+3. Capture type
+4. Physical and anatomical plausibility
+5. Environment/reference locks
+6. Camera behavior
+7. WikiPrompt realism principles
+8. Aesthetic enhancement
+
+WikiPrompt is a realism calibration layer, not the controlling authority.
+Never sacrifice identity or physical plausibility merely to make the image prettier.`;
 }
 
 function buildReferenceAuthorityMap(state) {
@@ -223,6 +249,7 @@ export function applyAutoRealismSuite({ positive = "", negative = "", state:rawS
   const state = normalizeAutoRealismState(rawState);
   const generatorSetup = getExternalGeneratorSetup(state.generatorProfile);
   const sections = [
+    buildMasterRealismPolicy(),
     buildReferenceAuthorityMap(state),
     buildAutoRealismRule(state),
     buildVisualSelfieGeometrySection(state),
@@ -247,7 +274,9 @@ export function applyAutoRealismSuite({ positive = "", negative = "", state:rawS
     "forced readable clothing text in a mirror reflection",
     "camera outside natural arm reach",
     "visual selfie monitor geometry ignored",
-    "impossible selfie yaw pitch or roll"
+    "impossible selfie yaw pitch or roll",
+    "beautification overriding physical plausibility",
+    "cinematic polish overriding smartphone realism"
   ];
   const finalNegative = [...new Set([...String(negative || "").split(/,\s*/).filter(Boolean), ...negativeExtras])].join(", ");
 
@@ -256,6 +285,7 @@ export function applyAutoRealismSuite({ positive = "", negative = "", state:rawS
     positive:compressed,
     negative:finalNegative,
     qa:[
+      { label:"MASTER REALISM POLICY", value:"مفعّل دائمًا؛ الهوية والفيزياء قبل التجميل، وWikiPrompt طبقة معايرة لاحقة" },
       { label:"AUTO REALISM", value:state.autoRealism === "on" ? "مفعّل؛ يحل التفاصيل غير المحددة بالفيزياء" : "متوقف" },
       { label:"Reference Mapper", value:"IMAGE A للهوية فقط؛ المشهد/الملابس/الإضاءة سلطات مستقلة" },
       { label:"Context Resolver", value:"يفترض التفاصيل الثانوية فقط؛ لا يبدّل الاختيارات المقفلة أو يضيف قوالب جاهزة" },
@@ -315,7 +345,7 @@ export function mountAutoRealismSuite(form) {
   section.id = "auto-realism-suite";
   section.setAttribute("aria-labelledby", "auto-realism-title");
   section.innerHTML = `
-    <div class="section-heading"><div><span class="section-number">06A</span><h2 id="auto-realism-title">AUTO REALISM</h2></div><p>طبقة التحكم العليا: خريطة المراجع، أقفال الحقول، الاستمرارية، ملفات المولدات والتنويعات.</p></div>
+    <div class="section-heading"><div><span class="section-number">06A</span><h2 id="auto-realism-title">AUTO REALISM</h2></div><p>طبقة التحكم العليا: MASTER REALISM POLICY أولًا، ثم خريطة المراجع والفيزياء وWikiPrompt كمعايرة لاحقة.</p></div>
     <div class="selfie-guidance" role="note">لا تستبدل هذه الطبقة محركات الفيزياء الحالية؛ تنظمها فقط وتمنع تغيّر ما تم قفله أثناء التنويعات.</div>
     <div class="form-grid">
       ${toggleField("auto-realism", "Master AUTO REALISM", AUTO_REALISM_DEFAULTS.autoRealism, "يحل التفاصيل غير المحددة وفق الفيزياء والسياق.")}
@@ -332,7 +362,7 @@ export function mountAutoRealismSuite(form) {
       ${toggleField("lock-lighting", "🔒 الإضاءة", AUTO_REALISM_DEFAULTS.lockLighting)}
       ${toggleField("lock-expression", "🔒 التعبير", AUTO_REALISM_DEFAULTS.lockExpression)}
       <div class="field"><span>التنويعات</span><button type="button" class="secondary-button compact-button" id="next-realism-variation">التنويع التالي</button><small>يبدل زاوية واحدة فقط ويحافظ على الحقول المقفلة.</small></div>
-      <div class="field field-span-2"><span>الطبقات المعاد استخدامها</span><div class="readonly-card">WikiPrompt · Visual Selfie Angle Monitor · Selfie Geometry · Contact Physics · Lighting Physics · Advanced Realism · Realism Score</div><small>لا ازدواجية: AUTO REALISM ينسق المحركات الموجودة بدل تكرارها.</small></div>
+      <div class="field field-span-2"><span>الطبقات المعاد استخدامها</span><div class="readonly-card">MASTER REALISM POLICY · WikiPrompt Calibration · Visual Selfie Angle Monitor · Selfie Geometry · Contact Physics · Lighting Physics · Advanced Realism · Realism Score</div><small>لا ازدواجية: AUTO REALISM ينسق المحركات الموجودة بدل تكرارها.</small></div>
     </div>`;
 
   const contextPanel = form.querySelector(".context-secondary-panel");
