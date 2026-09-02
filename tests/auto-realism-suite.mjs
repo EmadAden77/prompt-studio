@@ -43,6 +43,12 @@ const suite = applyAutoRealismSuite({
 assert.match(suite.positive, /\[REFERENCE AUTHORITY MAP\]/u);
 assert.match(suite.positive, /IMAGE A = identity only/u);
 assert.match(suite.positive, /\[AUTO REALISM\]/u);
+assert.match(suite.positive, /CONTEXT RESOLUTION/u);
+assert.match(suite.positive, /VISIBILITY GATE/u);
+assert.match(suite.positive, /ACCESSORY GATE/u);
+assert.match(suite.positive, /IMPERFECTION BUDGET/u);
+assert.match(suite.positive, /MIRROR \/ TEXT SAFETY/u);
+assert.match(suite.positive, /Do not force clothing text to be readable/u);
 assert.match(suite.positive, /\[REALISM PRESET\]/u);
 assert.match(suite.positive, /REFERENCE-CRITICAL/u);
 assert.match(suite.positive, /\[LOCKED FIELDS\]/u);
@@ -53,13 +59,33 @@ assert.match(suite.positive, /GEMINI IMAGE ADAPTER/u);
 assert.doesNotMatch(suite.positive, /temporary diagnostic line/u, "compact mode should remove the optional realism-risk diagnostic line");
 assert.match(suite.negative, /reference-role mixing/u);
 assert.match(suite.negative, /locked-field drift/u);
+assert.match(suite.negative, /background context forced outside the selfie field of view/u);
+assert.match(suite.negative, /invented generic accessory or product prop/u);
 assert.equal(suite.meta.generator, "gemini");
 assert.equal(suite.meta.compression, "compact");
 assert.equal(suite.qa.find((item) => item.label === "Realism Score")?.value, "97/100 · LOW");
 assert.equal(suite.qa.find((item) => item.label === "Auto Fix")?.value, "تم تمرير 1 تعارض مصحح من المحركات الأساسية");
+assert.ok(suite.qa.some((item) => item.label === "Context Resolver"));
+assert.ok(suite.qa.some((item) => item.label === "Visibility Gate"));
+assert.ok(suite.qa.some((item) => item.label === "Accessory Gate"));
+assert.ok(suite.qa.some((item) => item.label === "Imperfection Budget"));
+
+const driverSuite = applyAutoRealismSuite({
+  positive:"BASE",
+  state:{
+    studioSection:"car", scene:"rangeRover", carSeat:"driver-left", pose:"car-driver-close",
+    selfieAngle:"eye", composition:"tight", clothing:"work-blue-navy", lighting:"car-night-parking-led", time:"night",
+    accessoryProfile:"none", objectProfile:"none"
+  }
+});
+assert.match(driverSuite.positive, /dedicated driver geometry/u);
+assert.match(driverSuite.positive, /unmirrored left-hand-drive mapping/u);
+assert.match(driverSuite.positive, /steering-wheel anchor without exception/u);
+assert.match(driverSuite.positive, /Do not invent accessories, jewelry, fitness trackers/u);
 
 const off = applyAutoRealismSuite({ positive:"BASE", state:{ autoRealism:"off", continuityMode:"off" } });
 assert.doesNotMatch(off.positive, /\[AUTO REALISM\]/u);
+assert.doesNotMatch(off.positive, /CONTEXT RESOLUTION/u);
 assert.doesNotMatch(off.positive, /\[SCENE CONTINUITY\]/u);
 
 console.log("AUTO REALISM suite tests passed");
