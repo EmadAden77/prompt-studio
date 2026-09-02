@@ -1,0 +1,112 @@
+name: Fix Expression Lock
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix-expression:
+    if: contains(github.event.head_commit.message, '[expression-lock-fix]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply expression authority fix
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          engine = Path('js/physics-prompt-engine-v5.js')
+          s = engine.read_text(encoding='utf-8')
+
+          # 1) Make it explicit that reference expression is not part of identity authority.
+          old = '    sentence(referenceInstruction),\n    sentence(buildVisibleBodyInstruction(state)),'
+          new = '    sentence(referenceInstruction),\n    "The reference image controls permanent facial identity, not the temporary facial expression captured in that reference. Preserve facial anatomy while applying the selected [EXPRESSION LOCK] even when the reference face is neutral or different.",\n    sentence(buildVisibleBodyInstruction(state)),'
+          if old not in s and '[EXPRESSION LOCK]' not in s:
+              raise SystemExit('reference insertion marker not found')
+          if old in s:
+              s = s.replace(old, new, 1)
+
+          # 2) Add a dedicated high-authority expression section.
+          marker = '''function buildHairSection(state) {
+            const hair = optionText(HAIR_OPTIONS, state.hair);
+            return `[HAIR] ${HAIR_DENSITY_LOCK} Selected arrangement: ${hair}.`;
+          }
+
+          function buildAppearanceSection(state) {'''
+          replacement = '''function buildHairSection(state) {
+            const hair = optionText(HAIR_OPTIONS, state.hair);
+            return `[HAIR] ${HAIR_DENSITY_LOCK} Selected arrangement: ${hair}.`;
+          }
+
+          function buildExpressionSection(state) {
+            const selected = optionText(EXPRESSION_OPTIONS, state.expression, "calm neutral expression");
+            const exact = {
+              neutral:"The mouth, cheeks, eyelids and brow remain naturally at rest. Do not introduce a smile.",
+              "soft-smile":"The smile must be visibly present, not merely implied: gently raise both mouth corners with slight natural asymmetry, create mild cheek elevation and subtle eye-muscle engagement. Keep the smile restrained and candid rather than broad or posed. Do not copy a neutral mouth from the reference image. Keep teeth hidden unless another explicit instruction requests visible teeth.",
+              serious:"Keep the mouth unsmiling and relaxed, with a calm serious gaze and no artificial brow tension.",
+              focused:"Use a naturally attentive gaze while keeping jaw, mouth and brow physically relaxed; do not turn it into anger or a smile.",
+              "slightly-tired":"Use slightly heavier eyelids and a mildly tired resting face without changing age, identity geometry or adding a smile."
+            }[state.expression] || "Apply the selected expression visibly while preserving permanent identity anatomy.";
+            return `[EXPRESSION LOCK] EXPRESSION IS AN EXPLICIT USER INSTRUCTION, NOT AN IDENTITY FEATURE. Selected expression: ${selected}. ${exact} The selected expression must survive all later realism, subject-moment, pose, lighting, continuity and generator-adapter rules. Later instructions such as relaxed jaw, candid behavior or natural asymmetry may soften the expression only within real anatomy; they must never neutralize, replace or contradict it.`;
+          }
+
+          function buildAppearanceSection(state) {'''
+          if 'function buildExpressionSection(state)' not in s:
+              if marker not in s:
+                  raise SystemExit('expression function marker not found')
+              s = s.replace(marker, replacement, 1)
+
+          # 3) Remove the weaker duplicated expression sentence from APPEARANCE.
+          s = s.replace('    sentence(skin),\n    sentence(expression),\n    cropRule,', '    sentence(skin),\n    cropRule,', 1)
+
+          # 4) Insert expression immediately after identity, ahead of camera/scene layers.
+          s, n = re.subn(
+              r'(buildReferenceSection\(state\),\n\s*)(buildCameraSection\(state\),)',
+              r'\1buildExpressionSection(state),\n    \2',
+              s,
+              count=1
+          )
+          if n != 1 and 'buildExpressionSection(state),' not in s:
+              raise SystemExit('positive prompt insertion marker not found')
+
+          engine.write_text(s, encoding='utf-8')
+
+          # 5) Bust browser module cache so the live app actually loads the fix.
+          app = Path('js/physics-app-v7.js')
+          a = app.read_text(encoding='utf-8')
+          a = re.sub(r'physics-prompt-engine-v5\.js\?v=[^"\']+', 'physics-prompt-engine-v5.js?v=20260902-expression-lock1', a, count=1)
+          app.write_text(a, encoding='utf-8')
+
+          index = Path('index.html')
+          i = index.read_text(encoding='utf-8')
+          i = re.sub(r'js/physics-app-v7\.js\?v=[^"\']+', 'js/physics-app-v7.js?v=20260902-expression-lock1', i, count=1)
+          index.write_text(i, encoding='utf-8')
+          PY
+
+      - name: Verify expression lock
+        shell: bash
+        run: |
+          grep -q '\[EXPRESSION LOCK\]' js/physics-prompt-engine-v5.js
+          grep -q 'The smile must be visibly present, not merely implied' js/physics-prompt-engine-v5.js
+          grep -q 'not the temporary facial expression' js/physics-prompt-engine-v5.js
+          grep -q '20260902-expression-lock1' js/physics-app-v7.js
+          grep -q '20260902-expression-lock1' index.html
+          node tests/v2-deployment.mjs
+          node tests/run-tests.mjs
+
+      - name: Commit fix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/physics-prompt-engine-v5.js js/physics-app-v7.js index.html
+          git commit -m "Enforce selected facial expression over reference pose"
+          git push
