@@ -40,7 +40,31 @@ const GENERATOR_RULES = Object.freeze({
   gemini:`GEMINI IMAGE ADAPTER: keep instructions literal and causally connected. Preserve reference roles exactly and avoid decorative detail that is not caused by the selected scene, pose or light.`,
   grok:`GROK IMAGE ADAPTER: prioritize candid smartphone behavior, direct subject-held camera geometry, ordinary environment detail and physically caused imperfections over cinematic polish.`,
   midjourney:`MIDJOURNEY ADAPTER: preserve hard constraints before style tokens. Interpret the scene as candid smartphone photography with restrained stylization; do not let aesthetic shorthand override identity, anatomy, camera reach or lighting.`,
-  flux:`FLUX ADAPTER: prefer concise literal visual constraints, physically explicit relationships and stable reference roles. Do not infer glamour, studio light or third-person camera behavior.`
+  flux:`FLUX ADAPTER: prefer concise literal visual constraints, physically explicit relationships and stable reference roles. Do not infer glamour, studio light or third-person camera behavior.`,
+  "stable-diffusion":`STABLE DIFFUSION ADAPTER: use the positive and negative prompts as separate fields. Keep any sampler, step, CFG or masked-refinement setting outside the text prompt and never let post-processing replace the locked reference identity.`
+});
+
+const EXTERNAL_GENERATOR_SETUPS = Object.freeze({
+  flux:Object.freeze({
+    label:"FLUX — إعدادات خارج البرومبت",
+    qa:"اختياري: إعدادات FLUX معروضة منفصلة ولا تدخل في البرومبت",
+    items:Object.freeze([
+      ["الكادر","عمودي 9:16؛ استخدم مقاساً أصلياً يدعمه المضيف، مثل 1024×1536 عند توفره."],
+      ["Guidance","ابدأ بين 2.5 و3.5 إذا كان المضيف يعرض هذا الضبط؛ لا ترفعه لمجرد زيادة الحدة."],
+      ["Steps","استخدم الافتراضي أو 28–36 عند توفره؛ راقب ثبات الهوية قبل زيادة الخطوات."],
+      ["التنقيح","لا تستخدم تحسين وجه في التوليد الأول. عند تعديل موضعي فقط، حافظ على قوة منخفضة 0.20–0.35 مع مرجع الهوية."]
+    ])
+  }),
+  "stable-diffusion":Object.freeze({
+    label:"Stable Diffusion — إعدادات خارج البرومبت",
+    qa:"اختياري: إعدادات Stable Diffusion معروضة منفصلة ولا تدخل في البرومبت",
+    items:Object.freeze([
+      ["الكادر","عمودي 9:16؛ استخدم مقاساً أصلياً يدعمه الـcheckpoint، مثل 1024×1536 عند توفره."],
+      ["Steps / CFG","ابدأ بـ 28–40 خطوة وCFG بين 4 و6 عند استخدام SDXL؛ عدّل بهدوء حسب الـcheckpoint بدل نسخ قيم ثابتة لكل نموذج."],
+      ["Sampler","استخدم الـsampler الفوتوغرافي الموصى به للـcheckpoint؛ لا تنقل إعداد sampler إلى FLUX أو ChatGPT أو Midjourney."],
+      ["ADetailer","اختياري للوجه أو اليد فقط وبقناع محدود وقوة 0.20–0.35؛ لا تستخدم Face Restore أو إعادة رسم الوجه بالكامل."]
+    ])
+  })
 });
 
 const VARIATION_RULES = Object.freeze({
@@ -60,6 +84,17 @@ function boolValue(value, fallback = "off") {
 
 function optionValue(map, value, fallback) {
   return Object.prototype.hasOwnProperty.call(map, value) ? value : fallback;
+}
+
+export function getExternalGeneratorSetup(profile) {
+  const setup = EXTERNAL_GENERATOR_SETUPS[profile];
+  if (!setup) return null;
+  return {
+    label:setup.label,
+    qa:setup.qa,
+    items:setup.items.map(([name, value]) => ({ name, value })),
+    copyText:[setup.label, ...setup.items.map(([name, value]) => `${name}: ${value}`)].join("\n")
+  };
 }
 
 function isDriverCarState(state = {}) {
@@ -186,6 +221,7 @@ function compressPrompt(prompt, mode) {
 
 export function applyAutoRealismSuite({ positive = "", negative = "", state:rawState = {}, risk = null, conflicts = [] } = {}) {
   const state = normalizeAutoRealismState(rawState);
+  const generatorSetup = getExternalGeneratorSetup(state.generatorProfile);
   const sections = [
     buildReferenceAuthorityMap(state),
     buildAutoRealismRule(state),
@@ -228,6 +264,7 @@ export function applyAutoRealismSuite({ positive = "", negative = "", state:rawS
       { label:"Imperfection Budget", value:"حد أقصى أثرين واقعيين بسيطين حسب المسافة والإضاءة" },
       ...visualSelfieQa(state),
       { label:"Generator", value:state.generatorProfile },
+      ...(generatorSetup ? [{ label:"Generator Setup", value:generatorSetup.qa }] : []),
       { label:"Prompt Compression", value:`${state.promptCompression} · ضغط آمن لا يحذف أقفال الهوية والكاميرا والإضاءة` },
       { label:"Continuity", value:state.continuityMode === "on" ? "مقفل عبر التنويعات" : "غير مقفل" },
       { label:"Locked Fields", value:[state.lockIdentity === "on" && "الهوية", state.lockScene === "on" && "المشهد", state.lockClothing === "on" && "الملابس", state.lockLighting === "on" && "الإضاءة", state.lockExpression === "on" && "التعبير"].filter(Boolean).join("، ") || "لا يوجد" },
@@ -238,6 +275,7 @@ export function applyAutoRealismSuite({ positive = "", negative = "", state:rawS
     meta:{
       preset:state.realismPreset,
       generator:state.generatorProfile,
+      generatorSetup:generatorSetup?.copyText ?? "",
       compression:state.promptCompression,
       variation:state.variationMode,
       selfieGeometry:`${state.selfieDistanceCm}cm/Y${state.selfieYawDeg}/P${state.selfiePitchDeg}/R${state.selfieRollDeg}`
@@ -254,6 +292,20 @@ function toggleField(id, label, value, hint = "") {
   return `<label class="field" for="${id}"><span>${label}</span><select id="${id}" name="${id}"><option value="on"${value === "on" ? " selected" : ""}>مفعّل</option><option value="off"${value === "off" ? " selected" : ""}>متوقف</option></select>${hint ? `<small>${hint}</small>` : ""}</label>`;
 }
 
+function renderExternalGeneratorSetup(root = document) {
+  const panel = root.querySelector("#external-generator-setup");
+  if (!panel) return;
+  const profile = root.querySelector("#generator-profile")?.value ?? AUTO_REALISM_DEFAULTS.generatorProfile;
+  const setup = getExternalGeneratorSetup(profile);
+  panel.hidden = !setup;
+  if (!setup) {
+    panel.innerHTML = "";
+    return;
+  }
+  const items = setup.items.map(({ name, value }) => `<li><strong>${name}:</strong> ${value}</li>`).join("");
+  panel.innerHTML = `<span>${setup.label}</span><div class="readonly-card"><strong>اختيارية وخارج الـPositive/Negative Prompt</strong><ul>${items}</ul></div><small>هذه إعدادات للمضيف أو سير العمل فقط؛ لا تغيّر الهوية أو هندسة السيلفي أو أقفال المشهد.</small>`;
+}
+
 export function mountAutoRealismSuite(form) {
   if (!form || typeof document === "undefined") return;
   mountVisualSelfieAngleMonitor(form);
@@ -268,10 +320,11 @@ export function mountAutoRealismSuite(form) {
     <div class="form-grid">
       ${toggleField("auto-realism", "Master AUTO REALISM", AUTO_REALISM_DEFAULTS.autoRealism, "يحل التفاصيل غير المحددة وفق الفيزياء والسياق.")}
       ${selectField("realism-preset", "Realism Preset", [["natural","Natural Everyday"],["raw-smartphone","Raw Smartphone"],["high-physical","High Physical Realism"],["reference-critical","Reference-Critical"]], AUTO_REALISM_DEFAULTS.realismPreset)}
-      ${selectField("generator-profile", "Generator Profile", [["chatgpt","ChatGPT Image"],["gemini","Gemini"],["grok","Grok"],["midjourney","Midjourney"],["flux","FLUX"]], AUTO_REALISM_DEFAULTS.generatorProfile)}
+      ${selectField("generator-profile", "Generator Profile", [["chatgpt","ChatGPT Image"],["gemini","Gemini"],["grok","Grok"],["midjourney","Midjourney"],["flux","FLUX"],["stable-diffusion","Stable Diffusion"]], AUTO_REALISM_DEFAULTS.generatorProfile)}
       ${selectField("prompt-compression", "Prompt Compression", [["full","Full"],["compact","Compact"],["ultra","Ultra Compact"]], AUTO_REALISM_DEFAULTS.promptCompression)}
       ${toggleField("continuity-mode", "Scene Continuity", AUTO_REALISM_DEFAULTS.continuityMode, "يحافظ على نفس الجلسة والمكان والوقت بين النسخ.")}
       ${selectField("variation-mode", "One-Click Variation", [["none","بدون تنويع"],["eye_level","Eye level"],["slight_high","Slight high"],["three_quarter","Three-quarter"],["close_crop","Close crop"],["slight_low","Slight low"]], AUTO_REALISM_DEFAULTS.variationMode)}
+      <div class="field field-span-2" id="external-generator-setup" hidden></div>
       <div class="field field-span-2"><span>Reference Mapper</span><div class="readonly-card">IMAGE A = الهوية فقط · Scene = المكان · Clothing = الملابس · Lighting = الإضاءة · Pose/Camera = هندسة الالتقاط</div><small>يمنع خلط هوية الشخص مع بيئة أو ملابس المرجع.</small></div>
       ${toggleField("lock-identity", "🔒 الهوية", AUTO_REALISM_DEFAULTS.lockIdentity)}
       ${toggleField("lock-scene", "🔒 المشهد", AUTO_REALISM_DEFAULTS.lockScene)}
@@ -289,9 +342,10 @@ export function mountAutoRealismSuite(form) {
   if (!document.querySelector("#auto-realism-suite-style")) {
     const style = document.createElement("style");
     style.id = "auto-realism-suite-style";
-    style.textContent = `#auto-realism-suite .readonly-card{line-height:1.75}#auto-realism-suite .compact-button{width:100%;min-height:44px}`;
+    style.textContent = `#auto-realism-suite .readonly-card{line-height:1.75}#auto-realism-suite .readonly-card ul{margin:.5rem 0 0;padding-inline-start:1.2rem}#auto-realism-suite .readonly-card li+li{margin-top:.3rem}#auto-realism-suite .compact-button{width:100%;min-height:44px}`;
     document.head.append(style);
   }
+  renderExternalGeneratorSetup(document);
 }
 
 export function readAutoRealismUiState(root = document) {
@@ -315,7 +369,10 @@ export function readAutoRealismUiState(root = document) {
 export function bindAutoRealismSuite(onChange) {
   if (typeof document === "undefined") return;
   const ids = ["auto-realism","realism-preset","generator-profile","prompt-compression","continuity-mode","variation-mode","lock-identity","lock-scene","lock-clothing","lock-lighting","lock-expression"];
-  ids.forEach((id) => document.querySelector(`#${id}`)?.addEventListener("change", () => onChange?.()));
+  ids.forEach((id) => document.querySelector(`#${id}`)?.addEventListener("change", () => {
+    if (id === "generator-profile") renderExternalGeneratorSetup(document);
+    onChange?.();
+  }));
   document.querySelector("#next-realism-variation")?.addEventListener("click", () => {
     const select = document.querySelector("#variation-mode");
     if (!select) return;
