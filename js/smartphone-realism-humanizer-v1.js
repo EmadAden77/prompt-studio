@@ -3,10 +3,23 @@
 // This layer is subordinate to MASTER REALISM POLICY, identity/reference authority,
 // explicit user instructions, capture type and physical/anatomical plausibility.
 
-export const SMARTPHONE_REALISM_HUMANIZER_VERSION = "1.0.0";
+export const SMARTPHONE_REALISM_HUMANIZER_VERSION = "1.1.0";
+
+export function buildIdentityBoundAccessoryPolicy() {
+  return `[IDENTITY-BOUND ACCESSORIES]
+Accessories explicitly established as part of the subject's persistent reference appearance are identity-bound and must survive scene changes unless the user explicitly requests removal or replacement.
+
+Prescription eyeglasses or another consistently worn identity-defining accessory may be preserved from the identity reference. Do not redesign, replace, recolor or restyle an identity-bound accessory without explicit instruction.
+
+SCENE ACCESSORIES: Do not invent NEW styling accessories, jewelry, watches, hats, earbuds, headphones, bags, products or handheld props unless explicitly selected or physically required by the requested scene.
+
+Identity-bound accessories outrank the generic accessory gate. The generic accessory gate applies only to new scene accessories.`;
+}
 
 export function buildSmartphoneRealismHumanizer() {
   return `[SMARTPHONE REALISM HUMANIZER]
+AUTHORITY SCOPE: This layer may control camera rendering, physically caused capture artifacts, composition naturalness and photographic coherence only. It has NO authority to change identity, identity-bound accessories, expression, clothing, pose, scene selection or user-selected styling.
+
 REALISM MUST COME FROM CAPTURE BEHAVIOR AND PHYSICAL COHERENCE, NOT FROM EXAGGERATED DETAIL.
 
 Preserve natural human appearance without deliberately amplifying skin, hair, beard, fabric, noise, grain or optical defects.
