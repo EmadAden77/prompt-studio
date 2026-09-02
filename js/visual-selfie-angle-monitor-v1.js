@@ -30,6 +30,48 @@ function isDriverCarState(rawState = {}) {
     && (section === "car" || /range.?rover|(?:^|[-_])car(?:[-_]|$)/u.test(scene));
 }
 
+function previewLighting(rawState = {}) {
+  const lighting = String(rawState.lighting || "").toLowerCase();
+  const time = String(rawState.time || "").toLowerCase();
+  if (/parking|led|night|fluorescent/u.test(lighting) || time === "night") {
+    return {
+      id:"practical-night",
+      label:"PRACTICAL LED",
+      arabic:"LED عملي عبر النوافذ",
+      cue:"مصدر عملي محدد، وليس ضوء تجميل"
+    };
+  }
+  if (/window|daylight|sun|golden|overcast/u.test(lighting) || time === "day") {
+    return {
+      id:"natural-day",
+      label:"NATURAL LIGHT",
+      arabic:"ضوء طبيعي مختار",
+      cue:"مصدر طبيعي محدد، وليس ضوء استوديو"
+    };
+  }
+  return {
+    id:"selected",
+    label:"SELECTED LIGHT",
+    arabic:"الإضاءة المختارة",
+    cue:"المعاينة لا تخترع مصدر ضوء إضافياً"
+  };
+}
+
+export function buildLiveGeometryPreviewModel(rawState = {}) {
+  const state = normalizeVisualSelfieState(rawState);
+  const composition = resolveMonitorComposition({ ...state, composition:rawState.composition || state.composition });
+  const driver = state.driverCarGeometryLocked;
+  return {
+    state,
+    composition,
+    lighting:previewLighting(rawState),
+    context:driver ? "driver-cabin" : "selfie-space",
+    driverAnchor:driver
+      ? "Unmirrored LHD: steering wheel ahead of the driver, vehicle-left door/window on the subject's left, center console on the subject's right."
+      : "Subject-held phone, face axis and crop only; optional surroundings remain secondary."
+  };
+}
+
 function driverCarGeometry(rawState = {}) {
   const angle = String(rawState.selfieAngle || "eye").toLowerCase().replace(/_/g,"-");
   const composition = String(rawState.composition || rawState.monitorComposition || "close").toLowerCase();
@@ -199,6 +241,7 @@ Never convert this geometry into a tripod, observer, rear-camera, drone or third
 
 export function visualSelfieQa(rawState = {}) {
   const result = evaluateSelfieGeometry(rawState);
+  const preview = buildLiveGeometryPreviewModel(rawState);
   if (result.state.visualSelfieMonitor !== "on") return [{ label:"Visual Selfie Monitor", value:"متوقف" }];
   const vector = `D ${result.state.selfieDistanceCm}cm · Y ${signed(result.state.selfieYawDeg)} · P ${signed(result.state.selfiePitchDeg)} · R ${signed(result.state.selfieRollDeg)} · Face ${signed(result.state.faceYawDeg)}`;
   if (result.state.driverCarGeometryLocked) {
@@ -206,14 +249,16 @@ export function visualSelfieQa(rawState = {}) {
       { label:"Car Driver Geometry", value:`${result.score}/100 · مقفل على مقعد السائق خلف المقود` },
       { label:"Selfie Geometry", value:vector },
       { label:"Monitor Crop", value:resolveMonitorComposition(result.state) },
-      { label:"Driver Anchor", value:"قوس علوي رفيع من المقود ظاهر أمام الجذع؛ الباب يسار والكونسول يمين" }
+      { label:"Driver Anchor", value:"قوس علوي رفيع من المقود ظاهر أمام الجذع؛ الباب يسار والكونسول يمين" },
+      { label:"Live Context", value:`${preview.lighting.arabic} · مخطط LHD غير معكوس` }
     ];
   }
   return [
     { label:"Visual Selfie Monitor", value:`${result.score}/100 · ${result.level}` },
     { label:"Selfie Geometry", value:vector },
     { label:"Monitor Crop", value:resolveMonitorComposition(result.state) },
-    { label:"Arm-Reach Check", value:result.reachable ? "هندسة قابلة للتنفيذ" : `يحتاج تصحيح: ${result.issues[0] || "خارج النطاق المريح"}` }
+    { label:"Arm-Reach Check", value:result.reachable ? "هندسة قابلة للتنفيذ" : `يحتاج تصحيح: ${result.issues[0] || "خارج النطاق المريح"}` },
+    { label:"Live Context", value:`${preview.lighting.arabic} · الكادر ${preview.composition}` }
   ];
 }
 
@@ -227,7 +272,7 @@ function rangeField(id, label, min, max, step, value, unit) {
 function monitorMarkup() {
   return `
     <div class="section-heading"><div><span class="section-number">02A</span><h2 id="visual-selfie-monitor-title">Visual Selfie Angle Monitor</h2></div><p>محاكاة هندسية مباشرة لموضع الهاتف والوجه والكادر. لا تولّد صورًا.</p></div>
-    <div class="selfie-guidance" role="note">حرّك القيم وشاهد موضع الهاتف فورًا. الأرقام تنتقل إلى البرومبت كقيود هندسية، بينما محركات الوضعية والتشريح تظل صاحبة الكلمة الأخيرة إذا كانت الحركة غير ممكنة.</div>
+    <div class="selfie-guidance" role="note">معاينة حيّة للهاتف والوجه والقص والإضاءة المختارة. في سيلفي السائق تظهر خريطة LHD غير معكوسة للمقود والباب والكونسول. الأرقام تنتقل إلى البرومبت كقيود هندسية فقط.</div>
     <div class="visual-monitor-layout">
       <div class="visual-monitor-preview-wrap">
         <div class="visual-monitor-preview" aria-label="معاينة هندسة زاوية السيلفي">
@@ -240,6 +285,25 @@ function monitorMarkup() {
             <rect x="10" y="10" width="340" height="250" rx="14" fill="url(#selfie-grid)" />
             <line x1="55" y1="118" x2="305" y2="118" class="visual-eye-line" />
             <text x="300" y="111" class="visual-svg-label">EYE LEVEL</text>
+            <g id="visual-light-layer" aria-hidden="true">
+              <path id="visual-light-beam" d="M48 43 L154 95 L169 153 L60 89 Z" class="visual-light-beam" />
+              <circle id="visual-light-glow" cx="48" cy="43" r="18" class="visual-light-glow" />
+              <circle id="visual-light-source" cx="48" cy="43" r="5" class="visual-light-source" />
+              <text id="visual-light-label" x="70" y="38" class="visual-light-label">SELECTED LIGHT</text>
+              <text id="visual-light-note" x="70" y="50" class="visual-light-note">PRACTICAL</text>
+            </g>
+            <g id="visual-driver-cabin" hidden aria-hidden="true">
+              <path d="M32 46 L72 25 L288 25 L328 46 L328 236 L32 236 Z" class="visual-cabin-shell" />
+              <path d="M32 72 L68 86 L68 216 L32 230" class="visual-driver-door" />
+              <path d="M292 89 L320 76 L320 221 L292 211 Z" class="visual-center-console" />
+              <path d="M250 29 L250 103 L330 103" class="visual-cabin-map-line" />
+              <path d="M262 42 L282 42 L282 86 L262 86 Z" class="visual-cabin-seat" />
+              <circle cx="272" cy="32" r="8" class="visual-cabin-wheel" />
+              <text x="256" y="18" class="visual-cabin-map-label">FRONT ↑</text>
+              <text x="38" y="64" class="visual-cabin-map-label">DOOR · L</text>
+              <text x="285" y="226" class="visual-cabin-map-label">CONSOLE · R</text>
+              <text x="237" y="116" class="visual-cabin-map-label">LHD MAP</text>
+            </g>
             <g id="visual-subject-group">
               <path d="M118 224 C125 178, 235 178, 242 224 L242 245 L118 245 Z" class="visual-shoulders" />
               <ellipse cx="180" cy="119" rx="47" ry="61" class="visual-head" />
@@ -255,12 +319,14 @@ function monitorMarkup() {
               <circle cx="0" cy="-23" r="2.7" class="visual-phone-camera" />
               <line x1="-9" y1="22" x2="9" y2="22" class="visual-phone-detail" />
             </g>
+            <path id="visual-driver-wheel-anchor" d="M144 226 Q180 193 216 226" class="visual-driver-wheel-anchor" hidden />
             <rect id="visual-crop-frame" x="88" y="35" width="184" height="206" rx="13" class="visual-crop-frame" />
             <text id="visual-crop-label" x="99" y="55" class="visual-svg-label">CLOSE</text>
           </svg>
           <div class="visual-monitor-score-row"><strong id="visual-monitor-score">100/100</strong><span id="visual-monitor-level">ممكن طبيعيًا</span></div>
         </div>
         <div class="visual-monitor-readout" id="visual-monitor-readout">Xiaomi 15 Ultra Front · 50 cm · Y 0° · P 0° · R +2°</div>
+        <div class="visual-monitor-context" id="visual-monitor-context">الإضاءة المختارة · الكادر Close</div>
         <div class="visual-monitor-warning" id="visual-monitor-warning" hidden></div>
       </div>
       <div class="visual-monitor-controls">
@@ -294,6 +360,19 @@ function monitorStyle() {
 .visual-grid-dot{fill:rgba(255,255,255,.08)}
 .visual-eye-line{stroke:rgba(250,198,42,.36);stroke-width:1;stroke-dasharray:6 8}
 .visual-svg-label{fill:rgba(250,198,42,.8);font-size:9px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em}
+.visual-light-beam{fill:rgba(109,203,255,.09);stroke:rgba(109,203,255,.23);stroke-width:.8}
+.visual-light-glow{fill:rgba(109,203,255,.09);stroke:rgba(109,203,255,.2);stroke-width:.8}
+.visual-light-source{fill:rgba(167,225,255,.95);stroke:rgba(255,255,255,.85);stroke-width:1}
+.visual-light-label{fill:rgba(185,225,255,.92);font-size:8px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.07em}
+.visual-light-note{fill:rgba(185,225,255,.62);font-size:7px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em}
+.visual-cabin-shell{fill:rgba(126,153,180,.055);stroke:rgba(160,187,216,.36);stroke-width:1.1}
+.visual-driver-door{fill:none;stroke:rgba(121,197,255,.56);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.visual-center-console{fill:rgba(250,198,42,.08);stroke:rgba(250,198,42,.6);stroke-width:1.2;stroke-linejoin:round}
+.visual-cabin-map-line{fill:none;stroke:rgba(255,255,255,.24);stroke-width:.9}
+.visual-cabin-seat{fill:rgba(180,192,207,.12);stroke:rgba(214,225,237,.44);stroke-width:.9}
+.visual-cabin-wheel{fill:none;stroke:rgba(250,198,42,.78);stroke-width:1.6}
+.visual-cabin-map-label{fill:rgba(191,210,229,.67);font-size:6.4px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em}
+.visual-driver-wheel-anchor{fill:none;stroke:rgba(250,198,42,.9);stroke-width:4;stroke-linecap:round}
 .visual-shoulders{fill:rgba(179,190,207,.25);stroke:rgba(222,230,240,.55);stroke-width:1.5}
 .visual-head{fill:rgba(190,199,214,.28);stroke:rgba(231,237,245,.72);stroke-width:1.6}
 .visual-ear{fill:rgba(190,199,214,.24);stroke:rgba(231,237,245,.48);stroke-width:1}
@@ -309,6 +388,7 @@ function monitorStyle() {
 .visual-monitor-score-row{display:flex;justify-content:center;gap:10px;align-items:center;padding:6px 0 0;font-size:.9rem}
 .visual-monitor-score-row strong{color:#fac62a}
 .visual-monitor-readout{margin-top:10px;border-radius:12px;padding:10px 12px;background:rgba(250,198,42,.07);border:1px solid rgba(250,198,42,.18);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.84rem;direction:ltr;text-align:center}
+.visual-monitor-context{margin-top:7px;padding:8px 10px;border-radius:10px;background:rgba(109,203,255,.06);border:1px solid rgba(109,203,255,.16);font-size:.79rem;line-height:1.45;text-align:center}
 .visual-monitor-warning{margin-top:8px;padding:9px 11px;border-radius:10px;background:rgba(255,141,61,.09);border:1px solid rgba(255,141,61,.24);font-size:.82rem;line-height:1.6}
 .visual-monitor-controls{display:grid;gap:11px}
 .visual-monitor-toolbar{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -327,6 +407,7 @@ function monitorStyle() {
   #visual-selfie-svg{height:154px;max-height:154px}
   .visual-monitor-score-row{gap:7px;padding-top:2px;font-size:.76rem;line-height:1.2}
   .visual-monitor-readout{margin-top:4px;border-radius:9px;padding:5px 7px;font-size:.66rem;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .visual-monitor-context{margin-top:4px;padding:5px 7px;border-radius:8px;font-size:.67rem;line-height:1.3;max-height:38px;overflow:auto}
   .visual-monitor-warning{margin-top:4px;padding:5px 7px;border-radius:8px;font-size:.68rem;line-height:1.3;max-height:42px;overflow:auto}
   .visual-monitor-toolbar{grid-template-columns:1fr 1fr;gap:7px}
   .visual-monitor-controls{gap:7px}
@@ -375,6 +456,8 @@ export function readVisualSelfieUiState(root = document) {
     studioSection:value("studio-section", ""),
     scene:value("scene", ""),
     carSeat:value("car-seat", ""),
+    lighting:value("lighting", ""),
+    time:value("time", ""),
     selfieAngle:value("selfie-angle", "eye"),
     composition:value("composition", "close"),
     visualSelfieMonitor:root.querySelector("#visual-selfie-angle-monitor") ? "on" : "off",
@@ -492,6 +575,7 @@ export function updateVisualSelfieAnglePreview(root = document) {
   const state = readVisualSelfieUiState(root);
   const result = evaluateSelfieGeometry({ ...state, composition:root.querySelector("#composition")?.value || "close" });
   const composition = resolveMonitorComposition({ ...state, composition:root.querySelector("#composition")?.value || "close" });
+  const preview = buildLiveGeometryPreviewModel({ ...state, composition });
 
   outputText("visual-selfie-distance",state.selfieDistanceCm," cm",root);
   outputText("visual-selfie-yaw",state.selfieYawDeg,"°",root);
@@ -527,13 +611,36 @@ export function updateVisualSelfieAnglePreview(root = document) {
   const cropLabel = root.querySelector("#visual-crop-label");
   if (cropLabel) { cropLabel.textContent = crop.label; cropLabel.setAttribute("x",String(crop.x + 10)); cropLabel.setAttribute("y",String(crop.y + 20)); }
 
+  const driverCabin = root.querySelector("#visual-driver-cabin");
+  if (driverCabin) driverCabin.hidden = preview.context !== "driver-cabin";
+  const wheelAnchor = root.querySelector("#visual-driver-wheel-anchor");
+  if (wheelAnchor) wheelAnchor.hidden = preview.context !== "driver-cabin";
+  const lightSource = root.querySelector("#visual-light-source");
+  const lightGlow = root.querySelector("#visual-light-glow");
+  const lightBeam = root.querySelector("#visual-light-beam");
+  const lightLabel = root.querySelector("#visual-light-label");
+  const lightNote = root.querySelector("#visual-light-note");
+  const lightConfig = preview.lighting.id === "natural-day"
+    ? { x:310, y:44, beam:"M310 44 L208 92 L192 154 L304 87 Z" }
+    : preview.lighting.id === "selected"
+      ? { x:180, y:27, beam:"M180 27 L154 85 L168 152 L194 152 L208 85 Z" }
+      : { x:48, y:43, beam:"M48 43 L154 95 L169 153 L60 89 Z" };
+  [lightSource,lightGlow].forEach((node) => { if (node) { node.setAttribute("cx",String(lightConfig.x)); node.setAttribute("cy",String(lightConfig.y)); } });
+  if (lightBeam) lightBeam.setAttribute("d",lightConfig.beam);
+  if (lightLabel) { lightLabel.textContent = preview.lighting.label; lightLabel.setAttribute("x",String(Math.min(286,lightConfig.x + 17))); lightLabel.setAttribute("y",String(lightConfig.y - 5)); }
+  if (lightNote) { lightNote.textContent = "SELECTED SOURCE"; lightNote.setAttribute("x",String(Math.min(286,lightConfig.x + 17))); lightNote.setAttribute("y",String(lightConfig.y + 7)); }
+
   const score = root.querySelector("#visual-monitor-score");
   const level = root.querySelector("#visual-monitor-level");
   const readout = root.querySelector("#visual-monitor-readout");
+  const context = root.querySelector("#visual-monitor-context");
   const warning = root.querySelector("#visual-monitor-warning");
   if (score) score.textContent = `${result.score}/100`;
   if (level) level.textContent = result.level;
   if (readout) readout.textContent = `Xiaomi 15 Ultra Front · ${state.selfieDistanceCm} cm · Y ${signed(state.selfieYawDeg)} · P ${signed(state.selfiePitchDeg)} · R ${signed(state.selfieRollDeg)} · Face ${signed(state.faceYawDeg)} · ${composition}`;
+  if (context) context.textContent = preview.context === "driver-cabin"
+    ? `إضاءة: ${preview.lighting.arabic} · LHD غير معكوس: المقود أمام السائق، الباب يسار، الكونسول يمين.`
+    : `إضاءة: ${preview.lighting.arabic} · الكادر: ${composition} · ${preview.lighting.cue}.`;
   if (warning) {
     warning.hidden = !(state.driverCarGeometryLocked || result.issues.length);
     warning.textContent = state.driverCarGeometryLocked
@@ -566,7 +673,7 @@ export function bindVisualSelfieAngleMonitor(onChange, root = document) {
     if (syncVisualMonitorFromPrimaryControls(root)) onChange?.();
   });
   root.querySelector("#composition")?.addEventListener("change",() => { syncVisualMonitorFromPrimaryControls(root); updateVisualSelfieAnglePreview(root); });
-  ["#studio-section", "#scene", "#car-seat"].forEach((selector) => root.querySelector(selector)?.addEventListener("change",() => {
+  ["#studio-section", "#scene", "#car-seat", "#lighting", "#time"].forEach((selector) => root.querySelector(selector)?.addEventListener("change",() => {
     syncVisualMonitorFromPrimaryControls(root);
     updateVisualSelfieAnglePreview(root);
     onChange?.();
