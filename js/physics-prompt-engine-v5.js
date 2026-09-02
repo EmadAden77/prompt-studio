@@ -379,6 +379,7 @@ function buildReferenceSection(state) {
     "[IDENTITY]",
     sentence(IDENTITY_LOCK),
     sentence(referenceInstruction),
+    "The reference image controls permanent facial identity, not the temporary facial expression captured in that reference. Preserve facial anatomy while applying the selected [EXPRESSION LOCK] even when the reference face is neutral or different.",
     sentence(buildVisibleBodyInstruction(state)),
     "If eyeglasses are visibly worn in the identity reference, preserve that same pair as part of identity: the same frame shape, color character, proportions and ordinary fit, with both temples physically supported by the ears. Do not remove, replace or redesign visible reference eyewear.",
     notes ? sentence(`Reference-specific observations to preserve if compatible: ${notes}`) : ""
@@ -426,6 +427,18 @@ function buildHairSection(state) {
   return `[HAIR] ${HAIR_DENSITY_LOCK} Selected arrangement: ${hair}.`;
 }
 
+function buildExpressionSection(state) {
+  const selected = optionText(EXPRESSION_OPTIONS, state.expression, "calm neutral expression");
+  const exact = {
+    neutral:"The mouth, cheeks, eyelids and brow remain naturally at rest. Do not introduce a smile.",
+    "soft-smile":"The smile must be visibly present, not merely implied: gently raise both mouth corners with slight natural asymmetry, create mild cheek elevation and subtle eye-muscle engagement. Keep the smile restrained and candid rather than broad or posed. Do not copy a neutral mouth from the reference image. Keep teeth hidden unless another explicit instruction requests visible teeth.",
+    serious:"Keep the mouth unsmiling and relaxed, with a calm serious gaze and no artificial brow tension.",
+    focused:"Use a naturally attentive gaze while keeping jaw, mouth and brow physically relaxed; do not turn it into anger or a smile.",
+    "slightly-tired":"Use slightly heavier eyelids and a mildly tired resting face without changing age, identity geometry or adding a smile."
+  }[state.expression] || "Apply the selected expression visibly while preserving permanent identity anatomy.";
+  return `[EXPRESSION LOCK] EXPRESSION IS AN EXPLICIT USER INSTRUCTION, NOT AN IDENTITY FEATURE. Selected expression: ${selected}. ${exact} The selected expression must survive all later realism, subject-moment, pose, lighting, continuity and generator-adapter rules. Later instructions such as relaxed jaw, candid behavior or natural asymmetry may soften the expression only within real anatomy; they must never neutralize, replace or contradict it.`;
+}
+
 function buildAppearanceSection(state) {
   const clothing = optionText(getClothingOptions(state.scene), state.clothing);
   const clothingCustom = clean(state.clothingCustom);
@@ -442,7 +455,6 @@ function buildAppearanceSection(state) {
     sentence(clothing),
     custom,
     sentence(skin),
-    sentence(expression),
     cropRule,
     "Do not turn ordinary clothing or grooming into fashion-editorial styling."
   ].filter(Boolean).join(" ");
@@ -711,6 +723,7 @@ export function buildPositivePrompt(rawState = {}) {
   const sections = [
     "[SELFIE TASK] Create a candid, physically plausible smartphone selfie taken by the subject himself. The person and the act of taking the selfie are the primary visual event.",
     buildReferenceSection(state),
+    buildExpressionSection(state),
     buildCameraSection(state),
     buildPoseSection(state),
     buildCarSeatSection(state),
