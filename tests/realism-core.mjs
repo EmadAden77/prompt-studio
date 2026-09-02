@@ -4,6 +4,7 @@ import {
   buildRealismCoreSections,
   getPeopleDensityOptions,
   getPlaceStateOptions,
+  getSmartphoneCaptureProfile,
   getSubjectMomentOptions,
   realismCoreQaItems,
   resolveRealismCoreState
@@ -13,6 +14,15 @@ import { DEFAULT_STATE, normalizeState } from "../js/physics-prompt-engine-v5.js
 assert.ok(getPlaceStateOptions().length >= 5, "Place-state realism choices must stay compact but useful");
 assert.ok(getPeopleDensityOptions().some((item) => item.value === "auto"));
 assert.ok(getSubjectMomentOptions().some((item) => item.value === "post-workout"));
+
+const nearCapture = getSmartphoneCaptureProfile({ selfieDistanceCm:40, composition:"tight" });
+assert.equal(nearCapture.zone, "near");
+assert.equal(nearCapture.distance, 40);
+assert.match(nearCapture.perspective, /bulbous nose/u);
+const standardCapture = getSmartphoneCaptureProfile({ selfieDistanceCm:50, composition:"close" });
+assert.equal(standardCapture.zone, "standard");
+const extendedCapture = getSmartphoneCaptureProfile({ selfieDistanceCm:70, composition:"upper" });
+assert.equal(extendedCapture.zone, "extended");
 
 const tightCrowd = resolveRealismCoreState(normalizeState({
   ...DEFAULT_STATE,
@@ -33,6 +43,9 @@ assert.match(tightSections, /\[CAMERA AUTO BEHAVIOR\]/u);
 assert.match(tightSections, /\[REFLECTION AND GLASS\]/u);
 assert.match(tightSections, /A tight selfie crop cannot support a dense crowd/u);
 assert.match(tightSections, /real front-camera auto behavior/u);
+assert.match(tightSections, /DISTANCE-AWARE SMARTPHONE CAPTURE/u);
+assert.match(tightSections, /phone-to-face distance 48 cm/u);
+assert.match(tightSections, /portrait-mode cutout/u);
 
 const windowless = resolveRealismCoreState(normalizeState({
   ...DEFAULT_STATE,
@@ -78,6 +91,7 @@ const nightCar = resolveRealismCoreState(normalizeState({
   poseFamily:"car",
   pose:"car-driver-close",
   composition:"close",
+  selfieDistanceCm:40,
   lighting:"car-night-parking-led",
   peopleDensity:"auto",
   placeState:"daily",
@@ -85,6 +99,9 @@ const nightCar = resolveRealismCoreState(normalizeState({
 }));
 const nightCarSections = buildRealismCoreSections(nightCar.state, nightCar.conflicts).join("\n\n");
 assert.match(nightCarSections, /luminance and chroma noise increase/u);
+assert.match(nightCarSections, /phone-to-face distance 40 cm/u);
+assert.match(nightCarSections, /modern front-camera lens correction/u);
+assert.match(nightCarSections, /selected practical highlights may clip/u);
 assert.match(nightCarSections, /Vehicle glass, glossy trim and mirrors/u);
 assert.match(nightCarSections, /seat cushion and backrest/u);
 assert.match(nightCarSections, /outside the stationary car/u);
@@ -92,12 +109,16 @@ assert.match(nightCarSections, /outside the stationary car/u);
 const qa = realismCoreQaItems(windowless.state, windowless.conflicts);
 assert.ok(qa.some((item) => item.label === "فحص التعارض" && /LED/u.test(item.value)));
 assert.ok(qa.some((item) => item.label === "التفاعل"));
+assert.ok(qa.some((item) => item.label === "كاميرا الهاتف" && /56 سم/u.test(item.value)));
 
 for (const forbidden of [
   "unsupported body contact",
   "mirror reflection from impossible camera angle",
   "noise-free night smartphone image",
-  "crowd forced into tight selfie crop"
+  "crowd forced into tight selfie crop",
+  "telephoto compression in a close front-camera selfie",
+  "portrait-mode cutout around hair or shoulders",
+  "background blur inconsistent with smartphone front-camera focus"
 ]) {
   assert.ok(REALISM_CORE_NEGATIVE_RULES.includes(forbidden), `Missing realism negative guard: ${forbidden}`);
 }

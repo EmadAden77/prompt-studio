@@ -39,6 +39,45 @@ const isCustom = (scene) => scene === "custom";
 const isTight = (state) => state.composition === "tight" || state.composition === "close";
 const isMovingPose = (state) => /walk|browsing|activity/i.test(`${state.poseFamily} ${state.pose}`);
 
+const DISTANCE_FALLBACKS = Object.freeze({ tight:40, close:48, upper:56, medium:62, full:68 });
+
+function numberValue(value, fallback) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+export function getSmartphoneCaptureProfile(rawState = {}) {
+  const composition = String(rawState.composition || "close").toLowerCase();
+  const fallback = DISTANCE_FALLBACKS[composition] ?? DISTANCE_FALLBACKS.close;
+  const distance = Math.round(Math.max(35, Math.min(85, numberValue(rawState.selfieDistanceCm, fallback))));
+
+  if (distance <= 42) {
+    return {
+      distance,
+      zone:"near",
+      label:"قريب جداً",
+      qa:"منظور قريب واسع مضبوط بلا تمدد أو إعادة تشكيل للوجه",
+      perspective:"At this close distance, preserve mild near-field front-camera perspective: the central face plane is subtly nearer than the ears, while the locked nose, cheeks, jaw, eye spacing and hairline remain recognizably unchanged. Do not create a bulbous nose, stretched cheeks, shrunken ears, face slimming or beauty-filter reshaping."
+    };
+  }
+  if (distance <= 58) {
+    return {
+      distance,
+      zone:"standard",
+      label:"طبيعي",
+      qa:"مسافة ذراع طبيعية بمنظور هاتف متوازن",
+      perspective:"Use a balanced ordinary arm-length front-camera perspective. Preserve the reference facial structure while allowing only the small perspective change physically caused by this phone distance; do not flatten the face into a telephoto portrait."
+    };
+  }
+  return {
+    distance,
+    zone:"extended",
+    label:"ذراع ممتدة",
+    qa:"مسافة أطول تقلل أثر القرب، بلا ضغط تيليفوتو أو توسعة مصطنعة",
+    perspective:"At this longer but still reachable selfie distance, reduce near-field perspective naturally. Do not replace it with telephoto compression, a third-person viewpoint or a wider camera merely to expose more context."
+  };
+}
+
 function hasWindowlessSignal(state) {
   return /(?:windowless|no window|without windows|بدون (?:نافذ|نوافذ)|بلا (?:نافذ|نوافذ)|لا توجد (?:نافذ|نوافذ))/iu.test(`${state.customScene} ${state.customSceneDetails}`);
 }
@@ -182,11 +221,18 @@ function buildContactRule(state) {
 }
 
 function buildCameraRule(state) {
+  const capture = getSmartphoneCaptureProfile(state);
   const movement = isMovingPose(state);
+  const accidental = state.captureMode === "accidental";
+  const focusRule = accidental
+    ? "The accidental-capture engine remains the authority for any temporary focus, motion or exposure transition."
+    : "Autofocus settles on the eyes or nearest usable upper-face plane. Any background softness comes only from real distance, focus falloff and the front-camera pipeline; never use a portrait-mode cutout, opaque hair mask or shallow DSLR bokeh.";
+  const lensRule = "Use modern front-camera lens correction: room or cabin lines remain broadly stable, with only subtle outer-frame perspective change caused by the real lens and camera position. Never create an exaggerated barrel warp across the face, dashboard or walls.";
+  const captureRule = `DISTANCE-AWARE SMARTPHONE CAPTURE: phone-to-face distance ${capture.distance} cm (${capture.label}). ${capture.perspective} ${focusRule} ${lensRule}`;
   if (state.time === "night") {
-    return `Use real front-camera auto behavior in low light: exposure protects the face imperfectly, shadow detail falls away, luminance and chroma noise increase, white balance follows the dominant practical source with small residual color error, and sharpening remains restrained. ${movement ? "Allow only slight physically plausible motion softness from the subject-held phone or body movement; do not freeze everything with impossible shutter speed." : "Keep the face reasonably stable but not unnaturally noise-free or studio-sharp."}`;
+    return `${captureRule} Use real front-camera auto behavior in low light: exposure meters near the face imperfectly, selected practical highlights may clip, shadow detail falls away, luminance and chroma noise increase, white balance follows the dominant practical source with small residual color error, and sharpening remains restrained. ${accidental ? "Do not add a second normal-capture motion rule." : movement ? "Allow only slight physically plausible motion softness from the subject-held phone or body movement; do not freeze everything with impossible shutter speed." : "Keep the face reasonably stable but not unnaturally noise-free or studio-sharp."}`;
   }
-  return `Use real front-camera auto exposure in daylight: preserve natural highlight clipping when exterior or direct light exceeds sensor range, keep shadow contrast instead of flattening everything with HDR, allow small automatic white-balance variation, and avoid over-sharpened microdetail. ${movement ? "A tiny amount of motion softness may occur at moving edges while the face remains the focus target." : "The face remains the autofocus priority without fake DSLR separation."}`;
+  return `${captureRule} Use real front-camera auto exposure in daylight: preserve natural highlight clipping when exterior or direct light exceeds sensor range, keep shadow contrast instead of flattening everything with HDR, allow small automatic white-balance variation, and avoid over-sharpened microdetail. ${accidental ? "Do not add a second normal-capture motion rule." : movement ? "A tiny amount of motion softness may occur at moving edges while the face remains the focus target." : "The face remains the autofocus priority without fake DSLR separation."}`;
 }
 
 function buildReflectionRule(state) {
@@ -234,12 +280,14 @@ export function realismCoreQaItems(state, conflicts = []) {
   const peopleLabel = peopleOption(state.peopleDensity).label;
   const momentLabel = momentOption(state.subjectMoment).label;
   const placeLabel = placeOption(state.placeState).label;
+  const capture = getSmartphoneCaptureProfile(state);
   return [
     { label:"حالة المكان", value:`${placeLabel} — الفوضى والاهتراء بقدر الاستعمال الحقيقي فقط` },
     { label:"البشر", value:`${peopleLabel} — العدد مقيد بالكادر والمنظور` },
     { label:"لحظة الشخص", value:`${momentLabel} — تغيرات صغيرة في الوقفة والملابس والتعبير فقط` },
     { label:"التلامس", value:"ضغط ودعم وظلال تماس فقط عند نقاط التلامس الحقيقية" },
-    { label:"الكاميرا", value:"تعريض وWB وضوضاء وحدّة تلقائية حسب الضوء والحركة" },
+    { label:"كاميرا الهاتف", value:`${capture.distance} سم · ${capture.label} · ${capture.qa}` },
+    { label:"معالجة الالتقاط", value:state.time === "night" ? "تعريض وجه غير مثالي، ضوضاء وWB واقعيان، وحركة فقط عند سبب حقيقي" : "تعريض تلقائي، مدى ديناميكي محدود، وتركيز عينين بلا عزل DSLR" },
     { label:"الانعكاسات", value:"المرايا والزجاج تتبع نفس موضع الكاميرا ومصادر الضوء" },
     ...(state.interactionObject ? [{ label:"التفاعل", value:`${state.interactionObject} — قبضة ووزن وتلامس واقعي أو يُحذف إذا لم يسمح الكادر` }] : []),
     { label:"فحص التعارض", value:conflicts.length ? conflicts.map((item) => item.qa).join(" ") : "لا يوجد تعارض عالي الخطورة بعد التطبيع" }
@@ -266,5 +314,10 @@ export const REALISM_CORE_NEGATIVE_RULES = Object.freeze([
   "noise-free night smartphone image",
   "uniform HDR exposure across incompatible light levels",
   "impossible frozen motion in low light",
-  "fake DSLR depth separation"
+  "fake DSLR depth separation",
+  "telephoto compression in a close front-camera selfie",
+  "portrait-mode cutout around hair or shoulders",
+  "exaggerated barrel distortion across face or vehicle cabin",
+  "bulbous nose or stretched cheeks from fake selfie distortion",
+  "background blur inconsistent with smartphone front-camera focus"
 ]);

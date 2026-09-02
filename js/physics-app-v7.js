@@ -32,7 +32,7 @@ import {
   getSubjectMomentOptions,
   realismCoreQaItems,
   resolveRealismCoreState
-} from "./realism-core-v1.js";
+} from "./realism-core-v1.js?v=20260902-distance-capture1";
 import {
   ADVANCED_REALISM_NEGATIVE_RULES,
   advancedRealismQaItems,
