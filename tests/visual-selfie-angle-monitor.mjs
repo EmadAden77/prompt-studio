@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import {
   VISUAL_SELFIE_DEFAULTS,
+  buildLiveGeometryPreviewModel,
   buildVisualSelfieGeometrySection,
   evaluateSelfieGeometry,
   normalizeVisualSelfieState,
@@ -88,6 +89,17 @@ assert.match(driverSection,/Never introduce a second camera distance/u);
 const driverQa = visualSelfieQa(driverLocked);
 assert.ok(driverQa.some((item) => item.label === "Car Driver Geometry"));
 assert.ok(driverQa.some((item) => item.label === "Driver Anchor"));
+assert.ok(driverQa.some((item) => item.label === "Live Context"));
+
+const driverLivePreview = buildLiveGeometryPreviewModel({ ...driverLocked, lighting:"car-night-parking-led", time:"night" });
+assert.equal(driverLivePreview.context,"driver-cabin");
+assert.equal(driverLivePreview.lighting.id,"practical-night");
+assert.match(driverLivePreview.driverAnchor,/Unmirrored LHD/u);
+
+const daylightLivePreview = buildLiveGeometryPreviewModel({ lighting:"daylight", time:"day", composition:"close" });
+assert.equal(daylightLivePreview.context,"selfie-space");
+assert.equal(daylightLivePreview.lighting.id,"natural-day");
+assert.equal(daylightLivePreview.composition,"close");
 
 const suite = applyAutoRealismSuite({
   positive:"[PHONE REALISM]\nSubject-held front camera only.",
