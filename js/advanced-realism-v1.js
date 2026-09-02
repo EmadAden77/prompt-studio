@@ -234,9 +234,9 @@ function buildCarOrientationRule(state) {
 function buildDriverSeatVerificationRule(state) {
   if (!isDriverSeat(state)) return "";
   const tightRule = isTight(state)
-    ? "Because the crop is tight or close, do not widen the selfie merely to prove the seat."
+    ? "Because the crop is tight or close, keep the selfie close but reserve a thin upper steering-wheel arc in the lower foreground instead of widening into an interior showcase."
     : "The wider crop should normally preserve more than one coherent driver-side cue when those cues naturally enter frame.";
-  return `[DRIVER SEAT VISUAL VERIFICATION] Keep the subject physically in the LEFT FRONT DRIVER'S SEAT even when the steering wheel or dashboard is mostly cropped. ${tightRule} When the selected field of view has room for any cabin cue, preserve at least one unmistakable driver-side anchor: a small steering-wheel rim or column edge physically in front of the subject, the center-console edge on the subject's right, or coherent driver-door / A-pillar / side-window geometry on the subject's left. Never fabricate or force a complete steering wheel. If no verification anchor can physically enter the crop, keep the seat mapping internally correct and treat visual seat verification as ambiguous rather than silently moving the subject to the passenger seat.`;
+  return `[DRIVER SEAT VISUAL VERIFICATION] Keep the subject physically in the LEFT FRONT DRIVER'S SEAT. ${tightRule} A small, physically attached upper steering-wheel rim or column edge is mandatory in front of the subject's lower torso and must align with the real instrument cluster behind it. Preserve the center-console edge on the subject's right and/or coherent driver-door / A-pillar / side-window geometry on the subject's left whenever those cues naturally enter frame. Never fabricate or force a complete steering wheel. If the selected crop initially misses the steering-wheel cue, adjust the crop slightly downward within the same reachable phone geometry; never treat the seat as visually ambiguous, mirror the cabin, move the wheel, or move the subject to the passenger seat.`;
 }
 
 function microCues(state) {
@@ -264,8 +264,8 @@ export function evaluateRealismRisk(state, conflicts = []) {
   if (isTight(state) && state.objectProfile === "laptop") { score -= 7; issues.push("اللابتوب كبير بالنسبة لكلوز أب وقد يخرج من الكادر"); }
   if (isTight(state) && state.objectProfile === "shopping-bag") { score -= 5; issues.push("كيس المشتريات قد لا يدخل طبيعيًا في الكادر الضيق"); }
   if (state.peopleDensity === "busy" && isTight(state)) { score -= 10; issues.push("ازدحام البشر مرتفع بالنسبة للكادر الضيق"); }
-  if (isDriverSeat(state) && state.composition === "tight") { score -= 10; issues.push("الكادر شديد الضيق يجعل التحقق البصري من مقعد السائق عالي المخاطرة؛ يجب الحفاظ على دليل مقصورة واحد إذا سمحت الهندسة"); }
-  else if (isDriverSeat(state) && state.composition === "close") { score -= 7; issues.push("كلوز أب السائق قد يبدو كمقعد راكب إذا اختفت كل دلائل المقصورة؛ يجب الحفاظ على دليل بصري واحد لموضع السائق"); }
+  if (isDriverSeat(state) && state.composition === "tight") { score -= 3; issues.push("الكادر الضيق مقفل على قوس مقود علوي رفيع أمام السائق لتثبيت موضعه بصرياً"); }
+  else if (isDriverSeat(state) && state.composition === "close") { score -= 2; issues.push("كلوز أب السائق يحتفظ بقوس مقود علوي ودليل مقصورة متسقين لتثبيت الموضع بصرياً"); }
   if (conflicts.length) { score -= Math.min(10, conflicts.length * 2); issues.push(`تم تصحيح ${conflicts.length} تعارض قبل إخراج البرومبت`); }
   if (state.sceneProfile && state.sceneProfile !== "auto") strengths.push("المشهد المخصص مربوط بملف مكان واقعي");
   if (state.accessoryProfile && state.accessoryProfile !== "none") strengths.push("الإكسسوار له تماس ومقياس وانعكاس مقيدان");
@@ -279,7 +279,7 @@ export function evaluateRealismRisk(state, conflicts = []) {
 }
 
 const PROTECTED_HEADERS = new Set([
-  "[IDENTITY]","[CAMERA]","[SELFIE POSE]","[CAR SEAT POSITION]","[CAR ORIENTATION LOCK]","[DRIVER SEAT VISUAL VERIFICATION]","[HAIR]","[CLOTHING PHYSICS]","[PRACTICAL LIGHTING]"
+  "[IDENTITY]","[CAMERA]","[SELFIE POSE]","[CAR SEAT POSITION]","[CAR DRIVER SELFIE GEOMETRY — SOLE AUTHORITY]","[CAR ORIENTATION LOCK]","[DRIVER SEAT VISUAL VERIFICATION]","[HAIR]","[CLOTHING PHYSICS]","[PRACTICAL LIGHTING]"
 ]);
 
 export function optimizePrompt(prompt) {
