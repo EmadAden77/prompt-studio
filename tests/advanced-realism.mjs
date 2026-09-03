@@ -85,6 +85,7 @@ const driverCloseState = {
   peopleDensity:"sparse", hasReference:true, time:"day"
 };
 const driverSections = buildAdvancedRealismSections(driverCloseState, []).join("\n\n");
+assert.doesNotMatch(driverSections, /\[SCENE PROFILE\]/u, "Car scenes must not receive a dormant custom-scene profile");
 assert.match(driverSections, /\[CAR ORIENTATION LOCK\]/u, "Car scene must lock final physical orientation");
 assert.match(driverSections, /unmirrored physical camera geometry/u);
 assert.match(driverSections, /Do not horizontally flip, selfie-mirror, swap or reinterpret the cabin/u);

@@ -99,7 +99,8 @@ const nightCar = resolveRealismCoreState(normalizeState({
 }));
 const nightCarSections = buildRealismCoreSections(nightCar.state, nightCar.conflicts).join("\n\n");
 assert.match(nightCarSections, /luminance and chroma noise increase/u);
-assert.match(nightCarSections, /phone-to-face distance 40 cm/u);
+assert.match(nightCarSections, /use the exact distance and vector declared in \[CAR DRIVER SELFIE GEOMETRY — SOLE AUTHORITY\]/u);
+assert.doesNotMatch(nightCarSections, /phone-to-face distance 40 cm/u, "Driver camera distance must be declared only by the driver geometry lock");
 assert.match(nightCarSections, /modern front-camera lens correction/u);
 assert.match(nightCarSections, /selected practical highlights may clip/u);
 assert.match(nightCarSections, /Vehicle glass, glossy trim and mirrors/u);

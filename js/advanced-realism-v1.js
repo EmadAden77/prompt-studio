@@ -195,7 +195,8 @@ export function resolveAdvancedRealismState(rawState = {}) {
 }
 
 function buildSceneProfileRule(state) {
-  if (!isCustom(state) || state.sceneProfile === "auto") return "[SCENE PROFILE] No specialized scene profile is forced. The user's custom location text remains the authority.";
+  if (!isCustom(state)) return "";
+  if (state.sceneProfile === "auto") return "[SCENE PROFILE] No specialized scene profile is forced. The user's custom location text remains the authority.";
   const profile = SCENE_PROFILES[state.sceneProfile];
   if (!profile) return "[SCENE PROFILE] Use only the physically plausible structure implied by the custom location.";
   return `[SCENE PROFILE] ${profile.text}. This profile supplies ordinary real-world priors only; it must not replace the user's written location, force every typical object into frame, add brands or create readable signage.`;

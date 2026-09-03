@@ -216,7 +216,7 @@ export const SELFIE_POSES = [
   { value:"coffee-relaxed", family:"activity", label:"يمسك كوب قهوة", scenes:["my_bedroom_text","bedroom","street"], angles:["eye","three-quarter"], compositions:["close","upper"], text:"holding a cup casually with the non-selfie hand while taking the selfie, wrist and cup orientation remaining physically comfortable" },
   { value:"waiting-relaxed", family:"activity", label:"ينتظر باسترخاء", scenes:ALL_SCENES, angles:["eye","slight-high","three-quarter"], compositions:["close","upper"], text:"a natural waiting posture with small asymmetries and no staged gesture, as if the selfie was taken casually during a pause" },
 
-  { value:"car-driver-close", family:"car", label:"السائق — سيلفي قريب", scenes:CAR, angles:["eye","three-quarter"], compositions:["tight","close"], text:"seated in the stationary driver's seat, torso supported by the seatback, steering wheel only partly visible if it naturally enters the crop" },
+  { value:"car-driver-close", family:"car", label:"السائق — سيلفي قريب", scenes:CAR, angles:["eye","three-quarter"], compositions:["tight","close"], text:"seated in the stationary driver's seat, torso supported by the seatback, with only a thin physically attached upper steering-wheel arc retained at the lower edge as the minimal driver-seat cue; do not force a full wheel into the crop" },
   { value:"car-driver-relaxed", family:"car", label:"السائق — مسترخي", scenes:CAR, angles:["eye","slight-high","three-quarter"], compositions:["close","upper"], text:"relaxed in the stationary driver's seat with natural seat compression and ordinary shoulder asymmetry" },
   { value:"car-driver-side", family:"car", label:"السائق — جانبي", scenes:CAR, angles:["three-quarter","side-close"], compositions:["tight","close","upper"], text:"subject-held selfie from a slight side angle in the stationary driver's seat, cabin perspective and steering-side geometry remaining coherent" },
   { value:"car-driver-low", family:"car", label:"السائق — من أسفل قليلًا", scenes:CAR, angles:["slight-low"], compositions:["close","upper"], text:"a mildly low front-camera selfie from the stationary driver's seat, still within natural arm reach and without exaggerating the chin or cabin geometry" },
@@ -348,8 +348,19 @@ export const SMARTPHONE_REALISM =
 export const SCENE_PRIORITY_RULE =
   "SELFIE PRIORITY: the person taking the selfie is the primary subject. Scene, furniture, vehicle, equipment, floor, windows and clutter are supporting context only. They may be cropped, partially visible, softly rendered or absent if outside the real front-camera field of view. Never force every environmental detail into the frame.";
 
-export const REALISM_ORDER =
-  "CONFLICT ORDER: 1 identity, 2 subject-held selfie geometry, 3 anatomy and contact, 4 selected pose, 5 selected practical lighting, 6 hair and clothing physics, 7 optional scene context. If a lower-priority detail conflicts with a higher-priority rule, omit the lower-priority detail.";
+export const CONFLICT_PRIORITY_LINES = Object.freeze([
+  "1. Reference identity and reference-linked eyewear.",
+  "2. Explicit selected fields: active scene, seat position, expression, clothing and lighting.",
+  "3. Dedicated scene-specific subject-held camera geometry.",
+  "4. Physical anatomy, reach, support, contact and pose feasibility.",
+  "5. Hair, clothing, lighting and smartphone capture physics.",
+  "6. Optional cabin/exterior context and physically caused imperfections.",
+  "7. WikiPrompt calibration and aesthetic finishing."
+]);
+
+export const REALISM_ORDER = `CONFLICT ORDER:
+${CONFLICT_PRIORITY_LINES.join("\n")}
+If a selected detail conflicts with physical feasibility, preserve its intent and correct only the impossible component. If optional context conflicts with a higher-priority rule, omit it rather than changing the scene, seat or camera geometry.`;
 
 export function sceneFamily(sceneId) {
   return SCENES[sceneId]?.family ?? "bedroom";

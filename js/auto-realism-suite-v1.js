@@ -7,7 +7,8 @@ import {
   readVisualSelfieUiState,
   selfieAnglePreset,
   visualSelfieQa
-} from "./visual-selfie-angle-monitor-v1.js?v=20260902-live-geometry1";
+} from "./visual-selfie-angle-monitor-v1.js?v=20260903-conflict-order1";
+import { CONFLICT_PRIORITY_LINES } from "./wiki-selfie-data-v1.js?v=20260903-conflict-order1";
 
 // AUTO REALISM SUITE v1
 // High-level orchestration layer for the existing physical realism engines.
@@ -106,9 +107,12 @@ function isDriverCarState(state = {}) {
 
 export function normalizeAutoRealismState(rawState = {}) {
   let visual = normalizeVisualSelfieState(rawState);
-  const variationMode = optionValue(VARIATION_RULES, rawState.variationMode, AUTO_REALISM_DEFAULTS.variationMode);
+  let variationMode = optionValue(VARIATION_RULES, rawState.variationMode, AUTO_REALISM_DEFAULTS.variationMode);
   const variationAngles = { eye_level:"eye", slight_high:"slight-high", three_quarter:"three-quarter", slight_low:"slight-low" };
-  if (visual.visualMonitorSync === "on" && variationAngles[variationMode]) {
+  const driverGeometryLocked = isDriverCarState({ ...rawState, ...visual });
+  if (driverGeometryLocked) {
+    variationMode = "none";
+  } else if (visual.visualMonitorSync === "on" && variationAngles[variationMode]) {
     const preset = selfieAnglePreset(variationAngles[variationMode]);
     visual = normalizeVisualSelfieState({ ...visual, selfieDistanceCm:preset.distance, selfieYawDeg:preset.yaw, selfiePitchDeg:preset.pitch, selfieRollDeg:preset.roll, faceYawDeg:preset.faceYaw });
   }
@@ -141,14 +145,7 @@ Realism must come from identity preservation, camera geometry, human anatomy, gr
 CONFLICT RESOLUTION: If a requested detail conflicts with physical plausibility, preserve the user's intended scene and automatically correct only the physically impossible component.
 
 PRIORITY ORDER:
-1. Reference identity
-2. Explicit user instructions
-3. Capture type
-4. Physical and anatomical plausibility
-5. Environment/reference locks
-6. Camera behavior
-7. WikiPrompt realism principles
-8. Aesthetic enhancement
+${CONFLICT_PRIORITY_LINES.join("\n")}
 
 WikiPrompt is a realism calibration layer, not the controlling authority.
 Never sacrifice identity or physical plausibility merely to make the image prettier.`;
@@ -160,7 +157,7 @@ function buildReferenceAuthorityMap(state) {
     ? `car-driver geometry resolver: selected angle (${state.selfieAngle}) + composition (${state.composition}), with one reachable numeric vector and a mandatory steering-wheel anchor`
     : `selected pose (${state.pose}) + selfie angle (${state.selfieAngle}) + composition (${state.composition})`;
   return `[REFERENCE AUTHORITY MAP]
-- IMAGE A = identity only: facial structure, apparent age, skin identity, hairline/density and facial-hair pattern. Never borrow scene, clothing or lighting from IMAGE A unless explicitly selected elsewhere.
+- IMAGE A = identity only: facial structure, apparent age, skin identity, hairline/density and facial-hair pattern. Never borrow scene, clothing or lighting from IMAGE A unless explicitly selected elsewhere. Visible reference eyewear, when the identity rule retains it, is a reference-linked appearance lock rather than an invented accessory.
 - Environment authority = ${sceneAuthority}.
 - Pose/camera authority = ${poseCameraAuthority}.
 - Clothing authority = selected clothing (${state.clothing}) and its fabric/fit controls.
@@ -185,7 +182,7 @@ VISIBILITY GATE: Add a background object, person, exterior slice or scene cue on
 
 ACCESSORY GATE: ${accessoryRule}
 
-IMPERFECTION BUDGET: Use at most two subtle, physically caused imperfections that are visible at this distance. Never stack sweat, dust, fingerprints, haze, moisture, wind, clutter and wrinkles as decorative effects.
+IMPERFECTION BUDGET: Use at most two subtle, physically caused optional imperfections that are visible at this distance. Normal skin texture, pores and local tone variation are baseline capture traits, not decorative defects. Never stack sweat, dust, fingerprints, haze, moisture, wind, clutter and wrinkles as decorative effects.
 
 MIRROR / TEXT SAFETY: If a mirror naturally enters the crop, use one coherent reflection path and keep all reflected geometry physically consistent. Do not force clothing text to be readable; omit incidental typography when reflection legibility would create a contradiction.
 
@@ -194,7 +191,7 @@ ${driverRule}`.replace(/\n\n$/u, "");
 
 function buildLockRule(state) {
   const locks = [];
-  if (state.lockIdentity === "on") locks.push("identity/reference face structure");
+  if (state.lockIdentity === "on") locks.push("identity/reference face structure and reference-linked eyewear when present");
   if (state.lockScene === "on") locks.push("scene/place/vehicle-or-room context");
   if (state.lockClothing === "on") locks.push("clothing selection and material family");
   if (state.lockLighting === "on") locks.push("time and selected lighting event");
@@ -206,8 +203,11 @@ Keep unchanged across regeneration and variations: ${locks.join(", ")}. A variat
 
 function buildContinuityRule(state) {
   if (state.continuityMode !== "on") return "";
+  const driverRule = isDriverCarState(state)
+    ? "For an active driver selfie, retain the exact locked numeric camera vector; only naturally resulting minor occlusion or crop effects may differ."
+    : "Change only the selected variation delta and whatever minor occlusion/crop naturally follows from that camera move.";
   return `[SCENE CONTINUITY]
-Treat this prompt as one frame from a continuous real session. Preserve the same person, selected place, clothing, time-of-day and lighting logic between variants. Keep vehicle/room topology, material identity and left/right orientation stable. Change only the selected variation delta and whatever minor occlusion/crop naturally follows from that camera move.`;
+Treat this prompt as one frame from a continuous real session. Preserve the same person, selected place, clothing, time-of-day and lighting logic between variants. Keep vehicle/room topology, material identity and left/right orientation stable. ${driverRule}`;
 }
 
 function buildGeneratorRule(state) {
@@ -273,7 +273,6 @@ export function applyAutoRealismSuite({ positive = "", negative = "", state:rawS
     "invented generic accessory or product prop",
     "forced readable clothing text in a mirror reflection",
     "camera outside natural arm reach",
-    "visual selfie monitor geometry ignored",
     "impossible selfie yaw pitch or roll",
     "beautification overriding physical plausibility",
     "cinematic polish overriding smartphone realism"
@@ -298,7 +297,7 @@ export function applyAutoRealismSuite({ positive = "", negative = "", state:rawS
       { label:"Prompt Compression", value:`${state.promptCompression} · ضغط آمن لا يحذف أقفال الهوية والكاميرا والإضاءة` },
       { label:"Continuity", value:state.continuityMode === "on" ? "مقفل عبر التنويعات" : "غير مقفل" },
       { label:"Locked Fields", value:[state.lockIdentity === "on" && "الهوية", state.lockScene === "on" && "المشهد", state.lockClothing === "on" && "الملابس", state.lockLighting === "on" && "الإضاءة", state.lockExpression === "on" && "التعبير"].filter(Boolean).join("، ") || "لا يوجد" },
-      { label:"Variation", value:state.variationMode === "none" ? "لا يوجد" : state.variationMode },
+      { label:"Variation", value:state.driverCarGeometryLocked ? "مقفل على هندسة السائق" : state.variationMode === "none" ? "لا يوجد" : state.variationMode },
       { label:"Auto Fix", value:conflicts.length ? `تم تمرير ${conflicts.length} تعارض مصحح من المحركات الأساسية` : "لا توجد تعارضات أساسية متبقية" },
       { label:"Realism Score", value:risk ? `${risk.score}/100 · ${risk.level}` : "يحسبه محرك Advanced Realism" }
     ],
@@ -336,10 +335,43 @@ function renderExternalGeneratorSetup(root = document) {
   panel.innerHTML = `<span>${setup.label}</span><div class="readonly-card"><strong>اختيارية وخارج الـPositive/Negative Prompt</strong><ul>${items}</ul></div><small>هذه إعدادات للمضيف أو سير العمل فقط؛ لا تغيّر الهوية أو هندسة السيلفي أو أقفال المشهد.</small>`;
 }
 
+function syncDriverVariationControl(root = document) {
+  const select = root.querySelector("#variation-mode");
+  const button = root.querySelector("#next-realism-variation");
+  const hint = root.querySelector("#variation-mode-hint");
+  if (!select) return;
+  const driverLocked = isDriverCarState({
+    studioSection:root.querySelector("#studio-section")?.value,
+    scene:root.querySelector("#scene")?.value,
+    carSeat:root.querySelector("#car-seat")?.value
+  });
+  if (driverLocked) {
+    select.value = "none";
+    select.disabled = true;
+    if (button) {
+      button.disabled = true;
+      button.setAttribute("aria-disabled", "true");
+      button.title = "هندسة سيلفي السائق مقفلة لمنع تعارض الزوايا";
+    }
+    if (hint) hint.textContent = "في مقعد السائق، متجه الكاميرا المقفل هو السلطة الوحيدة؛ لا يوجد تنويع زاوية إضافي.";
+    return;
+  }
+  select.disabled = false;
+  if (button) {
+    button.disabled = false;
+    button.setAttribute("aria-disabled", "false");
+    button.removeAttribute("title");
+  }
+  if (hint) hint.textContent = "يبدل زاوية واحدة فقط ويحافظ على الحقول المقفلة.";
+}
+
 export function mountAutoRealismSuite(form) {
   if (!form || typeof document === "undefined") return;
   mountVisualSelfieAngleMonitor(form);
-  if (document.querySelector("#auto-realism-suite")) return;
+  if (document.querySelector("#auto-realism-suite")) {
+    syncDriverVariationControl(document);
+    return;
+  }
   const section = document.createElement("section");
   section.className = "panel priority-panel";
   section.id = "auto-realism-suite";
@@ -361,7 +393,7 @@ export function mountAutoRealismSuite(form) {
       ${toggleField("lock-clothing", "🔒 الملابس", AUTO_REALISM_DEFAULTS.lockClothing)}
       ${toggleField("lock-lighting", "🔒 الإضاءة", AUTO_REALISM_DEFAULTS.lockLighting)}
       ${toggleField("lock-expression", "🔒 التعبير", AUTO_REALISM_DEFAULTS.lockExpression)}
-      <div class="field"><span>التنويعات</span><button type="button" class="secondary-button compact-button" id="next-realism-variation">التنويع التالي</button><small>يبدل زاوية واحدة فقط ويحافظ على الحقول المقفلة.</small></div>
+      <div class="field"><span>التنويعات</span><button type="button" class="secondary-button compact-button" id="next-realism-variation">التنويع التالي</button><small id="variation-mode-hint">يبدل زاوية واحدة فقط ويحافظ على الحقول المقفلة.</small></div>
       <div class="field field-span-2"><span>الطبقات المعاد استخدامها</span><div class="readonly-card">MASTER REALISM POLICY · WikiPrompt Calibration · Visual Selfie Angle Monitor · Selfie Geometry · Contact Physics · Lighting Physics · Advanced Realism · Realism Score</div><small>لا ازدواجية: AUTO REALISM ينسق المحركات الموجودة بدل تكرارها.</small></div>
     </div>`;
 
@@ -376,9 +408,11 @@ export function mountAutoRealismSuite(form) {
     document.head.append(style);
   }
   renderExternalGeneratorSetup(document);
+  syncDriverVariationControl(document);
 }
 
 export function readAutoRealismUiState(root = document) {
+  syncDriverVariationControl(root);
   const read = (id, fallback) => root.querySelector(`#${id}`)?.value ?? fallback;
   return normalizeAutoRealismState({
     ...readVisualSelfieUiState(root),
@@ -401,6 +435,11 @@ export function bindAutoRealismSuite(onChange) {
   const ids = ["auto-realism","realism-preset","generator-profile","prompt-compression","continuity-mode","variation-mode","lock-identity","lock-scene","lock-clothing","lock-lighting","lock-expression"];
   ids.forEach((id) => document.querySelector(`#${id}`)?.addEventListener("change", () => {
     if (id === "generator-profile") renderExternalGeneratorSetup(document);
+    if (id === "variation-mode") syncDriverVariationControl(document);
+    onChange?.();
+  }));
+  ["studio-section", "scene", "car-seat"].forEach((id) => document.querySelector(`#${id}`)?.addEventListener("change", () => {
+    syncDriverVariationControl(document);
     onChange?.();
   }));
   document.querySelector("#next-realism-variation")?.addEventListener("click", () => {

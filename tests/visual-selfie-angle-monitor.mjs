@@ -85,6 +85,8 @@ assert.doesNotMatch(driverSection,/\[VISUAL SELFIE ANGLE MONITOR\]/u);
 assert.match(driverSection,/40 cm/u);
 assert.match(driverSection,/thin, physically attached upper steering-wheel arc/u);
 assert.match(driverSection,/Never introduce a second camera distance/u);
+assert.match(driverSection,/torso and head aligned with the steering-wheel axis/u);
+assert.doesNotMatch(driverSection,/only the head and eyes make the small camera correction/u);
 
 const driverQa = visualSelfieQa(driverLocked);
 assert.ok(driverQa.some((item) => item.label === "Car Driver Geometry"));
@@ -110,14 +112,14 @@ const suite = applyAutoRealismSuite({
 });
 assert.match(suite.positive,/\[VISUAL SELFIE ANGLE MONITOR\]/u);
 assert.match(suite.negative,/camera outside natural arm reach/u);
-assert.match(suite.negative,/visual selfie monitor geometry ignored/u);
+assert.doesNotMatch(suite.negative,/visual selfie monitor geometry ignored/u);
 assert.match(suite.meta.selfieGeometry,/50cm\/Y24\/P-2\/R2/u);
 
 const driverSuite = applyAutoRealismSuite({
   positive:"[PHONE REALISM]\nSubject-held front camera only.",
   state:{
     studioSection:"car", scene:"rangeRover", carSeat:"driver-left", pose:"car-driver-close", selfieAngle:"eye", composition:"tight", clothing:"work-blue-navy", lighting:"car-night-parking-led", time:"night",
-    selfieDistanceCm:76, selfieYawDeg:0, selfiePitchDeg:18, selfieRollDeg:2, faceYawDeg:0, monitorComposition:"tight"
+    selfieDistanceCm:76, selfieYawDeg:0, selfiePitchDeg:18, selfieRollDeg:2, faceYawDeg:0, monitorComposition:"tight", variationMode:"slight_high"
   }
 });
 assert.match(driverSuite.positive,/\[CAR DRIVER SELFIE GEOMETRY — SOLE AUTHORITY\]/u);
@@ -125,5 +127,8 @@ assert.doesNotMatch(driverSuite.positive,/\[VISUAL SELFIE ANGLE MONITOR\]/u);
 assert.match(driverSuite.positive,/40 cm/u);
 assert.match(driverSuite.positive,/mandatory steering-wheel anchor/u);
 assert.match(driverSuite.meta.selfieGeometry,/40cm\/Y0\/P-3\/R2/u);
+assert.equal(driverSuite.state.variationMode,"none", "Driver geometry must suppress a competing One-Click Variation");
+assert.doesNotMatch(driverSuite.positive,/\[ONE-CLICK VARIATION\]/u);
+assert.equal(driverSuite.qa.find((item) => item.label === "Variation")?.value,"مقفل على هندسة السائق");
 
 console.log("Visual Selfie Angle Monitor tests passed");

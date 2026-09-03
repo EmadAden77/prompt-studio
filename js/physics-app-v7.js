@@ -1,6 +1,7 @@
 import {
   DEFAULT_STATE,
   buildPromptPack,
+  buildStructuredPromptSpec,
   getCarSeatOptions,
   getClothingFitOptions,
   getClothingOptions,
@@ -23,7 +24,7 @@ import {
   isCustomScene,
   isTextRoomReference,
   normalizeState
-} from "./physics-prompt-engine-v5.js?v=20260902-expression-lock1";
+} from "./physics-prompt-engine-v5.js?v=20260903-json-output1";
 import {
   REALISM_CORE_NEGATIVE_RULES,
   buildRealismCoreSections,
@@ -32,7 +33,7 @@ import {
   getSubjectMomentOptions,
   realismCoreQaItems,
   resolveRealismCoreState
-} from "./realism-core-v1.js?v=20260902-distance-capture1";
+} from "./realism-core-v1.js?v=20260903-conflict-order1";
 import {
   ADVANCED_REALISM_NEGATIVE_RULES,
   advancedRealismQaItems,
@@ -43,7 +44,7 @@ import {
   getSceneProfileOptions,
   optimizePrompt,
   resolveAdvancedRealismState
-} from "./advanced-realism-v1.js";
+} from "./advanced-realism-v1.js?v=20260903-conflict-order1";
 import { wikiPromptService } from "./services/wikiPromptService.js";
 import {
   AUTO_REALISM_DEFAULTS,
@@ -52,7 +53,7 @@ import {
   mountAutoRealismSuite,
   normalizeAutoRealismState,
   readAutoRealismUiState
-} from "./auto-realism-suite-v1.js?v=20260902-master-policy1";
+} from "./auto-realism-suite-v1.js?v=20260903-conflict-order1";
 import { CAMERA_HOLDER_OPTIONS, GROUP_ARRANGEMENT_OPTIONS, GROUP_COUNT_OPTIONS, GROUP_INTERACTION_OPTIONS, GROUP_SELFIE_DEFAULTS, buildGroupSelfieEnhancement, evaluateGroupRealism, isGroupSelfie, normalizeGroupSelfieState } from "./group-selfie-engine-v1.js";
 import { ACCIDENTAL_DEFAULTS, ACCIDENTAL_DEVICE_OPTIONS, ACCIDENTAL_EXPOSURE_OPTIONS, ACCIDENTAL_FOCUS_OPTIONS, ACCIDENTAL_INTENSITY_OPTIONS, ACCIDENTAL_MOTION_OPTIONS, ACCIDENTAL_POSITION_OPTIONS, ACCIDENTAL_TILT_OPTIONS, ACCIDENTAL_TRIGGER_OPTIONS, applyAccidentalDeviceAuthority, buildAccidentalCaptureEnhancement, isAccidentalCapture, normalizeAccidentalState } from "./accidental-capture-engine-v1.js";
 import { SCENARIO_DEFAULTS, SCENARIO_OPTIONS, buildScenarioLock, getScenarioSceneOptions, normalizeScenarioState, scenarioForScene } from "./scenario-section-engine-v1.js";
@@ -136,6 +137,7 @@ const templateHint = document.querySelector("#template-hint");
 const resultPanel = document.querySelector("#result-panel");
 const positivePrompt = document.querySelector("#positive-prompt");
 const negativePrompt = document.querySelector("#negative-prompt");
+const jsonPrompt = document.querySelector("#json-prompt");
 const resultMeta = document.querySelector("#result-meta");
 const qaList = document.querySelector("#qa-list");
 const qaItemTemplate = document.querySelector("#qa-item-template");
@@ -189,6 +191,20 @@ function wikiStatusText(status = wikiPromptService.getStatus()) {
 
 function composeWikiFirstPrompt(basePrompt, guidance) {
   return guidance ? `[WIKIPROMPT BASE REALISM]\n${guidance}\n\n${basePrompt}` : basePrompt;
+}
+
+function renderStructuredJson(pack, guidance = "") {
+  const positive = composeWikiFirstPrompt(pack.positive, guidance);
+  const spec = buildStructuredPromptSpec(pack.state, {
+    positive,
+    negative:pack.negative,
+    qa:pack.qa,
+    conflicts:pack.conflicts,
+    risk:pack.risk,
+    suiteMeta:pack.suiteMeta,
+    wikiPromptGuidance:guidance
+  });
+  jsonPrompt.value = JSON.stringify(spec, null, 2);
 }
 
 function restoreSelectedScene() {
@@ -473,7 +489,8 @@ function renderPrompt() {
   const cachedGuidance = wikiPromptService.getCachedGuidance(config);
   positivePrompt.value = composeWikiFirstPrompt(pack.positive, cachedGuidance);
   negativePrompt.value = pack.negative;
-  resultMeta.textContent = `${pack.template.title} · Xiaomi 15 Ultra Front · AUTO REALISM · ${pack.suiteMeta.generator} · ${pack.suiteMeta.compression} · ${pack.risk.score}/100 · ${pack.state.time === "night" ? "ليلي" : "نهاري"}`;
+  renderStructuredJson(pack, cachedGuidance);
+  resultMeta.textContent = `${pack.template.title} · Xiaomi 15 Ultra Front · AUTO REALISM · JSON READY · ${pack.suiteMeta.generator} · ${pack.suiteMeta.compression} · ${pack.risk.score}/100 · ${pack.state.time === "night" ? "ليلي" : "نهاري"}`;
   if (isGroupSelfie(pack.state)) resultMeta.textContent += ` · GROUP ${pack.state.groupCount} · ${pack.groupScore.score}/100`;
   if (isAccidentalCapture(pack.state)) resultMeta.textContent += ` · ACCIDENTAL CAPTURE · ${pack.state.accidentalDevice === "iphone" ? "iPhone 15 Pro Max" : "Xiaomi 15 Ultra"}`;
   renderQa([...pack.qa, { label:"WikiPrompt", value:cachedGuidance ? "هو أساس البرومبت الحالي" : "جارٍ تحميل أساس الواقعية" }]);
@@ -484,6 +501,7 @@ function renderPrompt() {
     if (syncId !== wikiSyncId) return;
     const status = wikiPromptService.getStatus();
     positivePrompt.value = composeWikiFirstPrompt(pack.positive, guidance);
+    renderStructuredJson(pack, guidance);
     renderQa([...pack.qa, {
       label:"WikiPrompt",
       value:guidance ? (status.state === "synced-fallback" ? "الأساس الواقعي مضاف عبر النسخة الاحتياطية" : "الأساس الواقعي مضاف أول البرومبت") : wikiStatusText(status).replace(/^\S+\sWikiPrompt:\s*/, "")
@@ -521,6 +539,13 @@ function downloadPrompt() {
   const href = URL.createObjectURL(blob); const link = document.createElement("a");
   link.href = href; link.download = "wikiprompt-selfie-auto-realism.txt"; document.body.append(link); link.click(); link.remove(); URL.revokeObjectURL(href);
   setStatus(`تم تنزيل ملف البرومبت. · ${wikiStatusText()}`);
+}
+
+function downloadJsonPrompt() {
+  const blob = new Blob([jsonPrompt.value], { type:"application/json;charset=utf-8" });
+  const href = URL.createObjectURL(blob); const link = document.createElement("a");
+  link.href = href; link.download = "wikiprompt-selfie-specification.json"; document.body.append(link); link.click(); link.remove(); URL.revokeObjectURL(href);
+  setStatus(`تم تنزيل ملف JSON المنظّم. · ${wikiStatusText()}`);
 }
 
 function resetForm() {
@@ -595,8 +620,11 @@ form.addEventListener("submit", (event) => { event.preventDefault(); renderPromp
 document.querySelector("#reset-form").addEventListener("click", resetForm);
 document.querySelector("#copy-positive").addEventListener("click", () => copyText(positivePrompt.value, "البرومبت"));
 document.querySelector("#copy-negative").addEventListener("click", () => copyText(negativePrompt.value, "البرومبت السلبي"));
+document.querySelector("#copy-json").addEventListener("click", () => copyText(jsonPrompt.value, "JSON المنظّم"));
+document.querySelector("#copy-json-output").addEventListener("click", () => copyText(jsonPrompt.value, "JSON المنظّم"));
 document.querySelector("#copy-pack").addEventListener("click", () => copyText(`POSITIVE PROMPT\n${positivePrompt.value}\n\nNEGATIVE PROMPT\n${negativePrompt.value}`, "الحزمة الكاملة"));
 document.querySelector("#download-prompt").addEventListener("click", downloadPrompt);
+document.querySelector("#download-json").addEventListener("click", downloadJsonPrompt);
 bindAutoRealismSuite(renderPrompt);
 
 initializeStaticSelects(); renderStudioSectionCards(); restoreSelectedScene(); refreshDynamicFields(); renderPrompt(); closeStudioSection();

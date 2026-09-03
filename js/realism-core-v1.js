@@ -37,6 +37,7 @@ const isGym = (scene) => scene === "gym";
 const isStreet = (scene) => scene === "street";
 const isCustom = (scene) => scene === "custom";
 const isTight = (state) => state.composition === "tight" || state.composition === "close";
+const isDriverCar = (state) => isCar(state.scene) && state.carSeat === "driver-left";
 const isMovingPose = (state) => /walk|browsing|activity/i.test(`${state.poseFamily} ${state.pose}`);
 
 const DISTANCE_FALLBACKS = Object.freeze({ tight:40, close:48, upper:56, medium:62, full:68 });
@@ -161,7 +162,9 @@ export function resolveRealismCoreState(rawState = {}) {
 
 function buildPlaceStateRule(state) {
   const selected = placeOption(state.placeState);
-  const base = selected.text;
+  const base = isCar(state.scene) && selected.value === "active"
+    ? "If a real exterior slice is genuinely visible, allow modest ordinary parking activity; never create activity merely to fill the frame"
+    : selected.text;
   if (isBedroom(state.scene)) {
     return `${base}. Keep bedding, bedside items and personal objects subtly uneven only where they naturally enter frame; never stage the room symmetrically for the camera.`;
   }
@@ -195,7 +198,7 @@ function buildPeopleRule(state) {
 function buildSubjectMomentRule(state) {
   const moment = momentOption(state.subjectMoment).value;
   const map = {
-    relaxed:"The subject appears ordinarily relaxed: uneven shoulders, natural breathing posture, relaxed jaw and no presentation pose.",
+    relaxed:"The subject appears ordinarily relaxed: uneven shoulders, natural breathing posture, a relaxed jaw beneath the selected expression and no presentation pose.",
     "just-arrived":"The subject looks as if he has just arrived: posture has not fully settled, clothing may retain mild movement creases, and grooming remains ordinary rather than freshly staged.",
     waiting:"The subject is naturally waiting during a brief pause, with asymmetrical relaxed posture and no deliberate model pose.",
     "after-work":"The subject carries mild end-of-workday realism: slightly relaxed clothing structure, subtle tiredness only if compatible with the selected expression, and no exaggerated exhaustion.",
@@ -228,7 +231,9 @@ function buildCameraRule(state) {
     ? "The accidental-capture engine remains the authority for any temporary focus, motion or exposure transition."
     : "Autofocus settles on the eyes or nearest usable upper-face plane. Any background softness comes only from real distance, focus falloff and the front-camera pipeline; never use a portrait-mode cutout, opaque hair mask or shallow DSLR bokeh.";
   const lensRule = "Use modern front-camera lens correction: room or cabin lines remain broadly stable, with only subtle outer-frame perspective change caused by the real lens and camera position. Never create an exaggerated barrel warp across the face, dashboard or walls.";
-  const captureRule = `DISTANCE-AWARE SMARTPHONE CAPTURE: phone-to-face distance ${capture.distance} cm (${capture.label}). ${capture.perspective} ${focusRule} ${lensRule}`;
+  const captureRule = isDriverCar(state)
+    ? `DISTANCE-AWARE SMARTPHONE CAPTURE: use the exact distance and vector declared in [CAR DRIVER SELFIE GEOMETRY — SOLE AUTHORITY]. Do not introduce a second numeric distance, eye-height rule or camera vector. ${capture.perspective} ${focusRule} ${lensRule}`
+    : `DISTANCE-AWARE SMARTPHONE CAPTURE: phone-to-face distance ${capture.distance} cm (${capture.label}). ${capture.perspective} ${focusRule} ${lensRule}`;
   if (state.time === "night") {
     return `${captureRule} Use real front-camera auto behavior in low light: exposure meters near the face imperfectly, selected practical highlights may clip, shadow detail falls away, luminance and chroma noise increase, white balance follows the dominant practical source with small residual color error, and sharpening remains restrained. ${accidental ? "Do not add a second normal-capture motion rule." : movement ? "Allow only slight physically plausible motion softness from the subject-held phone or body movement; do not freeze everything with impossible shutter speed." : "Keep the face reasonably stable but not unnaturally noise-free or studio-sharp."}`;
   }
@@ -262,7 +267,7 @@ function buildInteractionRule(state) {
 export function buildRealismCoreSections(state, conflicts = []) {
   const conflictText = conflicts.length
     ? `[REALISM CONFLICT CHECK] ${conflicts.map((item) => item.prompt).join(" ")} Lower-priority conflicting details have been corrected before prompt assembly.`
-    : "[REALISM CONFLICT CHECK] No high-risk contradiction detected among scene, crop, people density, subject moment and lighting. If a later detail conflicts with selfie geometry or physical support, omit the lower-priority detail.";
+    : "[REALISM CONFLICT CHECK] Constraint normalization is active for scene, crop, people density, subject moment and lighting. If a later optional detail conflicts with selfie geometry or physical support, omit the lower-priority detail rather than changing a locked field.";
 
   return [
     `[PLACE STATE] ${buildPlaceStateRule(state)}`,

@@ -46,6 +46,10 @@ assert.match(index, /Conflict Check · Contact Physics · Camera Auto Behavior �
 assert.match(index, /Prompt Optimizer · Occlusion · Microphysics/u);
 assert.match(index, /id="positive-prompt"/u);
 assert.match(index, /id="negative-prompt"/u);
+assert.match(index, /id="json-prompt"/u);
+assert.match(index, /id="copy-json"/u);
+assert.match(index, /id="download-json"/u);
+assert.match(index, /JSON SPECIFICATION/u);
 assert.match(index, /id="qa-list"/u);
 assert.match(index, /<input id="mode" name="mode" type="hidden" value="selfie"/u);
 assert.doesNotMatch(index, /<option value="standard">/u, "Standard/observer photography must not remain as an active option");
@@ -81,6 +85,9 @@ assert.match(app, /sceneProfile:value\("scene-profile"\)/u);
 assert.match(app, /accessoryProfile:value\("accessory-profile"\)/u);
 assert.match(app, /objectProfile:value\("object-profile"\)/u);
 assert.match(app, /wikiPromptService\.sync\(config\)/u);
+assert.match(app, /buildStructuredPromptSpec/u);
+assert.match(app, /renderStructuredJson/u);
+assert.match(app, /downloadJsonPrompt/u);
 assert.doesNotMatch(app, /bedroomLighting/u, "Old parallel bedroom-lighting state must be removed from the live controller");
 assert.doesNotMatch(app, /activity:value/u, "Free-form pose activity must not compete with the linked pose catalog");
 

@@ -209,6 +209,9 @@ export function buildVisualSelfieGeometrySection(rawState = {}) {
   if (result.state.visualSelfieMonitor !== "on") return "";
   const composition = resolveMonitorComposition(result.state);
   if (result.state.driverCarGeometryLocked) {
+    const faceYawRule = Math.abs(result.state.faceYawDeg) <= 1
+      ? "Keep the torso and head aligned with the steering-wheel axis; only the eyes make the small natural correction toward the lens."
+      : "Keep the torso broadly aligned with the steering-wheel axis; rotate the head only by the declared face-yaw value and let the eyes finish the small natural correction toward the lens.";
     return `[CAR DRIVER SELFIE GEOMETRY — SOLE AUTHORITY]
 This is the only numeric camera geometry for a left-front driver selfie. It overrides incompatible manual monitor values and any generic camera-distance wording elsewhere in the prompt.
 - Device: Xiaomi 15 Ultra FRONT camera, held by the seated driver himself.
@@ -216,7 +219,7 @@ This is the only numeric camera geometry for a left-front driver selfie. It over
 - Phone yaw: ${signed(result.state.selfieYawDeg)}; ${yawMeaning(result.state.selfieYawDeg)}.
 - Phone pitch: ${signed(result.state.selfiePitchDeg)}; ${pitchMeaning(result.state.selfiePitchDeg)}.
 - Phone roll: ${signed(result.state.selfieRollDeg)}; ${rollMeaning(result.state.selfieRollDeg)}.
-- Face yaw relative to the vehicle-forward axis: ${signed(result.state.faceYawDeg)}. Keep the torso broadly aligned with the steering-wheel axis; only the head and eyes make the small camera correction.
+- Face yaw relative to the vehicle-forward axis: ${signed(result.state.faceYawDeg)}. ${faceYawRule}
 - Framing target: ${composition}. Keep the face primary while preserving a thin, physically attached upper steering-wheel arc in the lower foreground directly in front of the driver's torso.
 - Driver mapping: real vehicle-left driver door/window and A-pillar remain on the subject's left; the center console remains on the subject's right; the instrument cluster stays behind the steering wheel.
 - Feasibility diagnostic: ${result.score}/100 (${result.level}). This geometry is intentionally constrained to a reachable confined-cabin selfie and may not be widened, mirrored, moved to the passenger seat, or replaced with a mounted/third-person camera.

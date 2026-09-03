@@ -201,11 +201,14 @@ function textOf(options, value) {
   return options.find((item) => item.value === value)?.text ?? "";
 }
 
-function poseFabricRule(poseFamily, poseId, sceneId) {
+function poseFabricRule(poseFamily, poseId, sceneId, composition) {
   if (poseFamily === "lying" || /lying|bed/i.test(poseId)) {
     return "Because the body is lying or reclining, cloth shifts toward gravity, bunches asymmetrically away from supported surfaces, and compresses under the shoulder, side, back or hip only where those areas actually contact bedding or furniture.";
   }
   if (poseFamily === "seated" || /seat|seated|driver|waiting/i.test(poseId) || sceneId === "rangeRover") {
+    if (["tight","close"].includes(composition)) {
+      return "Because the body is seated, any visible collar, shoulders, upper chest and sleeves respond to real posture and arm position. Seat, lap and waist compression remain physically present but implicit outside this crop; do not force them into view.";
+    }
     return "Because the body is seated, fabric develops localized compression and radial folds at the lap, waist and seat contact, with elbow or sleeve creases from arm position; do not invent knee or trouser folds when those areas are outside the crop.";
   }
   if (poseFamily === "standing" || poseFamily === "street") {
@@ -234,7 +237,7 @@ export function buildClothingPhysicsText(state) {
     `Iron state: ${iron}.`,
     `Wear state: ${wear}.`,
     `Fit: ${fit}.`,
-    poseFabricRule(state.poseFamily, state.pose, state.scene),
+    poseFabricRule(state.poseFamily, state.pose, state.scene, state.composition),
     crop,
     "Keep weave scale, edge thickness, seam tension, wrinkle size, compression, stretch and specular response consistent with this exact fabric and weight. Pressing may reduce old wrinkles but never prevents fresh pose creases. Wear may soften structure but never changes the garment into a different material. Do not make matte cotton glossy, linen perfectly smooth, heavy fabric float, or technical sports fabric behave like paper."
   ].join(" ");

@@ -3,6 +3,7 @@ import {
   CAMERA_SELFIE_LOCK,
   CITIES,
   COMPOSITION_OPTIONS,
+  CONFLICT_PRIORITY_LINES,
   EXPRESSION_OPTIONS,
   HAIR_DENSITY_LOCK,
   HAIR_OPTIONS,
@@ -20,7 +21,7 @@ import {
   SUBJECT_BODY,
   BEDROOM_WINDOW_OPTIONS,
   sceneFamily
-} from "./wiki-selfie-data-v1.js?v=20260902-bedroom-topology1";
+} from "./wiki-selfie-data-v1.js?v=20260903-conflict-order1";
 import {
   CLOTHING_NEGATIVE_RULES,
   buildClothingPhysicsText,
@@ -33,6 +34,7 @@ import {
   getWearStateOptions,
   normalizeClothingPhysicsState
 } from "./clothing-physics-v1.js";
+import { evaluateSelfieGeometry, resolveMonitorComposition } from "./visual-selfie-angle-monitor-v1.js?v=20260903-json-output1";
 
 const clean = (value) => String(value ?? "").replace(/\s+/g, " ").trim();
 const sentence = (value) => {
@@ -381,7 +383,7 @@ function buildReferenceSection(state) {
     sentence(referenceInstruction),
     "The reference image controls permanent facial identity, not the temporary facial expression captured in that reference. Preserve facial anatomy while applying the selected [EXPRESSION LOCK] even when the reference face is neutral or different.",
     sentence(buildVisibleBodyInstruction(state)),
-    "If eyeglasses are visibly worn in the identity reference, preserve that same pair as part of identity: the same frame shape, color character, proportions and ordinary fit, with both temples physically supported by the ears. Do not remove, replace or redesign visible reference eyewear.",
+    "If eyeglasses are visibly worn in the identity reference, preserve that same pair as a reference-linked appearance lock: the same frame shape, color character, proportions and ordinary fit, with both temples physically supported by the ears. Do not remove, replace or redesign visible reference eyewear.",
     notes ? sentence(`Reference-specific observations to preserve if compatible: ${notes}`) : ""
   ].filter(Boolean).join(" ");
 }
@@ -396,6 +398,9 @@ function buildPoseSection(state) {
   const angle = optionText(getSelfieAngleOptions(state.pose), state.selfieAngle);
   const composition = optionText(getCompositionOptions(state.pose), state.composition);
   const driverCar = isDriverCarState(state);
+  const driverComposition = state.composition === "close"
+    ? "close selfie framing showing head and shoulders with enough context to establish a parked-driver selfie, not the full vehicle or location"
+    : composition;
   const cropRule = driverCar
     ? "Keep the selected close selfie crop, but retain only a thin natural upper steering-wheel arc at the lower edge as the mandatory proof of the driver position. Do not force a full wheel, dashboard or console into view."
     : isCarScene(state.scene)
@@ -405,9 +410,9 @@ function buildPoseSection(state) {
     "[SELFIE POSE]",
     sentence(pose?.text ?? "a natural subject-held selfie pose"),
     driverCar
-      ? sentence(`Selected angle intent: ${angle}. The numeric camera vector remains exclusively controlled by the car-driver geometry lock`)
+      ? "Use only the exact vector declared in [CAR DRIVER SELFIE GEOMETRY — SOLE AUTHORITY]. Do not add a generic eye-height, broad reach range or alternative angle description."
       : sentence(angle),
-    sentence(composition),
+    sentence(driverCar ? driverComposition : composition),
     "The pose, crop and phone position must describe the same single instant.",
     cropRule
   ].filter(Boolean).join(" ");
@@ -704,7 +709,16 @@ function backgroundNegativeRules(state) {
       "perfectly symmetrical stock-photo interior"
     ];
   }
-  return ["sterile empty street when exterior context is naturally visible", ...common];
+  return common;
+}
+
+function buildFinalQa(state) {
+  const contextRule = isCustomScene(state.scene)
+    ? "For a custom scene, preserve the user's requested place while omitting lower-priority details that do not fit the real field of view."
+    : isDriverCarState(state)
+      ? "For this driver selfie, preserve the left-front seat mapping and the mandatory thin steering-wheel anchor without widening into a vehicle showcase."
+      : "Keep optional context subordinate to the selected front-camera field of view.";
+  return `[FINAL QA] One identity, one subject-held phone, one front camera, one lens, one physically possible arm reach, one coherent pose, one clothing material system, one lighting setup and one exposure strategy. The selected fabric, weight, ironing, wear state and fit must remain mutually compatible and must produce folds only where the pose and crop physically permit them. For car scenes, preserve the selected seat position and cabin side mapping. Background activity may appear only where the selected front-camera angle and crop physically reveal it. ${contextRule} Do not add full-body requirements to a tight crop. Omit secondary details rather than forcing them into the frame.`;
 }
 
 export function getTemplate(rawState = {}) {
@@ -738,7 +752,7 @@ export function buildPositivePrompt(rawState = {}) {
     buildSceneSpecificSafety(state),
     `[PHONE REALISM] ${SMARTPHONE_REALISM}`,
     `[CONFLICT RESOLUTION] ${REALISM_ORDER}`,
-    "[FINAL QA] One identity, one subject-held phone, one front camera, one lens, one physically possible arm reach, one coherent pose, one clothing material system, one lighting setup and one exposure strategy. The selected fabric, weight, ironing, wear state and fit must remain mutually compatible and must produce folds only where the pose and crop physically permit them. For car scenes, preserve the selected seat position and cabin side mapping. Background activity may appear only where the selected front-camera angle and crop physically reveal it. For a custom scene, preserve the user's requested place while omitting lower-priority details that do not fit the real field of view. Do not add full-body requirements to a tight crop. Omit secondary details rather than forcing them into the frame."
+    buildFinalQa(state)
   ];
   return sections.filter(Boolean).join("\n\n");
 }
@@ -843,5 +857,232 @@ export function buildPromptPack(rawState = {}) {
     qa:buildRealismQa(state),
     template:getTemplate(state),
     state
+  };
+}
+
+function structuredOption(options, value) {
+  const selected = optionByValue(options, value);
+  return {
+    id:value || null,
+    label:selected?.label ?? value ?? null,
+    instruction:selected?.text ?? null
+  };
+}
+
+function structuredLockNames(state) {
+  return [
+    state.lockIdentity === "on" && "identity_and_reference_linked_eyewear",
+    state.lockScene === "on" && "scene_and_location",
+    state.lockClothing === "on" && "clothing_and_material_family",
+    state.lockLighting === "on" && "time_and_selected_lighting",
+    state.lockExpression === "on" && "expression"
+  ].filter(Boolean);
+}
+
+function structuredAccessories(state) {
+  const accessory = state.accessoryProfile && state.accessoryProfile !== "none" ? state.accessoryProfile : null;
+  const object = state.objectProfile && state.objectProfile !== "none" ? state.objectProfile : null;
+  return {
+    headwear:accessory === "cap" ? { type:"cap", detail:clean(state.accessoryDetail) || null } : null,
+    jewelry:accessory === "ring" ? { type:"ring", detail:clean(state.accessoryDetail) || null } : null,
+    wrist_accessory:accessory === "watch" ? { type:"watch", detail:clean(state.accessoryDetail) || null } : null,
+    eyewear:{
+      reference_linked:"preserve the same pair only when visibly worn in the identity reference",
+      selected_accessory:accessory === "eyeglasses" ? { type:"eyeglasses", detail:clean(state.accessoryDetail) || null } : null,
+      held_object:object === "held-eyeglasses"
+    },
+    device:{
+      capture_device:"Xiaomi 15 Ultra FRONT camera",
+      subject_held:true,
+      visible_in_frame:"not required; do not force the phone body or holding arm into the crop"
+    },
+    prop:object ? {
+      type:object,
+      user_instruction:clean(state.interactionObject) || null,
+      visibility:"secondary; omit it when the selected crop cannot show it with real reach, support and contact"
+    } : null,
+    invention_policy:"Do not invent additional accessories, jewelry, props, products, a second free hand or duplicate objects."
+  };
+}
+
+function structuredCameraGeometry(state) {
+  const geometry = evaluateSelfieGeometry(state);
+  const monitorActive = geometry.state.visualSelfieMonitor === "on";
+  const driverLocked = geometry.state.driverCarGeometryLocked;
+  return {
+    authority:driverLocked ? "car_driver_selfie_geometry_sole_authority" : monitorActive ? "visual_selfie_angle_monitor" : "selected_selfie_angle",
+    subject_held:true,
+    front_camera_only:true,
+    device:"Xiaomi 15 Ultra FRONT camera",
+    distance_cm:monitorActive ? geometry.state.selfieDistanceCm : null,
+    phone_yaw_deg:monitorActive ? geometry.state.selfieYawDeg : null,
+    phone_pitch_deg:monitorActive ? geometry.state.selfiePitchDeg : null,
+    phone_roll_deg:monitorActive ? geometry.state.selfieRollDeg : null,
+    face_yaw_deg:monitorActive ? geometry.state.faceYawDeg : null,
+    framing_target:resolveMonitorComposition({ ...geometry.state, composition:state.composition }),
+    feasibility:monitorActive ? { score:geometry.score, level:geometry.level, reachable:geometry.reachable } : null,
+    driver_constraints:driverLocked ? [
+      "left_front_driver_seat_only",
+      "unmirrored_left_hand_drive_mapping",
+      "thin_upper_steering_wheel_arc_in_lower_foreground",
+      "no_second_camera_distance_or_competing_angle"
+    ] : []
+  };
+}
+
+function structuredBackground(state) {
+  const driver = isDriverCarState(state);
+  const scene = isCustomScene(state)
+    ? clean(state.customScene) || "user-defined location"
+    : SCENES[state.scene]?.environment || state.scene;
+  const city = optionByValue(CITIES, state.city)?.text ?? "a plausible Saudi Arabian location";
+  const required = driver
+    ? ["thin physically attached upper steering-wheel arc at the lower foreground"]
+    : [];
+  const optional = driver
+    ? ["one small coherent driver-side cabin cue", "exterior slice only through real visible vehicle glass"]
+    : isCustomScene(state)
+      ? ["only details from the written custom location that the real selfie crop can reveal"]
+      : ["scene cues only when the selected front-camera crop physically reaches them"];
+  const family = isCustomScene(state) ? "custom" : sceneFamily(state.scene);
+  return {
+    setting:scene,
+    scene_id:state.scene,
+    scene_family:family,
+    city,
+    wall_color:null,
+    elements:{ required, optional, visibility_rule:"Keep the face primary. Omit context instead of widening the camera, changing the pose or forcing a full room, vehicle or street view." },
+    atmosphere:state.time === "night"
+      ? "uneven real-world night illumination with darker gaps and restrained practical highlights"
+      : "ordinary real-world daylight exposure with natural contrast and only physically present sources",
+    environment_note:clean(state.environmentNote) || null,
+    background_visibility:getBackgroundVisibility(state)
+  };
+}
+
+function structuredClothing(state) {
+  return {
+    garment:structuredOption(getClothingOptions(state.scene), state.clothing),
+    custom_modifier:clean(state.clothingCustom) || null,
+    fabric:structuredOption(getFabricOptions(state.clothing), state.fabric),
+    fabric_weight:structuredOption(getFabricWeightOptions(state.clothing, state.fabric), state.fabricWeight),
+    iron_state:structuredOption(getIronStateOptions(state.clothing), state.ironState),
+    wear_state:structuredOption(getWearStateOptions(state.clothing), state.wearState),
+    fit:structuredOption(getClothingFitOptions(state.clothing), state.clothingFit),
+    crop_rule:["tight", "close"].includes(state.composition)
+      ? "Describe only visible collar, shoulders, upper chest and sleeves. Keep lower-body fabric physics implicit outside the crop."
+      : "Describe only garment regions that naturally enter the selected framing."
+  };
+}
+
+/**
+ * Produces the portable JSON contract for an already-resolved scene.  The JSON
+ * contains the selected facts and locks while compiled_prompt remains the
+ * generator-ready natural-language rendering of exactly those facts.
+ */
+export function buildStructuredPromptSpec(rawState = {}, {
+  positive = "",
+  negative = "",
+  qa = [],
+  conflicts = [],
+  risk = null,
+  suiteMeta = {},
+  wikiPromptGuidance = ""
+} = {}) {
+  const state = normalizeState(rawState);
+  const pose = getPoseById(state.pose);
+  const lighting = structuredOption(getLightingOptions(state.scene, state.time), state.lighting);
+  const scene = isCustomScene(state)
+    ? { id:"custom", description:clean(state.customScene) || null, supporting_details:clean(state.customSceneDetails) || null }
+    : { id:state.scene, description:SCENES[state.scene]?.environment ?? state.scene, supporting_details:null };
+  const driver = isDriverCarState(state);
+  const seat = isCarScene(state.scene) ? structuredOption(CAR_SEAT_OPTIONS, state.carSeat) : null;
+  const expression = structuredOption(EXPRESSION_OPTIONS, state.expression);
+  const hair = structuredOption(HAIR_OPTIONS, state.hair);
+  const skin = structuredOption(SKIN_OPTIONS, state.skin);
+  const angle = structuredOption(getSelfieAngleOptions(state.pose), state.selfieAngle);
+  const composition = structuredOption(getCompositionOptions(state.pose), state.composition);
+  const compiledPositive = positive || buildPositivePrompt(state);
+  const compiledNegative = negative || buildNegativePrompt(state);
+
+  return {
+    schema_version:"realistic-image-generator/v1",
+    task:{
+      type:"generate_one_realistic_image",
+      capture_type:driver ? "subject_held_driver_selfie" : "subject_held_front_camera_selfie",
+      instruction:"Generate one candid, physically plausible smartphone photograph. The subject and the act of taking the selfie are the primary visual event."
+    },
+    authority:{
+      identity_reference:{
+        source:state.hasReference ? "attached_reference_image" : "attach_exactly_one_identity_reference_image",
+        role:"identity_only",
+        controls:["facial structure", "apparent age", "skin identity", "hairline and visible density", "facial-hair pattern", "reference-linked eyewear when visible"],
+        does_not_control:["scene", "clothing", "pose", "expression", "lighting", "camera angle", "crop"]
+      },
+      scene,
+      conflict_priority:CONFLICT_PRIORITY_LINES,
+      lower_priority_resolution:"Preserve the selected intent, correct only the physically impossible component, and omit optional context before changing identity, seat position or camera geometry."
+    },
+    subject:{
+      description:"the same person from the sole identity reference, casually taking the selfie himself",
+      mirror_rules:{
+        applicable:false,
+        policy:"Not a mirror selfie. If a mirror naturally enters the crop, keep one coherent reflection path and omit incidental readable text when reflection legibility would contradict geometry."
+      },
+      age:"preserve the apparent age from the identity reference; do not de-age or age the face",
+      expression,
+      hair:{
+        arrangement:hair,
+        density_lock:"Preserve only the reference-visible hairline, density, scalp visibility and strand coverage. Styling may rearrange existing hair but may not add hair, volume or scalp coverage."
+      },
+      clothing:structuredClothing(state),
+      face:{
+        identity_lock:"Preserve facial structure, feature spacing, eyes, brows, nose, lips, jaw, chin, ears, skin tone and natural asymmetry. Do not beautify, symmetrize, slim, reshape or substitute the face.",
+        skin
+      },
+      visible_anatomy:["tight", "close"].includes(state.composition)
+        ? "Describe only anatomy that naturally enters the head-and-shoulders crop; do not force full body, height, weight, hands or legs into view."
+        : "Keep all visible anatomy connected, supported and physically plausible; every visible hand has exactly five fingers."
+    },
+    accessories:structuredAccessories(state),
+    photography:{
+      camera_style:"raw realistic smartphone front-camera capture; ordinary handheld framing; no beauty treatment, fake DSLR bokeh, studio light or cinematic polish",
+      angle,
+      shot_type:composition,
+      aspect_ratio:null,
+      texture:"ordinary skin texture, restrained sharpening, realistic auto-exposure, limited highlight recovery, subtle sensor noise appropriate to the selected light and slight handheld imperfection",
+      camera_geometry:structuredCameraGeometry(state)
+    },
+    scene:{
+      selected_pose:{ id:state.pose, label:pose?.label ?? state.pose, instruction:pose?.text ?? null },
+      seat_position:seat,
+      time_of_day:state.time,
+      lighting,
+      vehicle_orientation:driver ? "unmirrored_left_hand_drive" : null,
+      stationary:driver ? true : null
+    },
+    background:structuredBackground(state),
+    realism:{
+      priority:"photographic_realism_over_visual_perfection",
+      contact_and_support:"Body support, gravity, material response, occlusion, reflection and lighting must arise from one physically possible moment.",
+      auto_resolution:"Use contextual defaults only for unspecified secondary details. Never replace selected clothing, lighting, expression, scene, seat, camera geometry or reference identity with generic assumptions.",
+      imperfection_budget:{ max_count:2, rule:"Only subtle physically caused imperfections visible at this distance; ordinary pores and tonal variation are baseline capture traits, not decorative defects." },
+      locked_fields:structuredLockNames(state),
+      continuity:state.continuityMode === "on",
+      variation:state.variationMode || "none",
+      realism_risk:risk ? { score:risk.score, level:risk.level } : null
+    },
+    generator:{
+      profile:suiteMeta.generator || state.generatorProfile || "chatgpt",
+      prompt_compression:suiteMeta.compression || state.promptCompression || "full",
+      wiki_prompt_calibration:wikiPromptGuidance || null,
+      instruction:"Treat this JSON as one coherent capture specification. Do not invent generic styling, scene details or accessories that are absent or null."
+    },
+    automatic_conflict_corrections:(conflicts || []).map((conflict) => ({ code:conflict.code || "resolved", note:conflict.qa || conflict.prompt || "Resolved by the priority order." })),
+    qa:(qa || []).map((item) => ({ label:item.label, value:item.value })),
+    compiled_prompt:{
+      positive:compiledPositive,
+      negative:compiledNegative.split(/,\s*/u).filter(Boolean)
+    }
   };
 }
