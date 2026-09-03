@@ -65,6 +65,29 @@
 .effect-choice:has(input:checked) { border-color:#6f7cff; background:rgba(111,124,255,.12); }
 .effect-choice input { width:20px; height:20px; accent-color:#6f7cff; }
 
+/*
+ * Canonical output guard.
+ * Positive/Negative remain in the DOM only for legacy runtime compatibility,
+ * but they are not exposed as user-copyable outputs. The portable JSON is the
+ * sole visible generation contract, preventing accidental prompt merging.
+ */
+label[for="positive-prompt"],
+label[for="negative-prompt"],
+#copy-pack,
+#download-prompt {
+  display: none !important;
+}
+
+.output-grid .output-field--json {
+  grid-column: 1 / -1;
+}
+
+.output-field--json > span::after {
+  content: " · CANONICAL ONLY";
+  opacity: .72;
+  font-size: .78em;
+}
+
 @media (max-width: 760px) {
   .studio-section-grid,.studio-workspace-header { grid-template-columns:1fr; }
   .priority-panel .form-grid,
