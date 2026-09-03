@@ -1,12 +1,16 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   ADVANCED_REALISM_NEGATIVE_RULES,
   advancedRealismQaItems,
   buildAdvancedRealismSections,
   evaluateRealismRisk,
+  getAccessoryProfileOptions,
+  getObjectProfileOptions,
+  getSceneProfileOptions,
+  inferSceneProfile,
   optimizePrompt,
   resolveAdvancedRealismState
 } from "../js/advanced-realism-v1.js";
@@ -14,58 +18,85 @@ import {
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
 
-const base = {
-  scene:"custom", customScene:"inside a modern medical optical store", customSceneDetails:"eyeglass display racks and one small mirror",
-  city:"riyadh", time:"night", poseFamily:"relaxed", pose:"custom-relaxed-close", composition:"close", selfieAngle:"three-quarter",
-  lighting:"custom-night-led", peopleDensity:"low", placeState:"used", subjectMoment:"browsing", interactionObject:"eyeglasses",
-  sceneProfile:"optical-store", accessoryProfile:"eyeglasses", accessoryDetail:"black full-rim rectangular optical frame", objectProfile:"eyeglasses",
-  clothing:"thobe-white", identityNotes:"preserve identity"
+assert.ok(getSceneProfileOptions().length >= 10, "Scene Profiles catalog should be broad");
+assert.ok(getAccessoryProfileOptions().some((item) => item.value === "eyeglasses"));
+assert.ok(getObjectProfileOptions().some((item) => item.value === "laptop"));
+
+assert.equal(inferSceneProfile({ scene:"custom", customScene:"داخل محل نظارات طبي في السعودية", customSceneDetails:"رفوف ومرايا" }), "optical-store");
+assert.equal(inferSceneProfile({ scene:"custom", customScene:"داخل بقالة صغيرة في حي سكني", customSceneDetails:"" }), "grocery");
+assert.equal(inferSceneProfile({ scene:"custom", customScene:"داخل صيدلية حديثة", customSceneDetails:"" }), "pharmacy");
+
+const mismatch = resolveAdvancedRealismState({
+  scene:"custom", customScene:"داخل بقالة صغيرة", customSceneDetails:"رفوف منتجات", sceneProfile:"optical-store",
+  accessoryProfile:"none", objectProfile:"none", accessoryDetail:"", interactionObject:"", composition:"upper"
+});
+assert.equal(mismatch.state.sceneProfile, "grocery", "Written custom location must override a conflicting scene profile");
+assert.ok(mismatch.conflicts.some((item) => item.code === "scene-profile-mismatch"));
+
+const autoAccessory = resolveAdvancedRealismState({
+  scene:"custom", customScene:"محل نظارات", sceneProfile:"auto", accessoryProfile:"auto",
+  accessoryDetail:"نظارة بإطار أسود رفيع", objectProfile:"auto", interactionObject:"", composition:"close"
+});
+assert.equal(autoAccessory.state.accessoryProfile, "eyeglasses");
+
+const largeObject = resolveAdvancedRealismState({
+  scene:"custom", customScene:"كوفي", sceneProfile:"auto", accessoryProfile:"none", accessoryDetail:"",
+  objectProfile:"auto", interactionObject:"يمسك لابتوب", composition:"close"
+});
+assert.equal(largeObject.state.objectProfile, "laptop");
+assert.ok(largeObject.conflicts.some((item) => item.code === "large-object-tight-crop"));
+
+const advancedState = {
+  scene:"custom", customScene:"داخل محل نظارات طبي", customSceneDetails:"رفوف نظارات ومرآة",
+  sceneProfile:"optical-store", accessoryProfile:"eyeglasses", accessoryDetail:"إطار أسود رفيع",
+  objectProfile:"held-eyeglasses", interactionObject:"يمسك نظارة باليد الحرة", composition:"upper",
+  selfieAngle:"three-quarter", peopleDensity:"sparse", hasReference:true, time:"night"
 };
+const sections = buildAdvancedRealismSections(advancedState, []);
+const joined = sections.join("\n\n");
+assert.match(joined, /\[SCENE PROFILE\]/u);
+assert.match(joined, /\[OCCLUSION ENGINE\]/u);
+assert.match(joined, /\[ACCESSORY PHYSICS\]/u);
+assert.match(joined, /\[OBJECT PROFILE\]/u);
+assert.match(joined, /\[ENVIRONMENT MICROPHYSICS\]/u);
+assert.match(joined, /\[REALISM RISK CHECK\]/u);
+assert.match(joined, /at most two subtle cues/u);
+assert.match(joined, /Do not generate worn eyeglasses/u, "Held-eyeglasses Object Profile must suppress a duplicate worn pair");
+assert.match(joined, /fingers correctly occlude the frame according to depth/u);
 
-const resolved = resolveAdvancedRealismState(base);
-assert.equal(resolved.state.sceneProfile, "optical-store");
-assert.equal(resolved.state.accessoryProfile, "eyeglasses");
-assert.equal(resolved.state.objectProfile, "eyeglasses");
-assert.equal(resolved.state.sceneProfileSource, "explicit");
-assert.equal(resolved.state.advancedProfileSource, "explicit");
+const risk = evaluateRealismRisk(advancedState, []);
+assert.equal(risk.score, 100);
+assert.equal(risk.level, "ممتاز");
 
-const sections = buildAdvancedRealismSections(resolved.state, resolved.conflicts).join("\n\n");
-assert.match(sections, /\[SCENE PROFILE\]/u);
-assert.match(sections, /medical optical store/u);
-assert.match(sections, /\[OCCLUSION ENGINE\]/u);
-assert.match(sections, /\[ACCESSORY PHYSICS\]/u);
-assert.match(sections, /black full-rim rectangular optical frame/u);
-assert.match(sections, /\[OBJECT PROFILE\]/u);
-assert.match(sections, /eyeglasses/u);
-assert.match(sections, /\[ENVIRONMENT MICROPHYSICS\]/u);
-assert.match(sections, /\[REALISM RISK CHECK\]/u);
+const risky = evaluateRealismRisk({
+  ...advancedState,
+  hasReference:false,
+  customScene:"",
+  sceneProfile:"auto",
+  objectProfile:"laptop",
+  composition:"close"
+}, [{ code:"x", qa:"x", prompt:"x" }]);
+assert.ok(risky.score < risk.score);
+assert.ok(risky.issues.length >= 3);
 
-const inferred = resolveAdvancedRealismState({
-  ...base,
-  sceneProfile:"auto", accessoryProfile:"auto", objectProfile:"auto", customScene:"inside an optical store with wall-mounted frame displays"
-});
-assert.equal(inferred.state.sceneProfile, "optical-store");
-assert.equal(inferred.state.accessoryProfile, "eyeglasses");
-assert.equal(inferred.state.objectProfile, "eyeglasses");
-assert.equal(inferred.state.advancedProfileSource, "inferred");
-
-const car = resolveAdvancedRealismState({
-  ...base,
-  studioSection:"car", scene:"rangeRover", customScene:"", customSceneDetails:"", sceneProfile:"auto", accessoryProfile:"auto", objectProfile:"none"
-});
-assert.equal(car.state.sceneProfile, "car");
-const carSections = buildAdvancedRealismSections(car.state, car.conflicts).join("\n\n");
-assert.match(carSections, /vehicle-relative/u);
-assert.match(carSections, /left-hand-drive/u);
-assert.doesNotMatch(carSections, /optical store/u);
-
-const risk = evaluateRealismRisk({ ...base, peopleDensity:"busy", interactionObject:"large unsupported object" }, ["camera mismatch", "light mismatch"]);
-assert.ok(risk.score < 100);
-assert.ok(["LOW","MEDIUM","HIGH"].includes(risk.level));
+const driverCloseState = {
+  studioSection:"car", scene:"rangeRover", composition:"close", selfieAngle:"slight-low",
+  sceneProfile:"auto", accessoryProfile:"none", accessoryDetail:"", objectProfile:"none", interactionObject:"",
+  peopleDensity:"sparse", hasReference:true, time:"day"
+};
+const driverSections = buildAdvancedRealismSections(driverCloseState, []).join("\n\n");
+assert.doesNotMatch(driverSections, /\[SCENE PROFILE\]/u, "Car scenes must not receive a dormant custom-scene profile");
+assert.match(driverSections, /\[CAR ORIENTATION LOCK\]/u, "Car scene must lock final physical orientation");
+assert.match(driverSections, /unmirrored physical camera geometry/u);
+assert.doesNotMatch(driverSections, /DRIVER SEAT VISUAL VERIFICATION/u);
+assert.doesNotMatch(driverSections, /mandatory.*steering/iu);
+const driverQa = advancedRealismQaItems(driverCloseState, [], {});
+assert.ok(driverQa.some((item) => item.label === "اتجاه المقصورة"));
+assert.ok(!driverQa.some((item) => /مقعد/u.test(item.label)));
 
 const optimized = optimizePrompt([
   "[IDENTITY] Keep the exact identity. Keep the exact identity.",
-  "[CONTEXT] Keep context secondary. Keep context secondary.",
+  "[OPTIONAL CONTEXT] Keep context secondary. Keep context secondary.",
   "[CAMERA] Keep front-camera geometry. Keep front-camera geometry.",
   "[CAR ORIENTATION LOCK] Keep physical left-right mapping. Keep physical left-right mapping.",
 ].join("\n\n"));
@@ -75,7 +106,7 @@ assert.match(optimized.prompt, /\[CAR ORIENTATION LOCK\] Keep physical left-righ
 assert.equal((optimized.prompt.match(/Keep context secondary\./gu) || []).length, 1, "Non-protected exact sentence duplication should be removed");
 assert.equal(optimized.stats.removedSentences, 1);
 
-const qa = advancedRealismQaItems(resolved.state, [], optimized.stats);
+const qa = advancedRealismQaItems(advancedState, [], optimized.stats);
 assert.ok(qa.some((item) => item.label === "مؤشر الواقعية"));
 assert.ok(qa.some((item) => item.label === "Prompt Optimizer"));
 assert.ok(ADVANCED_REALISM_NEGATIVE_RULES.includes("impossible occlusion order"));
