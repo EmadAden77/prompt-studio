@@ -4,7 +4,7 @@ import { resolveAdvancedRealismState, buildAdvancedRealismSections } from "../js
 const variation = normalizeAutoRealismState({ variationMode:"slight_high", visualMonitorSync:"on", selfiePitchDeg:0 });
 assert.equal(variation.selfiePitchDeg, -11);
 const driverVariation = normalizeAutoRealismState({
-  studioSection:"car", scene:"rangeRover", carSeat:"driver-left", selfieAngle:"eye", composition:"close",
+  studioSection:"car", scene:"rangeRover", selfieAngle:"eye", composition:"close",
   variationMode:"slight_high", visualMonitorSync:"on", selfiePitchDeg:0
 });
 assert.equal(driverVariation.variationMode, "none", "Driver geometry must reject a competing variation delta");

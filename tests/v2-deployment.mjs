@@ -12,7 +12,7 @@ assert.match(index, /id="prompt-form"/u);
 assert.match(index, /id="reference-image"/u);
 assert.match(index, /id="scene"/u);
 assert.match(index, /id="pose"/u);
-assert.match(index, /id="car-seat"/u);
+
 assert.match(index, /id="expression"/u);
 assert.match(index, /id="lighting"/u);
 assert.match(index, /id="selfie-angle"/u);
@@ -25,7 +25,7 @@ const app = readFileSync(resolve(root, "js/physics-app-v7.js"), "utf8");
 assert.match(app, /buildStructuredPromptSpec/u);
 assert.match(app, /renderStructuredJson/u);
 assert.match(app, /normalizeState/u);
-assert.match(app, /getCarSeatOptions/u);
+
 assert.match(app, /getCompatibleBedroomWindowOptions/u);
 assert.doesNotMatch(app, /bedroomLighting/u, "Parallel bedroom-lighting state must stay removed");
 
@@ -50,7 +50,6 @@ const driverState = normalizeState({
   time:"day",
   poseFamily:"car",
   pose:"car-driver-close",
-  carSeat:"passenger-front-right",
   selfieAngle:"three-quarter",
   composition:"close",
   lighting:"car-day-window",
@@ -59,14 +58,12 @@ const driverState = normalizeState({
   visualSelfieMonitor:"on"
 });
 
-assert.equal(driverState.carSeat, "driver-left", "Dedicated car studio must resolve to the front-left driver seat");
 const driverSpec = buildStructuredPromptSpec(driverState, { wikiPromptGuidance:"candid smartphone realism" });
 assert.equal(driverSpec.schema_version, "realistic-image-generator/v2-canonical");
 assert.equal(driverSpec.task.input_contract, "json_only");
 assert.equal(driverSpec.task.capture_type, "subject_held_driver_selfie");
 assert.equal(driverSpec.authority.policy, "single_authority_per_field");
 assert.equal(driverSpec.scene.vehicle_geometry.drive_configuration, "left_hand_drive");
-assert.equal(driverSpec.scene.vehicle_geometry.occupant_seat, "driver-left");
 assert.match(driverSpec.scene.vehicle_geometry.spatial_relations.center_console, /driver's physical right/u);
 assert.match(driverSpec.scene.vehicle_geometry.spatial_relations.driver_door_and_window, /driver's physical left/u);
 assert.match(driverSpec.scene.vehicle_geometry.spatial_relations.projection_rule, /not image-left\/image-right placement/iu);
@@ -84,16 +81,14 @@ assert.doesNotMatch(driverSerialized, /right_hand_drive/iu);
 const bedroomState = normalizeState({
   studioSection:"bedroom",
   scene:"bedroom",
-  carSeat:"driver-left",
   poseFamily:"lying",
   pose:"lying-right-close",
   time:"night",
   lighting:"night-bedside-3000",
   bedroomWindow:"night-charcoal-closed"
 });
-assert.equal(bedroomState.carSeat, "", "Car-seat state must not leak into bedroom scenes");
 const bedroomSpec = buildStructuredPromptSpec(bedroomState);
 assert.equal(bedroomSpec.scene.vehicle_geometry, null);
-assert.equal(bedroomSpec.scene.seat_position, null);
+
 
 console.log("✓ canonical deployment contract: single authority, scene isolation and LHD driver geometry passed");

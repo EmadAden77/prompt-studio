@@ -37,7 +37,7 @@ const isGym = (scene) => scene === "gym";
 const isStreet = (scene) => scene === "street";
 const isCustom = (scene) => scene === "custom";
 const isTight = (state) => state.composition === "tight" || state.composition === "close";
-const isDriverCar = (state) => isCar(state.scene) && state.carSeat === "driver-left";
+const isDriverCar = (state) => isCar(state.scene) && String(state.studioSection || "").toLowerCase() === "car";
 const isMovingPose = (state) => /walk|browsing|activity/i.test(`${state.poseFamily} ${state.pose}`);
 
 const DISTANCE_FALLBACKS = Object.freeze({ tight:40, close:48, upper:56, medium:62, full:68 });

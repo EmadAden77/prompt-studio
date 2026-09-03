@@ -61,7 +61,6 @@ const seatedWorkState = normalizeState({
   time:"day",
   poseFamily:"car",
   pose:"car-driver-close",
-  carSeat:"driver-left",
   clothing:"work-oxford-navy",
   fabric:"cotton-oxford",
   fabricWeight:"medium",

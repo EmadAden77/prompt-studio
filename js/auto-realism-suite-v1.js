@@ -101,8 +101,7 @@ export function getExternalGeneratorSetup(profile) {
 function isDriverCarState(state = {}) {
   const section = String(state.studioSection || "").toLowerCase();
   const scene = String(state.scene || "").toLowerCase();
-  return String(state.carSeat || "") === "driver-left"
-    && (section === "car" || /range.?rover|(?:^|[-_])car(?:[-_]|$)/u.test(scene));
+  return section === "car" && /range.?rover|(?:^|[-_])car(?:[-_]|$)/u.test(scene);
 }
 
 export function normalizeAutoRealismState(rawState = {}) {
@@ -343,7 +342,6 @@ function syncDriverVariationControl(root = document) {
   const driverLocked = isDriverCarState({
     studioSection:root.querySelector("#studio-section")?.value,
     scene:root.querySelector("#scene")?.value,
-    carSeat:root.querySelector("#car-seat")?.value
   });
   if (driverLocked) {
     select.value = "none";
@@ -438,7 +436,7 @@ export function bindAutoRealismSuite(onChange) {
     if (id === "variation-mode") syncDriverVariationControl(document);
     onChange?.();
   }));
-  ["studio-section", "scene", "car-seat"].forEach((id) => document.querySelector(`#${id}`)?.addEventListener("change", () => {
+  ["studio-section", "scene"].forEach((id) => document.querySelector(`#${id}`)?.addEventListener("change", () => {
     syncDriverVariationControl(document);
     onChange?.();
   }));

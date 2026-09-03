@@ -4,7 +4,7 @@ export const SCENARIO_DEFAULTS = Object.freeze({ scenarioMode:"bedroom" });
 export const SCENARIO_OPTIONS = Object.freeze([
   { value:"group", label:"👥 أماكن السيلفي الجماعي", description:"غرفة النوم أو النادي أو الشارع داخل قسم السيلفي الجماعي فقط" },
   { value:"bedroom", label:"🏠 غرفة النوم", description:"السرير والاستلقاء والملابس المنزلية وإضاءة الغرفة" },
-  { value:"car", label:"🚙 السيارة", description:"المقاعد والمقصورة ووضعيات وإضاءة السيارة" },
+  { value:"car", label:"🚙 السيارة", description:"المقصورة ووضعيات وإضاءة السيارة" },
   { value:"street", label:"🌆 الخارج والشارع", description:"الوقوف والمشي والمواقف والإضاءة الخارجية" },
   { value:"gym", label:"🏋️ الجيم", description:"الوضعيات والملابس والإضاءة الرياضية" },
   { value:"custom", label:"✍️ مشهد مخصص", description:"مكان يكتبه المستخدم مع قواعد مستقلة" }
@@ -36,7 +36,6 @@ export function normalizeScenarioState(raw = {}) {
   const allowedScenes = getScenarioSceneOptions(scenarioMode).map((item) => item.value);
   const scene = allowedScenes.includes(raw.scene) ? raw.scene : DEFAULT_SCENES[scenarioMode];
   const state = { ...raw, scenarioMode, scene };
-  if (scenarioMode !== "car") state.carSeat = "";
   if (scenarioMode !== "bedroom") state.bedroomWindow = "";
   if (scenarioMode !== "custom") {
     state.customScene = ""; state.customSceneDetails = ""; state.sceneProfile = "auto";

@@ -104,7 +104,7 @@ const OBJECT_PROFILES = Object.freeze({
 const optionValue = (options, value, fallback) => options.some((item) => item.value === value) ? value : fallback;
 const isCustom = (state) => state.scene === "custom";
 const isCar = (state) => state.scene === "rangeRover";
-const isDriverSeat = (state) => isCar(state) && state.carSeat === "driver-left";
+const isDriverCar = (state) => isCar(state) && String(state.studioSection || "").toLowerCase() === "car";
 const isTight = (state) => ["tight","close"].includes(state.composition);
 
 function scoreKeywords(text, keywords) {
@@ -232,13 +232,7 @@ function buildCarOrientationRule(state) {
   return "[CAR ORIENTATION LOCK] FINAL OUTPUT ORIENTATION: use unmirrored physical camera geometry for the finished image. Treat vehicle-left and vehicle-right as real cabin coordinates, not screen-left and screen-right. Do not horizontally flip, selfie-mirror, swap or reinterpret the cabin after composing the shot. Any visible steering wheel, center console, A-pillar, door, side window, mirror, seat, roof or windshield geometry must preserve the same left-hand-drive mapping from one coherent front-camera viewpoint.";
 }
 
-function buildDriverSeatVerificationRule(state) {
-  if (!isDriverSeat(state)) return "";
-  const tightRule = isTight(state)
-    ? "Because the crop is tight or close, keep the selfie close but reserve only a thin upper steering-wheel rim fragment at the extreme lower edge, no more than 8% of image height, instead of widening into an interior showcase."
-    : "The wider crop should normally preserve more than one coherent driver-side cue when those cues naturally enter frame.";
-  return `[DRIVER SEAT VISUAL VERIFICATION] Keep the subject physically in the LEFT FRONT DRIVER'S SEAT. ${tightRule} A small, physically attached upper steering-wheel rim or column edge is mandatory in front of the subject's lower torso and must align with the real instrument cluster behind it. Preserve the center-console edge on the subject's right and/or coherent driver-door / A-pillar / side-window geometry on the subject's left whenever those cues naturally enter frame. Never fabricate or force a complete steering wheel, wheel hub, spokes or a broad holding forearm. If the selected crop initially misses the steering-wheel cue, adjust the crop slightly downward within the same reachable phone geometry; never treat the seat as visually ambiguous, mirror the cabin, move the wheel, or move the subject to the passenger seat.`;
-}
+
 
 function microCues(state) {
   if (isCustom(state) && SCENE_PROFILES[state.sceneProfile]) return SCENE_PROFILES[state.sceneProfile].micro.slice(0, 2);
@@ -265,14 +259,11 @@ export function evaluateRealismRisk(state, conflicts = []) {
   if (isTight(state) && state.objectProfile === "laptop") { score -= 7; issues.push("اللابتوب كبير بالنسبة لكلوز أب وقد يخرج من الكادر"); }
   if (isTight(state) && state.objectProfile === "shopping-bag") { score -= 5; issues.push("كيس المشتريات قد لا يدخل طبيعيًا في الكادر الضيق"); }
   if (state.peopleDensity === "busy" && isTight(state)) { score -= 10; issues.push("ازدحام البشر مرتفع بالنسبة للكادر الضيق"); }
-  if (isDriverSeat(state) && state.composition === "tight") { score -= 3; issues.push("الكادر الضيق مقفل على قوس مقود علوي رفيع أمام السائق لتثبيت موضعه بصرياً"); }
-  else if (isDriverSeat(state) && state.composition === "close") { score -= 2; issues.push("كلوز أب السائق يحتفظ بقوس مقود علوي ودليل مقصورة متسقين لتثبيت الموضع بصرياً"); }
   if (conflicts.length) { score -= Math.min(10, conflicts.length * 2); issues.push(`تم تصحيح ${conflicts.length} تعارض قبل إخراج البرومبت`); }
   if (state.sceneProfile && state.sceneProfile !== "auto") strengths.push("المشهد المخصص مربوط بملف مكان واقعي");
   if (state.accessoryProfile && state.accessoryProfile !== "none") strengths.push("الإكسسوار له تماس ومقياس وانعكاس مقيدان");
   if (state.objectProfile && state.objectProfile !== "none") strengths.push("الجسم المتفاعل معه له وزن وقبضة ودعم مقيدان");
   if (isCar(state)) strengths.push("اتجاه المقصورة النهائي مقفل على هندسة غير معكوسة");
-  if (isDriverSeat(state) && !isTight(state)) strengths.push("الكادر يسمح عادةً بدليل بصري مباشر على مقعد السائق");
 
   score = Math.max(45, Math.min(100, score));
   const level = score >= 92 ? "ممتاز" : score >= 82 ? "قوي" : score >= 70 ? "جيد مع ملاحظات" : "يحتاج مراجعة";
@@ -280,7 +271,7 @@ export function evaluateRealismRisk(state, conflicts = []) {
 }
 
 const PROTECTED_HEADERS = new Set([
-  "[MASTER REALISM POLICY]","[CONFLICT RESOLUTION]","[IDENTITY]","[CAMERA]","[SELFIE POSE]","[CAR SEAT POSITION]","[CAR DRIVER SELFIE GEOMETRY — SOLE AUTHORITY]","[CAR ORIENTATION LOCK]","[DRIVER SEAT VISUAL VERIFICATION]","[HAIR]","[CLOTHING PHYSICS]","[PRACTICAL LIGHTING]"
+  "[MASTER REALISM POLICY]","[CONFLICT RESOLUTION]","[IDENTITY]","[CAMERA]","[SELFIE POSE]","[CAR SEAT POSITION]","[CAR DRIVER SELFIE GEOMETRY — SOLE AUTHORITY]","[CAR ORIENTATION LOCK]","[HAIR]","[CLOTHING PHYSICS]","[PRACTICAL LIGHTING]"
 ]);
 
 export function optimizePrompt(prompt) {
@@ -323,7 +314,6 @@ export function buildAdvancedRealismSections(state, conflicts = []) {
   return [
     buildSceneProfileRule(state),
     buildCarOrientationRule(state),
-    buildDriverSeatVerificationRule(state),
     buildOcclusionRule(state),
     buildAccessoryRule(state),
     buildObjectRule(state),
@@ -340,10 +330,6 @@ export function advancedRealismQaItems(state, conflicts = [], optimizerStats = {
   const removed = Number(optimizerStats.removedSections || 0) + Number(optimizerStats.removedSentences || 0);
   const carQa = isCar(state) ? [
     { label:"اتجاه المقصورة", value:"الإخراج النهائي غير معكوس؛ يمين/يسار السيارة يتبعان الإحداثيات الفيزيائية للمقصورة" },
-    ...(isDriverSeat(state) ? [{
-      label:"تحقق مقعد السائق",
-      value:isTight(state) ? "الكادر ضيق؛ يجب بقاء دليل بصري واحد على الأقل إذا سمحت الهندسة، وإلا يُسجل الموضع كملتبس بصرياً ولا يُنقل للراكب" : "الكادر يسمح عادةً بإظهار دليل أو أكثر على موضع السائق مع بقاء السيلفي هو الأساس"
-    }] : [])
   ] : [];
   return [
     { label:"مؤشر الواقعية", value:`${risk.score}/100 — ${risk.level}${risk.issues.length ? ` · ${risk.issues.join(" · ")}` : ""}` },
@@ -378,8 +364,8 @@ export const ADVANCED_REALISM_NEGATIVE_RULES = Object.freeze([
   "simultaneous haze dust moisture and wind effects",
   "scene profile overriding user location",
   "catalog-perfect scene symmetry",
-  "horizontally mirrored cabin after seat mapping",
-  "driver rendered in front passenger seat",
+  "horizontally mirrored left-hand-drive cabin",
+  "driver rendered on the wrong side of a left-hand-drive cabin",
   "steering wheel mapped to passenger side",
   "center console on driver's left",
   "driver-seat anchor omitted when the crop can include one"

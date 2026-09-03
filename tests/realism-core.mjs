@@ -86,6 +86,7 @@ assert.ok(wokeStreet.conflicts.some((item) => item.code === "woke-location"));
 
 const nightCar = resolveRealismCoreState(normalizeState({
   ...DEFAULT_STATE,
+  studioSection:"car",
   scene:"rangeRover",
   time:"night",
   poseFamily:"car",

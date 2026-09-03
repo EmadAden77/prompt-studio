@@ -94,7 +94,7 @@ assert.equal(
 const driverSuite = applyAutoRealismSuite({
   positive:"BASE",
   state:{
-    studioSection:"car", scene:"rangeRover", carSeat:"driver-left", pose:"car-driver-close",
+    studioSection:"car", scene:"rangeRover", pose:"car-driver-close",
     selfieAngle:"eye", composition:"tight", clothing:"work-blue-navy", lighting:"car-night-parking-led", time:"night",
     accessoryProfile:"none", objectProfile:"none"
   }

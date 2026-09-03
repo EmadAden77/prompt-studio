@@ -4,13 +4,12 @@ import { buildScenarioLock, getScenarioSceneOptions, normalizeScenarioState } fr
 assert.deepEqual(getScenarioSceneOptions("car").map((item) => item.value), ["rangeRover"]);
 assert.deepEqual(getScenarioSceneOptions("gym").map((item) => item.value), ["gym"]);
 
-const car = normalizeScenarioState({ scenarioMode:"car", scene:"my_bedroom_text", bedroomWindow:"night-charcoal-closed", carSeat:"driver-left" });
+const car = normalizeScenarioState({ scenarioMode:"car", scene:"my_bedroom_text", bedroomWindow:"night-charcoal-closed" });
 assert.equal(car.scene, "rangeRover");
 assert.equal(car.bedroomWindow, "");
 
-const bedroom = normalizeScenarioState({ scenarioMode:"bedroom", scene:"street", carSeat:"driver-left", customScene:"wrong" });
+const bedroom = normalizeScenarioState({ scenarioMode:"bedroom", scene:"street", customScene:"wrong" });
 assert.equal(bedroom.scene, "my_bedroom_text");
-assert.equal(bedroom.carSeat, "");
 assert.equal(bedroom.customScene, "");
 
 const lock = buildScenarioLock({ scenarioMode:"gym", scene:"rangeRover" });

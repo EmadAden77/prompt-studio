@@ -2,7 +2,6 @@ import {
   DEFAULT_STATE,
   buildPromptPack,
   buildStructuredPromptSpec,
-  getCarSeatOptions,
   getClothingFitOptions,
   getClothingOptions,
   getCompatibleBedroomWindowOptions,
@@ -92,8 +91,6 @@ const customSceneField = document.querySelector("#custom-scene-field");
 const customSceneDetailsField = document.querySelector("#custom-scene-details-field");
 const poseFamilySelect = document.querySelector("#pose-family");
 const poseSelect = document.querySelector("#pose");
-const carSeatSelect = document.querySelector("#car-seat");
-const carSeatField = document.querySelector("#car-seat-field");
 const selfieAngleSelect = document.querySelector("#selfie-angle");
 const compositionSelect = document.querySelector("#composition");
 const clothingSelect = document.querySelector("#clothing");
@@ -256,7 +253,7 @@ function readState() {
   return {
     studioSection:value("studio-section"), scenarioMode:value("scenario-mode"), scene:value("scene"), customScene:value("custom-scene"), customSceneDetails:value("custom-scene-details"),
     city:value("city"), time:value("time"), mode:"selfie", poseFamily:value("pose-family"), pose:value("pose"),
-    carSeat:value("car-seat"), clothing:value("clothing"), clothingCustom:value("clothing-custom"),
+    clothing:value("clothing"), clothingCustom:value("clothing-custom"),
     fabric:value("fabric"), fabricWeight:value("fabric-weight"), ironState:value("iron-state"), wearState:value("wear-state"),
     clothingFit:value("clothing-fit"), hair:value("hair"), skin:value("skin"), expression:value("expression"),
     composition:value("composition"), selfieAngle:value("selfie-angle"), messiness:value("messiness"),
@@ -339,7 +336,7 @@ function buildEnhancedPack(rawState = {}) {
 
 function syncUiToNormalizedState(state) {
   const pairs = [
-    [sceneSelect,state.scene],[poseFamilySelect,state.poseFamily],[poseSelect,state.pose],[carSeatSelect,state.carSeat],
+    [sceneSelect,state.scene],[poseFamilySelect,state.poseFamily],[poseSelect,state.pose],
     [selfieAngleSelect,state.selfieAngle],[compositionSelect,state.composition],[clothingSelect,state.clothing],
     [fabricSelect,state.fabric],[fabricWeightSelect,state.fabricWeight],[ironStateSelect,state.ironState],
     [wearStateSelect,state.wearState],[clothingFitSelect,state.clothingFit],[hairSelect,state.hair],[skinSelect,state.skin],
@@ -408,10 +405,6 @@ function refreshDynamicFields() {
   populateSelect(poseFamilySelect, getPoseFamilyOptions(scene, studioSection), poseFamilySelect.value || DEFAULT_STATE.poseFamily);
   populateSelect(poseSelect, getPoseOptions(scene, poseFamilySelect.value, studioSection), poseSelect.value || DEFAULT_STATE.pose);
 
-  const car = isCarScene(scene);
-  carSeatField.hidden = !car;
-  if (car) populateSelect(carSeatSelect, getCarSeatOptions(scene, poseSelect.value), carSeatSelect.value || DEFAULT_STATE.carSeat);
-  else carSeatSelect.replaceChildren();
 
   populateSelect(selfieAngleSelect, getSelfieAngleOptions(poseSelect.value), selfieAngleSelect.value || DEFAULT_STATE.selfieAngle);
   populateSelect(compositionSelect, getCompositionOptions(poseSelect.value), compositionSelect.value || DEFAULT_STATE.composition);
@@ -428,13 +421,6 @@ function refreshDynamicFields() {
   if (normalized.poseFamily !== poseFamilySelect.value) {
     populateSelect(poseFamilySelect, getPoseFamilyOptions(normalized.scene, normalized.studioSection), normalized.poseFamily);
     populateSelect(poseSelect, getPoseOptions(normalized.scene, normalized.poseFamily, normalized.studioSection), normalized.pose);
-  }
-  if (isCarScene(normalized.scene)) {
-    carSeatField.hidden = false;
-    populateSelect(carSeatSelect, getCarSeatOptions(normalized.scene, normalized.pose), normalized.carSeat);
-  } else {
-    carSeatField.hidden = true;
-    carSeatSelect.replaceChildren();
   }
 
   populateSelect(selfieAngleSelect, getSelfieAngleOptions(normalized.pose), normalized.selfieAngle);
@@ -465,7 +451,7 @@ function localStatus(pack) {
   const conflict = pack.conflicts.length ? ` · صُحح ${pack.conflicts.length} تعارض واقعي تلقائياً` : " · فحص التعارضات سليم";
   let base;
   if (isTextRoomReference(pack.state.scene)) base = hasReference ? "هوية واحدة مثبتة؛ وصف الغرفة سياق اختياري ولا يلزم IMAGE B." : "الغرفة وصف نصي مساعد؛ أرفق صورة هوية واحدة فقط عند الاستخدام.";
-  else if (isCarScene(pack.state.scene)) base = hasReference ? "تم تثبيت الهوية وموضع الجلوس داخل السيارة؛ الخلفية غير إجبارية." : "موضع الجلوس داخل السيارة مقفل؛ أرفق صورة هوية واحدة فقط عند الاستخدام.";
+  else if (isCarScene(pack.state.scene)) base = hasReference ? "تم تثبيت الهوية وهندسة السائق داخل السيارة؛ الخلفية غير إجبارية." : "هندسة السائق داخل السيارة مقفلة تلقائياً؛ أرفق صورة هوية واحدة فقط عند الاستخدام.";
   else if (isCustomScene(pack.state.scene)) {
     if (!pack.state.customScene) base = "اكتب وصف المشهد المخصص أولاً؛ المحرك لن يخترع المكان بدلاً منك.";
     else base = hasReference ? "تم تثبيت الهوية والمشهد المخصص؛ التفاصيل الثانوية مرتبطة بزاوية السيلفي." : "المشهد المخصص جاهز؛ أرفق صورة هوية واحدة فقط عند الاستخدام.";
@@ -606,7 +592,7 @@ studioSectionSelect.addEventListener("change", () => { persistSelectedScene(); r
 backToSectionsButton.addEventListener("click", returnToStudioHub);
 window.addEventListener("popstate", () => closeStudioSection());
 postProcessingInputs.forEach((input) => input.addEventListener("change", () => { refreshPostProcessingSelection(); refreshDynamicFields(); }));
-["time","pose-family","pose","car-seat","lighting","clothing","fabric","composition","selfie-angle","place-state","people-density","subject-moment","scene-profile","accessory-profile","object-profile","group-mode","group-count","camera-holder","group-arrangement","group-interaction","group-auto-fix","capture-mode","accidental-trigger","accidental-device","accidental-position","accidental-motion","accidental-tilt","accidental-focus","accidental-exposure","accidental-intensity"].forEach((id) => {
+["time","pose-family","pose","lighting","clothing","fabric","composition","selfie-angle","place-state","people-density","subject-moment","scene-profile","accessory-profile","object-profile","group-mode","group-count","camera-holder","group-arrangement","group-interaction","group-auto-fix","capture-mode","accidental-trigger","accidental-device","accidental-position","accidental-motion","accidental-tilt","accidental-focus","accidental-exposure","accidental-intensity"].forEach((id) => {
   document.querySelector(`#${id}`)?.addEventListener("change", refreshDynamicFields);
 });
 form.addEventListener("submit", (event) => { event.preventDefault(); renderPrompt(); resultPanel.hidden = false; resultPanel.scrollIntoView({ behavior:"smooth", block:"start" }); });

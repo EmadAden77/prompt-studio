@@ -39,12 +39,11 @@ const optionByValue = (options, value) => options.find((item) => item.value === 
 const optionText = (options, value, fallback = "") => optionByValue(options, value)?.text ?? fallback;
 const cloneOption = (item) => item ? { ...item } : null;
 const CUSTOM_SCENE_ID = "custom";
-const DRIVER_SEAT = "driver-left";
 
 const CANONICAL_CONFLICT_PRIORITY_LINES = Object.freeze([
   "1. Reference identity and reference-linked eyewear.",
   "2. Active capture type and its dedicated capture authority.",
-  "3. Explicit selected scene, seat position, expression, clothing and lighting.",
+  "3. Explicit selected scene, expression, clothing and lighting.",
   "4. Physical and anatomical feasibility: reach, support, contact, gravity and single-instant causality.",
   "5. Canonical camera geometry compatible with the active capture type and physical feasibility.",
   "6. Scene topology, vehicle-relative geometry, material, lighting and reflection physics.",
@@ -76,16 +75,10 @@ const CUSTOM_LIGHTING_OPTIONS = Object.freeze({
   ]
 });
 
-const CAR_SEAT_OPTIONS = Object.freeze([
-  { value:"driver-left", label:"مقعد السائق الأمامي الأيسر", text:"front-left driver seat of an unmirrored left-hand-drive vehicle" },
-  { value:"passenger-front-right", label:"مقعد الراكب الأمامي الأيمن", text:"front-right passenger seat of an unmirrored left-hand-drive vehicle" },
-  { value:"rear-left", label:"المقعد الخلفي الأيسر", text:"left rear seat behind the driver" },
-  { value:"rear-right", label:"المقعد الخلفي الأيمن", text:"right rear seat behind the front passenger" }
-]);
 
 export const DEFAULT_STATE = Object.freeze({
   scene:"my_bedroom_text", customScene:"", customSceneDetails:"", city:"riyadh", time:"night", mode:"selfie",
-  poseFamily:"lying", pose:"lying-right-close", carSeat:DRIVER_SEAT,
+  poseFamily:"lying", pose:"lying-right-close",
   clothing:"sleep-cotton-short", clothingCustom:"", fabric:"cotton-jersey", fabricWeight:"light",
   ironState:"lightly-unpressed", wearState:"home-used", clothingFit:"relaxed",
   hair:"natural", skin:"neutral", expression:"neutral", composition:"close", selfieAngle:"eye",
@@ -99,7 +92,7 @@ export function isCarScene(sceneId) { return !isCustomScene(sceneId) && sceneFam
 export function isTextRoomReference(sceneId) { return Boolean(SCENES[sceneId]?.text_reference); }
 
 function isDriverLockedPose(poseId) { return /^car-driver-/u.test(String(poseId ?? "")) || poseId === "car-roof-context"; }
-function isDriverCarState(state) { return isCarScene(state.scene) && state.carSeat === DRIVER_SEAT; }
+function isDriverCarState(state) { return isCarScene(state.scene) && String(state.studioSection || "").toLowerCase() === "car"; }
 function poseById(id) { return [...SELFIE_POSES, ...CUSTOM_POSES].find((item) => item.value === id) ?? null; }
 export function getPoseById(id) { return cloneOption(poseById(id)); }
 export function getCityOptions() { return CITIES.map(cloneOption); }
@@ -129,11 +122,6 @@ export function getSelfieAngleOptions(poseId) {
 export function getCompositionOptions(poseId) {
   const allowed = poseById(poseId)?.compositions ?? COMPOSITION_OPTIONS.map((item) => item.value);
   return COMPOSITION_OPTIONS.filter((item) => allowed.includes(item.value));
-}
-export function getCarSeatOptions(sceneId, poseId = "") {
-  if (!isCarScene(sceneId)) return [];
-  if (isDriverLockedPose(poseId)) return CAR_SEAT_OPTIONS.filter((item) => item.value === DRIVER_SEAT).map(cloneOption);
-  return CAR_SEAT_OPTIONS.map(cloneOption);
 }
 export function getClothingOptions(sceneId) { return getExpandedClothingOptions(sceneId, isCustomScene(sceneId)); }
 export { getFabricOptions, getFabricWeightOptions, getIronStateOptions, getWearStateOptions, getClothingFitOptions };
@@ -174,13 +162,6 @@ function canonicalizeState(rawState = {}) {
     record("pose", state.pose, poses[0]?.value ?? getPoseOptions(state.scene, "", state.studioSection)[0]?.value ?? "relaxed-close", "pose_scene_or_family_mismatch");
   }
 
-  if (!isCarScene(state.scene)) {
-    if (state.carSeat) record("carSeat", state.carSeat, "", "car_seat_leakage_outside_car_scene");
-  } else {
-    const seats = getCarSeatOptions(state.scene, state.pose);
-    if (!seats.some((item) => item.value === state.carSeat)) record("carSeat", state.carSeat, seats[0]?.value ?? DRIVER_SEAT, "seat_pose_mismatch");
-    if (String(state.studioSection).toLowerCase() === "car" && state.carSeat !== DRIVER_SEAT) record("carSeat", state.carSeat, DRIVER_SEAT, "dedicated_car_studio_is_driver_workflow");
-  }
 
   const angles = getSelfieAngleOptions(state.pose);
   if (!angles.some((item) => item.value === state.selfieAngle)) record("selfieAngle", state.selfieAngle, angles[0]?.value ?? "eye", "angle_pose_mismatch");
@@ -305,7 +286,6 @@ function vehicleGeometry(state) {
   return {
     drive_configuration:"left_hand_drive",
     mirror_state:"unmirrored",
-    occupant_seat:state.carSeat,
     spatial_relations:driver ? {
       steering_wheel:"directly ahead of the driver torso on the vehicle-left driving position",
       instrument_cluster:"behind the steering wheel on the same driver axis",
@@ -357,7 +337,7 @@ function structuredBackground(state) {
   return {
     setting:selectedScene(state), scene_id:state.scene, scene_family:isCustomScene(state.scene) ? "custom" : sceneFamily(state.scene), city:selectedCity(state),
     elements:{
-      required:driver ? ["physically coherent front-left driver-seat mapping"] : [],
+      required:driver ? ["physically coherent left-hand-drive driver geometry"] : [],
       optional:driver ? ["small steering-wheel rim fragment only if naturally reached by the crop","driver door/window or A-pillar cue","center-console edge","exterior slice through real vehicle glass"] : ["only scene details physically reached by the selected front-camera crop"],
       visibility_rule:"Omit optional context before widening the camera, changing the pose, altering the selected scene or breaking physical geometry."
     },
@@ -414,7 +394,7 @@ export function buildRealismQa(rawState = {}) {
     { label:"الهوية", value:"مرجع واحد للهوية فقط؛ المشهد والوضعية والإضاءة خارج سلطته" },
     { label:"الكاميرا", value:`${captureType(state)} · سلطة هندسة واحدة` },
     { label:"الوضعية", value:isAccidentalState(state) ? "حالة جسم فقط — لا تتحكم بزاوية أو تكوين اللقطة" : pose?.label ?? state.pose },
-    ...(isCarScene(state.scene) ? [{ label:"السيارة", value:`${state.carSeat} · LHD غير معكوس · العلاقات Vehicle-relative وليست Image-relative` }] : []),
+    ...(isCarScene(state.scene) ? [{ label:"السيارة", value:"LHD غير معكوس · هندسة السائق ثابتة تلقائياً · العلاقات Vehicle-relative وليست Image-relative" }] : []),
     { label:"الملابس", value:clothingQaText(state) },
     { label:"الإضاءة", value:light?.label ?? state.lighting },
     { label:"التعارضات", value:conflicts.length ? `صُحح ${conflicts.length} تعارض قبل التوليد` : "لا توجد تعارضات حالة غير محلولة" }
@@ -424,9 +404,8 @@ export function buildRealismQa(rawState = {}) {
 export function getTemplate(rawState = {}) {
   const state = normalizeState(rawState);
   const pose = poseById(state.pose);
-  const seat = isCarScene(state.scene) ? optionByValue(CAR_SEAT_OPTIONS, state.carSeat)?.label : "";
   const captureLabel = isAccidentalState(state) ? "لقطة عفوية بالخطأ" : pose?.label ?? "سيلفي";
-  return { title:[captureLabel, seat, state.time === "night" ? "ليلاً" : "نهاراً"].filter(Boolean).join(" · "), text:"Canonical subject-held smartphone capture" };
+  return { title:[captureLabel, state.time === "night" ? "ليلاً" : "نهاراً"].filter(Boolean).join(" · "), text:"Canonical subject-held smartphone capture" };
 }
 export function buildPromptPack(rawState = {}) {
   const state = normalizeState(rawState);
@@ -441,7 +420,6 @@ function lockNames(state) {
 export function buildStructuredPromptSpec(rawState = {}, { wikiPromptGuidance = "" } = {}) {
   const { state } = canonicalizeState(rawState);
   const pose = poseById(state.pose);
-  const seat = isCarScene(state.scene) ? structuredOption(CAR_SEAT_OPTIONS, state.carSeat) : null;
   const sceneAuthority = isCustomScene(state.scene)
     ? { id:"custom", description:clean(state.customScene) || null, supporting_details:clean(state.customSceneDetails) || null }
     : isTextRoomReference(state.scene)
@@ -497,7 +475,6 @@ export function buildStructuredPromptSpec(rawState = {}, { wikiPromptGuidance = 
     scene:{
       selected_pose:isAccidentalState(state) ? null : { id:state.pose, label:pose?.label ?? state.pose, instruction:pose?.text ?? null },
       body_state:accidentalBodyState(state),
-      seat_position:seat,
       vehicle_geometry:vehicleGeometry(state),
       time_of_day:state.time,
       lighting:structuredOption(getLightingOptions(state.scene, state.time), state.lighting),

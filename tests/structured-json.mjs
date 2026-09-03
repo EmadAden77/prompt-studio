@@ -43,7 +43,6 @@ const driver = buildStructuredPromptSpec({
   time:"night",
   poseFamily:"car",
   pose:"car-driver-close",
-  carSeat:"driver-left",
   composition:"close",
   selfieAngle:"eye",
   lighting:"car-night-parking-led",
@@ -56,7 +55,6 @@ const driver = buildStructuredPromptSpec({
 });
 
 assert.equal(driver.task.capture_type, "subject_held_driver_selfie");
-assert.equal(driver.scene.seat_position.id, "driver-left");
 assert.equal(driver.scene.vehicle_orientation, "unmirrored_left_hand_drive");
 assert.equal(driver.scene.stationary, true);
 assert.equal(driver.photography.camera_geometry.authority, "car_driver_selfie_geometry_sole_authority");
@@ -74,9 +72,7 @@ const normalizedCarStudio = buildStructuredPromptSpec({
   scene:"rangeRover",
   poseFamily:"relaxed",
   pose:"relaxed-close",
-  carSeat:"driver-left"
 });
 assert.equal(normalizedCarStudio.scene.selected_pose.id, "car-driver-close", "The car studio must reject a retained generic pose");
-assert.equal(normalizedCarStudio.scene.seat_position.id, "driver-left");
 
 console.log("✓ structured JSON is clean, direct and keeps the driver-only car workflow");

@@ -4,7 +4,6 @@ import {
   buildPromptPack,
   buildStructuredPromptSpec,
   getBackgroundVisibility,
-  getCarSeatOptions,
   getClothingOptions,
   getCompatibleBedroomWindowOptions,
   getCompositionOptions,
@@ -52,13 +51,11 @@ const bedroom = normalizeState({
   ...DEFAULT_STATE,
   studioSection:"bedroom",
   scene:"my_bedroom_text",
-  carSeat:"driver-left",
   poseFamily:"lying",
   pose:"lying-right-close",
   time:"night",
   lighting:"night-bedside-3000"
 });
-assert.equal(bedroom.carSeat, "", "Car seat must be erased outside car scenes");
 assert.equal(getBackgroundVisibility(bedroom), "none");
 const bedroomSpec = buildStructuredPromptSpec(bedroom);
 assert.equal(bedroomSpec.scene.vehicle_geometry, null);
@@ -71,7 +68,6 @@ const activeCar = normalizeState({
   scene:"rangeRover",
   poseFamily:"relaxed",
   pose:"relaxed-close",
-  carSeat:"passenger-front-right",
   time:"day",
   lighting:"car-day-window",
   clothing:"thobe-white",
@@ -80,8 +76,6 @@ const activeCar = normalizeState({
 });
 assert.equal(activeCar.poseFamily, "car");
 assert.equal(activeCar.pose, "car-driver-close");
-assert.equal(activeCar.carSeat, "driver-left");
-assert.deepEqual(getCarSeatOptions("rangeRover", "car-driver-close").map((item) => item.value), ["driver-left"]);
 
 const carSpec = buildStructuredPromptSpec(activeCar, { wikiPromptGuidance:"ordinary candid smartphone realism" });
 assert.equal(carSpec.task.capture_type, "subject_held_driver_selfie");
@@ -89,7 +83,6 @@ assert.equal(carSpec.task.input_contract, "json_only");
 assert.equal(carSpec.authority.policy, "single_authority_per_field");
 assert.equal(carSpec.scene.vehicle_geometry.drive_configuration, "left_hand_drive");
 assert.equal(carSpec.scene.vehicle_geometry.mirror_state, "unmirrored");
-assert.equal(carSpec.scene.vehicle_geometry.occupant_seat, "driver-left");
 assert.match(carSpec.scene.vehicle_geometry.spatial_relations.steering_wheel, /ahead of the driver torso/u);
 assert.match(carSpec.scene.vehicle_geometry.spatial_relations.center_console, /physical right/u);
 assert.match(carSpec.scene.vehicle_geometry.spatial_relations.driver_door_and_window, /physical left/u);

@@ -29,8 +29,7 @@ const STRUCTURAL_FIELDS = Object.freeze([
 function isDriverState(state = {}) {
   const section = String(state.studioSection || "").toLowerCase();
   const scene = String(state.scene || "").toLowerCase();
-  return String(state.carSeat || "") === "driver-left"
-    && (section === "car" || /range.?rover|(?:^|[-_])car(?:[-_]|$)/u.test(scene));
+  return section === "car" && /range.?rover|(?:^|[-_])car(?:[-_]|$)/u.test(scene);
 }
 
 function signed(value) {
@@ -42,11 +41,11 @@ export function buildSpatialConstraintGraph(state = {}) {
   if (!isDriverState(state)) return "";
   return `[SPATIAL CONSTRAINT GRAPH — DRIVER OCCUPANCY / HARD]
 Solve this graph as one continuous unmirrored LHD cabin before composition or aesthetics:
-DRIVER_SEAT → supports → SUBJECT_PELVIS → aligns → SUBJECT_TORSO → behind → STEERING_WHEEL → connected_to → STEERING_COLUMN → in_front_of → INSTRUMENT_CLUSTER
+DRIVER_POSITION → supports → SUBJECT_PELVIS → aligns → SUBJECT_TORSO → behind → STEERING_WHEEL → connected_to → STEERING_COLUMN → in_front_of → INSTRUMENT_CLUSTER
 SUBJECT_DRIVER → LEFT → DRIVER_DOOR / DRIVER_WINDOW / DRIVER_A_PILLAR
-SUBJECT_DRIVER → RIGHT → CENTER_CONSOLE → PASSENGER_SEAT
+SUBJECT_DRIVER → RIGHT → CENTER_CONSOLE → PASSENGER_POSITION
 
-The passenger seat must never support the subject. The center console must not separate the subject from the steering system. A visible wheel fragment alone is not proof of driver occupancy. Camera origin must remain inside the reachable arm volume of the subject seated in DRIVER_SEAT.`;
+The passenger seat must never support the subject. The center console must not separate the subject from the steering system. A visible wheel fragment alone is not proof of driver occupancy. Camera origin must remain inside the reachable arm volume of the subject occupying the resolved DRIVER_POSITION.`;
 }
 
 export function compileActiveCameraState(state = {}) {
@@ -60,7 +59,6 @@ export function compileActiveCameraState(state = {}) {
     ? state.monitorComposition
     : (state.composition || "close");
   return `[ACTIVE CAMERA STATE — SINGLE AUTHORITY]
-Seat: ${driver ? "LEFT-FRONT DRIVER [HARD]" : (state.carSeat || "scene-defined")}
 Capture: DIRECT FRONT-CAMERA SELFIE [HARD]
 Distance: ${distance} cm
 Phone yaw: ${signed(yaw)}
@@ -99,7 +97,7 @@ export function buildFailureDirectedRegenerationPolicy(state = {}) {
   return `[FAILURE-DIRECTED REGENERATION]
 When validation reports a failure, preserve all passing HARD/locked fields and reconstruct only the failed dependency chain plus the minimum geometry required to make it coherent.
 PRESERVE: identity, identity-bound accessories, selected clothing, expression when locked, scene/vehicle identity, lighting event and overall selfie intent.
-${driver ? "DRIVER OCCUPANCY FAILURE TARGET: reconstruct driver seat → pelvis → torso → steering wheel → steering column → instrument cluster, plus console/right and driver-door/left anchors. Do not patch the error by pasting a steering-wheel fragment into the foreground." : "Do not globally redesign the scene to repair a local structural failure."}
+${driver ? "DRIVER OCCUPANCY FAILURE TARGET: reconstruct driver position → pelvis → torso → steering wheel → steering column → instrument cluster, plus console/right and driver-door/left anchors. Do not patch the error by pasting a steering-wheel fragment into the foreground." : "Do not globally redesign the scene to repair a local structural failure."}
 Regeneration order: VALIDATE → DIAGNOSE → PRESERVE PASSING LOCKS → RECONSTRUCT FAILED CHAIN → VALIDATE AGAIN.`;
 }
 

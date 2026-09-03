@@ -80,7 +80,7 @@ assert.ok(risky.score < risk.score);
 assert.ok(risky.issues.length >= 3);
 
 const driverCloseState = {
-  scene:"rangeRover", carSeat:"driver-left", composition:"close", selfieAngle:"slight-low",
+  studioSection:"car", scene:"rangeRover", composition:"close", selfieAngle:"slight-low",
   sceneProfile:"auto", accessoryProfile:"none", accessoryDetail:"", objectProfile:"none", interactionObject:"",
   peopleDensity:"sparse", hasReference:true, time:"day"
 };
@@ -88,38 +88,21 @@ const driverSections = buildAdvancedRealismSections(driverCloseState, []).join("
 assert.doesNotMatch(driverSections, /\[SCENE PROFILE\]/u, "Car scenes must not receive a dormant custom-scene profile");
 assert.match(driverSections, /\[CAR ORIENTATION LOCK\]/u, "Car scene must lock final physical orientation");
 assert.match(driverSections, /unmirrored physical camera geometry/u);
-assert.match(driverSections, /Do not horizontally flip, selfie-mirror, swap or reinterpret the cabin/u);
-assert.match(driverSections, /\[DRIVER SEAT VISUAL VERIFICATION\]/u, "Driver seat must receive visual verification rules");
-assert.match(driverSections, /upper steering-wheel rim or column edge is mandatory/u);
-assert.match(driverSections, /center-console edge on the subject's right/u);
-assert.match(driverSections, /driver-door \/ A-pillar \/ side-window geometry on the subject's left/u);
-
-const driverCloseRisk = evaluateRealismRisk(driverCloseState, []);
-assert.ok(driverCloseRisk.score < 100, "Close driver selfie must not receive a perfect score because seat verification is visually ambiguous");
-assert.ok(driverCloseRisk.issues.some((item) => /قوس مقود/u.test(item)), "Driver risk must explain the required steering-wheel anchor");
-
-const driverWideRisk = evaluateRealismRisk({ ...driverCloseState, composition:"upper" }, []);
-assert.ok(driverWideRisk.score > driverCloseRisk.score, "A wider driver crop should have lower seat-verification risk");
-
-const passengerSections = buildAdvancedRealismSections({ ...driverCloseState, carSeat:"passenger-front-right" }, []).join("\n\n");
-assert.match(passengerSections, /\[CAR ORIENTATION LOCK\]/u);
-assert.doesNotMatch(passengerSections, /\[DRIVER SEAT VISUAL VERIFICATION\]/u, "Driver-only verification must not be forced on the passenger seat");
-
+assert.doesNotMatch(driverSections, /DRIVER SEAT VISUAL VERIFICATION/u);
+assert.doesNotMatch(driverSections, /mandatory.*steering/iu);
 const driverQa = advancedRealismQaItems(driverCloseState, [], {});
 assert.ok(driverQa.some((item) => item.label === "اتجاه المقصورة"));
-assert.ok(driverQa.some((item) => item.label === "تحقق مقعد السائق"));
+assert.ok(!driverQa.some((item) => /مقعد/u.test(item.label)));
 
 const optimized = optimizePrompt([
   "[IDENTITY] Keep the exact identity. Keep the exact identity.",
   "[OPTIONAL CONTEXT] Keep context secondary. Keep context secondary.",
   "[CAMERA] Keep front-camera geometry. Keep front-camera geometry.",
   "[CAR ORIENTATION LOCK] Keep physical left-right mapping. Keep physical left-right mapping.",
-  "[DRIVER SEAT VISUAL VERIFICATION] Keep one driver anchor. Keep one driver anchor."
 ].join("\n\n"));
 assert.match(optimized.prompt, /\[IDENTITY\] Keep the exact identity\. Keep the exact identity\./u, "Protected identity text must not be shortened");
 assert.match(optimized.prompt, /\[CAMERA\] Keep front-camera geometry\. Keep front-camera geometry\./u, "Protected camera text must not be shortened");
 assert.match(optimized.prompt, /\[CAR ORIENTATION LOCK\] Keep physical left-right mapping\. Keep physical left-right mapping\./u, "Car orientation lock must be protected from optimizer shortening");
-assert.match(optimized.prompt, /\[DRIVER SEAT VISUAL VERIFICATION\] Keep one driver anchor\. Keep one driver anchor\./u, "Driver seat verification must be protected from optimizer shortening");
 assert.equal((optimized.prompt.match(/Keep context secondary\./gu) || []).length, 1, "Non-protected exact sentence duplication should be removed");
 assert.equal(optimized.stats.removedSentences, 1);
 
@@ -128,8 +111,8 @@ assert.ok(qa.some((item) => item.label === "مؤشر الواقعية"));
 assert.ok(qa.some((item) => item.label === "Prompt Optimizer"));
 assert.ok(ADVANCED_REALISM_NEGATIVE_RULES.includes("impossible occlusion order"));
 assert.ok(ADVANCED_REALISM_NEGATIVE_RULES.includes("unsupported laptop"));
-assert.ok(ADVANCED_REALISM_NEGATIVE_RULES.includes("horizontally mirrored cabin after seat mapping"));
-assert.ok(ADVANCED_REALISM_NEGATIVE_RULES.includes("driver rendered in front passenger seat"));
+assert.ok(ADVANCED_REALISM_NEGATIVE_RULES.includes("horizontally mirrored left-hand-drive cabin"));
+assert.ok(ADVANCED_REALISM_NEGATIVE_RULES.includes("driver rendered on the wrong side of a left-hand-drive cabin"));
 assert.ok(ADVANCED_REALISM_NEGATIVE_RULES.includes("center console on driver's left"));
 
 const index = readFileSync(resolve(root, "index.html"), "utf8");

@@ -71,7 +71,7 @@ assert.ok(qa.some((item) => item.label === "Selfie Geometry"));
 assert.ok(qa.some((item) => item.label === "Arm-Reach Check"));
 
 const driverLocked = normalizeVisualSelfieState({
-  studioSection:"car", scene:"rangeRover", carSeat:"driver-left", selfieAngle:"eye", composition:"tight",
+  studioSection:"car", scene:"rangeRover", selfieAngle:"eye", composition:"tight",
   selfieDistanceCm:76, selfieYawDeg:0, selfiePitchDeg:18, selfieRollDeg:2, faceYawDeg:0, monitorComposition:"tight"
 });
 assert.equal(driverLocked.driverCarGeometryLocked,true, "Driver selfies must resolve through the car-driver geometry lock");
@@ -118,7 +118,7 @@ assert.match(suite.meta.selfieGeometry,/50cm\/Y24\/P-2\/R2/u);
 const driverSuite = applyAutoRealismSuite({
   positive:"[PHONE REALISM]\nSubject-held front camera only.",
   state:{
-    studioSection:"car", scene:"rangeRover", carSeat:"driver-left", pose:"car-driver-close", selfieAngle:"eye", composition:"tight", clothing:"work-blue-navy", lighting:"car-night-parking-led", time:"night",
+    studioSection:"car", scene:"rangeRover", pose:"car-driver-close", selfieAngle:"eye", composition:"tight", clothing:"work-blue-navy", lighting:"car-night-parking-led", time:"night",
     selfieDistanceCm:76, selfieYawDeg:0, selfiePitchDeg:18, selfieRollDeg:2, faceYawDeg:0, monitorComposition:"tight", variationMode:"slight_high"
   }
 });

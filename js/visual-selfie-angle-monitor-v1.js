@@ -26,8 +26,7 @@ const COMPOSITIONS = new Set(["auto","tight","close","upper","full"]);
 function isDriverCarState(rawState = {}) {
   const section = String(rawState.studioSection || "").toLowerCase();
   const scene = String(rawState.scene || "").toLowerCase();
-  return String(rawState.carSeat || "") === "driver-left"
-    && (section === "car" || /range.?rover|(?:^|[-_])car(?:[-_]|$)/u.test(scene));
+  return section === "car" && /range.?rover|(?:^|[-_])car(?:[-_]|$)/u.test(scene);
 }
 
 function previewLighting(rawState = {}) {
@@ -458,7 +457,6 @@ export function readVisualSelfieUiState(root = document) {
   return normalizeVisualSelfieState({
     studioSection:value("studio-section", ""),
     scene:value("scene", ""),
-    carSeat:value("car-seat", ""),
     lighting:value("lighting", ""),
     time:value("time", ""),
     selfieAngle:value("selfie-angle", "eye"),
@@ -483,7 +481,6 @@ function syncDriverGeometryUiLock(root = document) {
   const raw = {
     studioSection:root.querySelector("#studio-section")?.value || "",
     scene:root.querySelector("#scene")?.value || "",
-    carSeat:root.querySelector("#car-seat")?.value || "",
     selfieAngle:root.querySelector("#selfie-angle")?.value || "eye",
     composition:root.querySelector("#composition")?.value || "close"
   };
@@ -676,7 +673,7 @@ export function bindVisualSelfieAngleMonitor(onChange, root = document) {
     if (syncVisualMonitorFromPrimaryControls(root)) onChange?.();
   });
   root.querySelector("#composition")?.addEventListener("change",() => { syncVisualMonitorFromPrimaryControls(root); updateVisualSelfieAnglePreview(root); });
-  ["#studio-section", "#scene", "#car-seat", "#lighting", "#time"].forEach((selector) => root.querySelector(selector)?.addEventListener("change",() => {
+  ["#studio-section", "#scene", "#lighting", "#time"].forEach((selector) => root.querySelector(selector)?.addEventListener("change",() => {
     syncVisualMonitorFromPrimaryControls(root);
     updateVisualSelfieAnglePreview(root);
     onChange?.();

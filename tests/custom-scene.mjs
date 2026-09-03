@@ -41,12 +41,10 @@ const opticalStore = normalizeState({
   lighting:"custom-day-auto-practical",
   clothing:"tee-black",
   messiness:"natural",
-  carSeat:"driver-left",
   bedroomWindow:"day-charcoal-open-skylight"
 });
 
 assert.equal(opticalStore.scene, "custom");
-assert.equal(opticalStore.carSeat, "", "Car seat state must not leak into custom locations");
 assert.equal(opticalStore.bedroomWindow, "", "Bedroom-window state must not leak into custom locations");
 assert.equal(getBackgroundVisibility(opticalStore), "conditional");
 
@@ -55,7 +53,7 @@ assert.equal(spec.authority.scene.id, "custom");
 assert.match(spec.authority.scene.description, /modern medical optical store/u);
 assert.match(spec.authority.scene.supporting_details, /eyeglass display racks/u);
 assert.equal(spec.scene.vehicle_geometry, null);
-assert.equal(spec.scene.seat_position, null);
+
 assert.equal(spec.background.scene_family, "custom");
 assert.match(spec.background.elements.visibility_rule, /Omit optional context before widening/u);
 assert.doesNotMatch(JSON.stringify(spec), /BEDROOM TOPOLOGY LOCK/u);
