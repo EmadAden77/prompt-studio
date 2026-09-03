@@ -3,7 +3,6 @@ import {
   BEDROOM_WINDOW_OPTIONS,
   CITIES,
   COMPOSITION_OPTIONS,
-  CONFLICT_PRIORITY_LINES,
   EXPRESSION_OPTIONS,
   HAIR_OPTIONS,
   LIGHTING_OPTIONS,
@@ -41,6 +40,18 @@ const optionText = (options, value, fallback = "") => optionByValue(options, val
 const cloneOption = (item) => item ? { ...item } : null;
 const CUSTOM_SCENE_ID = "custom";
 const DRIVER_SEAT = "driver-left";
+
+const CANONICAL_CONFLICT_PRIORITY_LINES = Object.freeze([
+  "1. Reference identity and reference-linked eyewear.",
+  "2. Active capture type and its dedicated capture authority.",
+  "3. Explicit selected scene, seat position, expression, clothing and lighting.",
+  "4. Physical and anatomical feasibility: reach, support, contact, gravity and single-instant causality.",
+  "5. Canonical camera geometry compatible with the active capture type and physical feasibility.",
+  "6. Scene topology, vehicle-relative geometry, material, lighting and reflection physics.",
+  "7. Optional context and physically caused imperfections.",
+  "8. WikiPrompt realism calibration only; it has no override permission.",
+  "9. Aesthetic finishing, always last."
+]);
 
 const CUSTOM_POSES = Object.freeze([
   { value:"custom-relaxed-close", family:"relaxed", label:"سيلفي عفوي داخل المشهد", angles:["eye","slight-high","three-quarter","side-close"], compositions:["tight","close","upper"], text:"a relaxed subject-held selfie naturally positioned inside the user-defined location" },
@@ -269,6 +280,25 @@ function genericGeometry(state) {
 }
 function cameraGeometry(state) { return accidentalGeometry(state) ?? driverGeometry(state) ?? genericGeometry(state); }
 
+function accidentalBodyState(state) {
+  if (!isAccidentalState(state)) return null;
+  const supportByFamily = {
+    lying:"lying or reclining with anatomy supported by the selected real surface",
+    seated:"seated naturally on a real support surface",
+    standing:"standing naturally with ordinary balance and weight distribution",
+    car:"seated in the selected stationary vehicle seat with normal seat support",
+    activity:"maintaining the selected ordinary activity posture without using it to compose the camera",
+    relaxed:"holding an ordinary relaxed body posture"
+  };
+  return {
+    pose_family:state.poseFamily || "relaxed",
+    support_state:supportByFamily[state.poseFamily] || "maintaining a physically supported ordinary posture",
+    authority:"body_support_and_anatomy_only",
+    capture_composition_authority:false,
+    rule:"This body state may constrain anatomy, gravity and support only. It must not restore a deliberate selfie angle, framing target, lens position, gaze or staged capture pose."
+  };
+}
+
 function vehicleGeometry(state) {
   if (!isCarScene(state.scene)) return null;
   const driver = isDriverCarState(state);
@@ -355,7 +385,7 @@ function promptSections(state) {
     `[IDENTITY AUTHORITY] Use exactly one attached reference as identity only. Preserve permanent facial structure, apparent age, skin identity, hairline, visible density, facial-hair pattern and reference-linked eyewear. The reference does not control scene, clothing, pose, expression, lighting, camera angle or crop.`,
     `[EXPRESSION] ${expression}. Apply it without changing permanent identity geometry.`,
     `[CAPTURE] ${captureDeviceName(state)}, held by the subject. One camera, one lens, one exposure pipeline. Geometry authority: ${JSON.stringify(geometry)}.`,
-    `[SCENE] ${selectedScene(state)}. ${selectedCity(state)}. Pose: ${pose?.text ?? state.pose}.`,
+    `[SCENE] ${selectedScene(state)}. ${selectedCity(state)}. ${isAccidentalState(state) ? `Body support only: ${accidentalBodyState(state)?.support_state}. Catalog pose text is not capture authority.` : `Pose: ${pose?.text ?? state.pose}.`}`,
     vehicle ? `[VEHICLE GEOMETRY] ${JSON.stringify(vehicle)}.` : "",
     isGroupState(state) ? `[GROUP] Exactly ${state.groupCount || "3"} people. Camera holder: ${state.cameraHolder || "A"}. Arrangement: ${state.groupArrangement || "natural-auto"}. Interaction: ${state.groupInteraction || "casual"}. Keep identities independent and every visible limb attached to its owner.` : "",
     isAccidentalState(state) ? `[ACCIDENTAL EVENT] Trigger: ${state.accidentalTrigger || "pocket"}; phone position: ${state.accidentalPhonePosition || "rising"}; motion: ${state.accidentalMotion || "subtle"}; tilt: ${state.accidentalTilt || "auto"}; focus: ${state.accidentalFocus || "transition-face"}; exposure: ${state.accidentalExposure || "auto-imperfect"}; intensity: ${state.accidentalIntensity || "natural"}. These event fields are the sole capture-composition authority.` : "",
@@ -383,7 +413,7 @@ export function buildRealismQa(rawState = {}) {
     { label:"السلطة", value:"قيمة نهائية واحدة لكل خاصية؛ لا توجد سلطة ثانية لنفس الحقل" },
     { label:"الهوية", value:"مرجع واحد للهوية فقط؛ المشهد والوضعية والإضاءة خارج سلطته" },
     { label:"الكاميرا", value:`${captureType(state)} · سلطة هندسة واحدة` },
-    { label:"الوضعية", value:pose?.label ?? state.pose },
+    { label:"الوضعية", value:isAccidentalState(state) ? "حالة جسم فقط — لا تتحكم بزاوية أو تكوين اللقطة" : pose?.label ?? state.pose },
     ...(isCarScene(state.scene) ? [{ label:"السيارة", value:`${state.carSeat} · LHD غير معكوس · العلاقات Vehicle-relative وليست Image-relative` }] : []),
     { label:"الملابس", value:clothingQaText(state) },
     { label:"الإضاءة", value:light?.label ?? state.lighting },
@@ -395,7 +425,8 @@ export function getTemplate(rawState = {}) {
   const state = normalizeState(rawState);
   const pose = poseById(state.pose);
   const seat = isCarScene(state.scene) ? optionByValue(CAR_SEAT_OPTIONS, state.carSeat)?.label : "";
-  return { title:[pose?.label ?? "سيلفي", seat, state.time === "night" ? "ليلاً" : "نهاراً"].filter(Boolean).join(" · "), text:"Canonical subject-held smartphone capture" };
+  const captureLabel = isAccidentalState(state) ? "لقطة عفوية بالخطأ" : pose?.label ?? "سيلفي";
+  return { title:[captureLabel, seat, state.time === "night" ? "ليلاً" : "نهاراً"].filter(Boolean).join(" · "), text:"Canonical subject-held smartphone capture" };
 }
 export function buildPromptPack(rawState = {}) {
   const state = normalizeState(rawState);
@@ -434,8 +465,8 @@ export function buildStructuredPromptSpec(rawState = {}, { wikiPromptGuidance = 
         does_not_control:["scene","clothing","pose","expression","lighting","camera_geometry","crop","vehicle_side_mapping"]
       },
       scene:sceneAuthority,
-      priority:CONFLICT_PRIORITY_LINES,
-      resolution_rule:"When two constraints compete, keep the higher-authority selected field. Correct only the physically impossible component. Omit optional context before changing identity, selected scene, selected seat, selected expression, selected clothing, selected lighting or canonical camera geometry."
+      priority:CANONICAL_CONFLICT_PRIORITY_LINES,
+      resolution_rule:"Resolve conflicts strictly by the priority list. Active capture authority cannot be restored by a lower-priority pose or camera preset. Preserve selected intent only while it remains physically possible; correct the impossible component, and omit optional context before changing higher-authority fields."
     },
     subject:{
       description:isGroupState(state) ? "Person A is the same person from the sole identity reference; other selected people remain distinct individuals and must never inherit Person A's facial identity." : "the same person from the sole identity reference casually holding the capture device",
@@ -464,7 +495,8 @@ export function buildStructuredPromptSpec(rawState = {}, { wikiPromptGuidance = 
       texture:"ordinary skin texture, restrained sharpening, realistic auto-exposure, limited highlight recovery and subtle sensor noise appropriate to the selected light"
     },
     scene:{
-      selected_pose:{ id:state.pose, label:pose?.label ?? state.pose, instruction:pose?.text ?? null },
+      selected_pose:isAccidentalState(state) ? null : { id:state.pose, label:pose?.label ?? state.pose, instruction:pose?.text ?? null },
+      body_state:accidentalBodyState(state),
       seat_position:seat,
       vehicle_geometry:vehicleGeometry(state),
       time_of_day:state.time,

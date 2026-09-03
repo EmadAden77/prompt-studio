@@ -170,6 +170,14 @@ assert.equal(accidentalSpec.photography.selected_angle, null, "Deliberate selfie
 assert.equal(accidentalSpec.photography.selected_shot_type, null);
 assert.equal(accidentalSpec.photography.camera_geometry.authority, "accidental_capture_event");
 assert.match(accidentalSpec.photography.camera_geometry.rule, /sole composition and camera-behavior authority/u);
+assert.equal(accidentalSpec.scene.selected_pose, null, "Accidental capture must not expose a deliberate catalog pose as capture authority");
+assert.equal(accidentalSpec.scene.body_state.authority, "body_support_and_anatomy_only");
+assert.equal(accidentalSpec.scene.body_state.capture_composition_authority, false);
+assert.doesNotMatch(accidentalSpec.scene.body_state.support_state, /selfie|camera|framing|lens/iu);
+assert.match(accidentalSpec.authority.priority[1], /Active capture type/u);
+const physicalPriorityIndex = accidentalSpec.authority.priority.findIndex((line) => /Physical and anatomical feasibility/u.test(line));
+const wikiPriorityIndex = accidentalSpec.authority.priority.findIndex((line) => /WikiPrompt/u.test(line));
+assert.ok(physicalPriorityIndex >= 0 && wikiPriorityIndex > physicalPriorityIndex, "WikiPrompt must remain below physical feasibility");
 
 const pack = buildPromptPack(activeCar);
 assert.match(pack.positive, /\[VEHICLE GEOMETRY\]/u);
