@@ -15,8 +15,6 @@ const standalone = buildStructuredPromptSpec({
   wearState:"fresh",
   clothingFit:"slim"
 }, {
-  positive:"COMPILED POSITIVE",
-  negative:"third-person camera, beauty filter",
   wikiPromptGuidance:"calibration only"
 });
 
@@ -32,9 +30,12 @@ assert.equal(standalone.accessories.jewelry, null, "JSON must not invent jewelry
 assert.equal(standalone.accessories.prop, null, "JSON must not invent a prop");
 assert.equal(standalone.photography.aspect_ratio, null, "An unspecified aspect ratio must remain null");
 assert.equal(standalone.subject.mirror_rules.applicable, false, "A direct selfie is not silently converted into a mirror selfie");
-assert.equal(standalone.generator.wiki_prompt_calibration, "calibration only");
-assert.equal(standalone.compiled_prompt.positive, "COMPILED POSITIVE");
-assert.deepEqual(standalone.compiled_prompt.negative, ["third-person camera", "beauty filter"]);
+assert.equal(standalone.generator.input_mode, "json_only");
+assert.equal(standalone.generator.wiki_prompt_calibration.enabled, true);
+assert.equal(standalone.generator.wiki_prompt_calibration.role, "realism_calibration_only; never override explicit JSON fields");
+assert.ok(!Object.hasOwn(standalone, "compiled_prompt"), "Direct JSON must not embed a duplicate long-form prompt");
+assert.ok(!Object.hasOwn(standalone, "qa"), "Direct JSON must not embed UI-only QA diagnostics");
+assert.ok(!Object.hasOwn(standalone, "automatic_conflict_corrections"), "Direct JSON must not embed implementation traces");
 
 const driver = buildStructuredPromptSpec({
   ...DEFAULT_STATE,
@@ -63,7 +64,19 @@ assert.equal(driver.photography.camera_geometry.distance_cm, 42);
 assert.equal(driver.photography.camera_geometry.phone_yaw_deg, 0);
 assert.equal(driver.photography.camera_geometry.phone_pitch_deg, -3);
 assert.ok(driver.photography.camera_geometry.driver_constraints.includes("thin_upper_steering_wheel_arc_in_lower_foreground"));
-assert.deepEqual(driver.background.elements.required, ["thin physically attached upper steering-wheel arc at the lower foreground"]);
+assert.ok(driver.photography.camera_geometry.driver_constraints.includes("no_full_wheel_hub_spokes_or_broad_holding_forearm"));
+assert.match(driver.background.elements.required[0], /at most 8% of image height/u);
 assert.equal(driver.background.wall_color, null);
 
-console.log("✓ structured JSON contract preserves selected fields, null defaults and driver geometry");
+const normalizedCarStudio = buildStructuredPromptSpec({
+  ...DEFAULT_STATE,
+  studioSection:"car",
+  scene:"rangeRover",
+  poseFamily:"relaxed",
+  pose:"relaxed-close",
+  carSeat:"driver-left"
+});
+assert.equal(normalizedCarStudio.scene.selected_pose.id, "car-driver-close", "The car studio must reject a retained generic pose");
+assert.equal(normalizedCarStudio.scene.seat_position.id, "driver-left");
+
+console.log("✓ structured JSON is clean, direct and keeps the driver-only car workflow");

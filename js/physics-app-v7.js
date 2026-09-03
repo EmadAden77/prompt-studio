@@ -24,7 +24,7 @@ import {
   isCustomScene,
   isTextRoomReference,
   normalizeState
-} from "./physics-prompt-engine-v5.js?v=20260903-json-output1";
+} from "./physics-prompt-engine-v5.js?v=20260903-json-clean2";
 import {
   REALISM_CORE_NEGATIVE_RULES,
   buildRealismCoreSections,
@@ -44,7 +44,7 @@ import {
   getSceneProfileOptions,
   optimizePrompt,
   resolveAdvancedRealismState
-} from "./advanced-realism-v1.js?v=20260903-conflict-order1";
+} from "./advanced-realism-v1.js?v=20260903-json-clean2";
 import { wikiPromptService } from "./services/wikiPromptService.js";
 import {
   AUTO_REALISM_DEFAULTS,
@@ -53,7 +53,7 @@ import {
   mountAutoRealismSuite,
   normalizeAutoRealismState,
   readAutoRealismUiState
-} from "./auto-realism-suite-v1.js?v=20260903-conflict-order1";
+} from "./auto-realism-suite-v1.js?v=20260903-json-clean2";
 import { CAMERA_HOLDER_OPTIONS, GROUP_ARRANGEMENT_OPTIONS, GROUP_COUNT_OPTIONS, GROUP_INTERACTION_OPTIONS, GROUP_SELFIE_DEFAULTS, buildGroupSelfieEnhancement, evaluateGroupRealism, isGroupSelfie, normalizeGroupSelfieState } from "./group-selfie-engine-v1.js";
 import { ACCIDENTAL_DEFAULTS, ACCIDENTAL_DEVICE_OPTIONS, ACCIDENTAL_EXPOSURE_OPTIONS, ACCIDENTAL_FOCUS_OPTIONS, ACCIDENTAL_INTENSITY_OPTIONS, ACCIDENTAL_MOTION_OPTIONS, ACCIDENTAL_POSITION_OPTIONS, ACCIDENTAL_TILT_OPTIONS, ACCIDENTAL_TRIGGER_OPTIONS, applyAccidentalDeviceAuthority, buildAccidentalCaptureEnhancement, isAccidentalCapture, normalizeAccidentalState } from "./accidental-capture-engine-v1.js";
 import { SCENARIO_DEFAULTS, SCENARIO_OPTIONS, buildScenarioLock, getScenarioSceneOptions, normalizeScenarioState, scenarioForScene } from "./scenario-section-engine-v1.js";
@@ -194,14 +194,7 @@ function composeWikiFirstPrompt(basePrompt, guidance) {
 }
 
 function renderStructuredJson(pack, guidance = "") {
-  const positive = composeWikiFirstPrompt(pack.positive, guidance);
   const spec = buildStructuredPromptSpec(pack.state, {
-    positive,
-    negative:pack.negative,
-    qa:pack.qa,
-    conflicts:pack.conflicts,
-    risk:pack.risk,
-    suiteMeta:pack.suiteMeta,
     wikiPromptGuidance:guidance
   });
   jsonPrompt.value = JSON.stringify(spec, null, 2);
@@ -412,8 +405,8 @@ function refreshDynamicFields() {
   customSceneDetailsField.hidden = !custom;
   if (sceneProfileField) sceneProfileField.hidden = !custom;
 
-  populateSelect(poseFamilySelect, getPoseFamilyOptions(scene), poseFamilySelect.value || DEFAULT_STATE.poseFamily);
-  populateSelect(poseSelect, getPoseOptions(scene, poseFamilySelect.value), poseSelect.value || DEFAULT_STATE.pose);
+  populateSelect(poseFamilySelect, getPoseFamilyOptions(scene, studioSection), poseFamilySelect.value || DEFAULT_STATE.poseFamily);
+  populateSelect(poseSelect, getPoseOptions(scene, poseFamilySelect.value, studioSection), poseSelect.value || DEFAULT_STATE.pose);
 
   const car = isCarScene(scene);
   carSeatField.hidden = !car;
@@ -433,8 +426,8 @@ function refreshDynamicFields() {
 
   const { state:normalized, conflicts } = normalizeEnhancedState(readState());
   if (normalized.poseFamily !== poseFamilySelect.value) {
-    populateSelect(poseFamilySelect, getPoseFamilyOptions(normalized.scene), normalized.poseFamily);
-    populateSelect(poseSelect, getPoseOptions(normalized.scene, normalized.poseFamily), normalized.pose);
+    populateSelect(poseFamilySelect, getPoseFamilyOptions(normalized.scene, normalized.studioSection), normalized.poseFamily);
+    populateSelect(poseSelect, getPoseOptions(normalized.scene, normalized.poseFamily, normalized.studioSection), normalized.pose);
   }
   if (isCarScene(normalized.scene)) {
     carSeatField.hidden = false;

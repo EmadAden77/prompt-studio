@@ -183,13 +183,13 @@
         <div class="output-grid">
           <label class="output-field" for="positive-prompt"><span>POSITIVE PROMPT</span><textarea id="positive-prompt" rows="26" readonly></textarea><button class="secondary-button output-copy" type="button" id="copy-positive">نسخ</button></label>
           <label class="output-field" for="negative-prompt"><span>NEGATIVE PROMPT</span><textarea id="negative-prompt" rows="16" readonly></textarea><button class="secondary-button output-copy" type="button" id="copy-negative">نسخ</button></label>
-          <label class="output-field output-field--json" for="json-prompt"><span>JSON SPECIFICATION · العقد المنظّم</span><small>الاختيارات المقفلة والأولوية والـPrompt المترجم في ملف واحد. انسخه مباشرةً عندما يدعم مولّد الصور JSON.</small><textarea id="json-prompt" rows="24" readonly></textarea><button class="secondary-button output-copy" type="button" id="copy-json-output">نسخ JSON</button></label>
+          <label class="output-field output-field--json" for="json-prompt"><span>JSON SPECIFICATION · إدخال مباشر ونظيف</span><small>انسخ هذا JSON وحده عند دعم المولّد له؛ لا تدمجه مع POSITIVE أو NEGATIVE. لا يحتوي على نسخة مكررة من البرومبت أو قائمة QA.</small><textarea id="json-prompt" rows="24" readonly></textarea><button class="secondary-button output-copy" type="button" id="copy-json-output">نسخ JSON</button></label>
         </div>
         <div class="qa-block"><div class="qa-heading"><div><p class="eyebrow">REALISM QA</p><h3>فحص الترابط</h3></div><small>الهوية والسيلفي والوضعية والإضاءة أعلى من الخلفية وكل التفاصيل الثانوية.</small></div><ul id="qa-list"></ul></div>
       </section>
 
       <template id="qa-item-template"><li><strong></strong><span></span></li></template>
     </main>
-    <script type="module" src="js/physics-app-v7.js?v=20260903-json-output1"></script>
+    <script type="module" src="js/physics-app-v7.js?v=20260903-json-clean2"></script>
   </body>
 </html>

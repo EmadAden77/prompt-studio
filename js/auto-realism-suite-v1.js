@@ -77,7 +77,7 @@ const VARIATION_RULES = Object.freeze({
   slight_low:`VARIATION DELTA: keep every locked field unchanged. Use a mildly lower phone position with plausible upward pitch; avoid exaggerated low-angle distortion.`
 });
 
-const ESSENTIAL_LINE = /(IDENTITY|REFERENCE|AUTHORITY|SELFIE|CAMERA|ANATOM|LIGHT|CONTACT|GRAVITY|POSE|PHONE|LOCK|PRIORITY|DRIVER|STEERING|MIRROR|WIKIPROMPT|MASTER REALISM|PHOTOGRAPHIC REALISM|PHYSICAL PLAUSIBILITY|CONFLICT RESOLUTION)/i;
+const ESSENTIAL_LINE = /(^\s*\d+\.\s)|(IDENTITY|REFERENCE|AUTHORITY|SELFIE|CAMERA|ANATOM|LIGHT|CONTACT|GRAVITY|POSE|PHONE|LOCK|PRIORITY|DRIVER|STEERING|MIRROR|WIKIPROMPT|MASTER REALISM|PHOTOGRAPHIC REALISM|PHYSICAL PLAUSIBILITY|CONFLICT RESOLUTION)/i;
 
 function boolValue(value, fallback = "off") {
   return value === "on" || value === true ? "on" : value === "off" || value === false ? "off" : fallback;

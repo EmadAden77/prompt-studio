@@ -5,6 +5,7 @@ import {
   getExternalGeneratorSetup,
   normalizeAutoRealismState
 } from "../js/auto-realism-suite-v1.js";
+import { CONFLICT_PRIORITY_LINES } from "../js/wiki-selfie-data-v1.js";
 
 const normalized = normalizeAutoRealismState({});
 assert.equal(normalized.autoRealism, "on");
@@ -78,6 +79,17 @@ assert.ok(suite.qa.some((item) => item.label === "Context Resolver"));
 assert.ok(suite.qa.some((item) => item.label === "Visibility Gate"));
 assert.ok(suite.qa.some((item) => item.label === "Accessory Gate"));
 assert.ok(suite.qa.some((item) => item.label === "Imperfection Budget"));
+
+const priorityLineSix = CONFLICT_PRIORITY_LINES[5];
+const duplicatePrioritySuite = applyAutoRealismSuite({
+  positive:`[CONFLICT RESOLUTION]\n${CONFLICT_PRIORITY_LINES.join("\n")}`,
+  state:{ promptCompression:"full" }
+});
+assert.equal(
+  (duplicatePrioritySuite.positive.match(new RegExp(priorityLineSix.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "gu")) || []).length,
+  2,
+  "Compression must preserve every numbered priority line in both authoritative sections"
+);
 
 const driverSuite = applyAutoRealismSuite({
   positive:"BASE",

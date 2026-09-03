@@ -97,6 +97,18 @@ assert.equal(rightSidePack.state.carSeat, "", "Non-car scenes must clear car-sea
 const carPoses = getPoseOptions("rangeRover", "car");
 assert.ok(carPoses.some((pose) => pose.value === "car-driver-close"));
 assert.equal(getPoseOptions("my_bedroom_text", "car").length, 0, "Car-only poses must not leak into bedroom choices");
+assert.deepEqual(getPoseFamilyOptions("rangeRover", "car").map((item) => item.value), ["car"], "The active car studio must expose only the driver-pose catalog");
+assert.equal(getPoseOptions("rangeRover", "relaxed", "car").length, 0, "A generic relaxed pose must not leak into the active car studio");
+const normalizedActiveCar = normalizeState({
+  ...DEFAULT_STATE,
+  studioSection:"car",
+  scene:"rangeRover",
+  poseFamily:"relaxed",
+  pose:"relaxed-close",
+  carSeat:"driver-left"
+});
+assert.equal(normalizedActiveCar.poseFamily, "car");
+assert.equal(normalizedActiveCar.pose, "car-driver-close", "Car normalization must replace a retained generic pose");
 assert.equal(getCarSeatOptions("rangeRover", "waiting-relaxed").length, 4, "Generic car poses may use any real seat");
 assert.deepEqual(
   getCarSeatOptions("rangeRover", "car-driver-close").map((item) => item.value),

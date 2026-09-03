@@ -249,18 +249,26 @@ export function getExpressionOptions() {
   return EXPRESSION_OPTIONS;
 }
 
-export function getPoseFamilyOptions(sceneId) {
+function getScenePoseOptions(sceneId, studioSection = "") {
   const poses = isCustomScene(sceneId)
     ? CUSTOM_POSES
     : SELFIE_POSES.filter((pose) => pose.scenes.includes(sceneId));
+  // The dedicated car studio is the driver-selfie workflow. Retained browser
+  // values from another section must not select a generic waiting pose here.
+  if (isCarScene(sceneId) && String(studioSection).toLowerCase() === "car") {
+    return poses.filter((pose) => pose.family === "car");
+  }
+  return poses;
+}
+
+export function getPoseFamilyOptions(sceneId, studioSection = "") {
+  const poses = getScenePoseOptions(sceneId, studioSection);
   const validFamilies = new Set(poses.map((pose) => pose.family));
   return POSE_FAMILIES.filter((family) => validFamilies.has(family.value));
 }
 
-export function getPoseOptions(sceneId, family) {
-  const scenePoses = isCustomScene(sceneId)
-    ? [...CUSTOM_POSES]
-    : SELFIE_POSES.filter((pose) => pose.scenes.includes(sceneId));
+export function getPoseOptions(sceneId, family, studioSection = "") {
+  const scenePoses = getScenePoseOptions(sceneId, studioSection);
   if (!family) return scenePoses;
   return scenePoses.filter((pose) => pose.family === family);
 }
@@ -322,14 +330,14 @@ export function normalizeState(rawState = {}) {
   state.customScene = isCustomScene(state.scene) ? clean(state.customScene) : "";
   state.customSceneDetails = isCustomScene(state.scene) ? clean(state.customSceneDetails) : "";
 
-  const familyOptions = getPoseFamilyOptions(state.scene);
+  const familyOptions = getPoseFamilyOptions(state.scene, state.studioSection);
   if (!familyOptions.some((item) => item.value === state.poseFamily)) {
     state.poseFamily = familyOptions[0]?.value ?? "relaxed";
   }
 
-  const poseOptions = getPoseOptions(state.scene, state.poseFamily);
+  const poseOptions = getPoseOptions(state.scene, state.poseFamily, state.studioSection);
   if (!poseOptions.some((item) => item.value === state.pose)) {
-    state.pose = poseOptions[0]?.value ?? getPoseOptions(state.scene)[0]?.value ?? "relaxed-close";
+    state.pose = poseOptions[0]?.value ?? getPoseOptions(state.scene, "", state.studioSection)[0]?.value ?? "relaxed-close";
   }
 
   state.carSeat = normalizeCarSeat(state);
@@ -402,7 +410,7 @@ function buildPoseSection(state) {
     ? "close selfie framing showing head and shoulders with enough context to establish a parked-driver selfie, not the full vehicle or location"
     : composition;
   const cropRule = driverCar
-    ? "Keep the selected close selfie crop, but retain only a thin natural upper steering-wheel arc at the lower edge as the mandatory proof of the driver position. Do not force a full wheel, dashboard or console into view."
+    ? "Keep the selected close selfie crop, but retain only a thin natural upper steering-wheel arc at the extreme lower edge as the mandatory proof of the driver position. The rim fragment may occupy at most 8% of image height. Do not show a full wheel, hub, spokes, broad rim, dashboard, console, phone or broad holding forearm."
     : isCarScene(state.scene)
       ? "Do not force the holding hand, phone body, steering wheel, dashboard or console into view when the selected crop naturally excludes them."
     : "Do not force the holding hand or phone body into view when the selected crop naturally excludes them.";
@@ -424,7 +432,7 @@ function buildCarSeatSection(state) {
   if (!isDriverCarState(state)) {
     return `[CAR SEAT POSITION] ${sentence(seat.text)} The front-camera viewpoint originates from this exact seat position. Do not mirror, swap or reinterpret the subject's seat.`;
   }
-  return `[CAR SEAT POSITION] ${sentence(seat.text)} The front-camera viewpoint originates from this exact seat position. The steering wheel is physically in front of the driver's lower chest/upper abdomen, with the instrument cluster directly behind it. A thin upper steering-wheel arc is mandatory in the lower foreground, attached to the real steering column and aligned with the driver's torso. If the close crop initially misses that arc, lower the crop slightly without changing the phone origin, arm reach, seat, wheel, dashboard or cabin orientation. Do not mirror, swap or reinterpret the subject's seat.`;
+  return `[CAR SEAT POSITION] ${sentence(seat.text)} The front-camera viewpoint originates from this exact seat position. The steering wheel is physically in front of the driver's lower chest/upper abdomen, with the instrument cluster directly behind it. A thin upper steering-wheel arc is mandatory in the lower foreground, attached to the real steering column and aligned with the driver's torso. In a close crop it is only a rim fragment at the extreme lower edge, occupying at most 8% of image height; do not show the hub, spokes, a broad wheel or the dashboard. If the close crop initially misses that arc, lower the crop slightly without changing the phone origin, arm reach, seat, wheel, dashboard or cabin orientation. Do not mirror, swap or reinterpret the subject's seat.`;
 }
 
 function buildHairSection(state) {
@@ -632,7 +640,7 @@ function buildSceneSpecificSafety(state) {
   }
   if (isCarScene(state.scene)) {
     if (isDriverCarState(state)) {
-      return "The vehicle is fully stationary and safely parked. Preserve unmirrored left-hand-drive cabin geometry. Keep the thin upper steering-wheel arc visibly in front of the driver while leaving the rest of the dashboard and cabin subordinate to the close selfie crop. The driver door/window and A-pillar stay on the subject's real left; the center console stays on the subject's real right; never duplicate controls, imply driving, steering motion or road travel.";
+      return "The vehicle is fully stationary and safely parked. Preserve unmirrored left-hand-drive cabin geometry. Keep only a thin upper steering-wheel rim fragment at the extreme lower edge, no more than 8% of image height, in front of the driver; leave the rest of the wheel, dashboard, holding arm and cabin outside the close selfie crop. The driver door/window and A-pillar stay on the subject's real left; the center console stays on the subject's real right; never duplicate controls, imply driving, steering motion or road travel.";
     }
     return "The vehicle is fully stationary and safely parked. Preserve left-hand-drive cabin geometry. Steering wheel, dashboard, console and mirrors appear only if they naturally enter the front-camera crop; if visible, keep their geometry coherent and never duplicate controls. Do not imply driving, steering motion or road travel.";
   }
@@ -798,7 +806,9 @@ export function buildNegativePrompt(rawState = {}) {
       ...(isDriverCarState(state) ? [
         "missing steering-wheel arc in a driver selfie",
         "steering wheel beside the driver's torso instead of in front",
-        "driver-seat proof replaced by passenger-seat framing"
+        "driver-seat proof replaced by passenger-seat framing",
+        "full steering wheel, hub or spokes dominating a close driver selfie",
+        "broad holding forearm dominating a close driver selfie"
       ] : []),
       ...carSeatNegativeRules(state)
     );
@@ -894,7 +904,9 @@ function structuredAccessories(state) {
     device:{
       capture_device:"Xiaomi 15 Ultra FRONT camera",
       subject_held:true,
-      visible_in_frame:"not required; do not force the phone body or holding arm into the crop"
+      visible_in_frame:isDriverCarState(state)
+        ? "keep the phone and holding arm outside the close crop; do not show a broad forearm"
+        : "not required; do not force the phone body or holding arm into the crop"
     },
     prop:object ? {
       type:object,
@@ -925,6 +937,7 @@ function structuredCameraGeometry(state) {
       "left_front_driver_seat_only",
       "unmirrored_left_hand_drive_mapping",
       "thin_upper_steering_wheel_arc_in_lower_foreground",
+      "no_full_wheel_hub_spokes_or_broad_holding_forearm",
       "no_second_camera_distance_or_competing_angle"
     ] : []
   };
@@ -932,19 +945,19 @@ function structuredCameraGeometry(state) {
 
 function structuredBackground(state) {
   const driver = isDriverCarState(state);
-  const scene = isCustomScene(state)
+  const scene = isCustomScene(state.scene)
     ? clean(state.customScene) || "user-defined location"
     : SCENES[state.scene]?.environment || state.scene;
   const city = optionByValue(CITIES, state.city)?.text ?? "a plausible Saudi Arabian location";
   const required = driver
-    ? ["thin physically attached upper steering-wheel arc at the lower foreground"]
+    ? ["thin physically attached upper steering-wheel rim fragment at the extreme lower edge, at most 8% of image height; no hub, spokes or broad wheel"]
     : [];
   const optional = driver
     ? ["one small coherent driver-side cabin cue", "exterior slice only through real visible vehicle glass"]
-    : isCustomScene(state)
+    : isCustomScene(state.scene)
       ? ["only details from the written custom location that the real selfie crop can reveal"]
       : ["scene cues only when the selected front-camera crop physically reaches them"];
-  const family = isCustomScene(state) ? "custom" : sceneFamily(state.scene);
+  const family = isCustomScene(state.scene) ? "custom" : sceneFamily(state.scene);
   return {
     setting:scene,
     scene_id:state.scene,
@@ -976,23 +989,17 @@ function structuredClothing(state) {
 }
 
 /**
- * Produces the portable JSON contract for an already-resolved scene.  The JSON
- * contains the selected facts and locks while compiled_prompt remains the
- * generator-ready natural-language rendering of exactly those facts.
+ * Produces the portable JSON contract for an already-resolved scene. The JSON
+ * is a direct, canonical input and deliberately excludes the separately
+ * rendered positive prompt, negative prompt and UI-only QA diagnostics.
  */
 export function buildStructuredPromptSpec(rawState = {}, {
-  positive = "",
-  negative = "",
-  qa = [],
-  conflicts = [],
-  risk = null,
-  suiteMeta = {},
   wikiPromptGuidance = ""
 } = {}) {
   const state = normalizeState(rawState);
   const pose = getPoseById(state.pose);
   const lighting = structuredOption(getLightingOptions(state.scene, state.time), state.lighting);
-  const scene = isCustomScene(state)
+  const scene = isCustomScene(state.scene)
     ? { id:"custom", description:clean(state.customScene) || null, supporting_details:clean(state.customSceneDetails) || null }
     : { id:state.scene, description:SCENES[state.scene]?.environment ?? state.scene, supporting_details:null };
   const driver = isDriverCarState(state);
@@ -1002,15 +1009,12 @@ export function buildStructuredPromptSpec(rawState = {}, {
   const skin = structuredOption(SKIN_OPTIONS, state.skin);
   const angle = structuredOption(getSelfieAngleOptions(state.pose), state.selfieAngle);
   const composition = structuredOption(getCompositionOptions(state.pose), state.composition);
-  const compiledPositive = positive || buildPositivePrompt(state);
-  const compiledNegative = negative || buildNegativePrompt(state);
-
   return {
     schema_version:"realistic-image-generator/v1",
     task:{
       type:"generate_one_realistic_image",
       capture_type:driver ? "subject_held_driver_selfie" : "subject_held_front_camera_selfie",
-      instruction:"Generate one candid, physically plausible smartphone photograph. The subject and the act of taking the selfie are the primary visual event."
+      instruction:"Generate exactly one candid, physically plausible smartphone photograph from this JSON object only. Do not merge it with a separate positive prompt, negative prompt, QA list or alternate pose."
     },
     authority:{
       identity_reference:{
@@ -1069,20 +1073,16 @@ export function buildStructuredPromptSpec(rawState = {}, {
       imperfection_budget:{ max_count:2, rule:"Only subtle physically caused imperfections visible at this distance; ordinary pores and tonal variation are baseline capture traits, not decorative defects." },
       locked_fields:structuredLockNames(state),
       continuity:state.continuityMode === "on",
-      variation:state.variationMode || "none",
-      realism_risk:risk ? { score:risk.score, level:risk.level } : null
+      variation:state.variationMode || "none"
     },
     generator:{
-      profile:suiteMeta.generator || state.generatorProfile || "chatgpt",
-      prompt_compression:suiteMeta.compression || state.promptCompression || "full",
-      wiki_prompt_calibration:wikiPromptGuidance || null,
+      profile:state.generatorProfile || "chatgpt",
+      input_mode:"json_only",
+      wiki_prompt_calibration:{
+        enabled:Boolean(wikiPromptGuidance),
+        role:"realism_calibration_only; never override explicit JSON fields"
+      },
       instruction:"Treat this JSON as one coherent capture specification. Do not invent generic styling, scene details or accessories that are absent or null."
-    },
-    automatic_conflict_corrections:(conflicts || []).map((conflict) => ({ code:conflict.code || "resolved", note:conflict.qa || conflict.prompt || "Resolved by the priority order." })),
-    qa:(qa || []).map((item) => ({ label:item.label, value:item.value })),
-    compiled_prompt:{
-      positive:compiledPositive,
-      negative:compiledNegative.split(/,\s*/u).filter(Boolean)
     }
   };
 }

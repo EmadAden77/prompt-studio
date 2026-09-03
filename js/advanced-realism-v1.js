@@ -235,9 +235,9 @@ function buildCarOrientationRule(state) {
 function buildDriverSeatVerificationRule(state) {
   if (!isDriverSeat(state)) return "";
   const tightRule = isTight(state)
-    ? "Because the crop is tight or close, keep the selfie close but reserve a thin upper steering-wheel arc in the lower foreground instead of widening into an interior showcase."
+    ? "Because the crop is tight or close, keep the selfie close but reserve only a thin upper steering-wheel rim fragment at the extreme lower edge, no more than 8% of image height, instead of widening into an interior showcase."
     : "The wider crop should normally preserve more than one coherent driver-side cue when those cues naturally enter frame.";
-  return `[DRIVER SEAT VISUAL VERIFICATION] Keep the subject physically in the LEFT FRONT DRIVER'S SEAT. ${tightRule} A small, physically attached upper steering-wheel rim or column edge is mandatory in front of the subject's lower torso and must align with the real instrument cluster behind it. Preserve the center-console edge on the subject's right and/or coherent driver-door / A-pillar / side-window geometry on the subject's left whenever those cues naturally enter frame. Never fabricate or force a complete steering wheel. If the selected crop initially misses the steering-wheel cue, adjust the crop slightly downward within the same reachable phone geometry; never treat the seat as visually ambiguous, mirror the cabin, move the wheel, or move the subject to the passenger seat.`;
+  return `[DRIVER SEAT VISUAL VERIFICATION] Keep the subject physically in the LEFT FRONT DRIVER'S SEAT. ${tightRule} A small, physically attached upper steering-wheel rim or column edge is mandatory in front of the subject's lower torso and must align with the real instrument cluster behind it. Preserve the center-console edge on the subject's right and/or coherent driver-door / A-pillar / side-window geometry on the subject's left whenever those cues naturally enter frame. Never fabricate or force a complete steering wheel, wheel hub, spokes or a broad holding forearm. If the selected crop initially misses the steering-wheel cue, adjust the crop slightly downward within the same reachable phone geometry; never treat the seat as visually ambiguous, mirror the cabin, move the wheel, or move the subject to the passenger seat.`;
 }
 
 function microCues(state) {
@@ -280,7 +280,7 @@ export function evaluateRealismRisk(state, conflicts = []) {
 }
 
 const PROTECTED_HEADERS = new Set([
-  "[IDENTITY]","[CAMERA]","[SELFIE POSE]","[CAR SEAT POSITION]","[CAR DRIVER SELFIE GEOMETRY — SOLE AUTHORITY]","[CAR ORIENTATION LOCK]","[DRIVER SEAT VISUAL VERIFICATION]","[HAIR]","[CLOTHING PHYSICS]","[PRACTICAL LIGHTING]"
+  "[MASTER REALISM POLICY]","[CONFLICT RESOLUTION]","[IDENTITY]","[CAMERA]","[SELFIE POSE]","[CAR SEAT POSITION]","[CAR DRIVER SELFIE GEOMETRY — SOLE AUTHORITY]","[CAR ORIENTATION LOCK]","[DRIVER SEAT VISUAL VERIFICATION]","[HAIR]","[CLOTHING PHYSICS]","[PRACTICAL LIGHTING]"
 ]);
 
 export function optimizePrompt(prompt) {
