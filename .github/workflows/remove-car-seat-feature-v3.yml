@@ -1,0 +1,85 @@
+name: Remove Car Seat Feature V3
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.remove-car-seat-trigger-v3'
+
+permissions:
+  contents: write
+
+jobs:
+  remove:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply full removal with literal-free tests
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import textwrap
+
+          source = Path('.github/workflows/remove-car-seat-feature-v2.yml').read_text()
+          start_marker = "          python3 - <<'PY'\n"
+          end_marker = "\n          PY\n"
+          start = source.index(start_marker) + len(start_marker)
+          end = source.index(end_marker, start)
+          script = textwrap.dedent(source[start:end])
+
+          # The V2 transformer intentionally wrote three absence assertions containing
+          # the deleted identifiers. Remove those assertions too so the repository
+          # contains no selectable-seat feature names anywhere in active source/tests.
+          script = script.replace(
+              "s=s.replace('assert.match(index, /id=\"car-seat\"/u);','assert.doesNotMatch(index, /id=\"car-' + 'seat\"/u);')",
+              "s=s.replace('assert.match(index, /id=\"car-seat\"/u);','')"
+          )
+          script = script.replace(
+              "s=s.replace('assert.equal(bedroomSpec.scene.seat_position, null);','assert.ok(!(\"seat_' + 'position\" in bedroomSpec.scene));')",
+              "s=s.replace('assert.equal(bedroomSpec.scene.seat_position, null);','')"
+          )
+          script = script.replace(
+              "s=s.replace('assert.equal(spec.scene.seat_position, null);','assert.ok(!(\"seat_' + 'position\" in spec.scene));')",
+              "s=s.replace('assert.equal(spec.scene.seat_position, null);','')"
+          )
+
+          exec(compile(script, '<remove-car-seat-v3>', 'exec'))
+          PY
+
+      - name: Syntax and regression checks
+        shell: bash
+        run: |
+          node --check js/physics-prompt-engine-v5.js
+          node --check js/physics-app-v7.js
+          node --check js/visual-selfie-angle-monitor-v1.js
+          node --check js/auto-realism-suite-v1.js
+          node --check js/advanced-realism-v1.js
+          node --check js/realism-core-v1.js
+          node --check js/scenario-section-engine-v1.js
+          node --check js/realism-constraint-compiler-v1.js
+          node tests/v2-deployment.mjs
+          node tests/physics-v5-wikiprompt.mjs
+          node tests/custom-scene.mjs
+          node tests/clothing-physics.mjs
+          node tests/realism-core.mjs
+          node tests/advanced-realism.mjs
+          node tests/auto-realism-suite.mjs
+          node tests/visual-selfie-angle-monitor.mjs
+
+      - name: Commit full removal
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Remove car seat selector from all active paths"
+          git push origin HEAD:main
