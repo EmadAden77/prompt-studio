@@ -1,0 +1,66 @@
+name: Phase 6 gate evaluation
+
+on:
+  push:
+    branches:
+      - phase6-feature-flag-eval
+
+permissions:
+  contents: write
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Wire staging files
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          index = Path('index.html')
+          text = index.read_text()
+          old = '<script type="module" src="js/physics-app-v7.js?v=20260903-json-clean2"></script>'
+          new = '<script type="module" src="js/canonical/engine-gate.js?v=20260903-phase6"></script>'
+          if old in text:
+              text = text.replace(old, new, 1)
+          elif new not in text:
+              raise SystemExit('expected app script tag not found')
+          index.write_text(text)
+
+          workflow = Path('.github/workflows/test.yml')
+          yml = workflow.read_text()
+          marker = '      - name: Run Canonical V3 feature flag gate\n        run: node tests/canonical-v3-feature-flag.mjs\n'
+          if marker not in yml:
+              yml = yml.rstrip() + '\n' + marker
+          workflow.write_text(yml)
+          PY
+      - name: Run production and Phase 6 tests
+        run: |
+          node tests/v2-deployment.mjs
+          node tests/physics-v5-wikiprompt.mjs
+          node tests/custom-scene.mjs
+          node tests/clothing-physics.mjs
+          node tests/realism-core.mjs
+          node tests/advanced-realism.mjs
+          node tests/auto-realism-suite.mjs
+          node tests/visual-selfie-angle-monitor.mjs
+          node tests/canonical-v3-adapter-isolation.mjs
+          node tests/canonical-v3-comparison.mjs
+          node tests/canonical-v3-feature-flag.mjs
+      - name: Commit staging wiring when changed
+        run: |
+          if git diff --quiet -- index.html .github/workflows/test.yml; then
+            echo "staging wiring already committed"
+            exit 0
+          fi
+          git config user.name "EmadAden77"
+          git config user.email "sasfsas8@gmail.com"
+          git add index.html .github/workflows/test.yml
+          git commit -m "Phase 6 staging wire gate and tests"
+          git push origin HEAD:phase6-feature-flag-eval
