@@ -1,0 +1,151 @@
+name: Remove Car Seat Feature
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.remove-car-seat-trigger'
+
+permissions:
+  contents: write
+
+jobs:
+  remove:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Remove seat selector and seat field authority
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          def read(path): return Path(path).read_text()
+          def write(path, text): Path(path).write_text(text)
+          def sub_once(text, pattern, repl, label, flags=0):
+              new, count = re.subn(pattern, repl, text, count=1, flags=flags)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected 1 replacement, got {count}')
+              return new
+
+          # 1) UI: delete the complete seat-position control.
+          p = 'index.html'
+          text = read(p)
+          text = sub_once(
+              text,
+              r'\s*<label class="field field-span-2" id="car-seat-field" for="car-seat" hidden>.*?</label>',
+              '',
+              'remove car-seat UI field',
+              re.S
+          )
+          write(p, text)
+
+          # 2) Live app: delete imports, DOM bindings, state reads, refresh logic and visible status wording.
+          p = 'js/physics-app-v7.js'
+          text = read(p)
+          text = sub_once(text, r'\n  getCarSeatOptions,', '', 'remove getCarSeatOptions import')
+          text = sub_once(text, r'\nconst carSeatSelect = document\.querySelector\("#car-seat"\);\nconst carSeatField = document\.querySelector\("#car-seat-field"\);', '', 'remove car-seat DOM bindings')
+          text = sub_once(text, r'\n    carSeat:value\("car-seat"\), clothing:', '\n    clothing:', 'remove carSeat state read')
+          text = sub_once(text, r'\[sceneSelect,state\.scene\],\[poseFamilySelect,state\.poseFamily\],\[poseSelect,state\.pose\],\[carSeatSelect,state\.carSeat\],', '[sceneSelect,state.scene],[poseFamilySelect,state.poseFamily],[poseSelect,state.pose],', 'remove car seat UI sync')
+          text = sub_once(
+              text,
+              r'\n  const car = isCarScene\(scene\);\n  carSeatField\.hidden = !car;\n  if \(car\) populateSelect\(carSeatSelect, getCarSeatOptions\(scene, poseSelect\.value\), carSeatSelect\.value \|\| DEFAULT_STATE\.carSeat\);\n  else carSeatSelect\.replaceChildren\(\);\n',
+              '\n',
+              'remove first car seat refresh block'
+          )
+          text = sub_once(
+              text,
+              r'\n  if \(isCarScene\(normalized\.scene\)\) \{\n    carSeatField\.hidden = false;\n    populateSelect\(carSeatSelect, getCarSeatOptions\(normalized\.scene, normalized\.pose\), normalized\.carSeat\);\n  \} else \{\n    carSeatField\.hidden = true;\n    carSeatSelect\.replaceChildren\(\);\n  \}\n',
+              '\n',
+              'remove normalized car seat refresh block'
+          )
+          text = text.replace('تم تثبيت الهوية وموضع الجلوس داخل السيارة؛ الخلفية غير إجبارية.', 'تم تثبيت الهوية وهندسة السائق داخل السيارة؛ الخلفية غير إجبارية.')
+          text = text.replace('موضع الجلوس داخل السيارة مقفل؛ أرفق صورة هوية واحدة فقط عند الاستخدام.', 'هندسة السائق داخل السيارة مقفلة تلقائياً؛ أرفق صورة هوية واحدة فقط عند الاستخدام.')
+          text = text.replace('"time","pose-family","pose","car-seat","lighting"', '"time","pose-family","pose","lighting"')
+          write(p, text)
+
+          # 3) Canonical engine: remove selectable seat state/API/output. Driver mapping is derived internally from capture type.
+          p = 'js/physics-prompt-engine-v5.js'
+          text = read(p)
+          text = sub_once(text, r'\nconst DRIVER_SEAT = "driver-left";\n', '\n', 'remove DRIVER_SEAT constant')
+          text = sub_once(text, r'\nconst CAR_SEAT_OPTIONS = Object\.freeze\(\[.*?\]\);\n', '\n', 'remove CAR_SEAT_OPTIONS catalog', re.S)
+          text = text.replace('poseFamily:"lying", pose:"lying-right-close", carSeat:DRIVER_SEAT,', 'poseFamily:"lying", pose:"lying-right-close",')
+          text = text.replace('function isDriverCarState(state) { return isCarScene(state.scene) && state.carSeat === DRIVER_SEAT; }', 'function isDriverCarState(state) { return isCarScene(state.scene) && String(state.studioSection || "").toLowerCase() === "car"; }')
+          text = sub_once(text, r'\nexport function getCarSeatOptions\(sceneId, poseId = ""\) \{.*?\n\}', '', 'remove getCarSeatOptions API', re.S)
+          text = sub_once(
+              text,
+              r'\n  if \(!isCarScene\(state\.scene\)\) \{\n    if \(state\.carSeat\) record\("carSeat", state\.carSeat, "", "car_seat_leakage_outside_car_scene"\);\n  \} else \{\n    const seats = getCarSeatOptions\(state\.scene, state\.pose\);\n    if \(!seats\.some\(\(item\) => item\.value === state\.carSeat\)\) record\("carSeat", state\.carSeat, seats\[0\]\?\.value \?\? DRIVER_SEAT, "seat_pose_mismatch"\);\n    if \(String\(state\.studioSection\)\.toLowerCase\(\) === "car" && state\.carSeat !== DRIVER_SEAT\) record\("carSeat", state\.carSeat, DRIVER_SEAT, "dedicated_car_studio_is_driver_workflow"\);\n  \}\n',
+              '\n',
+              'remove car seat canonicalization block'
+          )
+          text = text.replace('    occupant_seat:state.carSeat,\n', '')
+          text = text.replace('      ? "Do not force a complete steering wheel. Preserve whichever authentic driver-side cues naturally enter the selected crop; a small attached rim fragment may appear only when the crop physically reaches it."', '      ? "Do not force a complete steering wheel. Preserve whichever authentic driver-side cues naturally enter the selected crop; a small attached rim fragment may appear only when the crop physically reaches it."')
+          text = text.replace('required:driver ? ["physically coherent front-left driver-seat mapping"] : [],', 'required:driver ? ["physically coherent left-hand-drive driver geometry"] : [],')
+          text = text.replace('{ label:"السيارة", value:`${state.carSeat} · LHD غير معكوس · العلاقات Vehicle-relative وليست Image-relative` }', '{ label:"السيارة", value:"LHD غير معكوس · هندسة السائق ثابتة تلقائياً · العلاقات Vehicle-relative وليست Image-relative" }')
+          text = sub_once(text, r'\n  const seat = isCarScene\(state\.scene\) \? optionByValue\(CAR_SEAT_OPTIONS, state\.carSeat\)\?\.label : "";', '', 'remove template seat label')
+          text = text.replace('return { title:[captureLabel, seat, state.time === "night" ? "ليلاً" : "نهاراً"]', 'return { title:[captureLabel, state.time === "night" ? "ليلاً" : "نهاراً"]')
+          text = sub_once(text, r'\n  const seat = isCarScene\(state\.scene\) \? structuredOption\(CAR_SEAT_OPTIONS, state\.carSeat\) : null;', '', 'remove structured seat value')
+          text = text.replace('"3. Explicit selected scene, seat position, expression, clothing and lighting."', '"3. Explicit selected scene, expression, clothing and lighting."')
+          text = text.replace('selected scene, selected seat, selected expression, selected clothing, selected lighting or canonical camera geometry', 'selected scene, selected expression, selected clothing, selected lighting or canonical camera geometry')
+          text = text.replace('      seat_position:seat,\n', '')
+          write(p, text)
+
+          # 4) Regression tests: remove the deleted API/state and assert it can never reappear in canonical JSON.
+          p = 'tests/physics-v5-wikiprompt.mjs'
+          text = read(p)
+          text = text.replace('  getCarSeatOptions,\n', '')
+          text = re.sub(r'\n\s*carSeat:"(?:driver-left|passenger-front-right)",', '', text)
+          text = re.sub(r'\nassert\.equal\(bedroom\.carSeat, "", "Car seat must be erased outside car scenes"\);', '', text)
+          text = re.sub(r'\nassert\.equal\(activeCar\.carSeat, "driver-left"\);', '', text)
+          text = re.sub(r'\nassert\.deepEqual\(getCarSeatOptions\("rangeRover", "car-driver-close"\)\.map\(\(item\) => item\.value\), \["driver-left"\]\);', '', text)
+          text = re.sub(r'\nassert\.equal\(carSpec\.scene\.vehicle_geometry\.occupant_seat, "driver-left"\);', '', text)
+          anchor = 'assert.equal(carSpec.scene.vehicle_geometry.mirror_state, "unmirrored");\n'
+          if anchor not in text:
+              raise SystemExit('test anchor missing')
+          text = text.replace(anchor, anchor + 'assert.ok(!("seat_position" in carSpec.scene));\nassert.ok(!("occupant_seat" in carSpec.scene.vehicle_geometry));\nassert.doesNotMatch(JSON.stringify(carSpec), /carSeat|car-seat|seat_position|occupant_seat/u);\n', 1)
+          write(p, text)
+
+          # Repository-wide active-code audit. No selectable-seat feature identifiers may survive.
+          forbidden = re.compile(r'carSeat|car-seat|getCarSeatOptions|CAR_SEAT_OPTIONS|DRIVER_SEAT|seat_position|occupant_seat|موضع الجلوس داخل السيارة|مقعد السائق الأمامي الأيسر')
+          hits = []
+          for path in Path('.').rglob('*'):
+              if not path.is_file():
+                  continue
+              if '.git' in path.parts or path.as_posix().startswith('.github/workflows/remove-car-seat-feature.yml') or path.name == '.remove-car-seat-trigger':
+                  continue
+              if path.suffix.lower() not in {'.js','.mjs','.html','.md','.json','.css'}:
+                  continue
+              try:
+                  content = path.read_text()
+              except UnicodeDecodeError:
+                  continue
+              for i, line in enumerate(content.splitlines(), 1):
+                  if forbidden.search(line):
+                      hits.append(f'{path}:{i}:{line.strip()}')
+          if hits:
+              print('\n'.join(hits[:200]))
+              raise SystemExit(f'selectable car-seat feature still present in {len(hits)} location(s)')
+          PY
+
+      - name: Run regression suite
+        run: |
+          node tests/physics-v5-wikiprompt.mjs
+          node tests/live-deployment-contract.mjs
+
+      - name: Commit removal
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html js/physics-app-v7.js js/physics-prompt-engine-v5.js tests/physics-v5-wikiprompt.mjs
+          git commit -m "Remove car seat selector and seat field authority"
+          git push origin HEAD:main
