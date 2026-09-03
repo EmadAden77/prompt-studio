@@ -1,0 +1,172 @@
+name: Repository Emergency Cleanup Guard
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/remove-car-seat-feature.yml'
+      - 'index.html'
+      - 'styles-v2.css'
+      - 'styles-wikiprompt.css'
+      - 'styles.css'
+      - 'js/**'
+      - 'tests/**'
+
+concurrency:
+  group: emergency-cleanup-main
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Apply idempotent repository cleanup
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          # Remove known obsolete entrypoints if an old branch or accidental merge restores them.
+          for stale in (Path('tests/run-tests.mjs'), Path('js/app.js')):
+              if stale.exists():
+                  stale.unlink()
+                  print(f'removed obsolete file: {stale}')
+
+          # Keep exactly one car-seat cleanup/guard workflow.
+          workflow_dir = Path('.github/workflows')
+          keep = workflow_dir / 'remove-car-seat-feature.yml'
+          for candidate in workflow_dir.glob('remove-car-seat-feature*.yml'):
+              if candidate != keep:
+                  candidate.unlink()
+                  print(f'removed duplicate workflow: {candidate}')
+
+          # Consolidate the current WikiPrompt UI styles without changing cascade order.
+          base_css = Path('styles-v2.css')
+          extension_css = Path('styles-wikiprompt.css')
+          index = Path('index.html')
+          marker = '/* === WikiPrompt extensions (consolidated) === */'
+          if extension_css.exists():
+              if not base_css.exists():
+                  raise SystemExit('styles-v2.css is missing; refusing destructive CSS consolidation')
+              base_text = base_css.read_text()
+              extension_text = extension_css.read_text()
+              if marker not in base_text:
+                  base_css.write_text(base_text.rstrip() + '\n\n' + marker + '\n' + extension_text.lstrip())
+              page = index.read_text()
+              page = re.sub(r'\n\s*<link\s+rel="stylesheet"\s+href="styles-wikiprompt\.css[^\"]*"\s*/?>', '', page, count=1)
+              page = page.replace('styles-v2.css?v=20260901-nav2', 'styles-v2.css?v=20260903-emergency-cleanup')
+              index.write_text(page)
+              extension_css.unlink()
+              print('consolidated styles-wikiprompt.css into styles-v2.css')
+
+          # Delete the root legacy stylesheet only when no HTML page references it.
+          legacy_css = Path('styles.css')
+          if legacy_css.exists():
+              references = []
+              for html in Path('.').glob('*.html'):
+                  if re.search(r'href=["\']styles\.css(?:\?[^"\']*)?["\']', html.read_text()):
+                      references.append(str(html))
+              if references:
+                  print('keeping styles.css; referenced by: ' + ', '.join(references))
+              else:
+                  legacy_css.unlink()
+                  print('removed unreferenced legacy styles.css')
+
+          # The selector/state API must not exist in any active source or test file.
+          forbidden = re.compile(r'carSeat|car-seat|getCarSeatOptions|CAR_SEAT_OPTIONS|seat_position|occupant_seat|موضع الجلوس داخل السيارة|مقعد السائق الأمامي الأيسر')
+          hits = []
+          allowed_suffixes = {'.js', '.mjs', '.html', '.json', '.css'}
+          for path in Path('.').rglob('*'):
+              if not path.is_file() or '.git' in path.parts:
+                  continue
+              if path == keep or path.suffix.lower() not in allowed_suffixes:
+                  continue
+              try:
+                  text = path.read_text()
+              except UnicodeDecodeError:
+                  continue
+              for line_number, line in enumerate(text.splitlines(), 1):
+                  if forbidden.search(line):
+                      hits.append(f'{path}:{line_number}:{line.strip()}')
+          if hits:
+              print('\n'.join(hits[:200]))
+              raise SystemExit(f'car-seat selector/state remnants remain in {len(hits)} location(s)')
+
+          # Contract checks for the current application entrypoint and CSS consolidation.
+          page = index.read_text()
+          if 'js/physics-app-v7.js' not in page:
+              raise SystemExit('index.html no longer points to js/physics-app-v7.js')
+          if 'js/app.js' in page:
+              raise SystemExit('legacy js/app.js is still referenced by index.html')
+          if 'styles-wikiprompt.css' in page:
+              raise SystemExit('index.html still references the split WikiPrompt stylesheet')
+          if marker not in base_css.read_text():
+              raise SystemExit('consolidated WikiPrompt CSS marker is missing from styles-v2.css')
+          PY
+
+      - name: Syntax check current JavaScript
+        shell: bash
+        run: |
+          while IFS= read -r -d '' file; do
+            node --check "$file"
+          done < <(find js -type f -name '*.js' -print0)
+
+      - name: Run all essential tests from test.yml
+        shell: bash
+        run: |
+          node tests/v2-deployment.mjs
+          node tests/physics-v5-wikiprompt.mjs
+          node tests/custom-scene.mjs
+          node tests/clothing-physics.mjs
+          node tests/realism-core.mjs
+          node tests/advanced-realism.mjs
+          node tests/auto-realism-suite.mjs
+          node tests/visual-selfie-angle-monitor.mjs
+
+      - name: Delete stale merged or closed branches
+        shell: bash
+        run: |
+          branches=(
+            'codex/live-geometry-preview'
+            'codex/distance-aware-smartphone-capture'
+            'codex/external-generator-setups'
+            'codex/context-resolution-guards'
+            'codex/driver-selfie-geometry-lock'
+          )
+          for branch in "${branches[@]}"; do
+            if git ls-remote --exit-code --heads origin "refs/heads/$branch" >/dev/null 2>&1; then
+              git push origin --delete "$branch"
+              echo "deleted stale branch: $branch"
+            else
+              echo "already absent: $branch"
+            fi
+          done
+
+      - name: Commit cleanup if needed
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No repository cleanup changes required.'
+          else
+            git commit -m 'Emergency repository cleanup and CSS consolidation'
+            git push origin HEAD:main
+          fi
