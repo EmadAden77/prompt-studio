@@ -111,8 +111,14 @@ jobs:
 
           # Contract checks for the current application entrypoint and CSS consolidation.
           page = index.read_text()
-          if 'js/physics-app-v7.js' not in page:
-              raise SystemExit('index.html no longer points to js/physics-app-v7.js')
+          direct_legacy_entry = 'js/physics-app-v7.js' in page
+          canonical_gate_entry = 'js/canonical/engine-gate.js' in page
+          if not direct_legacy_entry and not canonical_gate_entry:
+              raise SystemExit('index.html reaches neither the legacy v7 app nor the Canonical V3 engine gate')
+          if canonical_gate_entry:
+              gate = Path('js/canonical/engine-gate.js')
+              if not gate.exists() or 'physics-app-v7.js' not in gate.read_text():
+                  raise SystemExit('Canonical V3 engine gate no longer preserves the legacy v7 application path')
           if 'js/app.js' in page:
               raise SystemExit('legacy js/app.js is still referenced by index.html')
           if 'styles-wikiprompt.css' in page:
@@ -139,6 +145,9 @@ jobs:
           node tests/advanced-realism.mjs
           node tests/auto-realism-suite.mjs
           node tests/visual-selfie-angle-monitor.mjs
+          node tests/canonical-v3-adapter-isolation.mjs
+          node tests/canonical-v3-comparison.mjs
+          node tests/canonical-v3-feature-flag.mjs
 
       - name: Delete stale merged or closed branches
         shell: bash

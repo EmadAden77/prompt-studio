@@ -19,7 +19,13 @@ assert.match(index, /id="selfie-angle"/u);
 assert.match(index, /id="composition"/u);
 assert.match(index, /id="json-prompt"/u);
 assert.match(index, /JSON SPECIFICATION/u);
-assert.match(index, /<script type="module" src="js\/physics-app-v7\.js(?:\?[^"]+)?"><\/script>/u);
+const directLegacyEntry = /<script type="module" src="js\/physics-app-v7\.js(?:\?[^"]+)?"><\/script>/u.test(index);
+const canonicalGateEntry = /<script type="module" src="js\/canonical\/engine-gate\.js(?:\?[^"]+)?"><\/script>/u.test(index);
+assert.equal(directLegacyEntry || canonicalGateEntry, true, "index must load either the legacy app directly or the Phase 6 engine gate");
+if (canonicalGateEntry) {
+  const gate = readFileSync(resolve(root, "js/canonical/engine-gate.js"), "utf8");
+  assert.match(gate, /await import\("\.\.\/physics-app-v7\.js\?v=20260903-json-clean2"\)/u, "Phase 6 gate must retain the legacy application path");
+}
 
 const app = readFileSync(resolve(root, "js/physics-app-v7.js"), "utf8");
 assert.match(app, /buildStructuredPromptSpec/u);
@@ -89,6 +95,5 @@ const bedroomState = normalizeState({
 });
 const bedroomSpec = buildStructuredPromptSpec(bedroomState);
 assert.equal(bedroomSpec.scene.vehicle_geometry, null);
-
 
 console.log("✓ canonical deployment contract: single authority, scene isolation and LHD driver geometry passed");

@@ -122,7 +122,13 @@ assert.match(index, /id="object-profile"/u);
 assert.match(index, /id="accessory-detail"/u);
 assert.match(index, /id="realism-score-preview"/u);
 assert.match(index, /Prompt Optimizer · Occlusion · Microphysics/u);
-assert.match(index, /physics-app-v7\.js/u);
+const directLegacyEntry = /physics-app-v7\.js/u.test(index);
+const canonicalGateEntry = /js\/canonical\/engine-gate\.js/u.test(index);
+assert.equal(directLegacyEntry || canonicalGateEntry, true, "live page must reach physics-app-v7 directly or through the Phase 6 engine gate");
+if (canonicalGateEntry) {
+  const gate = readFileSync(resolve(root, "js/canonical/engine-gate.js"), "utf8");
+  assert.match(gate, /physics-app-v7\.js/u, "Phase 6 gate must keep the legacy v7 application reachable");
+}
 
 const app = readFileSync(resolve(root, "js/physics-app-v7.js"), "utf8");
 assert.match(app, /advanced-realism-v1\.js/u);

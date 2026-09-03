@@ -44,3 +44,5 @@ jobs:
         run: node tests/canonical-v3-adapter-isolation.mjs
       - name: Run Canonical V3 old-vs-new comparison
         run: node tests/canonical-v3-comparison.mjs
+      - name: Run Canonical V3 feature flag gate
+        run: node tests/canonical-v3-feature-flag.mjs
