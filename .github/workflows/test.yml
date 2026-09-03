@@ -40,3 +40,5 @@ jobs:
         run: node tests/auto-realism-suite.mjs
       - name: Run Visual Selfie Angle Monitor tests
         run: node tests/visual-selfie-angle-monitor.mjs
+      - name: Run Canonical V3 OpenAI adapter isolation test
+        run: node tests/canonical-v3-adapter-isolation.mjs

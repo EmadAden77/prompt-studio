@@ -1,22 +1,9 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import { fileURLToPath } from "node:url";
+import { buildCanonicalV3 } from "../js/canonical-v3-engine.js";
+import { buildOpenAIImagePrompt } from "../js/canonical/openai-image-adapter.js";
 
-const engineUrl = new URL("../js/canonical-v3-engine.js", import.meta.url);
-const adapterUrl = new URL("../js/openai-image-adapter-v1.js", import.meta.url);
-if (!fs.existsSync(fileURLToPath(engineUrl)) || !fs.existsSync(fileURLToPath(adapterUrl))) {
-  console.log("○ Phase 1 contract test pending: OpenAI adapter is not implemented until Phase 4");
-  process.exit(0);
-}
-
-const { buildCanonicalV3 } = await import(engineUrl.href);
-const { adaptCanonicalV3ToOpenAI } = await import(adapterUrl.href);
-
-function deepFreeze(value) {
-  if (!value || typeof value !== "object" || Object.isFrozen(value)) return value;
-  Object.freeze(value);
-  for (const child of Object.values(value)) deepFreeze(child);
-  return value;
+function count(text, needle) {
+  return text.split(needle).length - 1;
 }
 
 const canonical = buildCanonicalV3({
@@ -30,16 +17,62 @@ const canonical = buildCanonicalV3({
   composition: "close"
 });
 
-const before = JSON.stringify(canonical.hard_constraints);
-deepFreeze(canonical);
-const payload = adaptCanonicalV3ToOpenAI(canonical);
-const after = JSON.stringify(canonical.hard_constraints);
+const beforeCanonical = JSON.stringify(canonical);
+const beforeHardConstraints = JSON.stringify(canonical.hard_constraints);
 
-assert.ok(payload, "adapter must return a payload");
-assert.equal(after, before, "adapter must not mutate hard constraints");
+assert.equal(Object.isFrozen(canonical), true);
+assert.equal(Object.isFrozen(canonical.hard_constraints), true);
+assert.equal(Object.isFrozen(canonical.hard_constraints.vehicle_geometry), true);
+
+const prompt = buildOpenAIImagePrompt(canonical);
+
+const afterCanonical = JSON.stringify(canonical);
+const afterHardConstraints = JSON.stringify(canonical.hard_constraints);
+
+assert.equal(typeof prompt, "string");
+assert.ok(prompt.length > 0, "adapter must return a non-empty image prompt");
+assert.equal(afterCanonical, beforeCanonical, "adapter must not mutate canonical state");
+assert.equal(afterHardConstraints, beforeHardConstraints, "adapter must not mutate hard constraints");
+
 assert.equal(canonical.hard_constraints.identity.adapter_can_modify, false);
+assert.equal(canonical.hard_constraints.anatomy.adapter_can_modify, false);
+assert.equal(canonical.hard_constraints.capture_physics.adapter_can_modify, false);
+assert.equal(canonical.hard_constraints.selfie_geometry.adapter_can_modify, false);
 assert.equal(canonical.hard_constraints.camera_geometry.adapter_can_modify, false);
 assert.equal(canonical.hard_constraints.vehicle_geometry.adapter_can_modify, false);
 assert.equal(canonical.validation.adapter_mutation_detected, false);
+
+for (const forbidden of [
+  /\bDO NOT\b/iu,
+  /\bMUST\b/iu,
+  /\bIMPORTANT\b/iu,
+  /\bNEVER\b/iu,
+  /hard_constraints/iu,
+  /adapter_can_modify/iu,
+  /authority_collisions/iu,
+  /scene_leakage_detected/iu,
+  /\bconflicts?\b/iu,
+  /\bwinner\b/iu,
+  /\bloser\b/iu,
+  /left side of (?:the )?image/iu,
+  /right side of (?:the )?image/iu
+]) {
+  assert.equal(forbidden.test(prompt), false, `prompt contains forbidden adapter/debug marker: ${forbidden}`);
+}
+
+assert.match(prompt, /supplied identity reference/iu);
+assert.equal(/beautif|younger|older|perfect symmetry|more symmetrical|face slim/iu.test(prompt), false, "identity wording must stay preserve-reference only");
+assert.match(prompt, /natural asymmetry/iu, "reference-preservation may retain natural asymmetry from the canonical identity contract");
+
+for (const phrase of [
+  "vehicle-relative coordinates",
+  "steering wheel is directly ahead of the driver's torso",
+  "center console is at the driver's physical right",
+  "driver door/window is at the driver's physical left"
+]) {
+  assert.equal(count(prompt, phrase), 1, `vehicle relation must appear exactly once: ${phrase}`);
+}
+
+assert.equal(count(prompt, "supplied identity reference"), 1, "identity reference instruction must appear exactly once");
 
 console.log("✓ canonical-v3 OpenAI adapter isolation contract passed");
