@@ -1,153 +1,99 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { pathToFileURL, fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
 
 const index = readFileSync(resolve(root, "index.html"), "utf8");
 assert.match(index, /WikiPrompt Selfie Studio/u);
-assert.match(index, /WIKIPROMPT FIRST · SELFIE FIRST · REALISM CORE · ADVANCED REALISM/u);
 assert.match(index, /id="prompt-form"/u);
 assert.match(index, /id="reference-image"/u);
 assert.match(index, /id="scene"/u);
-assert.match(index, /id="custom-scene-field"/u);
-assert.match(index, /id="custom-scene"/u);
-assert.match(index, /id="custom-scene-details-field"/u);
-assert.match(index, /id="custom-scene-details"/u);
-assert.match(index, /وصف المشهد المخصص/u);
-assert.match(index, /تفاصيل مطلوبة إذا سمحت الزاوية/u);
-assert.match(index, /id="pose-family"/u);
 assert.match(index, /id="pose"/u);
-assert.match(index, /id="car-seat-field"/u);
 assert.match(index, /id="car-seat"/u);
-assert.match(index, /موضع الجلوس داخل السيارة/u);
-assert.match(index, /id="clothing"/u);
-assert.match(index, /id="fabric"/u);
-assert.match(index, /id="fabric-weight"/u);
-assert.match(index, /id="iron-state"/u);
-assert.match(index, /id="wear-state"/u);
-assert.match(index, /id="clothing-fit"/u);
-assert.match(index, /id="hair"/u);
+assert.match(index, /id="expression"/u);
 assert.match(index, /id="lighting"/u);
 assert.match(index, /id="selfie-angle"/u);
 assert.match(index, /id="composition"/u);
-assert.match(index, /id="place-state"/u);
-assert.match(index, /id="people-density"/u);
-assert.match(index, /id="subject-moment"/u);
-assert.match(index, /id="interaction-object"/u);
-assert.match(index, /id="scene-profile"/u);
-assert.match(index, /id="accessory-profile"/u);
-assert.match(index, /id="object-profile"/u);
-assert.match(index, /id="accessory-detail"/u);
-assert.match(index, /id="realism-score-preview"/u);
-assert.match(index, /Conflict Check · Contact Physics · Camera Auto Behavior · Reflection & Glass/u);
-assert.match(index, /Prompt Optimizer · Occlusion · Microphysics/u);
-assert.match(index, /id="positive-prompt"/u);
-assert.match(index, /id="negative-prompt"/u);
 assert.match(index, /id="json-prompt"/u);
-assert.match(index, /id="copy-json"/u);
-assert.match(index, /id="download-json"/u);
 assert.match(index, /JSON SPECIFICATION/u);
-assert.match(index, /id="qa-list"/u);
-assert.match(index, /<input id="mode" name="mode" type="hidden" value="selfie"/u);
-assert.doesNotMatch(index, /<option value="standard">/u, "Standard/observer photography must not remain as an active option");
-assert.match(index, /styles-wikiprompt\.css/u);
 assert.match(index, /<script type="module" src="js\/physics-app-v7\.js(?:\?[^"]+)?"><\/script>/u);
 
 const app = readFileSync(resolve(root, "js/physics-app-v7.js"), "utf8");
-assert.match(app, /composeWikiFirstPrompt/u);
-assert.match(app, /\[WIKIPROMPT BASE REALISM\].*\\n\$\{guidance\}\\n\\n\$\{basePrompt\}/u, "WikiPrompt guidance must precede the engine prompt");
-assert.match(app, /getPoseFamilyOptions/u);
-assert.match(app, /getPoseOptions/u);
-assert.match(app, /getCarSeatOptions/u);
-assert.match(app, /isCarScene/u);
-assert.match(app, /isCustomScene/u);
-assert.match(app, /customScene:value\("custom-scene"\)/u);
-assert.match(app, /customSceneDetails:value\("custom-scene-details"\)/u);
-assert.match(app, /getCompatibleBedroomWindowOptions/u);
-assert.match(app, /resolveRealismCoreState/u);
-assert.match(app, /buildRealismCoreSections/u);
-assert.match(app, /REALISM_CORE_NEGATIVE_RULES/u);
-assert.match(app, /realismCoreQaItems/u);
-assert.match(app, /placeState:value\("place-state"\)/u);
-assert.match(app, /peopleDensity:value\("people-density"\)/u);
-assert.match(app, /subjectMoment:value\("subject-moment"\)/u);
-assert.match(app, /interactionObject:value\("interaction-object"\)/u);
-assert.match(app, /advanced-realism-v1\.js/u);
-assert.match(app, /resolveAdvancedRealismState/u);
-assert.match(app, /buildAdvancedRealismSections/u);
-assert.match(app, /optimizePrompt/u);
-assert.match(app, /evaluateRealismRisk/u);
-assert.match(app, /ADVANCED_REALISM_NEGATIVE_RULES/u);
-assert.match(app, /sceneProfile:value\("scene-profile"\)/u);
-assert.match(app, /accessoryProfile:value\("accessory-profile"\)/u);
-assert.match(app, /objectProfile:value\("object-profile"\)/u);
-assert.match(app, /wikiPromptService\.sync\(config\)/u);
 assert.match(app, /buildStructuredPromptSpec/u);
 assert.match(app, /renderStructuredJson/u);
-assert.match(app, /downloadJsonPrompt/u);
-assert.doesNotMatch(app, /bedroomLighting/u, "Old parallel bedroom-lighting state must be removed from the live controller");
-assert.doesNotMatch(app, /activity:value/u, "Free-form pose activity must not compete with the linked pose catalog");
+assert.match(app, /normalizeState/u);
+assert.match(app, /getCarSeatOptions/u);
+assert.match(app, /getCompatibleBedroomWindowOptions/u);
+assert.doesNotMatch(app, /bedroomLighting/u, "Parallel bedroom-lighting state must stay removed");
 
-const realismCore = readFileSync(resolve(root, "js/realism-core-v1.js"), "utf8");
-assert.match(realismCore, /\[REALISM CONFLICT CHECK\]/u);
-assert.match(realismCore, /\[CONTACT PHYSICS\]/u);
-assert.match(realismCore, /\[CAMERA AUTO BEHAVIOR\]/u);
-assert.match(realismCore, /\[REFLECTION AND GLASS\]/u);
-assert.match(realismCore, /\[HAND OBJECT INTERACTION\]/u);
-assert.match(realismCore, /tight-crowd/u);
-assert.match(realismCore, /windowless-daylight/u);
-assert.match(realismCore, /noise-free night smartphone image/u);
+const engineText = readFileSync(resolve(root, "js/physics-prompt-engine-v5.js"), "utf8");
+assert.match(engineText, /CANONICAL PROMPT ENGINE/u);
+assert.match(engineText, /single_authority_per_field/u);
+assert.match(engineText, /vehicle-relative relations/u);
+assert.match(engineText, /camera_to_face_distance_cm/u);
+assert.match(engineText, /json_only/u);
+assert.doesNotMatch(engineText, /mandatory thin steering-wheel/iu);
+assert.doesNotMatch(engineText, /LEFT FRONT DRIVER'S SEAT LOCK/u);
+assert.doesNotMatch(engineText, /Do not mirror, swap or reinterpret the subject's seat/u);
+assert.doesNotMatch(engineText, /physics-data-v4\.js/u);
+assert.doesNotMatch(engineText, /physicsPolicy\.js/u);
 
-const advanced = readFileSync(resolve(root, "js/advanced-realism-v1.js"), "utf8");
-assert.match(advanced, /\[SCENE PROFILE\]/u);
-assert.match(advanced, /\[OCCLUSION ENGINE\]/u);
-assert.match(advanced, /\[ACCESSORY PHYSICS\]/u);
-assert.match(advanced, /\[OBJECT PROFILE\]/u);
-assert.match(advanced, /\[ENVIRONMENT MICROPHYSICS\]/u);
-assert.match(advanced, /\[REALISM RISK CHECK\]/u);
-assert.match(advanced, /optimizePrompt/u);
-assert.match(advanced, /PROTECTED_HEADERS/u);
-assert.match(advanced, /scene-profile-mismatch/u);
-assert.match(advanced, /large-object-tight-crop/u);
+const engineUrl = `${pathToFileURL(resolve(root, "js/physics-prompt-engine-v5.js")).href}?canonical-test=${Date.now()}`;
+const { buildStructuredPromptSpec, normalizeState } = await import(engineUrl);
 
-const engine = readFileSync(resolve(root, "js/physics-prompt-engine-v5.js"), "utf8");
-assert.match(engine, /wiki-selfie-data-v1\.js/u);
-assert.match(engine, /SCENE_PRIORITY_RULE/u, "Engine must consume the selfie-priority policy from the modular data source");
-assert.match(engine, /REALISM_ORDER/u, "Engine must consume the conflict-order policy from the modular data source");
-assert.match(engine, /getCompatibleBedroomWindowOptions/u);
-assert.match(engine, /LEFT FRONT DRIVER'S SEAT LOCK/u);
-assert.match(engine, /RIGHT FRONT PASSENGER SEAT LOCK/u);
-assert.match(engine, /Do not mirror, swap or reinterpret the subject's seat/u);
-assert.match(engine, /\[CUSTOM SCENE AUTHORITY\]/u);
-assert.match(engine, /Do not silently replace the requested place with a bedroom, car, gym, street or unrelated generic interior/u);
-assert.match(engine, /CUSTOM_LIGHTING_OPTIONS/u);
-assert.match(engine, /clothing-physics-v1\.js/u);
-assert.doesNotMatch(engine, /physics-data-v4\.js/u, "Old contradictory data source must be detached from the live engine");
-assert.doesNotMatch(engine, /physicsPolicy\.js/u, "Old generic physics contract must be detached from the live engine");
-assert.doesNotMatch(engine, /Leica Authentic|23mm-equivalent/u);
+const driverState = normalizeState({
+  studioSection:"car",
+  scene:"rangeRover",
+  time:"day",
+  poseFamily:"car",
+  pose:"car-driver-close",
+  carSeat:"passenger-front-right",
+  selfieAngle:"three-quarter",
+  composition:"close",
+  lighting:"car-day-window",
+  clothing:"thobe-white",
+  expression:"soft-smile",
+  visualSelfieMonitor:"on"
+});
 
-const clothingPhysics = readFileSync(resolve(root, "js/clothing-physics-v1.js"), "utf8");
-assert.match(clothingPhysics, /\[CLOTHING PHYSICS\]/u);
-assert.match(clothingPhysics, /FABRIC_OPTIONS/u);
-assert.match(clothingPhysics, /IRON_STATE_OPTIONS/u);
+assert.equal(driverState.carSeat, "driver-left", "Dedicated car studio must resolve to the front-left driver seat");
+const driverSpec = buildStructuredPromptSpec(driverState, { wikiPromptGuidance:"candid smartphone realism" });
+assert.equal(driverSpec.schema_version, "realistic-image-generator/v2-canonical");
+assert.equal(driverSpec.task.input_contract, "json_only");
+assert.equal(driverSpec.task.capture_type, "subject_held_driver_selfie");
+assert.equal(driverSpec.authority.policy, "single_authority_per_field");
+assert.equal(driverSpec.scene.vehicle_geometry.drive_configuration, "left_hand_drive");
+assert.equal(driverSpec.scene.vehicle_geometry.occupant_seat, "driver-left");
+assert.match(driverSpec.scene.vehicle_geometry.spatial_relations.center_console, /driver's physical right/u);
+assert.match(driverSpec.scene.vehicle_geometry.spatial_relations.driver_door_and_window, /driver's physical left/u);
+assert.match(driverSpec.scene.vehicle_geometry.spatial_relations.projection_rule, /not image-left\/image-right placement/iu);
+assert.match(driverSpec.scene.vehicle_geometry.visual_evidence_policy, /Do not force a complete steering wheel/u);
+assert.equal(typeof driverSpec.photography.camera_geometry.camera_to_face_distance_cm, "number");
+assert.equal(driverSpec.generator.wiki_prompt_calibration.override_permission, false);
+assert.ok(!("positive" in driverSpec), "Canonical JSON must not embed a positive prompt");
+assert.ok(!("negative" in driverSpec), "Canonical JSON must not embed a negative prompt");
+assert.ok(!("qa" in driverSpec), "Canonical JSON must not embed UI QA");
 
-const data = readFileSync(resolve(root, "js/wiki-selfie-data-v1.js"), "utf8");
-assert.match(data, /HAIR DENSITY LOCK/u);
-assert.match(data, /SUBJECT-HELD SELFIE CAMERA/u);
-assert.match(data, /SELFIE PRIORITY/u);
-assert.match(data, /CONFLICT ORDER/u);
-assert.doesNotMatch(data, /sheer white curtains/u);
-assert.doesNotMatch(data, /cinematic lighting.*dominant/iu);
+const driverSerialized = JSON.stringify(driverSpec);
+assert.doesNotMatch(driverSerialized, /mandatory.*steering/iu);
+assert.doesNotMatch(driverSerialized, /right_hand_drive/iu);
 
-const wikiService = readFileSync(resolve(root, "js/services/wikiPromptService.js"), "utf8");
-assert.match(wikiService, /new URL\("\.\.\/\.\.\/data\/wikiprompt-realism\.json", import\.meta\.url\)\.href/u);
-assert.doesNotMatch(wikiService, /document\.baseURI/u);
-assert.match(wikiService, /embedded-fallback/u);
+const bedroomState = normalizeState({
+  studioSection:"bedroom",
+  scene:"bedroom",
+  carSeat:"driver-left",
+  poseFamily:"lying",
+  pose:"lying-right-close",
+  time:"night",
+  lighting:"night-bedside-3000",
+  bedroomWindow:"night-charcoal-closed"
+});
+assert.equal(bedroomState.carSeat, "", "Car-seat state must not leak into bedroom scenes");
+const bedroomSpec = buildStructuredPromptSpec(bedroomState);
+assert.equal(bedroomSpec.scene.vehicle_geometry, null);
+assert.equal(bedroomSpec.scene.seat_position, null);
 
-const wikiDataset = JSON.parse(readFileSync(resolve(root, "data/wikiprompt-realism.json"), "utf8"));
-assert.ok(Array.isArray(wikiDataset.records) && wikiDataset.records.length > 0);
-
-console.log("✓ active WikiPrompt Selfie Studio + Realism Core + Advanced Realism deployment contract passed");
+console.log("✓ canonical deployment contract: single authority, scene isolation and LHD driver geometry passed");
