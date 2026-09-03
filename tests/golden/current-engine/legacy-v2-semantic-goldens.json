@@ -1,0 +1,254 @@
+{
+  "snapshot_version": "legacy-v2-semantic-golden/1",
+  "captured_from": {
+    "repository_commit": "c99ea05ff6675d94358900e62c06291664c7a43f",
+    "engine": "js/physics-prompt-engine-v5.js",
+    "engine_blob_sha": "6c44f46a9cc6f1bc65e3b9941c237077a167d55c",
+    "entrypoint": "buildStructuredPromptSpec",
+    "capture_mode": "stable semantic projection of current structured output"
+  },
+  "notes": [
+    "These goldens intentionally snapshot stable semantic fields rather than unstable prose formatting.",
+    "They are legacy baselines only; canonical-v3 is not required to preserve known legacy defects.",
+    "scene.facts in canonical-v3 is read-only scene_contract data and may never override a higher authority."
+  ],
+  "cases": {
+    "car_lhd_driver_selfie": {
+      "input": {
+        "studioSection": "car",
+        "scene": "rangeRover",
+        "hasReference": true,
+        "poseFamily": "relaxed",
+        "pose": "relaxed-close",
+        "time": "day",
+        "lighting": "car-day-window",
+        "clothing": "thobe-white",
+        "selfieAngle": "three-quarter",
+        "composition": "close"
+      },
+      "observed": {
+        "schema_version": "realistic-image-generator/v2-canonical",
+        "capture_type": "subject_held_driver_selfie",
+        "authority_policy": "single_authority_per_field",
+        "identity_reference_source": "attached_reference_image",
+        "scene_id": "rangeRover",
+        "selected_pose_id": "car-driver-close",
+        "camera_geometry": {
+          "authority": "driver_selfie_numeric_geometry",
+          "camera_to_face_distance_cm": 44,
+          "phone_yaw_deg": 12,
+          "phone_pitch_deg": -4,
+          "phone_roll_deg": 2,
+          "face_yaw_deg": 6,
+          "framing_target": "close",
+          "feasibility": {
+            "score": 100,
+            "level": "ممكن طبيعيًا",
+            "reachable": true
+          }
+        },
+        "vehicle_geometry": {
+          "drive_configuration": "left_hand_drive",
+          "mirror_state": "unmirrored",
+          "steering_wheel": "directly ahead of the driver torso on the vehicle-left driving position",
+          "instrument_cluster": "behind the steering wheel on the same driver axis",
+          "center_console": "to the driver's physical right",
+          "driver_door_and_window": "to the driver's physical left"
+        },
+        "background_visibility": "conditional",
+        "wiki_prompt_override_permission": false
+      }
+    },
+    "car_tight_crop": {
+      "input": {
+        "studioSection": "car",
+        "scene": "rangeRover",
+        "poseFamily": "car",
+        "pose": "car-driver-close",
+        "time": "day",
+        "lighting": "car-day-window",
+        "selfieAngle": "eye",
+        "composition": "tight"
+      },
+      "observed": {
+        "capture_type": "subject_held_driver_selfie",
+        "selected_pose_id": "car-driver-close",
+        "camera_geometry": {
+          "authority": "driver_selfie_numeric_geometry",
+          "camera_to_face_distance_cm": 40,
+          "phone_yaw_deg": 0,
+          "phone_pitch_deg": -3,
+          "phone_roll_deg": 2,
+          "face_yaw_deg": 0,
+          "framing_target": "tight",
+          "feasibility": {
+            "score": 95,
+            "level": "ممكن طبيعيًا",
+            "reachable": true
+          }
+        },
+        "vehicle_drive_configuration": "left_hand_drive",
+        "background_visibility": "minimal",
+        "visual_evidence_policy": "Do not force a complete steering wheel. Preserve whichever authentic driver-side cues naturally enter the selected crop; a small attached rim fragment may appear only when the crop physically reaches it."
+      }
+    },
+    "bedroom_direct_selfie": {
+      "input": {
+        "studioSection": "bedroom",
+        "scene": "my_bedroom_text",
+        "hasReference": true,
+        "poseFamily": "relaxed",
+        "pose": "relaxed-close",
+        "time": "day",
+        "lighting": "day-soft-window",
+        "clothing": "tee-black",
+        "selfieAngle": "eye",
+        "composition": "close"
+      },
+      "observed": {
+        "capture_type": "subject_held_front_camera_selfie",
+        "identity_reference_source": "attached_reference_image",
+        "scene_id": "my_bedroom_text",
+        "vehicle_geometry": null,
+        "camera_geometry": {
+          "authority": "visual_selfie_angle_monitor",
+          "camera_to_face_distance_cm": 50,
+          "phone_yaw_deg": 0,
+          "phone_pitch_deg": 0,
+          "phone_roll_deg": 2,
+          "face_yaw_deg": 0,
+          "framing_target": "close",
+          "feasibility": {
+            "score": 100,
+            "level": "ممكن طبيعيًا",
+            "reachable": true
+          }
+        },
+        "background_visibility": "none",
+        "mirror_rules_applicable": false
+      }
+    },
+    "mirror_selfie": {
+      "input": {
+        "studioSection": "bedroom",
+        "scene": "my_bedroom_text",
+        "mode": "mirror",
+        "captureType": "mirror_selfie",
+        "mirrorSelfie": true,
+        "time": "day",
+        "lighting": "day-soft-window",
+        "poseFamily": "relaxed",
+        "pose": "relaxed-close",
+        "selfieAngle": "eye",
+        "composition": "close"
+      },
+      "observed": {
+        "capture_type": "subject_held_front_camera_selfie",
+        "mirror_rules_applicable": false,
+        "camera_device": "Xiaomi 15 Ultra front camera",
+        "legacy_limitation": "The current v2 engine does not expose a distinct mirror-selfie capture authority for these markers."
+      }
+    },
+    "group_selfie": {
+      "input": {
+        "studioSection": "group",
+        "groupMode": "group",
+        "groupCount": "4",
+        "cameraHolder": "A",
+        "groupArrangement": "mixed-depth",
+        "groupInteraction": "friends",
+        "scene": "street",
+        "poseFamily": "street",
+        "pose": "street-standing",
+        "time": "day",
+        "lighting": "street-day-open-shade",
+        "clothing": "tee-black",
+        "selfieAngle": "eye",
+        "composition": "close"
+      },
+      "observed": {
+        "capture_type": "subject_held_group_selfie",
+        "group_count": 4,
+        "camera_holder": "A",
+        "arrangement": "mixed-depth",
+        "interaction": "friends",
+        "camera_geometry_authority": "visual_selfie_angle_monitor",
+        "background_visibility": "conditional",
+        "identity_policy_contains": "Never clone, blend or transfer",
+        "anatomy_policy_contains": "belongs to exactly one person"
+      }
+    },
+    "accidental_capture": {
+      "input": {
+        "studioSection": "accidental",
+        "captureMode": "accidental",
+        "accidentalDevice": "iphone",
+        "accidentalTrigger": "pocket",
+        "accidentalPhonePosition": "rising",
+        "accidentalMotion": "subtle",
+        "accidentalTilt": "right",
+        "accidentalFocus": "transition-face",
+        "accidentalExposure": "auto-imperfect",
+        "accidentalIntensity": "natural",
+        "scene": "bedroom",
+        "poseFamily": "relaxed",
+        "pose": "relaxed-close",
+        "time": "day",
+        "lighting": "day-soft-window",
+        "clothing": "tee-black"
+      },
+      "observed": {
+        "capture_type": "accidental_subject_held_front_camera_capture",
+        "device": "iPhone 15 Pro Max front camera",
+        "selected_angle": null,
+        "selected_shot_type": null,
+        "camera_geometry": {
+          "authority": "accidental_capture_event",
+          "intentional_selfie_geometry": false,
+          "trigger": "pocket",
+          "phone_position": "rising",
+          "motion": "subtle",
+          "tilt": "right",
+          "focus": "transition-face",
+          "exposure": "auto-imperfect"
+        },
+        "selected_pose": null,
+        "body_state_authority": "body_support_and_anatomy_only",
+        "body_state_capture_composition_authority": false
+      }
+    },
+    "identity_and_eyewear": {
+      "input": {
+        "studioSection": "custom",
+        "scene": "custom",
+        "customScene": "inside a modern medical optical store",
+        "customSceneDetails": "eyeglass display racks and one small mirror",
+        "hasReference": true,
+        "poseFamily": "relaxed",
+        "pose": "custom-relaxed-close",
+        "time": "day",
+        "lighting": "custom-day-auto-practical",
+        "clothing": "tee-black",
+        "selfieAngle": "eye",
+        "composition": "close"
+      },
+      "observed": {
+        "identity_reference_source": "attached_reference_image",
+        "identity_reference_role": "identity_only",
+        "identity_controls": [
+          "facial_structure",
+          "apparent_age",
+          "skin_identity",
+          "hairline",
+          "visible_hair_density",
+          "facial_hair_pattern",
+          "reference_linked_eyewear_when_visible"
+        ],
+        "reference_linked_eyewear_policy": "Preserve the same pair only when visibly worn in the sole identity reference.",
+        "scene_id": "custom",
+        "vehicle_geometry": null,
+        "camera_geometry_authority": "visual_selfie_angle_monitor"
+      }
+    }
+  }
+}
