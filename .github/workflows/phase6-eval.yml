@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   evaluate:
-    if: github.event.head_commit.message != 'Phase 6 staging: wire gate and tests'
+    if: "${{ github.event.head_commit.message != 'Phase 6 staging: wire gate and tests' }}"
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
