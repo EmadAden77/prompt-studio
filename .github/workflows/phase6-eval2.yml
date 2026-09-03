@@ -53,14 +53,14 @@ jobs:
           node tests/canonical-v3-adapter-isolation.mjs
           node tests/canonical-v3-comparison.mjs
           node tests/canonical-v3-feature-flag.mjs
-      - name: Commit staging wiring when changed
+      - name: Commit staging index when changed
         run: |
-          if git diff --quiet -- index.html .github/workflows/test.yml; then
-            echo "staging wiring already committed"
+          if git diff --quiet -- index.html; then
+            echo "staging index already committed"
             exit 0
           fi
           git config user.name "EmadAden77"
           git config user.email "sasfsas8@gmail.com"
-          git add index.html .github/workflows/test.yml
-          git commit -m "Phase 6 staging wire gate and tests"
+          git add index.html
+          git commit -m "Phase 6 staging wire gate"
           git push origin HEAD:phase6-feature-flag-eval
