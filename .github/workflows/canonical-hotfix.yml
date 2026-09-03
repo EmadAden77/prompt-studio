@@ -1,0 +1,130 @@
+name: Canonical Capture Authority Hotfix
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/canonical-hotfix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply canonical authority hotfix
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          engine_path = Path('js/physics-prompt-engine-v5.js')
+          engine = engine_path.read_text()
+
+          def replace_once(text, old, new, label):
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected exactly one match, found {count}')
+              return text.replace(old, new, 1)
+
+          engine = replace_once(
+              engine,
+              '  CONFLICT_PRIORITY_LINES,\n',
+              '',
+              'remove legacy imported priority'
+          )
+
+          engine = replace_once(
+              engine,
+              'const DRIVER_SEAT = "driver-left";\n',
+              '''const DRIVER_SEAT = "driver-left";\n\nconst CANONICAL_CONFLICT_PRIORITY_LINES = Object.freeze([\n  "1. Reference identity and reference-linked eyewear.",\n  "2. Active capture type and its dedicated capture authority.",\n  "3. Explicit selected scene, seat position, expression, clothing and lighting.",\n  "4. Physical and anatomical feasibility: reach, support, contact, gravity and single-instant causality.",\n  "5. Canonical camera geometry compatible with the active capture type and physical feasibility.",\n  "6. Scene topology, vehicle-relative geometry, material, lighting and reflection physics.",\n  "7. Optional context and physically caused imperfections.",\n  "8. WikiPrompt realism calibration only; it has no override permission.",\n  "9. Aesthetic finishing, always last."\n]);\n''',
+              'insert canonical priority'
+          )
+
+          engine = replace_once(
+              engine,
+              'function cameraGeometry(state) { return accidentalGeometry(state) ?? driverGeometry(state) ?? genericGeometry(state); }\n',
+              '''function cameraGeometry(state) { return accidentalGeometry(state) ?? driverGeometry(state) ?? genericGeometry(state); }\n\nfunction accidentalBodyState(state) {\n  if (!isAccidentalState(state)) return null;\n  const supportByFamily = {\n    lying:"lying or reclining with anatomy supported by the selected real surface",\n    seated:"seated naturally on a real support surface",\n    standing:"standing naturally with ordinary balance and weight distribution",\n    car:"seated in the selected stationary vehicle seat with normal seat support",\n    activity:"maintaining the selected ordinary activity posture without using it to compose the camera",\n    relaxed:"holding an ordinary relaxed body posture"\n  };\n  return {\n    pose_family:state.poseFamily || "relaxed",\n    support_state:supportByFamily[state.poseFamily] || "maintaining a physically supported ordinary posture",\n    authority:"body_support_and_anatomy_only",\n    capture_composition_authority:false,\n    rule:"This body state may constrain anatomy, gravity and support only. It must not restore a deliberate selfie angle, framing target, lens position, gaze or staged capture pose."\n  };\n}\n''',
+              'insert accidental body-state isolation'
+          )
+
+          engine = replace_once(
+              engine,
+              '    `[SCENE] ${selectedScene(state)}. ${selectedCity(state)}. Pose: ${pose?.text ?? state.pose}.`,\n',
+              '    `[SCENE] ${selectedScene(state)}. ${selectedCity(state)}. ${isAccidentalState(state) ? `Body support only: ${accidentalBodyState(state)?.support_state}. Catalog pose text is not capture authority.` : `Pose: ${pose?.text ?? state.pose}.`}`,\n',
+              'remove accidental catalog pose from legacy prompt'
+          )
+
+          engine = replace_once(
+              engine,
+              '    { label:"الوضعية", value:pose?.label ?? state.pose },\n',
+              '    { label:"الوضعية", value:isAccidentalState(state) ? "حالة جسم فقط — لا تتحكم بزاوية أو تكوين اللقطة" : pose?.label ?? state.pose },\n',
+              'remove accidental pose authority from QA'
+          )
+
+          engine = replace_once(
+              engine,
+              '  return { title:[pose?.label ?? "سيلفي", seat, state.time === "night" ? "ليلاً" : "نهاراً"].filter(Boolean).join(" · "), text:"Canonical subject-held smartphone capture" };\n',
+              '  const captureLabel = isAccidentalState(state) ? "لقطة عفوية بالخطأ" : pose?.label ?? "سيلفي";\n  return { title:[captureLabel, seat, state.time === "night" ? "ليلاً" : "نهاراً"].filter(Boolean).join(" · "), text:"Canonical subject-held smartphone capture" };\n',
+              'remove accidental pose label from template title'
+          )
+
+          engine = replace_once(
+              engine,
+              '      priority:CONFLICT_PRIORITY_LINES,\n',
+              '      priority:CANONICAL_CONFLICT_PRIORITY_LINES,\n',
+              'use canonical priority'
+          )
+
+          engine = replace_once(
+              engine,
+              '      resolution_rule:"When two constraints compete, keep the higher-authority selected field. Correct only the physically impossible component. Omit optional context before changing identity, selected scene, selected seat, selected expression, selected clothing, selected lighting or canonical camera geometry."\n',
+              '      resolution_rule:"Resolve conflicts strictly by the priority list. Active capture authority cannot be restored by a lower-priority pose or camera preset. Preserve selected intent only while it remains physically possible; correct the impossible component, and omit optional context before changing higher-authority fields."\n',
+              'strengthen conflict resolution rule'
+          )
+
+          engine = replace_once(
+              engine,
+              '      selected_pose:{ id:state.pose, label:pose?.label ?? state.pose, instruction:pose?.text ?? null },\n      seat_position:seat,\n',
+              '      selected_pose:isAccidentalState(state) ? null : { id:state.pose, label:pose?.label ?? state.pose, instruction:pose?.text ?? null },\n      body_state:accidentalBodyState(state),\n      seat_position:seat,\n',
+              'isolate accidental pose in canonical JSON'
+          )
+
+          engine_path.write_text(engine)
+
+          test_path = Path('tests/physics-v5-wikiprompt.mjs')
+          test = test_path.read_text()
+          test = replace_once(
+              test,
+              'assert.match(accidentalSpec.photography.camera_geometry.rule, /sole composition and camera-behavior authority/u);\n',
+              '''assert.match(accidentalSpec.photography.camera_geometry.rule, /sole composition and camera-behavior authority/u);\nassert.equal(accidentalSpec.scene.selected_pose, null, "Accidental capture must not expose a deliberate catalog pose as capture authority");\nassert.equal(accidentalSpec.scene.body_state.authority, "body_support_and_anatomy_only");\nassert.equal(accidentalSpec.scene.body_state.capture_composition_authority, false);\nassert.doesNotMatch(accidentalSpec.scene.body_state.support_state, /selfie|camera|framing|lens/iu);\nassert.match(accidentalSpec.authority.priority[1], /Active capture type/u);\nconst physicalPriorityIndex = accidentalSpec.authority.priority.findIndex((line) => /Physical and anatomical feasibility/u.test(line));\nconst wikiPriorityIndex = accidentalSpec.authority.priority.findIndex((line) => /WikiPrompt/u.test(line));\nassert.ok(physicalPriorityIndex >= 0 && wikiPriorityIndex > physicalPriorityIndex, "WikiPrompt must remain below physical feasibility");\n''',
+              'add accidental authority regression tests'
+          )
+          test_path.write_text(test)
+          PY
+
+      - name: Run canonical engine regression tests
+        run: node tests/physics-v5-wikiprompt.mjs
+
+      - name: Commit hotfix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/physics-prompt-engine-v5.js tests/physics-v5-wikiprompt.mjs
+          if git diff --cached --quiet; then
+            echo "No changes required"
+            exit 0
+          fi
+          git commit -m "Isolate accidental body state from capture authority"
+          git push origin HEAD:main
