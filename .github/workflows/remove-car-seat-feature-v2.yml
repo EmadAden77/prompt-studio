@@ -1,0 +1,229 @@
+name: Remove Car Seat Feature V2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.remove-car-seat-trigger-v2'
+
+permissions:
+  contents: write
+
+jobs:
+  remove:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Remove selectable car-seat feature everywhere active
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          def txt(path): return Path(path).read_text()
+          def put(path, value): Path(path).write_text(value)
+          def once(text, pattern, repl, label, flags=0):
+              out, n = re.subn(pattern, repl, text, count=1, flags=flags)
+              if n != 1:
+                  raise SystemExit(f'{label}: expected 1 replacement, got {n}')
+              return out
+
+          # UI
+          p='index.html'; s=txt(p)
+          s=once(s, r'\s*<label class="field field-span-2" id="car-seat-field" for="car-seat" hidden>.*?</label>', '', 'UI seat field', re.S)
+          put(p,s)
+
+          # Canonical engine
+          p='js/physics-prompt-engine-v5.js'; s=txt(p)
+          s=once(s, r'\nconst DRIVER_SEAT = "driver-left";\n', '\n', 'engine driver-seat selector constant')
+          s=once(s, r'\nconst CAR_SEAT_OPTIONS = Object\.freeze\(\[.*?\]\);\n', '\n', 'engine seat option catalog', re.S)
+          s=s.replace('poseFamily:"lying", pose:"lying-right-close", carSeat:DRIVER_SEAT,', 'poseFamily:"lying", pose:"lying-right-close",')
+          s=s.replace('function isDriverCarState(state) { return isCarScene(state.scene) && state.carSeat === DRIVER_SEAT; }', 'function isDriverCarState(state) { return isCarScene(state.scene) && String(state.studioSection || "").toLowerCase() === "car"; }')
+          s=once(s, r'\nexport function getCarSeatOptions\(sceneId, poseId = ""\) \{.*?\n\}', '', 'engine seat option API', re.S)
+          s=once(s, r'\n  if \(!isCarScene\(state\.scene\)\) \{\n    if \(state\.carSeat\) record\("carSeat", state\.carSeat, "", "car_seat_leakage_outside_car_scene"\);\n  \} else \{\n    const seats = getCarSeatOptions\(state\.scene, state\.pose\);\n    if \(!seats\.some\(\(item\) => item\.value === state\.carSeat\)\) record\("carSeat", state\.carSeat, seats\[0\]\?\.value \?\? DRIVER_SEAT, "seat_pose_mismatch"\);\n    if \(String\(state\.studioSection\)\.toLowerCase\(\) === "car" && state\.carSeat !== DRIVER_SEAT\) record\("carSeat", state\.carSeat, DRIVER_SEAT, "dedicated_car_studio_is_driver_workflow"\);\n  \}\n', '\n', 'engine seat normalization')
+          s=s.replace('    occupant_seat:state.carSeat,\n','')
+          s=s.replace('required:driver ? ["physically coherent front-left driver-seat mapping"] : [],','required:driver ? ["physically coherent left-hand-drive driver geometry"] : [],')
+          s=s.replace('{ label:"السيارة", value:`${state.carSeat} · LHD غير معكوس · العلاقات Vehicle-relative وليست Image-relative` }','{ label:"السيارة", value:"LHD غير معكوس · هندسة السائق ثابتة تلقائياً · العلاقات Vehicle-relative وليست Image-relative" }')
+          s=once(s, r'\n  const seat = isCarScene\(state\.scene\) \? optionByValue\(CAR_SEAT_OPTIONS, state\.carSeat\)\?\.label : "";', '', 'engine template seat label')
+          s=s.replace('return { title:[captureLabel, seat, state.time === "night" ? "ليلاً" : "نهاراً"]','return { title:[captureLabel, state.time === "night" ? "ليلاً" : "نهاراً"]')
+          s=once(s, r'\n  const seat = isCarScene\(state\.scene\) \? structuredOption\(CAR_SEAT_OPTIONS, state\.carSeat\) : null;', '', 'engine structured seat')
+          s=s.replace('"3. Explicit selected scene, seat position, expression, clothing and lighting."','"3. Explicit selected scene, expression, clothing and lighting."')
+          s=s.replace('selected scene, selected seat, selected expression, selected clothing, selected lighting or canonical camera geometry','selected scene, selected expression, selected clothing, selected lighting or canonical camera geometry')
+          s=s.replace('      seat_position:seat,\n','')
+          put(p,s)
+
+          # Live app v7
+          p='js/physics-app-v7.js'; s=txt(p)
+          s=s.replace('  getCarSeatOptions,\n','')
+          s=re.sub(r'\nconst carSeatSelect = document\.querySelector\("#car-seat"\);\nconst carSeatField = document\.querySelector\("#car-seat-field"\);','',s)
+          s=s.replace('    carSeat:value("car-seat"), clothing:', '    clothing:')
+          s=s.replace('[sceneSelect,state.scene],[poseFamilySelect,state.poseFamily],[poseSelect,state.pose],[carSeatSelect,state.carSeat],','[sceneSelect,state.scene],[poseFamilySelect,state.poseFamily],[poseSelect,state.pose],')
+          s=re.sub(r'\n  const car = isCarScene\(scene\);\n  carSeatField\.hidden = !car;\n  if \(car\) populateSelect\(carSeatSelect, getCarSeatOptions\(scene, poseSelect\.value\), carSeatSelect\.value \|\| DEFAULT_STATE\.carSeat\);\n  else carSeatSelect\.replaceChildren\(\);\n','\n',s)
+          s=re.sub(r'\n  if \(isCarScene\(normalized\.scene\)\) \{\n    carSeatField\.hidden = false;\n    populateSelect\(carSeatSelect, getCarSeatOptions\(normalized\.scene, normalized\.pose\), normalized\.carSeat\);\n  \} else \{\n    carSeatField\.hidden = true;\n    carSeatSelect\.replaceChildren\(\);\n  \}\n','\n',s)
+          s=s.replace('تم تثبيت الهوية وموضع الجلوس داخل السيارة؛ الخلفية غير إجبارية.','تم تثبيت الهوية وهندسة السائق داخل السيارة؛ الخلفية غير إجبارية.')
+          s=s.replace('موضع الجلوس داخل السيارة مقفل؛ أرفق صورة هوية واحدة فقط عند الاستخدام.','هندسة السائق داخل السيارة مقفلة تلقائياً؛ أرفق صورة هوية واحدة فقط عند الاستخدام.')
+          s=s.replace('"time","pose-family","pose","car-seat","lighting"','"time","pose-family","pose","lighting"')
+          put(p,s)
+
+          # Scenario engine no longer carries seat state.
+          p='js/scenario-section-engine-v1.js'; s=txt(p)
+          s=s.replace('{ value:"car", label:"🚙 السيارة", description:"المقاعد والمقصورة ووضعيات وإضاءة السيارة" }','{ value:"car", label:"🚙 السيارة", description:"المقصورة ووضعيات وإضاءة السيارة" }')
+          s=s.replace('  if (scenarioMode !== "car") state.carSeat = "";\n','')
+          put(p,s)
+
+          # Realism Core derives driver state from the active car section.
+          p='js/realism-core-v1.js'; s=txt(p)
+          s=s.replace('const isDriverCar = (state) => isCar(state.scene) && state.carSeat === "driver-left";','const isDriverCar = (state) => isCar(state.scene) && String(state.studioSection || "").toLowerCase() === "car";')
+          put(p,s)
+
+          # Visual monitor derives driver lock from section+scene only.
+          p='js/visual-selfie-angle-monitor-v1.js'; s=txt(p)
+          s=once(s, r'function isDriverCarState\(rawState = \{\}\) \{\n  const section = String\(rawState\.studioSection \|\| ""\)\.toLowerCase\(\);\n  const scene = String\(rawState\.scene \|\| ""\)\.toLowerCase\(\);\n  return String\(rawState\.carSeat \|\| ""\) === "driver-left"\n    && \(section === "car" \|\| /range\.\?rover\|\(\?:\^\|\[-_\]\)car\(\?:\[-_\]\|\$\)/u\.test\(scene\)\);\n\}', 'function isDriverCarState(rawState = {}) {\n  const section = String(rawState.studioSection || "").toLowerCase();\n  const scene = String(rawState.scene || "").toLowerCase();\n  return section === "car" && /range.?rover|(?:^|[-_])car(?:[-_]|$)/u.test(scene);\n}', 'visual driver state')
+          s=s.replace('    carSeat:value("car-seat", ""),\n','')
+          s=s.replace('    carSeat:root.querySelector("#car-seat")?.value || "",\n','')
+          s=s.replace('["#studio-section", "#scene", "#car-seat", "#lighting", "#time"]','["#studio-section", "#scene", "#lighting", "#time"]')
+          put(p,s)
+
+          # AUTO REALISM derives driver lock from section+scene only.
+          p='js/auto-realism-suite-v1.js'; s=txt(p)
+          s=once(s, r'function isDriverCarState\(state = \{\}\) \{\n  const section = String\(state\.studioSection \|\| ""\)\.toLowerCase\(\);\n  const scene = String\(state\.scene \|\| ""\)\.toLowerCase\(\);\n  return String\(state\.carSeat \|\| ""\) === "driver-left"\n    && \(section === "car" \|\| /range\.\?rover\|\(\?:\^\|\[-_\]\)car\(\?:\[-_\]\|\$\)/u\.test\(scene\)\);\n\}', 'function isDriverCarState(state = {}) {\n  const section = String(state.studioSection || "").toLowerCase();\n  const scene = String(state.scene || "").toLowerCase();\n  return section === "car" && /range.?rover|(?:^|[-_])car(?:[-_]|$)/u.test(scene);\n}', 'auto-realism driver state')
+          s=s.replace('    carSeat:root.querySelector("#car-seat")?.value\n','')
+          s=s.replace('    scene:root.querySelector("#scene")?.value,\n    carSeat:root.querySelector("#car-seat")?.value\n', '    scene:root.querySelector("#scene")?.value\n')
+          s=s.replace('["studio-section", "scene", "car-seat"]','["studio-section", "scene"]')
+          put(p,s)
+
+          # Advanced Realism: remove seat-verification subsystem and forced steering evidence.
+          p='js/advanced-realism-v1.js'; s=txt(p)
+          s=s.replace('const isDriverSeat = (state) => isCar(state) && state.carSeat === "driver-left";','const isDriverCar = (state) => isCar(state) && String(state.studioSection || "").toLowerCase() === "car";')
+          s=once(s, r'\nfunction buildDriverSeatVerificationRule\(state\) \{.*?\n\}', '\n', 'advanced seat verification function', re.S)
+          s=re.sub(r'\n  if \(isDriverSeat\(state\) && state\.composition === "tight"\) \{.*?\n  else if \(isDriverSeat\(state\) && state\.composition === "close"\) \{.*?\n', '\n', s, flags=re.S)
+          s=re.sub(r'\n  if \(isDriverSeat\(state\) && !isTight\(state\)\) strengths\.push\([^\n]+\);','',s)
+          s=s.replace(',"[DRIVER SEAT VISUAL VERIFICATION]"','')
+          s=s.replace('    buildDriverSeatVerificationRule(state),\n','')
+          s=re.sub(r'\n    \.\.\.\(isDriverSeat\(state\) \? \[\{\n      label:"تحقق مقعد السائق",\n      value:isTight\(state\) \? .*?\n    \}\] : \[\]\)', '', s, flags=re.S)
+          s=s.replace('horizontally mirrored cabin after seat mapping','horizontally mirrored left-hand-drive cabin')
+          s=s.replace('driver rendered in front passenger seat','driver rendered on the wrong side of a left-hand-drive cabin')
+          put(p,s)
+
+          # Constraint compiler: no seat-state input; retain LHD driver geometry with neutral position naming.
+          p='js/realism-constraint-compiler-v1.js'; s=txt(p)
+          s=once(s, r'function isDriverState\(state = \{\}\) \{\n  const section = String\(state\.studioSection \|\| ""\)\.toLowerCase\(\);\n  const scene = String\(state\.scene \|\| ""\)\.toLowerCase\(\);\n  return String\(state\.carSeat \|\| ""\) === "driver-left"\n    && \(section === "car" \|\| /range\.\?rover\|\(\?:\^\|\[-_\]\)car\(\?:\[-_\]\|\$\)/u\.test\(scene\)\);\n\}', 'function isDriverState(state = {}) {\n  const section = String(state.studioSection || "").toLowerCase();\n  const scene = String(state.scene || "").toLowerCase();\n  return section === "car" && /range.?rover|(?:^|[-_])car(?:[-_]|$)/u.test(scene);\n}', 'constraint compiler driver state')
+          s=s.replace('DRIVER_SEAT → supports → SUBJECT_PELVIS','DRIVER_POSITION → supports → SUBJECT_PELVIS')
+          s=s.replace('CENTER_CONSOLE → PASSENGER_SEAT','CENTER_CONSOLE → PASSENGER_POSITION')
+          s=s.replace('subject seated in DRIVER_SEAT','subject occupying the resolved DRIVER_POSITION')
+          s=re.sub(r'\nSeat: \$\{driver \? "LEFT-FRONT DRIVER \[HARD\]" : \(state\.carSeat \|\| "scene-defined"\)\}', '', s)
+          s=s.replace('driver seat → pelvis → torso → steering wheel → steering column → instrument cluster','driver position → pelvis → torso → steering wheel → steering column → instrument cluster')
+          put(p,s)
+
+          # Delete obsolete app bundles carrying the removed UI feature.
+          for legacy in ['js/physics-app-v5.js','js/physics-app-v6.js']:
+              path=Path(legacy)
+              if path.exists(): path.unlink()
+
+          # Tests: remove old selectable-seat inputs/expectations.
+          p='tests/physics-v5-wikiprompt.mjs'; s=txt(p)
+          s=s.replace('  getCarSeatOptions,\n','')
+          s=re.sub(r'\n\s*carSeat:"(?:driver-left|passenger-front-right)",','',s)
+          s=re.sub(r'\nassert\.equal\(bedroom\.carSeat, "", "Car seat must be erased outside car scenes"\);','',s)
+          s=re.sub(r'\nassert\.equal\(activeCar\.carSeat, "driver-left"\);','',s)
+          s=re.sub(r'\nassert\.deepEqual\(getCarSeatOptions\([^\n]+\);','',s)
+          s=re.sub(r'\nassert\.equal\(carSpec\.scene\.vehicle_geometry\.occupant_seat, "driver-left"\);','',s)
+          put(p,s)
+
+          p='tests/v2-deployment.mjs'; s=txt(p)
+          s=s.replace('assert.match(index, /id="car-seat"/u);','assert.doesNotMatch(index, /id="car-' + 'seat"/u);')
+          s=s.replace('assert.match(app, /getCarSeatOptions/u);','')
+          s=re.sub(r'\n\s*carSeat:"(?:driver-left|passenger-front-right)",','',s)
+          s=re.sub(r'\nassert\.equal\(driverState\.carSeat, .*?\);','',s)
+          s=re.sub(r'\nassert\.equal\(driverSpec\.scene\.vehicle_geometry\.occupant_seat, .*?\);','',s)
+          s=re.sub(r'\nassert\.equal\(bedroomState\.carSeat, .*?\);','',s)
+          s=s.replace('assert.equal(bedroomSpec.scene.seat_position, null);','assert.ok(!("seat_' + 'position" in bedroomSpec.scene));')
+          put(p,s)
+
+          p='tests/custom-scene.mjs'; s=txt(p)
+          s=re.sub(r'\n\s*carSeat:"driver-left",','',s)
+          s=re.sub(r'\nassert\.equal\(opticalStore\.carSeat, .*?\);','',s)
+          s=s.replace('assert.equal(spec.scene.seat_position, null);','assert.ok(!("seat_' + 'position" in spec.scene));')
+          put(p,s)
+
+          p='tests/clothing-physics.mjs'; s=txt(p); s=re.sub(r'\n\s*carSeat:"driver-left",','',s); put(p,s)
+          p='tests/auto-realism-suite.mjs'; s=txt(p); s=s.replace('studioSection:"car", scene:"rangeRover", carSeat:"driver-left",','studioSection:"car", scene:"rangeRover",'); put(p,s)
+          p='tests/visual-selfie-angle-monitor.mjs'; s=txt(p); s=s.replace('studioSection:"car", scene:"rangeRover", carSeat:"driver-left",','studioSection:"car", scene:"rangeRover",'); put(p,s)
+          p='tests/conflict-regressions.mjs'; s=txt(p); s=s.replace('studioSection:"car", scene:"rangeRover", carSeat:"driver-left",','studioSection:"car", scene:"rangeRover",'); put(p,s)
+
+          p='tests/scenario-section.mjs'; s=txt(p)
+          s=s.replace(', carSeat:"driver-left"','')
+          s=re.sub(r'\nassert\.equal\(bedroom\.carSeat, ""\);','',s)
+          put(p,s)
+
+          p='tests/structured-json.mjs'; s=txt(p)
+          s=re.sub(r'\n\s*carSeat:"driver-left",?','',s)
+          s=re.sub(r'\nassert\.equal\([^\n]*\.scene\.seat_position[^\n]*\);','',s)
+          put(p,s)
+
+          # Advanced realism tests now verify no forced seat-verification subsystem remains.
+          p='tests/advanced-realism.mjs'; s=txt(p)
+          start=s.index('const driverCloseState = {')
+          end=s.index('const optimized = optimizePrompt([', start)
+          replacement='''const driverCloseState = {\n  studioSection:"car", scene:"rangeRover", composition:"close", selfieAngle:"slight-low",\n  sceneProfile:"auto", accessoryProfile:"none", accessoryDetail:"", objectProfile:"none", interactionObject:"",\n  peopleDensity:"sparse", hasReference:true, time:"day"\n};\nconst driverSections = buildAdvancedRealismSections(driverCloseState, []).join("\\n\\n");\nassert.doesNotMatch(driverSections, /\\[SCENE PROFILE\\]/u, "Car scenes must not receive a dormant custom-scene profile");\nassert.match(driverSections, /\\[CAR ORIENTATION LOCK\\]/u, "Car scene must lock final physical orientation");\nassert.match(driverSections, /unmirrored physical camera geometry/u);\nassert.doesNotMatch(driverSections, /DRIVER SEAT VISUAL VERIFICATION/u);\nassert.doesNotMatch(driverSections, /mandatory.*steering/iu);\nconst driverQa = advancedRealismQaItems(driverCloseState, [], {});\nassert.ok(driverQa.some((item) => item.label === "اتجاه المقصورة"));\nassert.ok(!driverQa.some((item) => /مقعد/u.test(item.label)));\n\n'''
+          s=s[:start]+replacement+s[end:]
+          s=s.replace('  "[DRIVER SEAT VISUAL VERIFICATION] Keep one driver anchor. Keep one driver anchor."\n','')
+          s=re.sub(r'\nassert\.match\(optimized\.prompt, /\\\[DRIVER SEAT VISUAL VERIFICATION\\\].*?\);','',s)
+          s=s.replace('assert.ok(ADVANCED_REALISM_NEGATIVE_RULES.includes("horizontally mirrored cabin after seat mapping"));','assert.ok(ADVANCED_REALISM_NEGATIVE_RULES.includes("horizontally mirrored left-hand-drive cabin"));')
+          s=s.replace('assert.ok(ADVANCED_REALISM_NEGATIVE_RULES.includes("driver rendered in front passenger seat"));','assert.ok(ADVANCED_REALISM_NEGATIVE_RULES.includes("driver rendered on the wrong side of a left-hand-drive cabin"));')
+          put(p,s)
+
+          # Final active-source audit for the removed feature identifiers. Split strings in tests do not count as a feature implementation.
+          forbidden=re.compile(r'carSeat|getCarSeatOptions|CAR_SEAT_OPTIONS|seat_position|occupant_seat|id="car-seat"|#car-seat|موضع الجلوس داخل السيارة|مقعد السائق الأمامي الأيسر')
+          hits=[]
+          for path in Path('.').rglob('*'):
+              if not path.is_file() or '.git' in path.parts: continue
+              if path.as_posix().startswith('.github/workflows/remove-car-seat-feature'): continue
+              if path.name.startswith('.remove-car-seat-trigger'): continue
+              if path.suffix.lower() not in {'.js','.mjs','.html','.md','.json','.css'}: continue
+              try: content=path.read_text()
+              except UnicodeDecodeError: continue
+              for i,line in enumerate(content.splitlines(),1):
+                  if forbidden.search(line): hits.append(f'{path}:{i}:{line.strip()}')
+          if hits:
+              print('\n'.join(hits[:200]))
+              raise SystemExit(f'removed seat feature still present in {len(hits)} location(s)')
+          PY
+
+      - name: Syntax and regression checks
+        shell: bash
+        run: |
+          node --check js/physics-prompt-engine-v5.js
+          node --check js/physics-app-v7.js
+          node --check js/visual-selfie-angle-monitor-v1.js
+          node --check js/auto-realism-suite-v1.js
+          node --check js/advanced-realism-v1.js
+          node --check js/realism-core-v1.js
+          node --check js/scenario-section-engine-v1.js
+          node --check js/realism-constraint-compiler-v1.js
+          node tests/v2-deployment.mjs
+          node tests/physics-v5-wikiprompt.mjs
+          node tests/custom-scene.mjs
+          node tests/clothing-physics.mjs
+          node tests/realism-core.mjs
+          node tests/advanced-realism.mjs
+          node tests/auto-realism-suite.mjs
+          node tests/visual-selfie-angle-monitor.mjs
+
+      - name: Commit full removal
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Remove selectable car seat feature everywhere"
+          git push origin HEAD:main
