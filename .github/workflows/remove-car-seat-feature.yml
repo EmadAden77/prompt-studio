@@ -1,3 +1,4 @@
+# Idempotent cleanup guard: safe to rerun on an already-clean main branch.
 name: Repository Emergency Cleanup Guard
 
 on:
