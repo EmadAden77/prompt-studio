@@ -18,13 +18,6 @@ const engineSelection = resolvePromptEngineSelection({
   storageValue: readStoredEngine()
 });
 
-// Canonical V3 does not use WikiPrompt prompt-body injection. Keep the legacy
-// service untouched in normal/default legacy mode; suppress async legacy output
-// rewrites only while the Canonical V3 flag is active.
-if (engineSelection.engine === CANONICAL_V3_ENGINE) {
-  wikiPromptService.sync = () => Promise.resolve("");
-}
-
 const value = (id) => document.querySelector(`#${id}`)?.value ?? "";
 
 function activeSection() {
@@ -33,6 +26,18 @@ function activeSection() {
 
 function canonicalActiveForCurrentSection() {
   return shouldUseCanonicalV3(activeSection(), engineSelection);
+}
+
+// Keep the WikiPrompt service fully intact for the default legacy path and for
+// legacy-only sections. During Canonical V3 startup/output, suppress only the
+// asynchronous legacy prompt rewrite that could overwrite adapter output.
+const legacyWikiSync = wikiPromptService.sync.bind(wikiPromptService);
+let legacyAppReady = false;
+if (engineSelection.engine === CANONICAL_V3_ENGINE) {
+  wikiPromptService.sync = (...args) => {
+    if (!legacyAppReady || canonicalActiveForCurrentSection()) return Promise.resolve("");
+    return legacyWikiSync(...args);
+  };
 }
 
 function readFormState() {
@@ -54,6 +59,8 @@ function readFormState() {
   const intentType = canonicalIntentForSection(section);
   if (intentType) state.intentType = intentType;
   state.studioSection = section;
+  state.identityNotes = value("identity-notes");
+  state.environmentNote = value("environment-note");
   state.hasReference = Boolean(document.querySelector("#reference-image")?.files?.length)
     || document.querySelector("#reference-preview-wrap")?.hidden === false;
 
@@ -65,6 +72,23 @@ function setStatus(message) {
   if (node) node.textContent = message;
 }
 
+function setCanonicalOutputLabels(active) {
+  const jsonField = document.querySelector('label[for="json-prompt"]');
+  const title = jsonField?.querySelector(":scope > span");
+  const help = jsonField?.querySelector(":scope > small");
+  const copyTop = document.querySelector("#copy-json");
+  const copyOutput = document.querySelector("#copy-json-output");
+  const download = document.querySelector("#download-json");
+
+  if (active) {
+    if (title) title.textContent = "FINAL IMAGE PROMPT · CANONICAL V3";
+    if (help) help.textContent = "OpenAI Image Adapter output from the resolved frozen Canonical V3 state.";
+    if (copyTop) copyTop.textContent = "نسخ البرومبت";
+    if (copyOutput) copyOutput.textContent = "نسخ البرومبت";
+    if (download) download.textContent = "تنزيل TXT";
+  }
+}
+
 function renderCanonicalOutput({ reveal = true } = {}) {
   if (!canonicalActiveForCurrentSection()) return false;
 
@@ -72,15 +96,16 @@ function renderCanonicalOutput({ reveal = true } = {}) {
   const output = buildCanonicalV3UserOutput(rawState, rawState.sceneFacts);
   const positive = document.querySelector("#positive-prompt");
   const negative = document.querySelector("#negative-prompt");
-  const json = document.querySelector("#json-prompt");
+  const visibleOutput = document.querySelector("#json-prompt");
   const meta = document.querySelector("#result-meta");
   const qa = document.querySelector("#qa-list");
   const panel = document.querySelector("#result-panel");
 
   if (positive) positive.value = output.prompt;
   if (negative) negative.value = "";
-  if (json) json.value = JSON.stringify(output.canonical, null, 2);
+  if (visibleOutput) visibleOutput.value = output.prompt;
   if (qa) qa.replaceChildren();
+  setCanonicalOutputLabels(true);
   if (meta) {
     meta.textContent = `ENGINE CANONICAL V3 · ${output.canonical.intent.type.toUpperCase()} · OpenAI Image Adapter · ${output.prompt.trim().split(/\s+/u).filter(Boolean).length} words`;
   }
@@ -96,7 +121,9 @@ function renderCanonicalOutput({ reveal = true } = {}) {
 function scheduleCanonicalRefresh() {
   const panel = document.querySelector("#result-panel");
   if (!canonicalActiveForCurrentSection() || !panel || panel.hidden) return;
-  queueMicrotask(() => renderCanonicalOutput({ reveal:false }));
+  // A macrotask runs after legacy event handlers and their resolved Promise
+  // microtasks, so the Canonical V3 adapter remains the final user-facing writer.
+  setTimeout(() => renderCanonicalOutput({ reveal:false }), 0);
 }
 
 async function copyCanonicalPrompt() {
@@ -140,31 +167,33 @@ document.addEventListener("submit", (event) => {
   renderCanonicalOutput();
 }, true);
 
-// The legacy UI still owns field population and controls. If one of its
-// automatic render callbacks fires while Canonical V3 output is visible,
-// restore Canonical V3 at the end of the same event turn.
+// The legacy UI still owns field population and controls. Restore Canonical V3
+// after those callbacks whenever its result panel is already visible.
 document.addEventListener("change", scheduleCanonicalRefresh);
 document.addEventListener("input", scheduleCanonicalRefresh);
+document.addEventListener("click", scheduleCanonicalRefresh);
+
+// Existing visible output controls keep their layout. In Canonical V3 mode they
+// copy/download the adapter prompt rather than the legacy JSON/pack wrappers.
 document.addEventListener("click", (event) => {
   const id = event.target?.closest?.("button")?.id || "";
   if (!canonicalActiveForCurrentSection()) return;
 
-  if (id === "copy-pack") {
+  if (["copy-pack", "copy-json", "copy-json-output"].includes(id)) {
     event.preventDefault();
     event.stopImmediatePropagation();
     void copyCanonicalPrompt();
     return;
   }
-  if (id === "download-prompt") {
+  if (["download-prompt", "download-json"].includes(id)) {
     event.preventDefault();
     event.stopImmediatePropagation();
     downloadCanonicalPrompt();
-    return;
   }
-  scheduleCanonicalRefresh();
 }, true);
 
 await import("../physics-app-v7.js?v=20260903-json-clean2");
+legacyAppReady = true;
 
 // Exposed only for lightweight manual diagnostics from the browser console.
 globalThis.__PROMPT_STUDIO_ENGINE__ = Object.freeze({
