@@ -1,0 +1,1148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://realistic-image-generator.local/schemas/canonical-v3.schema.json",
+  "title": "REALISTIC IMAGE GENERATOR Canonical State V3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "intent",
+    "authorities",
+    "identity",
+    "scene",
+    "capture",
+    "subjects",
+    "camera",
+    "lighting",
+    "hard_constraints",
+    "preferences",
+    "resolution",
+    "validation"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "realistic-image-generator/canonical-v3"
+    },
+    "intent": {
+      "$ref": "#/$defs/intent"
+    },
+    "authorities": {
+      "$ref": "#/$defs/authorityRegistry"
+    },
+    "identity": {
+      "$ref": "#/$defs/identity"
+    },
+    "scene": {
+      "$ref": "#/$defs/scene"
+    },
+    "capture": {
+      "$ref": "#/$defs/capture"
+    },
+    "subjects": {
+      "$ref": "#/$defs/subjects"
+    },
+    "camera": {
+      "$ref": "#/$defs/camera"
+    },
+    "lighting": {
+      "$ref": "#/$defs/lighting"
+    },
+    "hard_constraints": {
+      "$ref": "#/$defs/hardConstraints"
+    },
+    "preferences": {
+      "$ref": "#/$defs/preferences"
+    },
+    "resolution": {
+      "$ref": "#/$defs/resolution"
+    },
+    "validation": {
+      "$ref": "#/$defs/validation"
+    }
+  },
+  "$defs": {
+    "intentType": {
+      "enum": [
+        "selfie",
+        "car",
+        "group",
+        "accidental",
+        "room"
+      ]
+    },
+    "intent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "confidence",
+        "source",
+        "ambiguous",
+        "fallback"
+      ],
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/intentType"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "source": {
+          "enum": [
+            "explicit_user",
+            "explicit_ui",
+            "capture_evidence",
+            "scene_evidence",
+            "deterministic_fallback"
+          ]
+        },
+        "ambiguous": {
+          "type": "boolean"
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/intentEvidence"
+          }
+        },
+        "fallback": {
+          "$ref": "#/$defs/intentFallback"
+        }
+      }
+    },
+    "intentEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "intent",
+        "source",
+        "score"
+      ],
+      "properties": {
+        "intent": {
+          "$ref": "#/$defs/intentType"
+        },
+        "source": {
+          "enum": [
+            "explicit_user",
+            "explicit_ui",
+            "capture_evidence",
+            "scene_evidence"
+          ]
+        },
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "intentFallback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "applied",
+        "confidence_threshold",
+        "default_intent",
+        "selection_order",
+        "tie_break_order"
+      ],
+      "properties": {
+        "applied": {
+          "type": "boolean"
+        },
+        "confidence_threshold": {
+          "const": 0.6
+        },
+        "default_intent": {
+          "const": "selfie"
+        },
+        "selection_order": {
+          "const": [
+            "explicit_user",
+            "explicit_ui",
+            "capture_evidence",
+            "scene_evidence",
+            "deterministic_fallback"
+          ]
+        },
+        "tie_break_order": {
+          "const": [
+            "accidental",
+            "group",
+            "car",
+            "room",
+            "selfie"
+          ]
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "authorityOwner": {
+      "enum": [
+        "hard_constraint",
+        "identity_reference",
+        "explicit_user",
+        "scene_contract",
+        "capture_contract",
+        "camera_contract",
+        "lighting_contract",
+        "realism_resolver",
+        "generator_adapter",
+        "aesthetic_preference"
+      ]
+    },
+    "authorityBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner",
+        "priority",
+        "adapter_can_modify"
+      ],
+      "properties": {
+        "owner": {
+          "$ref": "#/$defs/authorityOwner"
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 10,
+          "maximum": 100
+        },
+        "adapter_can_modify": {
+          "type": "boolean"
+        }
+      }
+    },
+    "authorityRegistry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "identity",
+        "scene",
+        "capture",
+        "subjects",
+        "camera",
+        "lighting",
+        "vehicle_geometry",
+        "anatomy",
+        "realism",
+        "aesthetic"
+      ],
+      "properties": {
+        "identity": {
+          "$ref": "#/$defs/authorityBinding"
+        },
+        "scene": {
+          "$ref": "#/$defs/authorityBinding"
+        },
+        "capture": {
+          "$ref": "#/$defs/authorityBinding"
+        },
+        "subjects": {
+          "$ref": "#/$defs/authorityBinding"
+        },
+        "camera": {
+          "$ref": "#/$defs/authorityBinding"
+        },
+        "lighting": {
+          "$ref": "#/$defs/authorityBinding"
+        },
+        "vehicle_geometry": {
+          "$ref": "#/$defs/authorityBinding"
+        },
+        "anatomy": {
+          "$ref": "#/$defs/authorityBinding"
+        },
+        "realism": {
+          "$ref": "#/$defs/authorityBinding"
+        },
+        "aesthetic": {
+          "$ref": "#/$defs/authorityBinding"
+        }
+      }
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reference_mode",
+        "reference_id",
+        "preserve"
+      ],
+      "properties": {
+        "reference_mode": {
+          "enum": [
+            "none",
+            "single_reference"
+          ]
+        },
+        "reference_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "preserve": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "facial_structure",
+              "head_shape",
+              "apparent_age",
+              "skin_identity",
+              "skin_tone",
+              "natural_asymmetry",
+              "eyes",
+              "eyebrows",
+              "nose",
+              "lips",
+              "jaw",
+              "chin",
+              "ears",
+              "hairline",
+              "hair_density",
+              "hair_texture",
+              "facial_hair_pattern",
+              "moustache_pattern",
+              "reference_linked_eyewear"
+            ]
+          }
+        }
+      }
+    },
+    "scene": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "id",
+        "description",
+        "facts"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "vehicle",
+            "room",
+            "outdoor",
+            "store",
+            "custom",
+            "unspecified"
+          ]
+        },
+        "id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "description": {
+          "type": "string"
+        },
+        "facts": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "vehicle": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/vehicle"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "room": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/room"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "vehicle": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "make": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "model": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "year": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "state": {
+          "enum": [
+            "stationary",
+            "moving",
+            null
+          ]
+        },
+        "interior_description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "room": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "reference_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "topology_locked": {
+          "type": "boolean"
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "capture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "operator",
+        "intentional",
+        "single_capture_event"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "direct_front_camera_selfie",
+            "subject_held_driver_selfie",
+            "group_selfie",
+            "accidental_front_camera_capture",
+            "mirror_selfie",
+            "third_person"
+          ]
+        },
+        "operator": {
+          "enum": [
+            "subject",
+            "group_member",
+            "third_party",
+            "unintentional_subject"
+          ]
+        },
+        "intentional": {
+          "type": "boolean"
+        },
+        "single_capture_event": {
+          "const": true
+        },
+        "trigger": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "subjects": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "count",
+        "primary",
+        "additional"
+      ],
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "primary": {
+          "$ref": "#/$defs/subject"
+        },
+        "additional": {
+          "type": "array",
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/$defs/subject"
+          }
+        }
+      }
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pose",
+        "expression",
+        "clothing"
+      ],
+      "properties": {
+        "reference_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pose": {
+          "type": "string"
+        },
+        "expression": {
+          "type": "string"
+        },
+        "clothing": {
+          "$ref": "#/$defs/clothing"
+        },
+        "body_scale": {
+          "$ref": "#/$defs/bodyScale"
+        }
+      }
+    },
+    "bodyScale": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "height_cm": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 100,
+          "maximum": 250
+        },
+        "weight_kg": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 25,
+          "maximum": 250
+        },
+        "preserve_environment_scale": {
+          "type": "boolean"
+        }
+      }
+    },
+    "clothing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "garment"
+      ],
+      "properties": {
+        "garment": {
+          "type": "string"
+        },
+        "fabric": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "fabric_weight": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "fit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "wear_state": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "custom_modifier": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "camera": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "device_profile",
+        "camera_type",
+        "geometry"
+      ],
+      "properties": {
+        "device_profile": {
+          "type": "string"
+        },
+        "camera_type": {
+          "enum": [
+            "front_camera",
+            "rear_camera",
+            "mirror_capture",
+            "external_camera"
+          ]
+        },
+        "geometry": {
+          "$ref": "#/$defs/cameraGeometry"
+        },
+        "sensor_behavior": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "cameraGeometry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "distance_cm",
+        "yaw_deg",
+        "pitch_deg",
+        "roll_deg",
+        "focal_length_equivalent_mm",
+        "crop"
+      ],
+      "properties": {
+        "distance_cm": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 10,
+          "maximum": 200
+        },
+        "yaw_deg": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": -180,
+          "maximum": 180
+        },
+        "pitch_deg": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": -90,
+          "maximum": 90
+        },
+        "roll_deg": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": -45,
+          "maximum": 45
+        },
+        "focal_length_equivalent_mm": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 10,
+          "maximum": 200
+        },
+        "crop": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "lighting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_type",
+        "description"
+      ],
+      "properties": {
+        "source_type": {
+          "enum": [
+            "daylight",
+            "practical",
+            "mixed",
+            "phone_screen",
+            "ambient",
+            "custom"
+          ]
+        },
+        "description": {
+          "type": "string"
+        },
+        "color_temperature_k": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1500,
+          "maximum": 12000
+        },
+        "direction": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "intensity": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "hardConstraints": {
+      "type": "object",
+      "description": "Immutable resolved constraints. Generator adapters may read these values but cannot modify them.",
+      "additionalProperties": false,
+      "required": [
+        "identity",
+        "anatomy",
+        "capture_physics",
+        "selfie_geometry",
+        "camera_geometry",
+        "vehicle_geometry"
+      ],
+      "properties": {
+        "identity": {
+          "$ref": "#/$defs/identityHardConstraint"
+        },
+        "anatomy": {
+          "$ref": "#/$defs/anatomyHardConstraint"
+        },
+        "capture_physics": {
+          "$ref": "#/$defs/capturePhysicsHardConstraint"
+        },
+        "selfie_geometry": {
+          "$ref": "#/$defs/selfieGeometryHardConstraint"
+        },
+        "camera_geometry": {
+          "$ref": "#/$defs/cameraGeometryHardConstraint"
+        },
+        "vehicle_geometry": {
+          "$ref": "#/$defs/vehicleGeometryHardConstraint"
+        }
+      }
+    },
+    "identityHardConstraint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "preserve_reference_identity",
+        "allow_beautification_override",
+        "allow_age_override",
+        "allow_identity_transfer",
+        "adapter_can_modify"
+      ],
+      "properties": {
+        "preserve_reference_identity": {
+          "type": "boolean"
+        },
+        "allow_beautification_override": {
+          "const": false
+        },
+        "allow_age_override": {
+          "const": false
+        },
+        "allow_identity_transfer": {
+          "const": false
+        },
+        "adapter_can_modify": {
+          "const": false
+        }
+      }
+    },
+    "anatomyHardConstraint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "physically_possible",
+        "limb_ownership_integrity",
+        "contact_consistency",
+        "gravity_consistency",
+        "occlusion_consistency",
+        "adapter_can_modify"
+      ],
+      "properties": {
+        "physically_possible": {
+          "const": true
+        },
+        "limb_ownership_integrity": {
+          "const": true
+        },
+        "contact_consistency": {
+          "const": true
+        },
+        "gravity_consistency": {
+          "const": true
+        },
+        "occlusion_consistency": {
+          "const": true
+        },
+        "adapter_can_modify": {
+          "const": false
+        }
+      }
+    },
+    "capturePhysicsHardConstraint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "physically_possible_camera_position",
+        "physically_possible_operator",
+        "single_capture_event",
+        "adapter_can_modify"
+      ],
+      "properties": {
+        "physically_possible_camera_position": {
+          "const": true
+        },
+        "physically_possible_operator": {
+          "const": true
+        },
+        "physically_possible_arm_reach": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "single_capture_event": {
+          "const": true
+        },
+        "adapter_can_modify": {
+          "const": false
+        }
+      }
+    },
+    "selfieGeometryHardConstraint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "applicable",
+        "adapter_can_modify"
+      ],
+      "properties": {
+        "applicable": {
+          "type": "boolean"
+        },
+        "subject_operated_camera": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "arm_reach_required": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "phone_position_physically_reachable": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "adapter_can_modify": {
+          "const": false
+        }
+      }
+    },
+    "cameraGeometryHardConstraint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "preserve_resolved_geometry",
+        "adapter_can_modify"
+      ],
+      "properties": {
+        "preserve_resolved_geometry": {
+          "const": true
+        },
+        "adapter_can_modify": {
+          "const": false
+        }
+      }
+    },
+    "vehicleGeometryHardConstraint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "applicable",
+        "mirror_may_swap_physical_sides",
+        "adapter_can_modify"
+      ],
+      "properties": {
+        "applicable": {
+          "type": "boolean"
+        },
+        "drive_configuration": {
+          "enum": [
+            "left_hand_drive",
+            "right_hand_drive",
+            null
+          ]
+        },
+        "driver_position": {
+          "enum": [
+            "vehicle_left",
+            "vehicle_right",
+            null
+          ]
+        },
+        "steering_relation": {
+          "enum": [
+            "ahead_of_driver_torso",
+            null
+          ]
+        },
+        "cluster_relation": {
+          "enum": [
+            "behind_steering_wheel",
+            null
+          ]
+        },
+        "console_relation": {
+          "enum": [
+            "driver_physical_right",
+            "driver_physical_left",
+            null
+          ]
+        },
+        "door_window_relation": {
+          "enum": [
+            "driver_physical_left",
+            "driver_physical_right",
+            null
+          ]
+        },
+        "coordinate_system": {
+          "enum": [
+            "vehicle_relative",
+            null
+          ]
+        },
+        "mirror_may_swap_physical_sides": {
+          "const": false
+        },
+        "adapter_can_modify": {
+          "const": false
+        }
+      }
+    },
+    "preferences": {
+      "type": "object",
+      "description": "Soft values. These may yield when they conflict with higher authorities or hard constraints.",
+      "additionalProperties": false,
+      "properties": {
+        "composition": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "background_visibility": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "realism": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "imperfection_level": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "aesthetic": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "resolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "authority_priority",
+        "conflicts",
+        "resolved"
+      ],
+      "properties": {
+        "authority_priority": {
+          "const": [
+            {
+              "owner": "hard_constraint",
+              "priority": 100
+            },
+            {
+              "owner": "identity_reference",
+              "priority": 90
+            },
+            {
+              "owner": "explicit_user",
+              "priority": 80
+            },
+            {
+              "owner": "scene_contract",
+              "priority": 70
+            },
+            {
+              "owner": "capture_contract",
+              "priority": 60
+            },
+            {
+              "owner": "camera_contract",
+              "priority": 50
+            },
+            {
+              "owner": "lighting_contract",
+              "priority": 40
+            },
+            {
+              "owner": "realism_resolver",
+              "priority": 30
+            },
+            {
+              "owner": "generator_adapter",
+              "priority": 20
+            },
+            {
+              "owner": "aesthetic_preference",
+              "priority": 10
+            }
+          ]
+        },
+        "conflicts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/conflictRecord"
+          }
+        },
+        "resolved": {
+          "type": "boolean"
+        }
+      }
+    },
+    "conflictRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "property",
+        "winner",
+        "loser",
+        "resolution"
+      ],
+      "properties": {
+        "property": {
+          "type": "string"
+        },
+        "winner": {
+          "$ref": "#/$defs/authorityOwner"
+        },
+        "loser": {
+          "$ref": "#/$defs/authorityOwner"
+        },
+        "resolution": {
+          "enum": [
+            "higher_authority",
+            "hard_constraint",
+            "physical_feasibility",
+            "deterministic_fallback"
+          ]
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_valid",
+        "hard_constraints_valid",
+        "authority_collisions",
+        "scene_leakage_detected",
+        "adapter_mutation_detected"
+      ],
+      "properties": {
+        "schema_valid": {
+          "type": "boolean"
+        },
+        "hard_constraints_valid": {
+          "type": "boolean"
+        },
+        "authority_collisions": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "scene_leakage_detected": {
+          "type": "boolean"
+        },
+        "adapter_mutation_detected": {
+          "type": "boolean"
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
