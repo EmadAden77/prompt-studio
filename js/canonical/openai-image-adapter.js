@@ -395,23 +395,44 @@ function describeVehicleGeometry(canonical) {
 
   if (vehicle.drive_configuration === "left_hand_drive"
       && vehicle.driver_position === "vehicle_left"
-      && vehicle.steering_relation === "ahead_of_driver_torso"
-      && vehicle.cluster_relation === "behind_steering_wheel"
-      && vehicle.console_relation === "driver_physical_right"
-      && vehicle.door_window_relation === "driver_physical_left"
-      && vehicle.coordinate_system === "vehicle_relative") {
-    return "Left-hand-drive geometry uses vehicle-relative coordinates: the driver occupies the vehicle-left driving position, the steering wheel is directly ahead of the driver's torso, the instrument cluster is behind the steering wheel, the center console is at the driver's physical right, and the driver door/window is at the driver's physical left.";
+      && vehicle.steering_relation === "ahead_of_driver_torso") {
+    return "Left-hand-drive geometry uses vehicle-relative coordinates: the driver occupies the vehicle-left driving position and the steering wheel is directly ahead of the driver's torso.";
+  }
+  if (vehicle.drive_configuration === "right_hand_drive"
+      && vehicle.driver_position === "vehicle_right"
+      && vehicle.steering_relation === "ahead_of_driver_torso") {
+    return "Right-hand-drive geometry uses vehicle-relative coordinates: the driver occupies the vehicle-right driving position and the steering wheel is directly ahead of the driver's torso.";
   }
 
   const relations = [];
   if (text(vehicle.drive_configuration)) relations.push(`${humanize(vehicle.drive_configuration)} configuration`);
   if (text(vehicle.driver_position)) relations.push(`driver position ${humanize(vehicle.driver_position)}`);
   if (text(vehicle.steering_relation)) relations.push(`steering wheel ${humanize(vehicle.steering_relation)}`);
-  if (text(vehicle.cluster_relation)) relations.push(`instrument cluster ${humanize(vehicle.cluster_relation)}`);
-  if (text(vehicle.console_relation)) relations.push(`center console ${humanize(vehicle.console_relation)}`);
-  if (text(vehicle.door_window_relation)) relations.push(`driver door/window ${humanize(vehicle.door_window_relation)}`);
   if (text(vehicle.coordinate_system)) relations.push(`${humanize(vehicle.coordinate_system)} coordinates`);
   return relations.length ? `Vehicle geometry follows ${naturalList(relations)}.` : "";
+}
+
+export function describeVehicleViewProjection(canonical, mirrorConvention = "photographic") {
+  if (!isObject(canonical)
+      || canonical.scene?.type !== "vehicle"
+      || canonical.capture?.type !== "subject_held_driver_selfie"
+      || canonical.camera?.camera_type !== "front_camera") {
+    return "";
+  }
+
+  const vehicle = canonical.hard_constraints?.vehicle_geometry;
+  if (!isObject(vehicle) || vehicle.applicable !== true) return "";
+
+  const drive = text(vehicle.drive_configuration);
+  if (drive !== "left_hand_drive" && drive !== "right_hand_drive") return "";
+
+  const convention = mirrorConvention === "mirror_preview" ? "mirror_preview" : "photographic";
+  const photographicDoorRight = drive === "left_hand_drive";
+  const doorRight = convention === "photographic" ? photographicDoorRight : !photographicDoorRight;
+  const doorSide = doorRight ? "right" : "left";
+  const consoleSide = doorRight ? "left" : "right";
+
+  return `In the frame, the driver's door and side window appear on the ${doorSide} side of the image, the center console on the ${consoleSide} side of the image, and the steering wheel rim enters the bottom of the frame directly ahead of his torso.`;
 }
 
 function describePreferences(canonical) {
@@ -427,10 +448,12 @@ function describePreferences(canonical) {
   return items.length ? `Visual preferences: ${naturalList(items)}.` : "";
 }
 
-export function buildOpenAIImagePrompt(canonical) {
+export function buildOpenAIImagePrompt(canonical, options = {}) {
   if (!isObject(canonical) || canonical.schema_version !== "realistic-image-generator/canonical-v3") {
     throw new TypeError("buildOpenAIImagePrompt expects a Canonical V3 state");
   }
+
+  const mirrorConvention = options?.mirrorConvention === "mirror_preview" ? "mirror_preview" : "photographic";
 
   return [
     describeCapture(canonical),
@@ -449,6 +472,7 @@ export function buildOpenAIImagePrompt(canonical) {
     describeAnatomy(canonical),
     describeCapturePhysics(canonical),
     describeVehicleGeometry(canonical),
+    describeVehicleViewProjection(canonical, mirrorConvention),
     describePreferences(canonical)
   ].filter(Boolean).join(" ");
 }
