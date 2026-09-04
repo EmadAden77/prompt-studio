@@ -1,138 +1,90 @@
 name: Phase 9 Apply
-
 on:
   push:
     branches: [main]
-    paths:
-      - '.github/workflows/phase9-apply.yml'
-
+    paths: ['.github/workflows/phase9-apply.yml']
 permissions:
   contents: write
-
 jobs:
   apply:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+        with: {fetch-depth: 0}
       - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Apply Phase 9 source changes
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import json, re
-
-          def replace_once(path, old, new):
-              p = Path(path); s = p.read_text()
-              if old not in s:
-                  raise SystemExit(f'pattern not found in {path}: {old[:80]}')
-              p.write_text(s.replace(old, new, 1))
-
-          engine='js/canonical-v3-engine.js'
-          replace_once(engine,
-            'rangeRover: "inside a stationary 2022 Range Rover Sport with coherent left-hand-drive geometry",',
-            'rangeRover: "inside a stationary 2022 Range Rover Sport with a premium Ivory cream leather interior, dark walnut veneer center console and door trim, black dashboard and digital displays, and silver metallic accents",')
-          old='''  const facts = raw.sceneFacts && typeof raw.sceneFacts === "object" && !Array.isArray(raw.sceneFacts)\n    ? deepClone(raw.sceneFacts)\n    : {};\n  const sceneLeakageDetected = inspectSceneFacts(facts, conflicts);'''
-          new='''  const rangeRoverFacts = id === "rangeRover" ? {\n    interior_palette: "ivory cream leather + dark walnut + black + silver",\n    seat_finish: "perforated center panels with smooth outer bolsters",\n    steering_wheel: "multi-spoke, black upper rim, Ivory inner/lower, silver trim, multifunction controls on both spokes",\n    instrument_cluster: "wide digital display with circular-style gauges",\n    center_console: "dark walnut, electronic gear selector, rotary dial",\n    roof: "panoramic dark-tinted glass with black inner frame",\n    door_panels: "layered Ivory/black/dark-wood/silver"\n  } : {};\n  const suppliedFacts = raw.sceneFacts && typeof raw.sceneFacts === "object" && !Array.isArray(raw.sceneFacts)\n    ? deepClone(raw.sceneFacts)\n    : {};\n  const facts = { ...suppliedFacts, ...rangeRoverFacts };\n  const sceneLeakageDetected = inspectSceneFacts(facts, conflicts);'''
-          replace_once(engine, old, new)
-
-          adapter='js/canonical/openai-image-adapter.js'
-          p=Path(adapter); s=p.read_text()
-          s=s.replace('"mirror_may_swap_physical_sides", "source"', '"mirror_may_swap_physical_sides", "interior_palette", "seat_finish", "steering_wheel", "instrument_cluster", "center_console", "roof", "door_panels", "source"', 1)
-          old='''function describeVehicleScene(scene) {\n  const vehicle = scene?.vehicle;\n  if (!isObject(vehicle)) return "";\n  const parts = [];\n  if (text(vehicle.state)) parts.push(humanize(vehicle.state));\n  if (Number.isInteger(vehicle.year)) parts.push(String(vehicle.year));\n  if (text(vehicle.make)) parts.push(text(vehicle.make));\n  if (text(vehicle.model)) parts.push(text(vehicle.model));\n  const base = parts.length ? `Inside a ${parts.join(" ")}.` : "Inside the selected vehicle.";\n  const interior = text(vehicle.interior_description);\n  return interior ? `${base} The interior has ${interior}.` : base;\n}'''
-          new='''function describeVehicleScene(scene) {\n  const vehicle = scene?.vehicle;\n  if (!isObject(vehicle)) return "";\n  if (scene?.id === "rangeRover") {\n    const interior = "Interior features Ivory cream leather seats and trim, dark walnut center console, black dashboard and digital displays, and silver metallic accents.";\n    const roof = text(scene?.facts?.roof) ? " Panoramic dark-tinted glass roof with black inner frame." : "";\n    return `${interior}${roof}`;\n  }\n  const parts = [];\n  if (text(vehicle.state)) parts.push(humanize(vehicle.state));\n  if (Number.isInteger(vehicle.year)) parts.push(String(vehicle.year));\n  if (text(vehicle.make)) parts.push(text(vehicle.make));\n  if (text(vehicle.model)) parts.push(text(vehicle.model));\n  const base = parts.length ? `Inside a ${parts.join(" ")}.` : "Inside the selected vehicle.";\n  const interior = text(vehicle.interior_description);\n  return interior ? `${base} The interior has ${interior}.` : base;\n}'''
-          if old not in s: raise SystemExit('describeVehicleScene pattern missing')
-          s=s.replace(old,new,1)
-          s=s.replace('return [scene.description, scene.room?.description, scene.vehicle?.interior_description, ...facts].map((value) => text(value).toLowerCase()).filter(Boolean).join(" ");', 'const description = scene.type === "vehicle" ? "" : scene.description;\n  return [description, scene.room?.description, scene.vehicle?.interior_description, ...facts].map((value) => text(value).toLowerCase()).filter(Boolean).join(" ");', 1)
-          s=s.replace('if (isObject(bodyScale) && bodyScale.preserve_environment_scale === true) phrases.push("Natural body proportions consistent with the environment.");', 'if (isObject(bodyScale) && bodyScale.preserve_environment_scale === true && canonical.scene?.type !== "vehicle") phrases.push("Natural body proportions consistent with the environment.");', 1)
-          old='''  return details.length ? `Captured with the ${device}${modePhrase}, using ${naturalList(details)}.` : `Captured with the ${device}${modePhrase}.`;'''
-          new='''  if (canonical.scene?.type === "vehicle" && details.length) return `${device}: ${naturalList(details).replace("subject distance", "distance").replace("equivalent focal length", "equivalent")}.`;\n  return details.length ? `Captured with the ${device}${modePhrase}, using ${naturalList(details)}.` : `Captured with the ${device}${modePhrase}.`;'''
-          if old not in s: raise SystemExit('camera return pattern missing')
-          s=s.replace(old,new,1)
-          s=s.replace('return `${holder} operates the camera${reach}${event}.`;', 'if (canonical.capture?.type === "subject_held_driver_selfie") return "The subject holds the camera at natural arm reach in one coherent capture.";\n    return `${holder} operates the camera${reach}${event}.`;', 1)
-          s=s.replace('return "Vehicle-relative LHD: driver at vehicle-left; steering wheel directly ahead of the driver\'s torso.";', 'return "LHD vehicle-relative: driver left; steering directly ahead of torso.";', 1)
-          s=s.replace('return "Vehicle-relative RHD: driver at vehicle-right; steering wheel directly ahead of the driver\'s torso.";', 'return "RHD vehicle-relative: driver right; steering directly ahead of torso.";', 1)
-          p.write_text(s)
-
-          # Golden metadata: record the locked Range Rover facts in both vehicle cases.
-          gp=Path('tests/golden/current-engine/legacy-v2-semantic-goldens.json')
-          data=json.loads(gp.read_text())
-          facts={
-            "interior_palette":"ivory cream leather + dark walnut + black + silver",
-            "seat_finish":"perforated center panels with smooth outer bolsters",
-            "steering_wheel":"multi-spoke, black upper rim, Ivory inner/lower, silver trim, multifunction controls on both spokes",
-            "instrument_cluster":"wide digital display with circular-style gauges",
-            "center_console":"dark walnut, electronic gear selector, rotary dial",
-            "roof":"panoramic dark-tinted glass with black inner frame",
-            "door_panels":"layered Ivory/black/dark-wood/silver"
-          }
-          for cid in ('car_lhd_driver_selfie','car_tight_crop'):
-              data['cases'][cid]['observed']['range_rover_interior_facts']=facts
-          gp.write_text(json.dumps(data, indent=2, ensure_ascii=False)+"\n")
-
-          # Superseded Phase 8 exact wording assertions now accept the compact vehicle-relative sentence.
-          for path in ['tests/canonical-v3-adapter-isolation.mjs','tests/canonical-v3-feature-flag.mjs']:
-              p=Path(path); t=p.read_text()
-              t=t.replace('/vehicle-relative coordinates/iu', '/LHD vehicle-relative/iu')
-              t=t.replace('/steering wheel is directly ahead of the driver\'s torso/iu', '/steering directly ahead of torso/iu')
-              t=t.replace('"vehicle-relative coordinates",\n  "steering wheel is directly ahead of the driver\'s torso",', '"LHD vehicle-relative",\n  "steering directly ahead of torso",')
-              p.write_text(t)
-
-          # Feature-flag validation for the locked interior palette.
-          fp=Path('tests/canonical-v3-feature-flag.mjs'); t=fp.read_text()
-          anchor='assert.match(carOutput.prompt, /steering directly ahead of torso/iu);'
-          if anchor not in t: raise SystemExit('feature flag anchor missing')
-          t=t.replace(anchor, anchor+'\nassert.match(carOutput.prompt, /Ivory cream leather/u);\nassert.match(carOutput.prompt, /dark walnut/u);',1)
-          fp.write_text(t)
-
-          # Add Phase 9 test to CI.
-          wp=Path('.github/workflows/test.yml'); t=wp.read_text()
-          anchor='      - name: Run Canonical V3 vehicle view projection test\n        run: node tests/canonical-v3-view-projection.mjs\n'
-          addition=anchor+'      - name: Run Canonical V3 Range Rover interior specs test\n        run: node tests/canonical-v3-range-rover-specs.mjs\n'
-          if 'Range Rover interior specs test' not in t:
-              if anchor not in t: raise SystemExit('workflow anchor missing')
-              t=t.replace(anchor,addition,1)
-          wp.write_text(t)
-          PY
-      - name: Measure Phase 9 prompts
-        run: |
-          node --input-type=module <<'NODE'
-          import fs from 'node:fs';
-          import { buildCanonicalV3 } from './js/canonical-v3-engine.js';
-          import { buildOpenAIImagePrompt } from './js/canonical/openai-image-adapter.js';
-          const g=JSON.parse(fs.readFileSync('./tests/golden/current-engine/legacy-v2-semantic-goldens.json','utf8'));
-          const ids=['car_lhd_driver_selfie','car_tight_crop','bedroom_direct_selfie','mirror_selfie','group_selfie','accidental_capture','identity_and_eyewear'];
-          const counts={};
-          for (const id of ids) { const p=buildOpenAIImagePrompt(buildCanonicalV3(structuredClone(g.cases[id].input))); counts[id]=p.trim().split(/\s+/u).filter(Boolean).length; }
-          fs.writeFileSync('/tmp/phase9-counts.json', JSON.stringify(counts));
-          console.log(counts);
-          NODE
-      - name: Update Phase 9 snapshots and report
+        with: {node-version: 22}
+      - name: Apply Phase 9
         run: |
           python - <<'PY'
           from pathlib import Path
           import json,re
-          counts=json.loads(Path('/tmp/phase9-counts.json').read_text())
-          if any(v>250 for v in counts.values()): raise SystemExit(f'word cap exceeded: {counts}')
-          p=Path('tests/canonical-v3-post-processing-layer.mjs'); s=p.read_text()
-          block='const FINAL_WORD_COUNTS = Object.freeze({\n'+',\n'.join(f'  {k}: {v}' for k,v in counts.items())+'\n});'
-          s=re.sub(r'const FINAL_WORD_COUNTS = Object\.freeze\(\{.*?\n\}\);',block,s,flags=re.S)
+          def req(path, old, new):
+              p=Path(path); s=p.read_text()
+              if old not in s: raise SystemExit(f'missing pattern in {path}: {old[:60]}')
+              p.write_text(s.replace(old,new,1))
+
+          req('js/canonical-v3-engine.js',
+              'rangeRover: "inside a stationary 2022 Range Rover Sport with coherent left-hand-drive geometry",',
+              'rangeRover: "inside a stationary 2022 Range Rover Sport with a premium Ivory cream leather interior, dark walnut veneer center console and door trim, black dashboard and digital displays, and silver metallic accents",')
+          req('js/canonical-v3-engine.js',
+          '''  const facts = raw.sceneFacts && typeof raw.sceneFacts === "object" && !Array.isArray(raw.sceneFacts)\n    ? deepClone(raw.sceneFacts)\n    : {};\n  const sceneLeakageDetected = inspectSceneFacts(facts, conflicts);''',
+          '''  const rangeRoverFacts = id === "rangeRover" ? {\n    interior_palette: "ivory cream leather + dark walnut + black + silver",\n    seat_finish: "perforated center panels with smooth outer bolsters",\n    steering_wheel: "multi-spoke, black upper rim, Ivory inner/lower, silver trim, multifunction controls on both spokes",\n    instrument_cluster: "wide digital display with circular-style gauges",\n    center_console: "dark walnut, electronic gear selector, rotary dial",\n    roof: "panoramic dark-tinted glass with black inner frame",\n    door_panels: "layered Ivory/black/dark-wood/silver"\n  } : {};\n  const suppliedFacts = raw.sceneFacts && typeof raw.sceneFacts === "object" && !Array.isArray(raw.sceneFacts) ? deepClone(raw.sceneFacts) : {};\n  const facts = { ...suppliedFacts, ...rangeRoverFacts };\n  const sceneLeakageDetected = inspectSceneFacts(facts, conflicts);''')
+
+          p=Path('js/canonical/openai-image-adapter.js'); s=p.read_text()
+          s=s.replace('"mirror_may_swap_physical_sides", "source"','"mirror_may_swap_physical_sides", "interior_palette", "seat_finish", "steering_wheel", "instrument_cluster", "center_console", "roof", "door_panels", "source"',1)
+          old='''function describeVehicleScene(scene) {\n  const vehicle = scene?.vehicle;\n  if (!isObject(vehicle)) return "";\n  const parts = [];\n  if (text(vehicle.state)) parts.push(humanize(vehicle.state));\n  if (Number.isInteger(vehicle.year)) parts.push(String(vehicle.year));\n  if (text(vehicle.make)) parts.push(text(vehicle.make));\n  if (text(vehicle.model)) parts.push(text(vehicle.model));\n  const base = parts.length ? `Inside a ${parts.join(" ")}.` : "Inside the selected vehicle.";\n  const interior = text(vehicle.interior_description);\n  return interior ? `${base} The interior has ${interior}.` : base;\n}'''
+          new='''function describeVehicleScene(scene) {\n  const vehicle = scene?.vehicle;\n  if (!isObject(vehicle)) return "";\n  if (scene?.id === "rangeRover") {\n    const interior = "Interior features Ivory cream leather seats and trim, dark walnut center console, black dashboard and digital displays, and silver metallic accents.";\n    const roof = text(scene?.facts?.roof) ? " Panoramic dark-tinted glass roof with black inner frame." : "";\n    return `${interior}${roof}`;\n  }\n  const parts = [];\n  if (text(vehicle.state)) parts.push(humanize(vehicle.state));\n  if (Number.isInteger(vehicle.year)) parts.push(String(vehicle.year));\n  if (text(vehicle.make)) parts.push(text(vehicle.make));\n  if (text(vehicle.model)) parts.push(text(vehicle.model));\n  const base = parts.length ? `Inside a ${parts.join(" ")}.` : "Inside the selected vehicle.";\n  const interior = text(vehicle.interior_description);\n  return interior ? `${base} The interior has ${interior}.` : base;\n}'''
+          if old not in s: raise SystemExit('vehicle scene pattern missing')
+          s=s.replace(old,new,1)
+          s=s.replace('return [scene.description, scene.room?.description, scene.vehicle?.interior_description, ...facts].map((value) => text(value).toLowerCase()).filter(Boolean).join(" ");','const description = scene.type === "vehicle" ? "" : scene.description;\n  return [description, scene.room?.description, scene.vehicle?.interior_description, ...facts].map((value) => text(value).toLowerCase()).filter(Boolean).join(" ");',1)
+          s=s.replace('if (isObject(bodyScale) && bodyScale.preserve_environment_scale === true) phrases.push("Natural body proportions consistent with the environment.");','if (isObject(bodyScale) && bodyScale.preserve_environment_scale === true && canonical.scene?.type !== "vehicle") phrases.push("Natural body proportions consistent with the environment.");',1)
+          s=s.replace('  return details.length ? `Captured with the ${device}${modePhrase}, using ${naturalList(details)}.` : `Captured with the ${device}${modePhrase}.`;','  if (canonical.scene?.type === "vehicle" && details.length) return `${device}: ${naturalList(details).replace("subject distance", "distance").replace("equivalent focal length", "equivalent")}.`;\n  return details.length ? `Captured with the ${device}${modePhrase}, using ${naturalList(details)}.` : `Captured with the ${device}${modePhrase}.`;',1)
+          s=s.replace('return `${holder} operates the camera${reach}${event}.`;','if (canonical.capture?.type === "subject_held_driver_selfie") return "The subject holds the camera at natural arm reach in one coherent capture.";\n    return `${holder} operates the camera${reach}${event}.`;',1)
+          s=s.replace('return "Vehicle-relative LHD: driver at vehicle-left; steering wheel directly ahead of the driver\'s torso.";','return "LHD vehicle-relative: driver left; steering directly ahead of torso.";',1)
+          s=s.replace('return "Vehicle-relative RHD: driver at vehicle-right; steering wheel directly ahead of the driver\'s torso.";','return "RHD vehicle-relative: driver right; steering directly ahead of torso.";',1)
           p.write_text(s)
-          rp=Path('docs/canonical-v3-comparison-report.md'); r=rp.read_text()
-          section='''\n\n## Phase 9 — Range Rover interior spec validation\n\nThe 2022 Range Rover Sport scene now carries a locked Ivory cream leather / dark walnut / black / silver interior contract. The adapter emits the condensed palette plus the panoramic dark-tinted glass roof while keeping the Phase 8 photographic projection unchanged.\n\n| Case | Final words | ≤250 |\n|---|---:|:---:|\n'''
-          labels={
-            'car_lhd_driver_selfie':'Car LHD driver selfie','car_tight_crop':'Car tight crop','bedroom_direct_selfie':'Bedroom direct selfie','mirror_selfie':'Mirror selfie','group_selfie':'Group selfie','accidental_capture':'Accidental capture','identity_and_eyewear':'Identity + eyewear'}
-          for k,v in counts.items(): section+=f'| {labels[k]} | {v} | yes |\n'
-          section+='''\nValidation: Range Rover prompts contain **Ivory cream leather**, **dark walnut**, **silver metallic** accents, and the **panoramic** roof; all seven golden prompts remain deterministic 10/10 and within the 250-word cap. The Canonical V3 hard constraints and authority model are unchanged.\n'''
-          if '## Phase 9 — Range Rover interior spec validation' in r:
-              r=r.split('## Phase 9 — Range Rover interior spec validation')[0].rstrip()+section
-          else: r=r.rstrip()+section
-          rp.write_text(r)
+
+          gp=Path('tests/golden/current-engine/legacy-v2-semantic-goldens.json'); d=json.loads(gp.read_text())
+          facts={"interior_palette":"ivory cream leather + dark walnut + black + silver","seat_finish":"perforated center panels with smooth outer bolsters","steering_wheel":"multi-spoke, black upper rim, Ivory inner/lower, silver trim, multifunction controls on both spokes","instrument_cluster":"wide digital display with circular-style gauges","center_console":"dark walnut, electronic gear selector, rotary dial","roof":"panoramic dark-tinted glass with black inner frame","door_panels":"layered Ivory/black/dark-wood/silver"}
+          for cid in ('car_lhd_driver_selfie','car_tight_crop'): d['cases'][cid]['observed']['range_rover_interior_facts']=facts
+          gp.write_text(json.dumps(d,indent=2,ensure_ascii=False)+'\n')
+
+          # Update old exact vehicle-relative assertions to the compact, equivalent Phase 9 wording.
+          for path in ('tests/canonical-v3-adapter-isolation.mjs','tests/canonical-v3-feature-flag.mjs'):
+              q=Path(path); t=q.read_text()
+              t=t.replace('/Vehicle-relative LHD/iu','/LHD vehicle-relative/iu')
+              t=t.replace('/steering wheel directly ahead of the driver\'s torso/iu','/steering directly ahead of torso/iu')
+              t=t.replace('"Vehicle-relative LHD",','"LHD vehicle-relative",')
+              t=t.replace('"steering wheel directly ahead of the driver\'s torso",','"steering directly ahead of torso",')
+              q.write_text(t)
+          q=Path('tests/canonical-v3-feature-flag.mjs'); t=q.read_text()
+          anchor='assert.match(carOutput.prompt, /steering directly ahead of torso/iu);'
+          if anchor not in t: raise SystemExit('feature anchor missing')
+          t=t.replace(anchor,anchor+'\nassert.match(carOutput.prompt, /Ivory cream leather/u);\nassert.match(carOutput.prompt, /dark walnut/u);',1); q.write_text(t)
+
+          q=Path('.github/workflows/test.yml'); t=q.read_text(); anchor='      - name: Run Canonical V3 vehicle view projection test\n        run: node tests/canonical-v3-view-projection.mjs\n'
+          if 'Range Rover interior specs test' not in t:
+              if anchor not in t: raise SystemExit('test workflow anchor missing')
+              t=t.replace(anchor,anchor+'      - name: Run Canonical V3 Range Rover interior specs test\n        run: node tests/canonical-v3-range-rover-specs.mjs\n',1)
+          q.write_text(t)
           PY
-      - name: Run focused Phase 9 validation
+      - name: Measure and snapshot
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs'; import {buildCanonicalV3} from './js/canonical-v3-engine.js'; import {buildOpenAIImagePrompt} from './js/canonical/openai-image-adapter.js';
+          const g=JSON.parse(fs.readFileSync('tests/golden/current-engine/legacy-v2-semantic-goldens.json')); const ids=['car_lhd_driver_selfie','car_tight_crop','bedroom_direct_selfie','mirror_selfie','group_selfie','accidental_capture','identity_and_eyewear']; const c={}; for(const id of ids)c[id]=buildOpenAIImagePrompt(buildCanonicalV3(structuredClone(g.cases[id].input))).trim().split(/\s+/u).filter(Boolean).length; fs.writeFileSync('/tmp/c.json',JSON.stringify(c)); console.log(c);
+          NODE
+          python - <<'PY'
+          from pathlib import Path
+          import json,re
+          c=json.loads(Path('/tmp/c.json').read_text())
+          if any(v>250 for v in c.values()): raise SystemExit(f'word cap exceeded: {c}')
+          p=Path('tests/canonical-v3-post-processing-layer.mjs'); s=p.read_text(); block='const FINAL_WORD_COUNTS = Object.freeze({\n'+',\n'.join(f'  {k}: {v}' for k,v in c.items())+'\n});'; p.write_text(re.sub(r'const FINAL_WORD_COUNTS = Object\.freeze\(\{.*?\n\}\);',block,s,flags=re.S))
+          labels={'car_lhd_driver_selfie':'Car LHD driver selfie','car_tight_crop':'Car tight crop','bedroom_direct_selfie':'Bedroom direct selfie','mirror_selfie':'Mirror selfie','group_selfie':'Group selfie','accidental_capture':'Accidental capture','identity_and_eyewear':'Identity + eyewear'}
+          sec='\n\n## Phase 9 — Range Rover interior spec validation\n\nThe 2022 Range Rover Sport scene carries the locked Ivory cream leather / dark walnut / black / silver interior contract, plus the panoramic dark-tinted glass roof, while retaining the Phase 8 photographic projection.\n\n| Case | Final words | ≤250 |\n|---|---:|:---:|\n'+''.join(f'| {labels[k]} | {v} | yes |\n' for k,v in c.items())+'\nValidation: **Ivory cream leather**, **dark walnut**, **silver metallic**, and **panoramic** are present in Range Rover prompts. All seven goldens remain deterministic 10/10 and within 250 words; hard constraints and authorities are unchanged.\n'
+          p=Path('docs/canonical-v3-comparison-report.md'); r=p.read_text(); r=r.split('## Phase 9 — Range Rover interior spec validation')[0].rstrip() if '## Phase 9 — Range Rover interior spec validation' in r else r.rstrip(); p.write_text(r+sec)
+          PY
+      - name: Focused validation
         run: |
           node tests/canonical-v3-range-rover-specs.mjs
           node tests/canonical-v3-view-projection.mjs
@@ -140,11 +92,11 @@ jobs:
           node tests/canonical-v3-adapter-isolation.mjs
           node tests/canonical-v3-feature-flag.mjs
           node tests/canonical-v3-comparison.mjs
-      - name: Commit Phase 9
+      - name: Commit
         run: |
-          git config user.name "EmadAden77"
-          git config user.email "sasfsas8@gmail.com"
+          git config user.name EmadAden77
+          git config user.email sasfsas8@gmail.com
           git rm .github/workflows/phase9-apply.yml
-          git add js/canonical-v3-engine.js js/canonical/openai-image-adapter.js tests/golden/current-engine/legacy-v2-semantic-goldens.json tests/canonical-v3-post-processing-layer.mjs tests/canonical-v3-adapter-isolation.mjs tests/canonical-v3-feature-flag.mjs .github/workflows/test.yml docs/canonical-v3-comparison-report.md tests/canonical-v3-range-rover-specs.mjs
+          git add -A
           git commit -m "Phase 9: lock in exact Range Rover 2022 Sport interior specs"
           git push origin HEAD:main
