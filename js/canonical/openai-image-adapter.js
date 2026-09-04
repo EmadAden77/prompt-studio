@@ -219,6 +219,73 @@ function describeSceneFacts(canonical) {
   return phrases.length ? `Scene details: ${naturalList(phrases)}.` : "";
 }
 
+const ENVIRONMENTAL_DETAIL_PHRASES = Object.freeze({
+  directional_dust: "Faint dust particles catch the directional light.",
+  surface_smudges: "Subtle fingerprints and smudges appear on glossy surfaces.",
+  touched_wear: "Natural wear appears on frequently touched surfaces.",
+  lived_in_room: "Lived-in details remain consistent with the room."
+});
+
+function environmentalSceneEvidence(canonical) {
+  const scene = canonical.scene ?? {};
+  const facts = isObject(scene.facts)
+    ? Object.entries(scene.facts).flatMap(([key, value]) => {
+        if (RESERVED_SCENE_FACT_KEYS.has(key)) return [];
+        if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+          return [`${key} ${String(value)}`];
+        }
+        return [];
+      })
+    : [];
+  return [
+    scene.description,
+    scene.room?.description,
+    scene.vehicle?.interior_description,
+    ...facts
+  ].map((value) => text(value).toLowerCase()).filter(Boolean).join(" ");
+}
+
+function isIndoorEnvironmentalScene(canonical, evidence) {
+  const type = canonical.scene?.type;
+  return type === "room" || type === "store" || (type === "custom" && /\bindoor\b|\binterior\b|\binside\b/iu.test(evidence));
+}
+
+function hasGlassOrScreenEvidence(evidence) {
+  return /\bglass\b|\bwindow\b|\bmirror\b|\bscreen\b|\bdisplay\b|\bglossy\b/iu.test(evidence);
+}
+
+function hasTouchedSurfaceEvidence(evidence) {
+  return /\bdoor\b|\bhandle\b|\btable\b|\bnightstand\b|\bdresser\b|\bwardrobe\b|\bswitch\b|\bchair\b|\bdesk\b|\bcabinet\b|\bdrawer\b|\bconsole\b|\bsteering\b/iu.test(evidence);
+}
+
+/**
+ * Describe up to two scene-supported environmental details.
+ * The adapter reads canonical scene and lighting facts only; it never changes canonical state.
+ */
+export function describeEnvironmentalDetails(canonical) {
+  if (!isObject(canonical)) return "";
+
+  const type = canonical.scene?.type;
+  const evidence = environmentalSceneEvidence(canonical);
+  const indoor = isIndoorEnvironmentalScene(canonical, evidence);
+  const phrases = [];
+
+  if (text(canonical.lighting?.direction)) {
+    phrases.push(ENVIRONMENTAL_DETAIL_PHRASES.directional_dust);
+  }
+  if (phrases.length < 2 && (type === "vehicle" || indoor) && hasGlassOrScreenEvidence(evidence)) {
+    phrases.push(ENVIRONMENTAL_DETAIL_PHRASES.surface_smudges);
+  }
+  if (phrases.length < 2 && (type === "vehicle" || (type === "room" && hasTouchedSurfaceEvidence(evidence)))) {
+    phrases.push(ENVIRONMENTAL_DETAIL_PHRASES.touched_wear);
+  }
+  if (phrases.length === 0 && type === "room") {
+    phrases.push(ENVIRONMENTAL_DETAIL_PHRASES.lived_in_room);
+  }
+
+  return phrases.slice(0, 2).join(" ");
+}
+
 function describeCamera(canonical) {
   const camera = canonical.camera ?? {};
   const geometry = camera.geometry ?? {};
@@ -396,6 +463,7 @@ export function buildOpenAIImagePrompt(canonical) {
     describeNaturalImperfections(canonical),
     describeScene(canonical),
     describeSceneFacts(canonical),
+    describeEnvironmentalDetails(canonical),
     describeCamera(canonical),
     describeCameraArtifacts(canonical),
     describeLighting(canonical),
