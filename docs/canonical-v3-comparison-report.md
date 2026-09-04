@@ -78,3 +78,12 @@ Step 2 is the frozen natural-imperfection variant. Step 3 adds the lighting-phys
 - Prompt-length cap: **7/7 Step 2**, **7/7 Step 3**, and **7/7 Step 4** prompts are at or below **250 words**.
 - Determinism: **10/10 identical outputs for every Step 2, Step 3, and Step 4 case**.
 - The Step 4 helper adds device-, light-, or motion-causal camera behavior only; it does not add environmental details or post-processing instructions.
+
+## Phase 15 — Soft group selfie backgrounds
+
+Phase 15 changes only `backgroundLife()` in `js/canonical/group-phase13.js`. Outdoor group background wording now uses shallow-depth cues such as soft-focus, blurred, out-of-focus, ambient, and distant, with one or two vague background elements per sentence.
+
+- Named background roles are removed from group prompts.
+- Background-life sentences stay under 15 words and remain a single sentence.
+- Phase 13/14 uniqueness, anti-similarity, vehicle de-conflict, seeded variety, and per-input 10/10 determinism remain unchanged.
+- Group prompts remain at or below 250 words.
