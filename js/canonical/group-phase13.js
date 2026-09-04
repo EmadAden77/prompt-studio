@@ -44,10 +44,28 @@ function words(value) { const text = String(value || "").trim(); return text ? t
 function kindOf(raw) { const value = String(raw?.groupKind || "friends").trim().toLowerCase(); return KIND_SET.has(value) ? value : "friends"; }
 function vibeOf(raw) { const value = String(raw?.groupVibe || "casual").trim().toLowerCase(); return VIBE_TEXT[value] ? value : "casual"; }
 
+function groupSeed(raw) {
+  raw = raw || {};
+  const key = [
+    raw.groupKind || "friends",
+    raw.groupVibe || "casual",
+    raw.groupCount || 3,
+    raw.streetMood || "auto",
+    raw.streetHour || new Date().getHours()
+  ].join("|");
+  let h = 2166136261;
+  for (let i = 0; i < key.length; i += 1) {
+    h ^= key.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return Math.abs(h >>> 0) % 5;
+}
+
 export function applyGroupPhase13(canonical, rawInput = {}) {
   if (!canonical || canonical.intent?.type !== "group" || canonical.capture?.type !== "group_selfie") return canonical;
   const next = clone(canonical);
   const kind = kindOf(rawInput);
+  const offset = groupSeed(rawInput);
   const additional = Array.isArray(next.subjects?.additional) ? next.subjects.additional : [];
 
   if (next.scene?.type === "vehicle") {
@@ -76,17 +94,17 @@ export function applyGroupPhase13(canonical, rawInput = {}) {
   }
 
   additional.forEach((person, index) => {
-    const poolIndex = index % 5;
+    const poolIndex = (index + offset) % FACES.length;
     person.reference_id = null;
-    person.expression = EXPRESSIONS[index % EXPRESSIONS.length];
-    person.pose = POSES[poolIndex];
+    person.expression = EXPRESSIONS[(index + offset) % EXPRESSIONS.length];
+    person.pose = POSES[(index + offset) % POSES.length];
     person.clothing = {
-      garment: OUTFITS[kind][poolIndex],
+      garment: OUTFITS[kind][(index + offset) % OUTFITS[kind].length],
       fabric: null,
       fabric_weight: null,
       fit: null,
       wear_state: null,
-      custom_modifier: `${FACES[poolIndex]}, apparent age ${AGES[poolIndex]}`
+      custom_modifier: `${FACES[poolIndex]}, apparent age ${AGES[(index + offset) % AGES.length]}`
     };
   });
 
