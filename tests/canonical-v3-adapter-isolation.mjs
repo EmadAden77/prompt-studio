@@ -63,8 +63,8 @@ assert.equal(/beautif|younger|older|perfect symmetry|more symmetrical|face slim/
 assert.match(prompt, /natural asymmetry/iu, "reference-preservation may retain natural asymmetry from the canonical identity contract");
 
 for (const phrase of [
-  "vehicle-relative coordinates",
-  "steering wheel is directly ahead of the driver's torso",
+  "Vehicle-relative LHD",
+  "steering wheel directly ahead of the driver's torso",
   "driver's door and side window appear on the right side of the image",
   "center console on the left side of the image"
 ]) {
