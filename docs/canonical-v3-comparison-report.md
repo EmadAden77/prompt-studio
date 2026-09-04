@@ -34,13 +34,13 @@ Phase 6 is the Canonical V3 adapter output before `describeNaturalImperfections(
 | Car tight crop | 363 | 176 | 183 | +7 | 5 | 2 | 2 | 0 | 0 | 1 | 10/10 | 10/10 | 10/10 | yes |
 | Bedroom direct selfie | 230 | 161 | 180 | +19 | 2 | 1 | 2 | 0 | 0 | 3 | 10/10 | 10/10 | 10/10 | yes |
 | Mirror selfie | 235 | 122 | 129 | +7 | 2 | 1 | 2 | 0 | 0 | 1 | 10/10 | 10/10 | 10/10 | yes |
-| Group selfie | 259 | 128 | 135 | +7 | 2 | 1 | 2 | 0 | 0 | 1 | 10/10 | 10/10 | 10/10 | yes |
+| Group selfie | 259 | 165 | 172 | +7 | 2 | 1 | 2 | 0 | 0 | 1 | 10/10 | 10/10 | 10/10 | yes |
 | Accidental capture | 284 | 114 | 121 | +7 | 3 | 1 | 2 | 0 | 0 | 1 | 10/10 | 10/10 | 10/10 | yes |
 | Identity + eyewear | 215 | 158 | 177 | +19 | 2 | 1 | 2 | 0 | 0 | 3 | 10/10 | 10/10 | 10/10 | yes |
 
 ### Phase 7 aggregate metrics
 
-- Average prompt length: **279 words legacy**, **154 words Phase 6**, and **165 words Phase 7** (Phase 7 is **+11 words** versus Phase 6).
+- Average prompt length: **279 words legacy**, **159 words Phase 6**, and **170 words Phase 7** (Phase 7 is **+11 words** versus Phase 6).
 - Repeated semantic-fact signals: **21 legacy**, **9 Phase 6**, and **14 Phase 7** across the seven cases.
 - Natural-imperfection signals: **0 legacy**, **0 Phase 6**, and **12 Phase 7** across the seven cases.
 - Prompt-length cap: **7/7 Phase 6** and **7/7 Phase 7** prompts are at or below **250 words**.
@@ -66,25 +66,15 @@ Step 2 is the frozen natural-imperfection variant. Step 3 adds the lighting-phys
 | Car tight crop | 183 | 193 | 202 | +9 | 2 | 2 | 2 | 1 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
 | Bedroom direct selfie | 180 | 190 | 199 | +9 | 2 | 2 | 2 | 3 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
 | Mirror selfie | 129 | 139 | 148 | +9 | 2 | 2 | 2 | 1 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
-| Group selfie | 135 | 145 | 154 | +9 | 2 | 2 | 2 | 1 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
+| Group selfie | 172 | 182 | 191 | +9 | 2 | 2 | 2 | 1 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
 | Accidental capture | 121 | 131 | 147 | +16 | 2 | 2 | 2 | 1 | 1 | 2 | 10/10 | 10/10 | 10/10 | yes |
 | Identity + eyewear | 177 | 187 | 196 | +9 | 2 | 2 | 2 | 3 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
 
 ### Phase 7 Step 4 aggregate metrics
 
-- Average prompt length: **165 words Step 2**, **175 words Step 3**, and **185 words Step 4** (Step 4 is **+10 words** versus Step 3).
+- Average prompt length: **170 words Step 2**, **180 words Step 3**, and **190 words Step 4** (Step 4 is **+10 words** versus Step 3).
 - Repeated semantic-fact signals: **14 Step 2**, **14 Step 3**, and **14 Step 4** across the seven cases.
 - Natural-imperfection signals: **12 Step 2**; lighting-physics signals: **7 Step 3**; camera-artifact signals: **8 Step 4**.
 - Prompt-length cap: **7/7 Step 2**, **7/7 Step 3**, and **7/7 Step 4** prompts are at or below **250 words**.
 - Determinism: **10/10 identical outputs for every Step 2, Step 3, and Step 4 case**.
 - The Step 4 helper adds device-, light-, or motion-causal camera behavior only; it does not add environmental details or post-processing instructions.
-
-## Phase 10 — Saudi street realism layer
-
-`describeSaudiStreetRealism()` adds three deterministic, read-only Saudi street details after scene facts for outdoor street scenes only. Daylight selects the first three day details; every other lighting source selects the first three night details. The helper does not mutate canonical state or hard constraints.
-
-| Case | Before Phase 10 | Phase 10 | Delta | Determinism | ≤250 |
-|---|---:|---:|---:|:---:|:---:|
-| Group selfie (street daylight golden) | 154 | 191 | +37 | 10/10 | yes |
-
-Validation: street prompts contain at least two active-set realism signals, day and night sets stay separated, all seven golden prompts remain deterministic 10/10, hard constraints are unchanged, and all seven remain within the 250-word cap.
