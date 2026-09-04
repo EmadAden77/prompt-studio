@@ -26,7 +26,7 @@ This preserved baseline is the original Phase 5 result from commit `ce00c39`. It
 
 ## Phase 7 Step 2 — Three-way natural-imperfection comparison
 
-Phase 6 is the Canonical V3 adapter output before `describeNaturalImperfections()`. Phase 7 is the same resolved frozen Canonical V3 state with that read-only helper included. The comparison removes only the helper's exact emitted text to reconstruct the Phase 6 column; no canonical field is modified.
+Phase 6 is the Canonical V3 adapter output before `describeNaturalImperfections()`. Phase 7 is the same resolved frozen Canonical V3 state with that read-only helper included. After the approved lighting-physics layer, the comparison removes its exact adapter-only sentence first, then removes only the natural-imperfection text to reconstruct the frozen Step 2 columns; no canonical field is modified.
 
 | Case | Legacy words | Phase 6 words | Phase 7 words | P7 Δ vs P6 | Legacy repeat | P6 repeat | P7 repeat | Legacy realism | P6 realism | P7 realism | Legacy det. | P6 det. | P7 det. | P7 ≤250 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|:---:|:---:|:---:|:---:|

@@ -251,6 +251,24 @@ function describeLighting(canonical) {
   return parts.length ? `Lighting uses ${naturalList(parts)}.` : "";
 }
 
+const LIGHTING_PHYSICS_BY_SOURCE = Object.freeze({
+  daylight: "Gentle directional contrast creates gradual shadow falloff across the scene.",
+  practical: "Localized highlights transition gradually into adjacent shadows.",
+  mixed: "Subtle color variation follows the overlapping illumination across the scene.",
+  phone_screen: "Concentrated illumination falls off across the nearby subject.",
+  ambient: "Soft low-contrast transitions extend across the scene."
+});
+
+/**
+ * Describe one causal lighting outcome from the already-resolved lighting source.
+ * The adapter reads canonical facts only; it never changes lighting authority or values.
+ */
+export function describeLightingPhysics(canonical) {
+  if (!isObject(canonical)) return "";
+  const source = text(canonical.lighting?.source_type);
+  return LIGHTING_PHYSICS_BY_SOURCE[source] ?? "";
+}
+
 function describeAnatomy(canonical) {
   const anatomy = canonical.hard_constraints?.anatomy;
   if (!isObject(anatomy) || anatomy.physically_possible !== true) return "";
@@ -344,6 +362,7 @@ export function buildOpenAIImagePrompt(canonical) {
     describeSceneFacts(canonical),
     describeCamera(canonical),
     describeLighting(canonical),
+    describeLightingPhysics(canonical),
     describeAnatomy(canonical),
     describeCapturePhysics(canonical),
     describeVehicleGeometry(canonical),

@@ -6,6 +6,7 @@ import { buildCanonicalV3 } from "../js/canonical-v3-engine.js";
 import { resolveCanonicalConflicts } from "../js/canonical/conflict-resolver.js";
 import {
   buildOpenAIImagePrompt,
+  describeLightingPhysics,
   describeNaturalImperfections
 } from "../js/canonical/openai-image-adapter.js";
 
@@ -113,6 +114,16 @@ function withoutNaturalImperfections(phase7Prompt, imperfections) {
   return phase7Prompt.replace(imperfections, "").replace(/\s{2,}/gu, " ").trim();
 }
 
+function withoutLightingPhysics(prompt, lightingPhysics) {
+  if (!lightingPhysics) return prompt;
+  assert.equal(
+    countOccurrences(prompt, lightingPhysics),
+    1,
+    "Current prompt must contain its lighting-physics description exactly once"
+  );
+  return prompt.replace(lightingPhysics, "").replace(/\s{2,}/gu, " ").trim();
+}
+
 function deterministicCount(factory) {
   const outputs = Array.from({ length: 10 }, factory);
   return outputs.filter((value) => value === outputs[0]).length;
@@ -140,8 +151,10 @@ function runLegacy(input) {
 function runCanonicalVariants(input) {
   const resolved = resolveCanonicalConflicts(structuredClone(input), input?.sceneFacts);
   const canonical = buildCanonicalV3(resolved.cleanInput);
-  const phase7Prompt = buildOpenAIImagePrompt(canonical);
+  const currentPrompt = buildOpenAIImagePrompt(canonical);
   const imperfections = describeNaturalImperfections(canonical);
+  const lightingPhysics = describeLightingPhysics(canonical);
+  const phase7Prompt = withoutLightingPhysics(currentPrompt, lightingPhysics);
   const phase6Prompt = withoutNaturalImperfections(phase7Prompt, imperfections);
   return {
     canonical,
@@ -233,7 +246,7 @@ ${PHASE5_BASELINE_SECTION}
 
 ## Phase 7 Step 2 — Three-way natural-imperfection comparison
 
-Phase 6 is the Canonical V3 adapter output before \`describeNaturalImperfections()\`. Phase 7 is the same resolved frozen Canonical V3 state with that read-only helper included. The comparison removes only the helper's exact emitted text to reconstruct the Phase 6 column; no canonical field is modified.
+Phase 6 is the Canonical V3 adapter output before \`describeNaturalImperfections()\`. Phase 7 is the same resolved frozen Canonical V3 state with that read-only helper included. After the approved lighting-physics layer, the comparison removes its exact adapter-only sentence first, then removes only the natural-imperfection text to reconstruct the frozen Step 2 columns; no canonical field is modified.
 
 ${table}
 
