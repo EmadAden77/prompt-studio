@@ -7,6 +7,15 @@ import { buildOpenAIImagePrompt, describePostProcessing } from "../js/canonical/
 const GOLDEN_URL = new URL("./golden/current-engine/legacy-v2-semantic-goldens.json", import.meta.url);
 const golden = JSON.parse(fs.readFileSync(fileURLToPath(GOLDEN_URL), "utf8"));
 const IDS = ["car_lhd_driver_selfie","car_tight_crop","bedroom_direct_selfie","mirror_selfie","group_selfie","accidental_capture","identity_and_eyewear"];
+const FINAL_WORD_COUNTS = Object.freeze({
+  car_lhd_driver_selfie: 242,
+  car_tight_crop: 188,
+  bedroom_direct_selfie: 199,
+  mirror_selfie: 148,
+  group_selfie: 154,
+  accidental_capture: 147,
+  identity_and_eyewear: 196
+});
 
 const P = Object.freeze({
   dynamic: "Realistic dynamic range with natural highlight rolloff.",
@@ -42,6 +51,7 @@ for (const id of IDS) {
   assert.equal(JSON.stringify(canonical.authorities), before.authorities, `${id}: authorities mutated`);
   assert.equal(JSON.stringify(canonical.camera), before.camera, `${id}: camera mutated`);
   assert.equal(JSON.stringify(canonical.identity), before.identity, `${id}: identity mutated`);
+  assert.equal(words(prompt), FINAL_WORD_COUNTS[id], `${id}: final comparison word count changed`);
   assert.ok(words(prompt) <= 250, `${id}: prompt exceeds 250 words (${words(prompt)})`);
   for (const forbidden of FORBIDDEN) {
     assert.equal(forbidden.test(helper), false, `${id}: forbidden post-processing wording ${forbidden}`);
