@@ -139,6 +139,41 @@ function describePrimarySubject(canonical) {
   return facts.length ? `The primary subject has ${naturalList(facts)}.` : "";
 }
 
+/**
+ * Add a sparse, deterministic layer of naturally occurring visual detail.
+ * The adapter reads canonical facts only; it never writes to Canonical V3.
+ */
+export function describeNaturalImperfections(canonical) {
+  if (!isObject(canonical)) return "";
+
+  const primary = canonical.subjects?.primary;
+  const referenceIdentityIsPreserved = canonical.identity?.reference_mode === "single_reference"
+    && canonical.hard_constraints?.identity?.preserve_reference_identity === true;
+  const preservedIdentityFields = Array.isArray(canonical.identity?.preserve)
+    ? canonical.identity.preserve
+    : [];
+  const preservedHairIdentity = referenceIdentityIsPreserved
+    && ["hairline", "hair_density", "hair_texture"].some((field) => preservedIdentityFields.includes(field));
+  const clothing = primary?.clothing;
+  const bodyScale = primary?.body_scale;
+  const phrases = [];
+
+  if (referenceIdentityIsPreserved) {
+    phrases.push("Subtle skin texture with natural pores.");
+  }
+  if (preservedHairIdentity) {
+    phrases.push("Natural hair flyaways and loose strands.");
+  }
+  if (isObject(clothing) && text(clothing.garment) && text(clothing.garment) !== "unspecified garment" && text(clothing.fabric)) {
+    phrases.push("Natural fabric wrinkles and folds.");
+  }
+  if (isObject(bodyScale) && bodyScale.preserve_environment_scale === true) {
+    phrases.push("Natural body proportions consistent with the environment.");
+  }
+
+  return phrases.slice(0, 3).join(" ");
+}
+
 function describeGroup(canonical) {
   const subjects = canonical.subjects ?? {};
   if (!Number.isInteger(subjects.count) || subjects.count <= 1) return "";
@@ -304,6 +339,7 @@ export function buildOpenAIImagePrompt(canonical) {
     describeIdentity(canonical),
     describeGroup(canonical),
     describePrimarySubject(canonical),
+    describeNaturalImperfections(canonical),
     describeScene(canonical),
     describeSceneFacts(canonical),
     describeCamera(canonical),
