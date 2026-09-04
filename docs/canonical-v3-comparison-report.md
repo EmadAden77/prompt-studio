@@ -78,3 +78,13 @@ Step 2 is the frozen natural-imperfection variant. Step 3 adds the lighting-phys
 - Prompt-length cap: **7/7 Step 2**, **7/7 Step 3**, and **7/7 Step 4** prompts are at or below **250 words**.
 - Determinism: **10/10 identical outputs for every Step 2, Step 3, and Step 4 case**.
 - The Step 4 helper adds device-, light-, or motion-causal camera behavior only; it does not add environmental details or post-processing instructions.
+
+## Phase 10 — Saudi street realism layer
+
+`describeSaudiStreetRealism()` adds three deterministic, read-only Saudi street details after scene facts for outdoor street scenes only. Daylight selects the first three day details; every other lighting source selects the first three night details. The helper does not mutate canonical state or hard constraints.
+
+| Case | Before Phase 10 | Phase 10 | Delta | Determinism | ≤250 |
+|---|---:|---:|---:|:---:|:---:|
+| Group selfie (street daylight golden) | 154 | 191 | +37 | 10/10 | yes |
+
+Validation: street prompts contain at least two active-set realism signals, day and night sets stay separated, all seven golden prompts remain deterministic 10/10, hard constraints are unchanged, and all seven remain within the 250-word cap.

@@ -12,7 +12,7 @@ const FINAL_WORD_COUNTS = Object.freeze({
   car_tight_crop: 202,
   bedroom_direct_selfie: 199,
   mirror_selfie: 148,
-  group_selfie: 154,
+  group_selfie: 191,
   accidental_capture: 147,
   identity_and_eyewear: 196
 });

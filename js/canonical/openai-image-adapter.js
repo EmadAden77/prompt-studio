@@ -114,6 +114,28 @@ function describeSceneFacts(canonical) {
   return phrases.length ? `Scene details: ${naturalList(phrases)}.` : "";
 }
 
+const SAUDI_STREET_DAY_DETAILS = Object.freeze([
+  "date palms line the median with visible drip-irrigation tubing.",
+  "weathered asphalt shows patch repairs and sand gathered along the yellow-and-black curb.",
+  "a dusty white Toyota Land Cruiser and a silver Camry are parked with dark tinted windows.",
+  "Arabic storefront signage for a cafeteria and a pharmacy glows under daylight.",
+  "a delivery rider with an insulated food box weaves between lanes.",
+  "pedestrians in white thobes and a woman in a black abaya cross at a faded zebra line.",
+  "heat haze shimmers over the distant asphalt under a pale blue sky."
+]);
+const SAUDI_STREET_NIGHT_DETAILS = Object.freeze([
+  "sodium-orange streetlights mix with cool white LED poles, leaving dark gaps between light pools.",
+  "a shawarma storefront glows with visible grill light and Arabic signage.",
+  "parked SUVs show tinted windows reflecting storefront light and lit license plates.",
+  "a mosque minaret is softly illuminated in the background.",
+  "a group of men in thobes and shemaghs gather near a parked Lexus."
+]);
+export function describeSaudiStreetRealism(canonical) {
+  if (!isObject(canonical) || canonical.scene?.type !== "outdoor") return "";
+  const details = canonical.lighting?.source_type === "daylight" ? SAUDI_STREET_DAY_DETAILS : SAUDI_STREET_NIGHT_DETAILS;
+  return details.slice(0, 3).join(" ");
+}
+
 const ENVIRONMENTAL_DETAIL_PHRASES = Object.freeze({ directional_dust: "Faint dust particles catch the directional light.", surface_smudges: "Subtle fingerprints and smudges appear on glossy surfaces.", touched_wear: "Natural wear appears on frequently touched surfaces.", lived_in_room: "Lived-in details remain consistent with the room." });
 function environmentalSceneEvidence(canonical) {
   const scene = canonical.scene ?? {};
@@ -261,7 +283,7 @@ export function buildOpenAIImagePrompt(canonical, options = {}) {
   if (!isObject(canonical) || canonical.schema_version !== "realistic-image-generator/canonical-v3") throw new TypeError("buildOpenAIImagePrompt expects a Canonical V3 state");
   const mirrorConvention = options?.mirrorConvention === "mirror_preview" ? "mirror_preview" : "photographic";
   return [
-    describeCapture(canonical), describeIdentity(canonical), describeGroup(canonical), describePrimarySubject(canonical), describeNaturalImperfections(canonical), describeScene(canonical), describeSceneFacts(canonical), describeEnvironmentalDetails(canonical), describeCamera(canonical), describeCameraArtifacts(canonical), describePostProcessing(canonical), describeLighting(canonical), describeLightingPhysics(canonical), describeAnatomy(canonical), describeCapturePhysics(canonical), describeVehicleGeometry(canonical), describeVehicleViewProjection(canonical, mirrorConvention), describePreferences(canonical)
+    describeCapture(canonical), describeIdentity(canonical), describeGroup(canonical), describePrimarySubject(canonical), describeNaturalImperfections(canonical), describeScene(canonical), describeSceneFacts(canonical), describeSaudiStreetRealism(canonical), describeEnvironmentalDetails(canonical), describeCamera(canonical), describeCameraArtifacts(canonical), describePostProcessing(canonical), describeLighting(canonical), describeLightingPhysics(canonical), describeAnatomy(canonical), describeCapturePhysics(canonical), describeVehicleGeometry(canonical), describeVehicleViewProjection(canonical, mirrorConvention), describePreferences(canonical)
   ].filter(Boolean).join(" ");
 }
 
