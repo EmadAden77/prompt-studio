@@ -6,6 +6,7 @@ import { buildCanonicalV3 } from "../js/canonical-v3-engine.js";
 import { resolveCanonicalConflicts } from "../js/canonical/conflict-resolver.js";
 import {
   buildOpenAIImagePrompt,
+  describeCameraArtifacts,
   describeLightingPhysics,
   describeNaturalImperfections
 } from "../js/canonical/openai-image-adapter.js";
@@ -30,6 +31,12 @@ const REALISM_SIGNAL_PHRASES = Object.freeze([
   "Natural hair flyaways and loose strands.",
   "Natural fabric wrinkles and folds.",
   "Natural body proportions consistent with the environment."
+]);
+
+const CAMERA_ARTIFACT_SIGNAL_PHRASES = Object.freeze([
+  "Slight lens softness is visible toward the frame edges.",
+  "Natural sensor noise is visible in shadow areas.",
+  "Natural micro-blur is visible on moving elements."
 ]);
 
 const FACT_CATEGORIES = Object.freeze([
@@ -104,6 +111,17 @@ function realismSignalCount(prompt) {
   );
 }
 
+function cameraArtifactSignalCount(prompt) {
+  return CAMERA_ARTIFACT_SIGNAL_PHRASES.reduce(
+    (total, phrase) => total + countOccurrences(prompt, phrase),
+    0
+  );
+}
+
+function emittedPhraseCount(prompt, phrase) {
+  return phrase ? countOccurrences(prompt, phrase) : 0;
+}
+
 function withoutNaturalImperfections(phase7Prompt, imperfections) {
   if (!imperfections) return phase7Prompt;
   assert.equal(
@@ -122,6 +140,16 @@ function withoutLightingPhysics(prompt, lightingPhysics) {
     "Current prompt must contain its lighting-physics description exactly once"
   );
   return prompt.replace(lightingPhysics, "").replace(/\s{2,}/gu, " ").trim();
+}
+
+function withoutCameraArtifacts(prompt, cameraArtifacts) {
+  if (!cameraArtifacts) return prompt;
+  assert.equal(
+    countOccurrences(prompt, cameraArtifacts),
+    1,
+    "Current prompt must contain its camera-artifact description exactly once"
+  );
+  return prompt.replace(cameraArtifacts, "").replace(/\s{2,}/gu, " ").trim();
 }
 
 function deterministicCount(factory) {
@@ -151,15 +179,21 @@ function runLegacy(input) {
 function runCanonicalVariants(input) {
   const resolved = resolveCanonicalConflicts(structuredClone(input), input?.sceneFacts);
   const canonical = buildCanonicalV3(resolved.cleanInput);
-  const currentPrompt = buildOpenAIImagePrompt(canonical);
+  const phase7Step4Prompt = buildOpenAIImagePrompt(canonical);
+  const cameraArtifacts = describeCameraArtifacts(canonical);
+  const phase7Step3Prompt = withoutCameraArtifacts(phase7Step4Prompt, cameraArtifacts);
   const imperfections = describeNaturalImperfections(canonical);
   const lightingPhysics = describeLightingPhysics(canonical);
-  const phase7Prompt = withoutLightingPhysics(currentPrompt, lightingPhysics);
+  const phase7Prompt = withoutLightingPhysics(phase7Step3Prompt, lightingPhysics);
   const phase6Prompt = withoutNaturalImperfections(phase7Prompt, imperfections);
   return {
     canonical,
     phase6Prompt,
     phase7Prompt,
+    phase7Step3Prompt,
+    phase7Step4Prompt,
+    lightingPhysics,
+    cameraArtifacts,
     conflicts: uniqueConflicts([
       ...(Array.isArray(resolved.conflicts) ? resolved.conflicts : []),
       ...(Array.isArray(canonical.resolution?.conflicts) ? canonical.resolution.conflicts : [])
@@ -175,6 +209,13 @@ function markdownTable(rows) {
   const header = "| Case | Legacy words | Phase 6 words | Phase 7 words | P7 Δ vs P6 | Legacy repeat | P6 repeat | P7 repeat | Legacy realism | P6 realism | P7 realism | Legacy det. | P6 det. | P7 det. | P7 ≤250 |";
   const divider = "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|:---:|:---:|:---:|:---:|";
   const body = rows.map((row) => `| ${row.label} | ${row.legacyWords} | ${row.phase6Words} | ${row.phase7Words} | ${signed(row.phase7Words - row.phase6Words)} | ${row.legacyDuplicates} | ${row.phase6Duplicates} | ${row.phase7Duplicates} | ${row.legacyRealism} | ${row.phase6Realism} | ${row.phase7Realism} | ${row.legacyDeterminism}/10 | ${row.phase6Determinism}/10 | ${row.phase7Determinism}/10 | ${row.phase7Words <= WORD_CAP ? "yes" : "no"} |`);
+  return [header, divider, ...body].join("\n");
+}
+
+function markdownStep4Table(rows) {
+  const header = "| Case | P7.2 words | P7.3 words | P7.4 words | P7.4 Δ vs P7.3 | P7.2 repeat | P7.3 repeat | P7.4 repeat | Imperfections | Lighting | Artifacts | P7.2 det. | P7.3 det. | P7.4 det. | P7.4 ≤250 |";
+  const divider = "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|:---:|:---:|:---:|:---:|";
+  const body = rows.map((row) => `| ${row.label} | ${row.phase7Step2Words} | ${row.phase7Step3Words} | ${row.phase7Step4Words} | ${signed(row.phase7Step4Words - row.phase7Step3Words)} | ${row.phase7Step2Duplicates} | ${row.phase7Step3Duplicates} | ${row.phase7Step4Duplicates} | ${row.phase7Step2Imperfections} | ${row.phase7Step3Lighting} | ${row.phase7Step4Artifacts} | ${row.phase7Step2Determinism}/10 | ${row.phase7Step3Determinism}/10 | ${row.phase7Step4Determinism}/10 | ${row.phase7Step4Words <= WORD_CAP ? "yes" : "no"} |`);
   return [header, divider, ...body].join("\n");
 }
 
@@ -195,18 +236,29 @@ for (const [id, label] of CASE_ORDER) {
   assert.ok(legacy.prompt.length > 0, `${id}: legacy prompt must not be empty`);
   assert.ok(canonical.phase6Prompt.length > 0, `${id}: Phase 6 prompt must not be empty`);
   assert.ok(canonical.phase7Prompt.length > 0, `${id}: Phase 7 prompt must not be empty`);
+  assert.ok(canonical.phase7Step3Prompt.length > 0, `${id}: Phase 7 Step 3 prompt must not be empty`);
+  assert.ok(canonical.phase7Step4Prompt.length > 0, `${id}: Phase 7 Step 4 prompt must not be empty`);
   assert.equal(realismSignalCount(canonical.phase6Prompt), 0, `${id}: Phase 6 prompt must not contain Phase 7 realism signals`);
   assert.ok(realismSignalCount(canonical.phase7Prompt) >= 1, `${id}: Phase 7 prompt must contain a realism signal`);
   assert.ok(realismSignalCount(canonical.phase7Prompt) <= 3, `${id}: Phase 7 realism layer must stay sparse`);
+  assert.equal(cameraArtifactSignalCount(canonical.phase7Step3Prompt), 0, `${id}: Step 3 baseline must not contain Step 4 artifact signals`);
+  assert.ok(cameraArtifactSignalCount(canonical.phase7Step4Prompt) >= 1, `${id}: Step 4 prompt must contain a camera-artifact signal`);
+  assert.ok(cameraArtifactSignalCount(canonical.phase7Step4Prompt) <= 2, `${id}: Step 4 camera artifacts must stay sparse`);
   assert.ok(wordCount(canonical.phase6Prompt) <= WORD_CAP, `${id}: Phase 6 prompt must stay at or below ${WORD_CAP} words`);
   assert.ok(wordCount(canonical.phase7Prompt) <= WORD_CAP, `${id}: Phase 7 prompt must stay at or below ${WORD_CAP} words`);
+  assert.ok(wordCount(canonical.phase7Step3Prompt) <= WORD_CAP, `${id}: Phase 7 Step 3 prompt must stay at or below ${WORD_CAP} words`);
+  assert.ok(wordCount(canonical.phase7Step4Prompt) <= WORD_CAP, `${id}: Phase 7 Step 4 prompt must stay at or below ${WORD_CAP} words`);
 
   const legacyDeterminism = deterministicCount(() => runLegacy(input).prompt);
   const phase6Determinism = deterministicCount(() => runCanonicalVariants(input).phase6Prompt);
   const phase7Determinism = deterministicCount(() => runCanonicalVariants(input).phase7Prompt);
+  const phase7Step3Determinism = deterministicCount(() => runCanonicalVariants(input).phase7Step3Prompt);
+  const phase7Step4Determinism = deterministicCount(() => runCanonicalVariants(input).phase7Step4Prompt);
   assert.equal(legacyDeterminism, 10, `${id}: legacy output must be identical across 10 runs`);
   assert.equal(phase6Determinism, 10, `${id}: Phase 6 output must be identical across 10 runs`);
   assert.equal(phase7Determinism, 10, `${id}: Phase 7 output must be identical across 10 runs`);
+  assert.equal(phase7Step3Determinism, 10, `${id}: Phase 7 Step 3 output must be identical across 10 runs`);
+  assert.equal(phase7Step4Determinism, 10, `${id}: Phase 7 Step 4 output must be identical across 10 runs`);
 
   rows.push({
     id,
@@ -222,7 +274,19 @@ for (const [id, label] of CASE_ORDER) {
     phase7Realism: realismSignalCount(canonical.phase7Prompt),
     legacyDeterminism,
     phase6Determinism,
-    phase7Determinism
+    phase7Determinism,
+    phase7Step2Words: wordCount(canonical.phase7Prompt),
+    phase7Step3Words: wordCount(canonical.phase7Step3Prompt),
+    phase7Step4Words: wordCount(canonical.phase7Step4Prompt),
+    phase7Step2Duplicates: duplicateFactCount(canonical.phase7Prompt),
+    phase7Step3Duplicates: duplicateFactCount(canonical.phase7Step3Prompt),
+    phase7Step4Duplicates: duplicateFactCount(canonical.phase7Step4Prompt),
+    phase7Step2Imperfections: realismSignalCount(canonical.phase7Prompt),
+    phase7Step3Lighting: emittedPhraseCount(canonical.phase7Step3Prompt, canonical.lightingPhysics),
+    phase7Step4Artifacts: cameraArtifactSignalCount(canonical.phase7Step4Prompt),
+    phase7Step2Determinism: phase7Determinism,
+    phase7Step3Determinism,
+    phase7Step4Determinism
   });
 
   legacyConflictTotal += legacy.conflicts.length;
@@ -236,7 +300,10 @@ const phase6ConflictPer100 = Number(((canonicalConflictTotal / caseCount) * 100)
 const legacyConflictPer100 = Number(((legacyConflictTotal / caseCount) * 100).toFixed(1));
 const phase6UnderCap = rows.filter((row) => row.phase6Words <= WORD_CAP).length;
 const phase7UnderCap = rows.filter((row) => row.phase7Words <= WORD_CAP).length;
+const phase7Step3UnderCap = rows.filter((row) => row.phase7Step3Words <= WORD_CAP).length;
+const phase7Step4UnderCap = rows.filter((row) => row.phase7Step4Words <= WORD_CAP).length;
 const table = markdownTable(rows);
+const step4Table = markdownStep4Table(rows);
 
 const report = `# Canonical V3 Comparison Reports
 
@@ -267,15 +334,32 @@ ${table}
 - “Repeated facts” is a deterministic semantic-signal metric. It counts category appearances beyond the first across identity reference, eyewear, camera device/geometry, lighting, physical plausibility, LHD geometry, steering wheel, center console, driver door/window, group count, accidental event, and body scale/proportions.
 - “Realism signals” counts only the four exact Phase 7 Step 1 helper phrases. This keeps the metric separate from existing canonical identity, lighting, and anatomy facts.
 - The Phase 7 metric uses token boundaries for the camera terms \`yaw\`, \`pitch\`, and \`roll\`, so incidental text such as \`flyaways\` is not counted as camera geometry. The frozen Phase 5 baseline retains its original broad-match tally by design; therefore its legacy repeated-fact total is historical rather than recalculated here.
+
+## Phase 7 Step 4 — Incremental camera-artifacts comparison
+
+Step 2 is the frozen natural-imperfection variant. Step 3 adds the lighting-physics helper. Step 4 adds \`describeCameraArtifacts()\` after the camera description. The test reconstructs prior layers by removing exact adapter-only helper text; no canonical field is modified.
+
+${step4Table}
+
+### Phase 7 Step 4 aggregate metrics
+
+- Average prompt length: **${average("phase7Step2Words")} words Step 2**, **${average("phase7Step3Words")} words Step 3**, and **${average("phase7Step4Words")} words Step 4** (Step 4 is **+${average("phase7Step4Words") - average("phase7Step3Words")} words** versus Step 3).
+- Repeated semantic-fact signals: **${total("phase7Step2Duplicates")} Step 2**, **${total("phase7Step3Duplicates")} Step 3**, and **${total("phase7Step4Duplicates")} Step 4** across the seven cases.
+- Natural-imperfection signals: **${total("phase7Step2Imperfections")} Step 2**; lighting-physics signals: **${total("phase7Step3Lighting")} Step 3**; camera-artifact signals: **${total("phase7Step4Artifacts")} Step 4**.
+- Prompt-length cap: **${phase7UnderCap}/${caseCount} Step 2**, **${phase7Step3UnderCap}/${caseCount} Step 3**, and **${phase7Step4UnderCap}/${caseCount} Step 4** prompts are at or below **${WORD_CAP} words**.
+- Determinism: **10/10 identical outputs for every Step 2, Step 3, and Step 4 case**.
+- The Step 4 helper adds device-, light-, or motion-causal camera behavior only; it does not add environmental details or post-processing instructions.
 `;
 
 assert.match(report, /## Phase 5 — Frozen old-vs-new baseline/u, "report must retain the Phase 5 baseline");
 assert.match(report, /## Phase 7 Step 2 — Three-way natural-imperfection comparison/u, "report must include the Phase 7 section");
 assert.match(report, /Legacy realism \| P6 realism \| P7 realism/u, "report must include per-case realism signal counts");
+assert.match(report, /## Phase 7 Step 4 — Incremental camera-artifacts comparison/u, "report must include the Step 4 section");
+assert.match(report, /P7\.4 words/u, "report must include per-case Step 4 comparison values");
 
 fs.writeFileSync(fileURLToPath(REPORT_URL), report, "utf8");
 
 console.log("\nBEGIN_CANONICAL_V3_COMPARISON_REPORT");
 console.log(report.trimEnd());
 console.log("END_CANONICAL_V3_COMPARISON_REPORT\n");
-console.log("✓ canonical-v3 three-way Phase 7 comparison passed");
+console.log("✓ canonical-v3 Phase 7 Step 4 incremental comparison passed");

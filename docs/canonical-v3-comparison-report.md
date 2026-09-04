@@ -55,3 +55,26 @@ Phase 6 is the Canonical V3 adapter output before `describeNaturalImperfections(
 - “Repeated facts” is a deterministic semantic-signal metric. It counts category appearances beyond the first across identity reference, eyewear, camera device/geometry, lighting, physical plausibility, LHD geometry, steering wheel, center console, driver door/window, group count, accidental event, and body scale/proportions.
 - “Realism signals” counts only the four exact Phase 7 Step 1 helper phrases. This keeps the metric separate from existing canonical identity, lighting, and anatomy facts.
 - The Phase 7 metric uses token boundaries for the camera terms `yaw`, `pitch`, and `roll`, so incidental text such as `flyaways` is not counted as camera geometry. The frozen Phase 5 baseline retains its original broad-match tally by design; therefore its legacy repeated-fact total is historical rather than recalculated here.
+
+## Phase 7 Step 4 — Incremental camera-artifacts comparison
+
+Step 2 is the frozen natural-imperfection variant. Step 3 adds the lighting-physics helper. Step 4 adds `describeCameraArtifacts()` after the camera description. The test reconstructs prior layers by removing exact adapter-only helper text; no canonical field is modified.
+
+| Case | P7.2 words | P7.3 words | P7.4 words | P7.4 Δ vs P7.3 | P7.2 repeat | P7.3 repeat | P7.4 repeat | Imperfections | Lighting | Artifacts | P7.2 det. | P7.3 det. | P7.4 det. | P7.4 ≤250 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|:---:|:---:|:---:|:---:|
+| Car LHD driver selfie | 209 | 219 | 228 | +9 | 2 | 2 | 2 | 3 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
+| Car tight crop | 155 | 165 | 174 | +9 | 2 | 2 | 2 | 1 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
+| Bedroom direct selfie | 157 | 167 | 176 | +9 | 2 | 2 | 2 | 3 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
+| Mirror selfie | 106 | 116 | 125 | +9 | 2 | 2 | 2 | 1 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
+| Group selfie | 119 | 129 | 138 | +9 | 2 | 2 | 2 | 1 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
+| Accidental capture | 98 | 108 | 124 | +16 | 2 | 2 | 2 | 1 | 1 | 2 | 10/10 | 10/10 | 10/10 | yes |
+| Identity + eyewear | 161 | 171 | 180 | +9 | 2 | 2 | 2 | 3 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
+
+### Phase 7 Step 4 aggregate metrics
+
+- Average prompt length: **144 words Step 2**, **154 words Step 3**, and **164 words Step 4** (Step 4 is **+10 words** versus Step 3).
+- Repeated semantic-fact signals: **14 Step 2**, **14 Step 3**, and **14 Step 4** across the seven cases.
+- Natural-imperfection signals: **13 Step 2**; lighting-physics signals: **7 Step 3**; camera-artifact signals: **8 Step 4**.
+- Prompt-length cap: **7/7 Step 2**, **7/7 Step 3**, and **7/7 Step 4** prompts are at or below **250 words**.
+- Determinism: **10/10 identical outputs for every Step 2, Step 3, and Step 4 case**.
+- The Step 4 helper adds device-, light-, or motion-causal camera behavior only; it does not add environmental details or post-processing instructions.

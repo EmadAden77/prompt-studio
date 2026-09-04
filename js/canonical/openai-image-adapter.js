@@ -238,6 +238,42 @@ function describeCamera(canonical) {
     : `Captured with the ${device}${modePhrase}.`;
 }
 
+const CAMERA_ARTIFACT_PHRASES = Object.freeze({
+  edge_softness: "Slight lens softness is visible toward the frame edges.",
+  sensor_noise: "Natural sensor noise is visible in shadow areas.",
+  micro_blur: "Natural micro-blur is visible on moving elements."
+});
+
+function hasRealDeviceProfile(canonical) {
+  const profile = text(canonical.camera?.device_profile);
+  return /xiaomi\s+15\s+ultra|iphone\s+15\s+pro\s+max|\breal\s+camera\b/iu.test(profile);
+}
+
+function hasLowLightCapture(canonical) {
+  const lighting = canonical.lighting ?? {};
+  const source = text(lighting.source_type).toLowerCase();
+  const conditions = [lighting.description, lighting.intensity]
+    .map((value) => text(value).toLowerCase())
+    .filter(Boolean)
+    .join(" ");
+  return source === "phone_screen" || /\bnight\b|\blow[- ]?light\b|\bdim\b|\bdark\b/iu.test(conditions);
+}
+
+/**
+ * Describe up to two device-, light-, or motion-causal camera artifacts.
+ * The adapter reads canonical facts only; it never changes camera values or authorities.
+ */
+export function describeCameraArtifacts(canonical) {
+  if (!isObject(canonical) || !hasRealDeviceProfile(canonical)) return "";
+
+  const phrases = [];
+  if (hasLowLightCapture(canonical)) phrases.push(CAMERA_ARTIFACT_PHRASES.sensor_noise);
+  if (canonical.capture?.type === "accidental_front_camera_capture") phrases.push(CAMERA_ARTIFACT_PHRASES.micro_blur);
+  if (phrases.length < 2) phrases.push(CAMERA_ARTIFACT_PHRASES.edge_softness);
+
+  return phrases.slice(0, 2).join(" ");
+}
+
 function describeLighting(canonical) {
   const lighting = canonical.lighting ?? {};
   const parts = [];
@@ -361,6 +397,7 @@ export function buildOpenAIImagePrompt(canonical) {
     describeScene(canonical),
     describeSceneFacts(canonical),
     describeCamera(canonical),
+    describeCameraArtifacts(canonical),
     describeLighting(canonical),
     describeLightingPhysics(canonical),
     describeAnatomy(canonical),
