@@ -139,10 +139,6 @@ function describePrimarySubject(canonical) {
   return facts.length ? `The primary subject has ${naturalList(facts)}.` : "";
 }
 
-/**
- * Add a sparse, deterministic layer of naturally occurring visual detail.
- * The adapter reads canonical facts only; it never writes to Canonical V3.
- */
 export function describeNaturalImperfections(canonical) {
   if (!isObject(canonical)) return "";
 
@@ -158,12 +154,8 @@ export function describeNaturalImperfections(canonical) {
   const bodyScale = primary?.body_scale;
   const phrases = [];
 
-  if (referenceIdentityIsPreserved) {
-    phrases.push("Subtle skin texture with natural pores.");
-  }
-  if (preservedHairIdentity) {
-    phrases.push("Natural hair flyaways and loose strands.");
-  }
+  if (referenceIdentityIsPreserved) phrases.push("Subtle skin texture with natural pores.");
+  if (preservedHairIdentity) phrases.push("Natural hair flyaways and loose strands.");
   if (isObject(clothing) && text(clothing.garment) && text(clothing.garment) !== "unspecified garment" && text(clothing.fabric)) {
     phrases.push("Natural fabric wrinkles and folds.");
   }
@@ -196,9 +188,7 @@ function describeVehicleScene(scene) {
 function describeScene(canonical) {
   const scene = canonical.scene ?? {};
   if (scene.type === "vehicle") return describeVehicleScene(scene);
-  if (scene.type === "room" && isObject(scene.room) && text(scene.room.description)) {
-    return sentence(scene.room.description);
-  }
+  if (scene.type === "room" && isObject(scene.room) && text(scene.room.description)) return sentence(scene.room.description);
   return sentence(scene.description);
 }
 
@@ -208,13 +198,9 @@ function describeSceneFacts(canonical) {
   const phrases = [];
   for (const [key, value] of Object.entries(facts)) {
     if (RESERVED_SCENE_FACT_KEYS.has(key)) continue;
-    if (typeof value === "string" && text(value)) {
-      phrases.push(`${humanize(key)} is ${text(value)}`);
-    } else if (typeof value === "number" && Number.isFinite(value)) {
-      phrases.push(`${humanize(key)} is ${value}`);
-    } else if (typeof value === "boolean") {
-      phrases.push(`${humanize(key)} is ${value ? "present" : "absent"}`);
-    }
+    if (typeof value === "string" && text(value)) phrases.push(`${humanize(key)} is ${text(value)}`);
+    else if (typeof value === "number" && Number.isFinite(value)) phrases.push(`${humanize(key)} is ${value}`);
+    else if (typeof value === "boolean") phrases.push(`${humanize(key)} is ${value ? "present" : "absent"}`);
   }
   return phrases.length ? `Scene details: ${naturalList(phrases)}.` : "";
 }
@@ -231,18 +217,12 @@ function environmentalSceneEvidence(canonical) {
   const facts = isObject(scene.facts)
     ? Object.entries(scene.facts).flatMap(([key, value]) => {
         if (RESERVED_SCENE_FACT_KEYS.has(key)) return [];
-        if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-          return [`${key} ${String(value)}`];
-        }
+        if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return [`${key} ${String(value)}`];
         return [];
       })
     : [];
-  return [
-    scene.description,
-    scene.room?.description,
-    scene.vehicle?.interior_description,
-    ...facts
-  ].map((value) => text(value).toLowerCase()).filter(Boolean).join(" ");
+  return [scene.description, scene.room?.description, scene.vehicle?.interior_description, ...facts]
+    .map((value) => text(value).toLowerCase()).filter(Boolean).join(" ");
 }
 
 function isIndoorEnvironmentalScene(canonical, evidence) {
@@ -258,10 +238,6 @@ function hasTouchedSurfaceEvidence(evidence) {
   return /\bdoor\b|\bhandle\b|\btable\b|\bnightstand\b|\bdresser\b|\bwardrobe\b|\bswitch\b|\bchair\b|\bdesk\b|\bcabinet\b|\bdrawer\b|\bconsole\b|\bsteering\b/iu.test(evidence);
 }
 
-/**
- * Describe up to two scene-supported environmental details.
- * The adapter reads canonical scene and lighting facts only; it never changes canonical state.
- */
 export function describeEnvironmentalDetails(canonical) {
   if (!isObject(canonical)) return "";
 
@@ -270,18 +246,14 @@ export function describeEnvironmentalDetails(canonical) {
   const indoor = isIndoorEnvironmentalScene(canonical, evidence);
   const phrases = [];
 
-  if (text(canonical.lighting?.direction)) {
-    phrases.push(ENVIRONMENTAL_DETAIL_PHRASES.directional_dust);
-  }
+  if (text(canonical.lighting?.direction)) phrases.push(ENVIRONMENTAL_DETAIL_PHRASES.directional_dust);
   if (phrases.length < 2 && (type === "vehicle" || indoor) && hasGlassOrScreenEvidence(evidence)) {
     phrases.push(ENVIRONMENTAL_DETAIL_PHRASES.surface_smudges);
   }
   if (phrases.length < 2 && (type === "vehicle" || (type === "room" && hasTouchedSurfaceEvidence(evidence)))) {
     phrases.push(ENVIRONMENTAL_DETAIL_PHRASES.touched_wear);
   }
-  if (phrases.length === 0 && type === "room") {
-    phrases.push(ENVIRONMENTAL_DETAIL_PHRASES.lived_in_room);
-  }
+  if (phrases.length === 0 && type === "room") phrases.push(ENVIRONMENTAL_DETAIL_PHRASES.lived_in_room);
 
   return phrases.slice(0, 2).join(" ");
 }
@@ -320,16 +292,10 @@ function hasLowLightCapture(canonical) {
   const lighting = canonical.lighting ?? {};
   const source = text(lighting.source_type).toLowerCase();
   const conditions = [lighting.description, lighting.intensity]
-    .map((value) => text(value).toLowerCase())
-    .filter(Boolean)
-    .join(" ");
+    .map((value) => text(value).toLowerCase()).filter(Boolean).join(" ");
   return source === "phone_screen" || /\bnight\b|\blow[- ]?light\b|\bdim\b|\bdark\b/iu.test(conditions);
 }
 
-/**
- * Describe up to two device-, light-, or motion-causal camera artifacts.
- * The adapter reads canonical facts only; it never changes camera values or authorities.
- */
 export function describeCameraArtifacts(canonical) {
   if (!isObject(canonical) || !hasRealDeviceProfile(canonical)) return "";
 
@@ -339,6 +305,27 @@ export function describeCameraArtifacts(canonical) {
   if (phrases.length < 2) phrases.push(CAMERA_ARTIFACT_PHRASES.edge_softness);
 
   return phrases.slice(0, 2).join(" ");
+}
+
+const POST_PROCESSING_PHRASES = Object.freeze({
+  dynamic_range: "Realistic dynamic range with natural highlight rolloff.",
+  white_balance: "Authentic white balance matched to the dominant light source.",
+  texture: "Minimal retouching preserves natural skin and fabric texture."
+});
+
+export function describePostProcessing(canonical) {
+  if (!isObject(canonical)) return "";
+
+  const phrases = [];
+  if (hasRealDeviceProfile(canonical)) phrases.push(POST_PROCESSING_PHRASES.dynamic_range);
+  if (text(canonical.lighting?.source_type)) phrases.push(POST_PROCESSING_PHRASES.white_balance);
+
+  const identityPreserved = canonical.identity?.reference_mode === "single_reference"
+    && canonical.hard_constraints?.identity?.preserve_reference_identity === true;
+  if (identityPreserved) phrases.push(POST_PROCESSING_PHRASES.texture);
+
+  const maxPhrases = canonical.scene?.type === "vehicle" ? 1 : canonical.scene?.type === "room" ? 2 : 2;
+  return phrases.slice(0, maxPhrases).join(" ");
 }
 
 function describeLighting(canonical) {
@@ -362,10 +349,6 @@ const LIGHTING_PHYSICS_BY_SOURCE = Object.freeze({
   ambient: "Soft low-contrast transitions extend across the scene."
 });
 
-/**
- * Describe one causal lighting outcome from the already-resolved lighting source.
- * The adapter reads canonical facts only; it never changes lighting authority or values.
- */
 export function describeLightingPhysics(canonical) {
   if (!isObject(canonical)) return "";
   const source = text(canonical.lighting?.source_type);
@@ -436,9 +419,7 @@ function describePreferences(canonical) {
   if (!isObject(preferences)) return "";
   const items = [];
   const crop = text(canonical.camera?.geometry?.crop);
-  if (text(preferences.composition) && text(preferences.composition) !== crop) {
-    items.push(`composition is ${humanize(preferences.composition)}`);
-  }
+  if (text(preferences.composition) && text(preferences.composition) !== crop) items.push(`composition is ${humanize(preferences.composition)}`);
   if (text(preferences.background_visibility)) items.push(`background visibility is ${humanize(preferences.background_visibility)}`);
   if (text(preferences.realism)) items.push(`realism is ${humanize(preferences.realism)}`);
   if (text(preferences.imperfection_level)) items.push(`imperfection level is ${humanize(preferences.imperfection_level)}`);
@@ -446,10 +427,6 @@ function describePreferences(canonical) {
   return items.length ? `Visual preferences: ${naturalList(items)}.` : "";
 }
 
-/**
- * Serialize a frozen Canonical V3 state into a concise image-model prompt.
- * This function is read-only: it never mutates the canonical object or its hard constraints.
- */
 export function buildOpenAIImagePrompt(canonical) {
   if (!isObject(canonical) || canonical.schema_version !== "realistic-image-generator/canonical-v3") {
     throw new TypeError("buildOpenAIImagePrompt expects a Canonical V3 state");
@@ -466,6 +443,7 @@ export function buildOpenAIImagePrompt(canonical) {
     describeEnvironmentalDetails(canonical),
     describeCamera(canonical),
     describeCameraArtifacts(canonical),
+    describePostProcessing(canonical),
     describeLighting(canonical),
     describeLightingPhysics(canonical),
     describeAnatomy(canonical),
