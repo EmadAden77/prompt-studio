@@ -51,7 +51,7 @@ const IDENTITY_PRESERVE_FIELDS = Object.freeze([
 ]);
 
 const SCENE_DESCRIPTIONS = Object.freeze({
-  rangeRover: "inside a stationary 2022 Range Rover Sport with a premium Ivory cream leather interior, dark walnut veneer center console and door trim, black dashboard and digital displays, and silver metallic accents",
+  rangeRover: "inside a stationary 2017 Range Rover Sport Autobiography Dynamic (L494) in Fuji White with coherent left-hand-drive geometry",
   my_bedroom_text: "the fixed referenced bedroom",
   bedroom: "an ordinary lived-in bedroom",
   street: "an ordinary outdoor street or parking environment",
@@ -265,13 +265,12 @@ function resolveScene(raw, intent, conflicts) {
   else if (id) type = "outdoor";
 
   const rangeRoverFacts = id === "rangeRover" ? {
-    interior_palette: "ivory cream leather + dark walnut + black + silver",
-    seat_finish: "perforated center panels with smooth outer bolsters",
-    steering_wheel: "multi-spoke, black upper rim, Ivory inner/lower, silver trim, multifunction controls on both spokes",
-    instrument_cluster: "wide digital display with circular-style gauges",
-    center_console: "dark walnut, electronic gear selector, rotary dial",
-    roof: "panoramic dark-tinted glass with black inner frame",
-    door_panels: "layered Ivory/black/dark-wood/silver"
+    exterior_color: "Fuji White",
+    interior: "Ebony/Ivory luxury",
+    seats: "Ivory perforated leather",
+    console_trim: "dark wood veneer center console and door trim",
+    steering_wheel: "black and Ivory leather multifunction",
+    roof: "panoramic glass"
   } : {};
   const suppliedFacts = raw.sceneFacts && typeof raw.sceneFacts === "object" && !Array.isArray(raw.sceneFacts)
     ? deepClone(raw.sceneFacts)
@@ -285,9 +284,9 @@ function resolveScene(raw, intent, conflicts) {
   );
 
   const vehicle = type === "vehicle" ? {
-    make: id === "rangeRover" ? "Range Rover" : null,
-    model: id === "rangeRover" ? "Sport" : null,
-    year: id === "rangeRover" ? 2022 : null,
+    make: id === "rangeRover" ? "Land Rover" : null,
+    model: id === "rangeRover" ? "Range Rover Sport Autobiography Dynamic" : null,
+    year: id === "rangeRover" ? 2017 : null,
     state: "stationary",
     interior_description: cleanString(raw.vehicleInteriorDescription) || null
   } : null;

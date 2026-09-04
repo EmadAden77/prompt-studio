@@ -1,5 +1,5 @@
 const RESERVED_SCENE_FACT_KEYS = new Set([
-  "identity", "scene", "capture", "subjects", "camera", "camera_geometry", "lighting", "vehicle_geometry", "anatomy", "realism", "aesthetic", "drive_configuration", "driver_position", "steering_relation", "cluster_relation", "console_relation", "door_window_relation", "coordinate_system", "mirror_may_swap_physical_sides", "interior_palette", "seat_finish", "steering_wheel", "instrument_cluster", "center_console", "roof", "door_panels", "source"
+  "identity", "scene", "capture", "subjects", "camera", "camera_geometry", "lighting", "vehicle_geometry", "anatomy", "realism", "aesthetic", "drive_configuration", "driver_position", "steering_relation", "cluster_relation", "console_relation", "door_window_relation", "coordinate_system", "mirror_may_swap_physical_sides", "exterior_color", "interior", "seats", "console_trim", "steering_wheel", "roof", "source"
 ]);
 
 const IDENTITY_LABELS = Object.freeze({
@@ -60,7 +60,7 @@ function describePrimarySubject(canonical) {
   if (isObject(body)) {
     if (Number.isFinite(body.height_cm)) facts.push(`${body.height_cm} cm height`);
     if (Number.isFinite(body.weight_kg)) facts.push(`${body.weight_kg} kg body weight`);
-    if (body.preserve_environment_scale === true) facts.push("body scale consistent with the surrounding environment");
+    if (body.preserve_environment_scale === true && canonical.scene?.type !== "vehicle") facts.push("body scale consistent with the surrounding environment");
   }
   return facts.length ? `The primary subject has ${naturalList(facts)}.` : "";
 }
@@ -84,9 +84,7 @@ function describeVehicleScene(scene) {
   const vehicle = scene?.vehicle;
   if (!isObject(vehicle)) return "";
   if (scene?.id === "rangeRover") {
-    const interior = "Interior features Ivory cream leather seats and trim, dark walnut center console, black dashboard and digital displays, and silver metallic accents.";
-    const roof = text(scene?.facts?.roof) ? " Panoramic dark-tinted glass roof with black inner frame." : "";
-    return `${interior}${roof}`;
+    return "Inside a stationary 2017 Range Rover Sport Autobiography Dynamic (L494) in Fuji White. The Ebony/Ivory luxury cabin has Ivory perforated leather seats, dark wood veneer on the center console and door trim, a black-and-Ivory leather multifunction steering wheel, and a panoramic glass roof.";
   }
   const parts = [];
   if (text(vehicle.state)) parts.push(humanize(vehicle.state));
@@ -149,7 +147,9 @@ function describeCamera(canonical) {
   if (Number.isFinite(geometry.roll_deg)) details.push(`${geometry.roll_deg}° roll`);
   if (Number.isFinite(geometry.focal_length_equivalent_mm)) details.push(`${geometry.focal_length_equivalent_mm} mm equivalent focal length`);
   if (text(geometry.crop)) details.push(`${humanize(geometry.crop)} crop`);
-  if (canonical.scene?.type === "vehicle" && details.length) return `${device}: ${naturalList(details).replace("subject distance", "distance").replace("equivalent focal length", "equivalent")}.`;
+  if (canonical.scene?.type === "vehicle" && details.length) {
+    return `${device}: ${naturalList(details).replace(" cm subject distance", " cm").replace(" mm equivalent focal length", " mm")}.`;
+  }
   return details.length ? `Captured with the ${device}${modePhrase}, using ${naturalList(details)}.` : `Captured with the ${device}${modePhrase}.`;
 }
 
@@ -209,7 +209,7 @@ function describeCapturePhysics(canonical) {
     const holder = canonical.capture?.operator === "group_member" ? "The camera-holding group member" : "The subject";
     const reach = selfie.phone_position_physically_reachable === true || physics.physically_possible_arm_reach === true ? " from a physically reachable arm position" : "";
     const event = physics.single_capture_event === true ? " in one physically possible capture event" : "";
-    if (canonical.capture?.type === "subject_held_driver_selfie") return "The subject holds the camera at natural arm reach in one coherent capture.";
+    if (canonical.capture?.type === "subject_held_driver_selfie") return "The subject holds the camera at natural arm reach.";
     return `${holder} operates the camera${reach}${event}.`;
   }
   const facts = [];
@@ -222,8 +222,8 @@ function describeCapturePhysics(canonical) {
 function describeVehicleGeometry(canonical) {
   const vehicle = canonical.hard_constraints?.vehicle_geometry;
   if (!isObject(vehicle) || vehicle.applicable !== true) return "";
-  if (vehicle.drive_configuration === "left_hand_drive" && vehicle.driver_position === "vehicle_left" && vehicle.steering_relation === "ahead_of_driver_torso") return "LHD vehicle-relative: driver left; steering directly ahead of torso.";
-  if (vehicle.drive_configuration === "right_hand_drive" && vehicle.driver_position === "vehicle_right" && vehicle.steering_relation === "ahead_of_driver_torso") return "RHD vehicle-relative: driver right; steering directly ahead of torso.";
+  if (vehicle.drive_configuration === "left_hand_drive" && vehicle.driver_position === "vehicle_left" && vehicle.steering_relation === "ahead_of_driver_torso") return "LHD vehicle-relative: driver-left; steering directly ahead of torso.";
+  if (vehicle.drive_configuration === "right_hand_drive" && vehicle.driver_position === "vehicle_right" && vehicle.steering_relation === "ahead_of_driver_torso") return "RHD vehicle-relative: driver-right; steering directly ahead of torso.";
   const relations = [];
   if (text(vehicle.drive_configuration)) relations.push(`${humanize(vehicle.drive_configuration)} configuration`);
   if (text(vehicle.driver_position)) relations.push(`driver position ${humanize(vehicle.driver_position)}`);

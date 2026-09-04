@@ -10,6 +10,8 @@ import {
   shouldUseCanonicalV3
 } from "../js/canonical/engine-feature-flag.js";
 import { buildCanonicalV3UserOutput } from "../js/canonical/canonical-v3-pipeline.js";
+import { buildCanonicalV3 } from "../js/canonical-v3-engine.js";
+import { buildOpenAIImagePrompt } from "../js/canonical/openai-image-adapter.js";
 
 assert.equal(ENGINE_STORAGE_KEY, "wikiprompt-selfie-studio:engine");
 assert.deepEqual(resolvePromptEngineSelection(), { engine: LEGACY_ENGINE, source: "default", defaulted: true });
@@ -42,12 +44,43 @@ assert.equal(carOutput.canonical.schema_version, "realistic-image-generator/cano
 assert.equal(carOutput.canonical.intent.type, "car");
 assert.equal(Object.isFrozen(carOutput.canonical), true);
 assert.equal(carOutput.canonical.hard_constraints.vehicle_geometry.adapter_can_modify, false);
+assert.equal(carOutput.canonical.scene.vehicle.make, "Land Rover");
+assert.equal(carOutput.canonical.scene.vehicle.model, "Range Rover Sport Autobiography Dynamic");
+assert.equal(carOutput.canonical.scene.vehicle.year, 2017);
+assert.equal(carOutput.canonical.scene.vehicle.state, "stationary");
+assert.deepEqual(carOutput.canonical.scene.facts, {
+  exterior_color: "Fuji White",
+  interior: "Ebony/Ivory luxury",
+  seats: "Ivory perforated leather",
+  console_trim: "dark wood veneer center console and door trim",
+  steering_wheel: "black and Ivory leather multifunction",
+  roof: "panoramic glass"
+});
+assert.match(carOutput.prompt, /Autobiography Dynamic/iu);
+assert.match(carOutput.prompt, /Fuji White/iu);
+assert.match(carOutput.prompt, /Ivory perforated leather/iu);
+assert.match(carOutput.prompt, /dark wood veneer/iu);
+assert.match(carOutput.prompt, /panoramic glass roof/iu);
 assert.match(carOutput.prompt, /LHD vehicle-relative/iu);
 assert.match(carOutput.prompt, /steering directly ahead of torso/iu);
-assert.match(carOutput.prompt, /Ivory cream leather/iu);
-assert.match(carOutput.prompt, /dark walnut/iu);
 assert.match(carOutput.prompt, /driver's door and side window appear on the right side of the image/iu);
 assert.match(carOutput.prompt, /center console on the left side of the image/iu);
+assert.equal(/\b2022\b/u.test(carOutput.prompt), false, "Range Rover prompt must not contain the superseded 2022 spec");
+assert.equal(/\b2022\b/u.test(JSON.stringify(carOutput.canonical.scene)), false, "Range Rover canonical scene must not contain the superseded 2022 spec");
+
+const golden = JSON.parse(fs.readFileSync(new URL("./golden/current-engine/legacy-v2-semantic-goldens.json", import.meta.url), "utf8"));
+const goldenIds = ["car_lhd_driver_selfie","car_tight_crop","bedroom_direct_selfie","mirror_selfie","group_selfie","accidental_capture","identity_and_eyewear"];
+const wordCount = (value) => String(value ?? "").trim().split(/\s+/u).filter(Boolean).length;
+for (const id of goldenIds) {
+  const canonical = buildCanonicalV3(structuredClone(golden.cases[id].input));
+  const beforeHardConstraints = JSON.stringify(canonical.hard_constraints);
+  const prompt = buildOpenAIImagePrompt(canonical);
+  assert.ok(wordCount(prompt) <= 250, `${id}: prompt exceeds 250 words (${wordCount(prompt)})`);
+  assert.equal(JSON.stringify(canonical.hard_constraints), beforeHardConstraints, `${id}: hard constraints changed`);
+  assert.equal(Object.isFrozen(canonical.hard_constraints), true, `${id}: hard constraints must remain frozen`);
+  const repeated = Array.from({ length: 10 }, () => buildOpenAIImagePrompt(canonical));
+  assert.equal(repeated.every((value) => value === repeated[0]), true, `${id}: determinism failed`);
+}
 
 const gateSource = fs.readFileSync(new URL("../js/canonical/engine-gate.js", import.meta.url), "utf8");
 assert.match(gateSource, /buildCanonicalV3UserOutput\(rawState, rawState\.sceneFacts\)/u, "UI gate must call the canonical resolver/build/adapter pipeline");
@@ -58,4 +91,4 @@ const indexSource = fs.readFileSync(new URL("../index.html", import.meta.url), "
 assert.match(indexSource, /js\/canonical\/engine-gate\.js\?v=20260903-phase6/u, "live page must load the Phase 6 gate");
 assert.equal(/<script type="module" src="js\/physics-app-v7\.js\?v=20260903-json-clean2"><\/script>/u.test(indexSource), false, "index must not bypass the gate");
 
-console.log("✓ canonical-v3 feature flag and parallel UI gate passed");
+console.log("✓ canonical-v3 feature flag and 2017 Range Rover spec contract passed");
