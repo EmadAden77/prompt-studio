@@ -13,7 +13,7 @@ const POSES = Object.freeze([
   "leaning toward camera holder",
   "arm around neighbor shoulder",
   "peace sign",
-  "holding a tea glass",
+  "hand in his pocket",
   "adjusting his shemagh"
 ]);
 const OUTFITS = Object.freeze({
@@ -131,12 +131,12 @@ function groupPersonClauses(canonical) {
 function backgroundLife(canonical) {
   if (canonical.scene?.type !== "outdoor") return "";
   const mood = String(canonical.scene?.facts?.street_mood || "").toLowerCase();
-  if (mood === "rush") return "Soft-focus, distant figures move between parked cars in the background.";
-  if (mood === "prayer") return "Blurred silhouettes of pedestrians pass near a softly lit building.";
-  if (mood === "cafe") return "Out-of-focus warm light and distant figures near cafe tables.";
-  if (mood === "latenight") return "Blurred distant streetlights and a single soft pedestrian figure.";
-  if (canonical.lighting?.source_type === "daylight") return "Soft-focus, distant pedestrians move in the ambient street background.";
-  return "Blurred ambient light and distant soft silhouettes in the background.";
+  if (mood === "rush") return "Soft-focus parked cars line the background street.";
+  if (mood === "prayer") return "A softly lit building blurs in the background.";
+  if (mood === "cafe") return "Out-of-focus warm storefront light glows in the background.";
+  if (mood === "latenight") return "Blurred distant streetlights dot the background.";
+  if (canonical.lighting?.source_type === "daylight") return "A quiet, soft-focus street stretches in the background.";
+  return "Blurred ambient streetlight glow fills the background.";
 }
 function removeStreetDetailBlock(prompt, canonical) {
   const block = describeSaudiStreetRealism(canonical);
