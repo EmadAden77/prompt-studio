@@ -78,9 +78,3 @@ Step 2 is the frozen natural-imperfection variant. Step 3 adds the lighting-phys
 - Prompt-length cap: **7/7 Step 2**, **7/7 Step 3**, and **7/7 Step 4** prompts are at or below **250 words**.
 - Determinism: **10/10 identical outputs for every Step 2, Step 3, and Step 4 case**.
 - The Step 4 helper adds device-, light-, or motion-causal camera behavior only; it does not add environmental details or post-processing instructions.
-
-## Phase 16 — Remove tea-glass pose and simplify group backgrounds
-
-Phase 16 removes the prominent `holding a tea glass` pose from the deterministic group pool and replaces it with `hand in his pocket`. `backgroundLife()` now emits only one of six short, people-free ambient background sentences, each at or below ten words.
-
-Validation keeps Phase 13–15 contracts intact: per-person uniqueness, anti-similarity, seeded variety, no vehicle facts, hard-constraint stability, deterministic 10/10 output for identical input, and group prompts at or below 250 words. Group prompts are also asserted to contain no `tea` or `cafeteria` text.
