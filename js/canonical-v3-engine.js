@@ -51,7 +51,7 @@ const IDENTITY_PRESERVE_FIELDS = Object.freeze([
 ]);
 
 const SCENE_DESCRIPTIONS = Object.freeze({
-  rangeRover: "inside a stationary 2022 Range Rover Sport with coherent left-hand-drive geometry",
+  rangeRover: "inside a stationary 2022 Range Rover Sport with a premium Ivory cream leather interior, dark walnut veneer center console and door trim, black dashboard and digital displays, and silver metallic accents",
   my_bedroom_text: "the fixed referenced bedroom",
   bedroom: "an ordinary lived-in bedroom",
   street: "an ordinary outdoor street or parking environment",
@@ -264,9 +264,19 @@ function resolveScene(raw, intent, conflicts) {
   else if (id === "custom" || cleanString(raw.customScene)) type = "custom";
   else if (id) type = "outdoor";
 
-  const facts = raw.sceneFacts && typeof raw.sceneFacts === "object" && !Array.isArray(raw.sceneFacts)
+  const rangeRoverFacts = id === "rangeRover" ? {
+    interior_palette: "ivory cream leather + dark walnut + black + silver",
+    seat_finish: "perforated center panels with smooth outer bolsters",
+    steering_wheel: "multi-spoke, black upper rim, Ivory inner/lower, silver trim, multifunction controls on both spokes",
+    instrument_cluster: "wide digital display with circular-style gauges",
+    center_console: "dark walnut, electronic gear selector, rotary dial",
+    roof: "panoramic dark-tinted glass with black inner frame",
+    door_panels: "layered Ivory/black/dark-wood/silver"
+  } : {};
+  const suppliedFacts = raw.sceneFacts && typeof raw.sceneFacts === "object" && !Array.isArray(raw.sceneFacts)
     ? deepClone(raw.sceneFacts)
     : {};
+  const facts = { ...suppliedFacts, ...rangeRoverFacts };
   const sceneLeakageDetected = inspectSceneFacts(facts, conflicts);
 
   const description = cleanString(
