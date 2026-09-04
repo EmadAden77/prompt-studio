@@ -42,8 +42,10 @@ assert.equal(carOutput.canonical.schema_version, "realistic-image-generator/cano
 assert.equal(carOutput.canonical.intent.type, "car");
 assert.equal(Object.isFrozen(carOutput.canonical), true);
 assert.equal(carOutput.canonical.hard_constraints.vehicle_geometry.adapter_can_modify, false);
-assert.match(carOutput.prompt, /Vehicle-relative LHD/iu);
-assert.match(carOutput.prompt, /steering wheel directly ahead of the driver's torso/iu);
+assert.match(carOutput.prompt, /LHD vehicle-relative/iu);
+assert.match(carOutput.prompt, /steering directly ahead of torso/iu);
+assert.match(carOutput.prompt, /Ivory cream leather/iu);
+assert.match(carOutput.prompt, /dark walnut/iu);
 assert.match(carOutput.prompt, /driver's door and side window appear on the right side of the image/iu);
 assert.match(carOutput.prompt, /center console on the left side of the image/iu);
 
