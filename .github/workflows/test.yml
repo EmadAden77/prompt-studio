@@ -50,6 +50,8 @@ jobs:
         run: node tests/canonical-v3-camera-artifacts-layer.mjs
       - name: Run Canonical V3 environmental details layer test
         run: node tests/canonical-v3-environmental-details-layer.mjs
+      - name: Run Canonical V3 post-processing layer test
+        run: node tests/canonical-v3-post-processing-layer.mjs
       - name: Run Canonical V3 old-vs-new comparison
         run: node tests/canonical-v3-comparison.mjs
       - name: Run Canonical V3 feature flag gate
