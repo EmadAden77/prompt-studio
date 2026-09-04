@@ -20,22 +20,13 @@ assert.deepEqual(resolvePromptEngineSelection({ search:"?engine=unknown", storag
 
 const canonicalSelection = resolvePromptEngineSelection({ search:"?engine=canonical-v3" });
 for (const [section, intent] of [
-  ["solo", "selfie"],
-  ["selfie", "selfie"],
-  ["studio", "selfie"],
-  ["car", "car"],
-  ["group", "group"],
-  ["accidental", "accidental"],
-  ["bedroom", "room"],
-  ["room", "room"]
+  ["solo", "selfie"], ["selfie", "selfie"], ["studio", "selfie"], ["car", "car"], ["group", "group"], ["accidental", "accidental"], ["bedroom", "room"], ["room", "room"]
 ]) {
   assert.equal(isCanonicalV3Section(section), true, `${section} must be Canonical V3-capable`);
   assert.equal(canonicalIntentForSection(section), intent);
   assert.equal(shouldUseCanonicalV3(section, canonicalSelection), true);
 }
-for (const section of ["gym", "street", "custom", ""]) {
-  assert.equal(isCanonicalV3Section(section), false, `${section || "empty"} must remain on legacy fallback`);
-}
+for (const section of ["gym", "street", "custom", ""]) assert.equal(isCanonicalV3Section(section), false, `${section || "empty"} must remain on legacy fallback`);
 assert.equal(shouldUseCanonicalV3("car", resolvePromptEngineSelection()), false, "legacy is the default");
 
 const carOutput = buildCanonicalV3UserOutput({
@@ -51,9 +42,10 @@ assert.equal(carOutput.canonical.schema_version, "realistic-image-generator/cano
 assert.equal(carOutput.canonical.intent.type, "car");
 assert.equal(Object.isFrozen(carOutput.canonical), true);
 assert.equal(carOutput.canonical.hard_constraints.vehicle_geometry.adapter_can_modify, false);
-assert.match(carOutput.prompt, /vehicle-relative coordinates/iu);
-assert.match(carOutput.prompt, /steering wheel is directly ahead of the driver's torso/iu);
-assert.equal(/left side of (?:the )?image|right side of (?:the )?image/iu.test(carOutput.prompt), false);
+assert.match(carOutput.prompt, /Vehicle-relative LHD/iu);
+assert.match(carOutput.prompt, /steering wheel directly ahead of the driver's torso/iu);
+assert.match(carOutput.prompt, /driver's door and side window appear on the right side of the image/iu);
+assert.match(carOutput.prompt, /center console on the left side of the image/iu);
 
 const gateSource = fs.readFileSync(new URL("../js/canonical/engine-gate.js", import.meta.url), "utf8");
 assert.match(gateSource, /buildCanonicalV3UserOutput\(rawState, rawState\.sceneFacts\)/u, "UI gate must call the canonical resolver/build/adapter pipeline");
