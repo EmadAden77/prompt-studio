@@ -87,7 +87,15 @@ export const SCENES = {
       { value: "thobe-car", label: "ثوب سعودي", text: "a Saudi thobe with lap and seat-belt-area folds that follow the seated posture" },
       { value: "formal-trousers", label: "قميص رسمي مع بنطلون", text: "pressed dress shirt with tailored trousers, natural seated compression and realistic fabric weight" },
       { value: "tee-jeans-car", label: "تيشيرت مع جينز", text: "fitted cotton T-shirt with dark jeans, natural denim texture and realistic seated fabric folds" },
-      { value: "polo-short-shorts", label: "بولو مع شورت قصير", text: "matte polo shirt with tailored shorts, natural seated creasing and realistic fabric drape" }
+      { value: "polo-short-shorts", label: "بولو مع شورت قصير", text: "matte polo shirt with tailored shorts, natural seated creasing and realistic fabric drape" },
+      {value: "blue-shirt-navy",label: "قميص أزرق فاتح مع بنطلون كحلي",text: "light blue cotton shirt with navy tailored trousers and natural seated folds"},
+      {value: "white-shirt-black",label: "قميص أبيض مع بنطلون أسود",text: "crisp white cotton shirt with black trousers and realistic seated creasing"},
+      {value: "beige-shirt-brown",label: "قميص بيج مع بنطلون بني",text: "soft beige shirt with brown chinos and natural fabric texture"},
+      {value: "grey-tee-charcoal",label: "تيشيرت رمادي مع بنطلون فحمي",text: "heather grey T-shirt with charcoal trousers and natural drape"},
+      {value: "olive-polo-khaki",label: "بولو زيتي مع بنطلون كاكي",text: "matte olive polo with khaki chinos and realistic seated compression"},
+      {value: "maroon-shirt-darkjeans",label: "قميص عنابي مع جينز داكن",text: "deep maroon shirt with dark indigo jeans and natural denim folds"},
+      {value: "black-shirt-grey",label: "قميص أسود مع بنطلون رمادي",text: "matte black shirt with light grey trousers and natural creasing"},
+      {value: "striped-shirt-navy",label: "قميص مخطط مع تشينو كحلي",text: "white shirt with fine blue stripes and navy chinos"}
     ]
   }
 };
