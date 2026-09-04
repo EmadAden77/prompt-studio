@@ -131,12 +131,12 @@ function groupPersonClauses(canonical) {
 function backgroundLife(canonical) {
   if (canonical.scene?.type !== "outdoor") return "";
   const mood = String(canonical.scene?.facts?.street_mood || "").toLowerCase();
-  if (mood === "rush") return "Behind them, commuters and delivery riders move between queued sedans.";
-  if (mood === "prayer") return "Behind them, men in thobes walk toward a softly lit mosque.";
-  if (mood === "cafe") return "Behind them, pedestrians pass as a cafeteria worker carries tea glasses.";
-  if (mood === "latenight") return "Behind them, sparse pedestrians pass a still-open late-night cafeteria.";
-  if (canonical.lighting?.source_type === "daylight") return "Behind them, pedestrians in thobes and abayas cross the active street.";
-  return "Behind them, pedestrians pass between lit storefronts and parked sedans.";
+  if (mood === "rush") return "Soft-focus, distant figures move between parked cars in the background.";
+  if (mood === "prayer") return "Blurred silhouettes of pedestrians pass near a softly lit building.";
+  if (mood === "cafe") return "Out-of-focus warm light and distant figures near cafe tables.";
+  if (mood === "latenight") return "Blurred distant streetlights and a single soft pedestrian figure.";
+  if (canonical.lighting?.source_type === "daylight") return "Soft-focus, distant pedestrians move in the ambient street background.";
+  return "Blurred ambient light and distant soft silhouettes in the background.";
 }
 function removeStreetDetailBlock(prompt, canonical) {
   const block = describeSaudiStreetRealism(canonical);
