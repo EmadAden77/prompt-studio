@@ -56,7 +56,16 @@
           "driver_door_and_window": "to the driver's physical left"
         },
         "background_visibility": "conditional",
-        "wiki_prompt_override_permission": false
+        "wiki_prompt_override_permission": false,
+        "range_rover_interior_facts": {
+          "interior_palette": "ivory cream leather + dark walnut + black + silver",
+          "seat_finish": "perforated center panels with smooth outer bolsters",
+          "steering_wheel": "multi-spoke, black upper rim, Ivory inner/lower, silver trim, multifunction controls on both spokes",
+          "instrument_cluster": "wide digital display with circular-style gauges",
+          "center_console": "dark walnut, electronic gear selector, rotary dial",
+          "roof": "panoramic dark-tinted glass with black inner frame",
+          "door_panels": "layered Ivory/black/dark-wood/silver"
+        }
       }
     },
     "car_tight_crop": {
@@ -89,7 +98,16 @@
         },
         "vehicle_drive_configuration": "left_hand_drive",
         "background_visibility": "minimal",
-        "visual_evidence_policy": "Do not force a complete steering wheel. Preserve whichever authentic driver-side cues naturally enter the selected crop; a small attached rim fragment may appear only when the crop physically reaches it."
+        "visual_evidence_policy": "Do not force a complete steering wheel. Preserve whichever authentic driver-side cues naturally enter the selected crop; a small attached rim fragment may appear only when the crop physically reaches it.",
+        "range_rover_interior_facts": {
+          "interior_palette": "ivory cream leather + dark walnut + black + silver",
+          "seat_finish": "perforated center panels with smooth outer bolsters",
+          "steering_wheel": "multi-spoke, black upper rim, Ivory inner/lower, silver trim, multifunction controls on both spokes",
+          "instrument_cluster": "wide digital display with circular-style gauges",
+          "center_console": "dark walnut, electronic gear selector, rotary dial",
+          "roof": "panoramic dark-tinted glass with black inner frame",
+          "door_panels": "layered Ivory/black/dark-wood/silver"
+        }
       }
     },
     "bedroom_direct_selfie": {
