@@ -1,4 +1,5 @@
 import { wikiPromptService } from "../services/wikiPromptService.js";
+import { STREET_MOODS } from "../data.js";
 import { buildCanonicalV3UserOutput } from "./canonical-v3-pipeline.js";
 import {
   CANONICAL_V3_ENGINE,
@@ -28,9 +29,6 @@ function canonicalActiveForCurrentSection() {
   return shouldUseCanonicalV3(activeSection(), engineSelection);
 }
 
-// Keep the WikiPrompt service fully intact for the default legacy path and for
-// legacy-only sections. During Canonical V3 startup/output, suppress only the
-// asynchronous legacy prompt rewrite that could overwrite adapter output.
 const legacyWikiSync = wikiPromptService.sync.bind(wikiPromptService);
 let legacyAppReady = false;
 if (engineSelection.engine === CANONICAL_V3_ENGINE) {
@@ -121,8 +119,6 @@ function renderCanonicalOutput({ reveal = true } = {}) {
 function scheduleCanonicalRefresh() {
   const panel = document.querySelector("#result-panel");
   if (!canonicalActiveForCurrentSection() || !panel || panel.hidden) return;
-  // A macrotask runs after legacy event handlers and their resolved Promise
-  // microtasks, so the Canonical V3 adapter remains the final user-facing writer.
   setTimeout(() => renderCanonicalOutput({ reveal:false }), 0);
 }
 
@@ -158,8 +154,61 @@ function downloadCanonicalPrompt() {
   setStatus("Canonical V3 prompt downloaded.");
 }
 
-// Capture submit before the legacy application handler. Unsupported sections
-// continue through the legacy path unchanged.
+function mountStreetMoodControls() {
+  if (document.querySelector("#street-mood")) return;
+  const contextGrid = document.querySelector("#context-title")?.closest("section")?.querySelector(".form-grid");
+  if (!contextGrid) return;
+
+  const moodField = document.createElement("label");
+  moodField.className = "field";
+  moodField.id = "street-mood-field";
+  moodField.htmlFor = "street-mood";
+  const moodTitle = document.createElement("span");
+  moodTitle.textContent = "مزاج الشارع";
+  const moodSelect = document.createElement("select");
+  moodSelect.id = "street-mood";
+  moodSelect.name = "streetMood";
+  for (const option of STREET_MOODS) {
+    const node = document.createElement("option");
+    node.value = option.value;
+    node.textContent = option.label;
+    moodSelect.append(node);
+  }
+  moodField.append(moodTitle, moodSelect);
+
+  const hourField = document.createElement("label");
+  hourField.className = "field";
+  hourField.id = "street-hour-field";
+  hourField.htmlFor = "street-hour";
+  const hourTitle = document.createElement("span");
+  hourTitle.textContent = "ساعة الشارع";
+  const hourInput = document.createElement("input");
+  hourInput.id = "street-hour";
+  hourInput.name = "streetHour";
+  hourInput.type = "number";
+  hourInput.min = "0";
+  hourInput.max = "23";
+  hourInput.step = "1";
+  hourField.append(hourTitle, hourInput);
+
+  contextGrid.prepend(hourField);
+  contextGrid.prepend(moodField);
+
+  const sync = () => {
+    const streetActive = activeSection() === "street" || value("scene") === "street";
+    moodField.hidden = !streetActive;
+    const auto = moodSelect.value === "auto";
+    hourField.hidden = !streetActive || !auto;
+    if (streetActive && auto) hourInput.value = String(new Date().getHours());
+  };
+
+  moodSelect.value = "auto";
+  moodSelect.addEventListener("change", () => { sync(); scheduleCanonicalRefresh(); });
+  document.querySelector("#studio-section")?.addEventListener("change", sync);
+  document.querySelector("#scene")?.addEventListener("change", sync);
+  sync();
+}
+
 document.addEventListener("submit", (event) => {
   if (event.target?.id !== "prompt-form" || !canonicalActiveForCurrentSection()) return;
   event.preventDefault();
@@ -167,14 +216,10 @@ document.addEventListener("submit", (event) => {
   renderCanonicalOutput();
 }, true);
 
-// The legacy UI still owns field population and controls. Restore Canonical V3
-// after those callbacks whenever its result panel is already visible.
 document.addEventListener("change", scheduleCanonicalRefresh);
 document.addEventListener("input", scheduleCanonicalRefresh);
 document.addEventListener("click", scheduleCanonicalRefresh);
 
-// Existing visible output controls keep their layout. In Canonical V3 mode they
-// copy/download the adapter prompt rather than the legacy JSON/pack wrappers.
 document.addEventListener("click", (event) => {
   const id = event.target?.closest?.("button")?.id || "";
   if (!canonicalActiveForCurrentSection()) return;
@@ -194,8 +239,8 @@ document.addEventListener("click", (event) => {
 
 await import("../physics-app-v7.js?v=20260903-json-clean2");
 legacyAppReady = true;
+mountStreetMoodControls();
 
-// Exposed only for lightweight manual diagnostics from the browser console.
 globalThis.__PROMPT_STUDIO_ENGINE__ = Object.freeze({
   engine: engineSelection.engine,
   source: engineSelection.source,

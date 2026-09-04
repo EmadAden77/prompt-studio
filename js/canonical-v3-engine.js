@@ -1,3 +1,5 @@
+import { HOUR_TO_MOOD } from "./data.js";
+
 const SCHEMA_VERSION = "realistic-image-generator/canonical-v3";
 const INTENT_TYPES = Object.freeze(["selfie", "car", "group", "accidental", "room"]);
 const INTENT_SET = new Set(INTENT_TYPES);
@@ -10,6 +12,7 @@ const INTENT_SOURCE_ORDER = Object.freeze([
   "scene_evidence",
   "deterministic_fallback"
 ]);
+const STREET_MOOD_SET = new Set(["dawn","rush","normal","school","prayer","cafe","latenight","dust","souq","event"]);
 
 export const CANONICAL_V3_AUTHORITY_PRIORITY = Object.freeze([
   Object.freeze({ owner: "hard_constraint", priority: 100 }),
@@ -117,6 +120,12 @@ function boundedOrNull(value, minimum, maximum) {
   const number = finiteNumber(value, null);
   if (number === null || number < minimum || number > maximum) return null;
   return number;
+}
+
+export function hourToMood(hour) {
+  const numeric = Number(hour);
+  if (!Number.isInteger(numeric) || numeric < 0 || numeric > 23) return "normal";
+  return HOUR_TO_MOOD[numeric] ?? "normal";
 }
 
 function normalizeIntentName(value) {
@@ -275,7 +284,12 @@ function resolveScene(raw, intent, conflicts) {
   const suppliedFacts = raw.sceneFacts && typeof raw.sceneFacts === "object" && !Array.isArray(raw.sceneFacts)
     ? deepClone(raw.sceneFacts)
     : {};
-  const facts = { ...suppliedFacts, ...rangeRoverFacts };
+  const requestedStreetMood = id === "street" ? cleanString(raw.streetMood).toLowerCase() : "";
+  const resolvedStreetMood = requestedStreetMood === "auto"
+    ? hourToMood(raw.streetHour)
+    : STREET_MOOD_SET.has(requestedStreetMood) ? requestedStreetMood : null;
+  const streetFacts = resolvedStreetMood ? { street_mood: resolvedStreetMood } : {};
+  const facts = { ...suppliedFacts, ...streetFacts, ...rangeRoverFacts };
   const sceneLeakageDetected = inspectSceneFacts(facts, conflicts);
 
   const description = cleanString(
@@ -549,11 +563,6 @@ function preferences(raw) {
   };
 }
 
-/**
- * Build the isolated Canonical V3 state. This module is parallel-only and has no UI wiring.
- * Scene facts are preserved as read-only scene_contract data, but they never write into
- * identity, capture, camera, lighting, anatomy, realism, or vehicle hard constraints.
- */
 export function buildCanonicalV3(rawInput = {}) {
   const raw = rawInput && typeof rawInput === "object" ? rawInput : {};
   const conflicts = [];
