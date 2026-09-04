@@ -46,7 +46,10 @@ export const SCENES = {
     clothing: [
       { value: "sleep-set", label: "طقم نوم قطني", text: "soft cotton sleep set with natural creasing where the body contacts the bedding" },
       { value: "t-shirt-shorts", label: "تيشيرت وشورت", text: "worn cotton T-shirt and relaxed sleep shorts with gravity-consistent folds" },
-      { value: "robe", label: "روب منزلي", text: "lightweight home robe with a naturally tied belt and realistic drape" }
+      { value: "robe", label: "روب منزلي", text: "lightweight home robe with a naturally tied belt and realistic drape" },
+      { value: "oversize-short", label: "تيشيرت oversize وشورت قصير", text: "oversized cotton T-shirt with relaxed drape and short sleep shorts, fabric weight and folds following gravity" },
+      { value: "tank-athletic", label: "تانك توب وشورت رياضي", text: "breathable tank top with visible arm definition and athletic shorts, natural fabric tension and seam behavior" },
+      { value: "silk-pajama", label: "طقم نوم حريري", text: "lightweight silk pajama set with natural sheen and fluid drape, realistic fabric movement and soft creasing" }
     ]
   },
   gym: {
@@ -55,7 +58,11 @@ export const SCENES = {
     clothing: [
       { value: "training-set", label: "طقم رياضي", text: "matte technical training shirt and tapered athletic trousers, fabric tension and sweat darkening only where physically plausible" },
       { value: "tee-shorts", label: "تيشيرت وشورت رياضي", text: "breathable athletic T-shirt and training shorts with realistic stretch and seam behavior" },
-      { value: "tracksuit", label: "ترينينغ", text: "lightweight sports tracksuit with believable fabric weight and creasing" }
+      { value: "tracksuit", label: "ترينينغ", text: "lightweight sports tracksuit with believable fabric weight and creasing" },
+      { value: "tank-shorts", label: "تانك توب وشورت", text: "sleeveless athletic tank top showing arm definition and fitted training shorts, realistic sweat distribution and fabric stretch" },
+      { value: "compression-shorts", label: "قميص ضغط مع شورت", text: "fitted compression training shirt with visible muscle definition and performance shorts, technical fabric with realistic moisture wicking" },
+      { value: "full-training", label: "ملابس تدريب كاملة", text: "complete athletic training outfit with long-sleeve technical top and jogger pants, fabric tension following body movement and realistic seam placement" },
+      { value: "oversize-gym", label: "تيشيرت oversize مع شورت قصير", text: "relaxed-fit oversized gym T-shirt with short training shorts, natural fabric drape and realistic workout wear patterns" }
     ]
   },
   street: {
@@ -64,7 +71,11 @@ export const SCENES = {
     clothing: [
       { value: "street-casual", label: "كاجوال", text: "clean casual cotton shirt and tailored trousers with natural outdoor drape" },
       { value: "thobe", label: "ثوب سعودي", text: "a crisp but naturally moving white Saudi thobe with physically plausible folds and hem contact" },
-      { value: "overshirt", label: "قميص أوفرشيرت", text: "casual overshirt over a cotton T-shirt and trousers, layers responding naturally to wind and gravity" }
+      { value: "overshirt", label: "قميص أوفرشيرت", text: "casual overshirt over a cotton T-shirt and trousers, layers responding naturally to wind and gravity" },
+      { value: "formal-shirt-trousers", label: "قميص رسمي مع بنطلون", text: "pressed cotton dress shirt with natural collar drape and tailored trousers, realistic fabric weight and seated creasing" },
+      { value: "tee-jeans", label: "تيشيرت مع جينز", text: "fitted cotton T-shirt with classic blue jeans, natural denim fading and realistic fabric tension at seams" },
+      { value: "polo-chinos", label: "بولو مع بنطلون تشينو", text: "matte cotton polo shirt with chinos, natural fabric drape and realistic seated compression" },
+      { value: "short-sleeve-shorts", label: "قميص أكمام قصيرة مع شورت", text: "short-sleeve casual shirt with tailored shorts, natural outdoor drape and realistic fabric movement" }
     ]
   },
   rangeRover: {
@@ -73,7 +84,10 @@ export const SCENES = {
     clothing: [
       { value: "button-shirt", label: "قميص قطني", text: "a neat cotton button-down shirt with natural seated compression and realistic sleeve folds" },
       { value: "polo", label: "بولو كاجوال", text: "a matte cotton polo with realistic seated creasing" },
-      { value: "thobe-car", label: "ثوب سعودي", text: "a Saudi thobe with lap and seat-belt-area folds that follow the seated posture" }
+      { value: "thobe-car", label: "ثوب سعودي", text: "a Saudi thobe with lap and seat-belt-area folds that follow the seated posture" },
+      { value: "formal-trousers", label: "قميص رسمي مع بنطلون", text: "pressed dress shirt with tailored trousers, natural seated compression and realistic fabric weight" },
+      { value: "tee-jeans-car", label: "تيشيرت مع جينز", text: "fitted cotton T-shirt with dark jeans, natural denim texture and realistic seated fabric folds" },
+      { value: "polo-short-shorts", label: "بولو مع شورت قصير", text: "matte polo shirt with tailored shorts, natural seated creasing and realistic fabric drape" }
     ]
   }
 };
