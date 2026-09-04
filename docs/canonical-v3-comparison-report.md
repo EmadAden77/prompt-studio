@@ -30,8 +30,8 @@ Phase 6 is the Canonical V3 adapter output before `describeNaturalImperfections(
 
 | Case | Legacy words | Phase 6 words | Phase 7 words | P7 Δ vs P6 | Legacy repeat | P6 repeat | P7 repeat | Legacy realism | P6 realism | P7 realism | Legacy det. | P6 det. | P7 det. | P7 ≤250 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|:---:|:---:|:---:|:---:|
-| Car LHD driver selfie | 368 | 218 | 230 | +12 | 5 | 1 | 1 | 0 | 0 | 2 | 10/10 | 10/10 | 10/10 | yes |
-| Car tight crop | 363 | 176 | 183 | +7 | 5 | 1 | 2 | 0 | 0 | 1 | 10/10 | 10/10 | 10/10 | yes |
+| Car LHD driver selfie | 368 | 218 | 230 | +12 | 5 | 2 | 2 | 0 | 0 | 2 | 10/10 | 10/10 | 10/10 | yes |
+| Car tight crop | 363 | 176 | 183 | +7 | 5 | 2 | 2 | 0 | 0 | 1 | 10/10 | 10/10 | 10/10 | yes |
 | Bedroom direct selfie | 230 | 161 | 180 | +19 | 2 | 1 | 2 | 0 | 0 | 3 | 10/10 | 10/10 | 10/10 | yes |
 | Mirror selfie | 235 | 122 | 129 | +7 | 2 | 1 | 2 | 0 | 0 | 1 | 10/10 | 10/10 | 10/10 | yes |
 | Group selfie | 259 | 128 | 135 | +7 | 2 | 1 | 2 | 0 | 0 | 1 | 10/10 | 10/10 | 10/10 | yes |
@@ -41,12 +41,12 @@ Phase 6 is the Canonical V3 adapter output before `describeNaturalImperfections(
 ### Phase 7 aggregate metrics
 
 - Average prompt length: **279 words legacy**, **154 words Phase 6**, and **165 words Phase 7** (Phase 7 is **+11 words** versus Phase 6).
-- Repeated semantic-fact signals: **21 legacy**, **7 Phase 6**, and **13 Phase 7** across the seven cases.
+- Repeated semantic-fact signals: **21 legacy**, **9 Phase 6**, and **14 Phase 7** across the seven cases.
 - Natural-imperfection signals: **0 legacy**, **0 Phase 6**, and **12 Phase 7** across the seven cases.
 - Prompt-length cap: **7/7 Phase 6** and **7/7 Phase 7** prompts are at or below **250 words**.
 - Determinism: **10/10 identical outputs for every legacy, Phase 6, and Phase 7 case**.
 - Conflict records normalized per 100 cases: **142.9 legacy** vs **0 Canonical V3**; the Phase 6 and Phase 7 variants resolve the same canonical state.
-- The Phase 7 column has one additional body-scale/proportion repeat in **6/7 cases**. This is a measurement finding only; Step 2 does not alter the Imperfection Engine wording.
+- The Phase 7 column has one additional body-scale/proportion repeat in **5/7 cases**. This is a measurement finding only; Step 2 does not alter the Imperfection Engine wording.
 
 ### Measurement notes
 
@@ -62,7 +62,7 @@ Step 2 is the frozen natural-imperfection variant. Step 3 adds the lighting-phys
 
 | Case | P7.2 words | P7.3 words | P7.4 words | P7.4 Δ vs P7.3 | P7.2 repeat | P7.3 repeat | P7.4 repeat | Imperfections | Lighting | Artifacts | P7.2 det. | P7.3 det. | P7.4 det. | P7.4 ≤250 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|:---:|:---:|:---:|:---:|
-| Car LHD driver selfie | 230 | 240 | 249 | +9 | 1 | 1 | 1 | 2 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
+| Car LHD driver selfie | 230 | 240 | 249 | +9 | 2 | 2 | 2 | 2 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
 | Car tight crop | 183 | 193 | 202 | +9 | 2 | 2 | 2 | 1 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
 | Bedroom direct selfie | 180 | 190 | 199 | +9 | 2 | 2 | 2 | 3 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
 | Mirror selfie | 129 | 139 | 148 | +9 | 2 | 2 | 2 | 1 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
@@ -73,7 +73,7 @@ Step 2 is the frozen natural-imperfection variant. Step 3 adds the lighting-phys
 ### Phase 7 Step 4 aggregate metrics
 
 - Average prompt length: **165 words Step 2**, **175 words Step 3**, and **185 words Step 4** (Step 4 is **+10 words** versus Step 3).
-- Repeated semantic-fact signals: **13 Step 2**, **13 Step 3**, and **13 Step 4** across the seven cases.
+- Repeated semantic-fact signals: **14 Step 2**, **14 Step 3**, and **14 Step 4** across the seven cases.
 - Natural-imperfection signals: **12 Step 2**; lighting-physics signals: **7 Step 3**; camera-artifact signals: **8 Step 4**.
 - Prompt-length cap: **7/7 Step 2**, **7/7 Step 3**, and **7/7 Step 4** prompts are at or below **250 words**.
 - Determinism: **10/10 identical outputs for every Step 2, Step 3, and Step 4 case**.
