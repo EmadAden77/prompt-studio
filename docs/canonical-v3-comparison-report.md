@@ -23,14 +23,15 @@ This preserved baseline is the original Phase 5 result from commit `ce00c39`. It
 - Conflict records normalized per 100 cases: **142.9 old** vs **0 new**.
 - Canonical V3 determinism: **10/10 identical outputs for every case**.
 
+
 ## Phase 7 Step 2 — Three-way natural-imperfection comparison
 
 Phase 6 is the Canonical V3 adapter output before `describeNaturalImperfections()`. Phase 7 is the same resolved frozen Canonical V3 state with that read-only helper included. After the approved lighting-physics layer, the comparison removes its exact adapter-only sentence first, then removes only the natural-imperfection text to reconstruct the frozen Step 2 columns; no canonical field is modified.
 
 | Case | Legacy words | Phase 6 words | Phase 7 words | P7 Δ vs P6 | Legacy repeat | P6 repeat | P7 repeat | Legacy realism | P6 realism | P7 realism | Legacy det. | P6 det. | P7 det. | P7 ≤250 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|:---:|:---:|:---:|:---:|
-| Car LHD driver selfie | 368 | 204 | 223 | +19 | 5 | 1 | 2 | 0 | 0 | 3 | 10/10 | 10/10 | 10/10 | yes |
-| Car tight crop | 363 | 162 | 169 | +7 | 5 | 1 | 2 | 0 | 0 | 1 | 10/10 | 10/10 | 10/10 | yes |
+| Car LHD driver selfie | 368 | 211 | 230 | +19 | 5 | 2 | 3 | 0 | 0 | 3 | 10/10 | 10/10 | 10/10 | yes |
+| Car tight crop | 363 | 169 | 176 | +7 | 5 | 2 | 3 | 0 | 0 | 1 | 10/10 | 10/10 | 10/10 | yes |
 | Bedroom direct selfie | 230 | 161 | 180 | +19 | 2 | 1 | 2 | 0 | 0 | 3 | 10/10 | 10/10 | 10/10 | yes |
 | Mirror selfie | 235 | 122 | 129 | +7 | 2 | 1 | 2 | 0 | 0 | 1 | 10/10 | 10/10 | 10/10 | yes |
 | Group selfie | 259 | 128 | 135 | +7 | 2 | 1 | 2 | 0 | 0 | 1 | 10/10 | 10/10 | 10/10 | yes |
@@ -39,8 +40,8 @@ Phase 6 is the Canonical V3 adapter output before `describeNaturalImperfections(
 
 ### Phase 7 aggregate metrics
 
-- Average prompt length: **279 words legacy**, **150 words Phase 6**, and **162 words Phase 7** (Phase 7 is **+12 words** versus Phase 6).
-- Repeated semantic-fact signals: **21 legacy**, **7 Phase 6**, and **14 Phase 7** across the seven cases.
+- Average prompt length: **279 words legacy**, **152 words Phase 6**, and **164 words Phase 7** (Phase 7 is **+12 words** versus Phase 6).
+- Repeated semantic-fact signals: **21 legacy**, **9 Phase 6**, and **16 Phase 7** across the seven cases.
 - Natural-imperfection signals: **0 legacy**, **0 Phase 6**, and **13 Phase 7** across the seven cases.
 - Prompt-length cap: **7/7 Phase 6** and **7/7 Phase 7** prompts are at or below **250 words**.
 - Determinism: **10/10 identical outputs for every legacy, Phase 6, and Phase 7 case**.
@@ -61,8 +62,8 @@ Step 2 is the frozen natural-imperfection variant. Step 3 adds the lighting-phys
 
 | Case | P7.2 words | P7.3 words | P7.4 words | P7.4 Δ vs P7.3 | P7.2 repeat | P7.3 repeat | P7.4 repeat | Imperfections | Lighting | Artifacts | P7.2 det. | P7.3 det. | P7.4 det. | P7.4 ≤250 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|:---:|:---:|:---:|:---:|
-| Car LHD driver selfie | 223 | 233 | 242 | +9 | 2 | 2 | 2 | 3 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
-| Car tight crop | 169 | 179 | 188 | +9 | 2 | 2 | 2 | 1 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
+| Car LHD driver selfie | 230 | 240 | 249 | +9 | 3 | 3 | 3 | 3 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
+| Car tight crop | 176 | 186 | 195 | +9 | 3 | 3 | 3 | 1 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
 | Bedroom direct selfie | 180 | 190 | 199 | +9 | 2 | 2 | 2 | 3 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
 | Mirror selfie | 129 | 139 | 148 | +9 | 2 | 2 | 2 | 1 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
 | Group selfie | 135 | 145 | 154 | +9 | 2 | 2 | 2 | 1 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
@@ -71,34 +72,9 @@ Step 2 is the frozen natural-imperfection variant. Step 3 adds the lighting-phys
 
 ### Phase 7 Step 4 aggregate metrics
 
-- Average prompt length: **162 words Step 2**, **172 words Step 3**, and **182 words Step 4** (Step 4 is **+10 words** versus Step 3).
-- Repeated semantic-fact signals: **14 Step 2**, **14 Step 3**, and **14 Step 4** across the seven cases.
+- Average prompt length: **164 words Step 2**, **174 words Step 3**, and **184 words Step 4** (Step 4 is **+10 words** versus Step 3).
+- Repeated semantic-fact signals: **16 Step 2**, **16 Step 3**, and **16 Step 4** across the seven cases.
 - Natural-imperfection signals: **13 Step 2**; lighting-physics signals: **7 Step 3**; camera-artifact signals: **8 Step 4**.
 - Prompt-length cap: **7/7 Step 2**, **7/7 Step 3**, and **7/7 Step 4** prompts are at or below **250 words**.
 - Determinism: **10/10 identical outputs for every Step 2, Step 3, and Step 4 case**.
 - The Step 4 helper adds device-, light-, or motion-causal camera behavior only; it does not add environmental details or post-processing instructions.
-
-## Phase 8 — Deterministic vehicle view projection
-
-Phase 8 adds the adapter-only `describeVehicleViewProjection(canonical, mirrorConvention)` helper. The frozen Canonical V3 schema is unchanged. `photographic` is the default convention and maps an LHD front-camera driver selfie to driver door/window on frame-right and center console on frame-left. `mirror_preview` swaps both image-space anchors. RHD reverses the mapping under each convention.
-
-The existing vehicle-relative sentence was compressed so it retains drive configuration, driver position, and steering-ahead-of-torso only. Console and door/window relations now appear only in the projection sentence, avoiding duplicate facts while preserving the validated image-space anchor.
-
-| Case | Phase 7 final words | Phase 8 words | Δ | Determinism | ≤250 |
-|---|---:|---:|---:|:---:|:---:|
-| Car LHD driver selfie | 242 | **249** | +7 | 10/10 | yes |
-| Car tight crop | 188 | **195** | +7 | 10/10 | yes |
-| Bedroom direct selfie | 199 | **199** | 0 | 10/10 | yes |
-| Mirror selfie | 148 | **148** | 0 | 10/10 | yes |
-| Group selfie | 154 | **154** | 0 | 10/10 | yes |
-| Accidental capture | 147 | **147** | 0 | 10/10 | yes |
-| Identity + eyewear | 196 | **196** | 0 | 10/10 | yes |
-
-### Phase 8 aggregate metrics
-
-- Average final prompt length: **184 words** across the seven golden cases.
-- Prompt-length cap: **7/7 prompts are at or below 250 words**; the Car LHD driver selfie is the maximum at **249 words**.
-- Determinism: **10/10 identical outputs for every golden case**.
-- Projection scope: vehicle scene + `subject_held_driver_selfie` + front camera only; other scene/capture combinations emit no projection sentence.
-- Default product convention: **photographic**, representing the standard non-mirrored saved-photo orientation.
-- Canonical mutation: **none**; hard constraints and authorities remain frozen and unchanged.
