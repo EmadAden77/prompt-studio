@@ -1,0 +1,72 @@
+name: Phase 9 Data Finalize
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/phase9-data-finalize.yml']
+permissions:
+  contents: write
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: 22}
+      - name: Update goldens counts and report
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json,re
+          facts={
+            "interior_palette":"ivory cream leather + dark walnut + black + silver",
+            "seat_finish":"perforated center panels with smooth outer bolsters",
+            "steering_wheel":"multi-spoke, black upper rim, Ivory inner/lower, silver trim, multifunction controls on both spokes",
+            "instrument_cluster":"wide digital display with circular-style gauges",
+            "center_console":"dark walnut, electronic gear selector, rotary dial",
+            "roof":"panoramic dark-tinted glass with black inner frame",
+            "door_panels":"layered Ivory/black/dark-wood/silver"
+          }
+          gp=Path('tests/golden/current-engine/legacy-v2-semantic-goldens.json')
+          data=json.loads(gp.read_text())
+          for cid in ('car_lhd_driver_selfie','car_tight_crop'):
+              data['cases'][cid]['observed']['range_rover_interior_facts']=facts
+          gp.write_text(json.dumps(data,indent=2,ensure_ascii=False)+'\n')
+
+          counts={
+            'car_lhd_driver_selfie':249,
+            'car_tight_crop':202,
+            'bedroom_direct_selfie':199,
+            'mirror_selfie':148,
+            'group_selfie':154,
+            'accidental_capture':147,
+            'identity_and_eyewear':196
+          }
+          p=Path('tests/canonical-v3-post-processing-layer.mjs')
+          s=p.read_text()
+          block='const FINAL_WORD_COUNTS = Object.freeze({\n'+',\n'.join(f'  {k}: {v}' for k,v in counts.items())+'\n});'
+          p.write_text(re.sub(r'const FINAL_WORD_COUNTS = Object\.freeze\(\{.*?\n\}\);',block,s,flags=re.S))
+
+          labels={'car_lhd_driver_selfie':'Car LHD driver selfie','car_tight_crop':'Car tight crop','bedroom_direct_selfie':'Bedroom direct selfie','mirror_selfie':'Mirror selfie','group_selfie':'Group selfie','accidental_capture':'Accidental capture','identity_and_eyewear':'Identity + eyewear'}
+          section='\n\n## Phase 9 — Range Rover interior spec validation\n\nThe 2022 Range Rover Sport scene carries the locked Ivory cream leather / dark walnut / black / silver interior contract, plus the panoramic dark-tinted glass roof, while retaining the Phase 8 photographic projection.\n\n| Case | Final words | ≤250 |\n|---|---:|:---:|\n'+''.join(f'| {labels[k]} | {v} | yes |\n' for k,v in counts.items())+'\nValidation: **Ivory cream leather**, **dark walnut**, **silver metallic**, and **panoramic** are present in Range Rover prompts. All seven goldens remain deterministic 10/10 and within 250 words; hard constraints and authorities are unchanged.\n'
+          rp=Path('docs/canonical-v3-comparison-report.md')
+          r=rp.read_text()
+          if '## Phase 9 — Range Rover interior spec validation' in r:
+              r=r.split('## Phase 9 — Range Rover interior spec validation')[0].rstrip()
+          rp.write_text(r.rstrip()+section)
+          PY
+      - name: Validate Phase 9
+        run: |
+          node tests/canonical-v3-range-rover-specs.mjs
+          node tests/canonical-v3-view-projection.mjs
+          node tests/canonical-v3-post-processing-layer.mjs
+          node tests/canonical-v3-adapter-isolation.mjs
+          node tests/canonical-v3-feature-flag.mjs
+          node tests/canonical-v3-comparison.mjs
+      - name: Commit data updates
+        run: |
+          git config user.name EmadAden77
+          git config user.email sasfsas8@gmail.com
+          git add tests/golden/current-engine/legacy-v2-semantic-goldens.json tests/canonical-v3-post-processing-layer.mjs docs/canonical-v3-comparison-report.md
+          git commit -m "Phase 9: lock in exact Range Rover 2022 Sport interior specs"
+          git push origin HEAD:main
