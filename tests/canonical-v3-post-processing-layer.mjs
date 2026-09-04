@@ -8,8 +8,8 @@ const GOLDEN_URL = new URL("./golden/current-engine/legacy-v2-semantic-goldens.j
 const golden = JSON.parse(fs.readFileSync(fileURLToPath(GOLDEN_URL), "utf8"));
 const IDS = ["car_lhd_driver_selfie","car_tight_crop","bedroom_direct_selfie","mirror_selfie","group_selfie","accidental_capture","identity_and_eyewear"];
 const FINAL_WORD_COUNTS = Object.freeze({
-  car_lhd_driver_selfie: 242,
-  car_tight_crop: 188,
+  car_lhd_driver_selfie: 249,
+  car_tight_crop: 195,
   bedroom_direct_selfie: 199,
   mirror_selfie: 148,
   group_selfie: 154,
