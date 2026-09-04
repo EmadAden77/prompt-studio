@@ -62,15 +62,13 @@ const noDevice = structuredClone(base({}));
 noDevice.camera.device_profile = "synthetic preview profile";
 assert.deepEqual(signals(describePostProcessing(noDevice)), [P.white_balance], "lighting-only canonical uses white balance phrase");
 
-const noLightSource = structuredClone(base({}));
+const noLightSource = structuredClone(base({ hasReference:true }));
 noLightSource.lighting.source_type = null;
 assert.deepEqual(signals(describePostProcessing(noLightSource)), [P.dynamic, P.texture], "preserved identity may supply texture phrase when white balance is unavailable");
 
 const minimal = structuredClone(base({}));
 minimal.camera.device_profile = "synthetic preview profile";
 minimal.lighting.source_type = null;
-minimal.identity.reference_mode = "none";
-minimal.hard_constraints.identity.preserve_reference_identity = false;
 assert.equal(describePostProcessing(minimal), "", "helper skips when no supported evidence exists");
 
 console.log("✓ canonical-v3 post-processing layer contract passed");
