@@ -42,6 +42,8 @@ jobs:
         run: node tests/visual-selfie-angle-monitor.mjs
       - name: Run Canonical V3 OpenAI adapter isolation test
         run: node tests/canonical-v3-adapter-isolation.mjs
+      - name: Run Canonical V3 natural imperfection layer test
+        run: node tests/canonical-v3-realism-layer.mjs
       - name: Run Canonical V3 old-vs-new comparison
         run: node tests/canonical-v3-comparison.mjs
       - name: Run Canonical V3 feature flag gate
