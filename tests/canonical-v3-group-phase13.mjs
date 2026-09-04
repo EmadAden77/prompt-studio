@@ -25,6 +25,7 @@ const baseInput = {
   groupVibe: "casual",
   scene: "street",
   streetMood: "latenight",
+  streetHour: 23,
   lighting: "street-night",
   time: "night",
   hasReference: true,
@@ -60,7 +61,7 @@ assert.ok(unique(expressions), "additional expressions must be unique");
 assert.ok(unique(poses), "additional poses must be unique");
 assert.ok(unique(faces), "additional faces must be unique");
 assert.ok(unique(ages), "additional apparent ages must be unique");
-assert.deepEqual(outfits, GROUP_PHASE13_POOLS.OUTFITS.friends.slice(0, 3));
+assert.ok(outfits.every((outfit) => GROUP_PHASE13_POOLS.OUTFITS.friends.includes(outfit)), "seeded outfits must remain inside the selected kind pool");
 
 assert.equal(canonical.hard_constraints.vehicle_geometry.applicable, false, "street group must not activate vehicle geometry");
 assert.deepEqual(canonical.hard_constraints.anatomy, baseCanonical.hard_constraints.anatomy, "anatomy hard constraints must stay unchanged");
@@ -74,7 +75,7 @@ for (const person of additional) {
   assert.equal((prompt.match(new RegExp(person.clothing.garment.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gu")) || []).length, 1, `outfit should appear once: ${person.clothing.garment}`);
 }
 const repeats = Array.from({ length: 10 }, () => buildCanonicalV3UserOutput(baseInput).prompt);
-assert.equal(new Set(repeats).size, 1, "group output must remain deterministic 10/10");
+assert.equal(new Set(repeats).size, 1, "group output must remain deterministic 10/10 for identical input");
 
 for (const kind of ["friends", "family", "work", "team", "kashta"]) {
   const variant = buildCanonicalV3UserOutput({ ...baseInput, groupKind: kind }).canonical.subjects.additional;
@@ -94,6 +95,21 @@ assert.equal(five.canonical.subjects.additional.length, 4);
 assert.ok(unique(five.canonical.subjects.additional.map((person) => person.expression)), "4 added people must all have unique expressions");
 assert.ok(wordCount(five.prompt) <= 250, `five-person prompt must stay <=250 words, got ${wordCount(five.prompt)}`);
 
-console.log(`PHASE13_SAMPLE_WORDS=${wordCount(prompt)}`);
-console.log(`PHASE13_SAMPLE_PROMPT=${prompt}`);
-console.log("✓ Phase 13 group selfie diversity, anti-similarity, de-conflict, and street-life contracts passed");
+const seededBase = { ...baseInput, groupVibe: "laughing" };
+const hour20a = buildCanonicalV3UserOutput({ ...seededBase, streetHour: 20 });
+const hour20b = buildCanonicalV3UserOutput({ ...seededBase, streetHour: 20 });
+const hour21 = buildCanonicalV3UserOutput({ ...seededBase, streetHour: 21 });
+const outfits20 = hour20a.canonical.subjects.additional.map((person) => person.clothing.garment);
+const outfits21 = hour21.canonical.subjects.additional.map((person) => person.clothing.garment);
+assert.deepEqual(hour20a.canonical, hour20b.canonical, "same input plus same hour must resolve identically");
+assert.equal(hour20a.prompt, hour20b.prompt, "same input plus same hour must emit identical prompt");
+assert.notDeepEqual(outfits20, outfits21, "different streetHour must rotate to different outfits");
+assert.notEqual(hour20a.prompt, hour21.prompt, "different streetHour must produce perceptually different group prompt");
+assert.ok(wordCount(hour20a.prompt) <= 250);
+assert.ok(wordCount(hour21.prompt) <= 250);
+
+console.log(`PHASE14_HOUR20_WORDS=${wordCount(hour20a.prompt)}`);
+console.log(`PHASE14_HOUR20_PROMPT=${hour20a.prompt}`);
+console.log(`PHASE14_HOUR21_WORDS=${wordCount(hour21.prompt)}`);
+console.log(`PHASE14_HOUR21_PROMPT=${hour21.prompt}`);
+console.log("✓ Phase 14 seeded group diversity preserves Phase 13 contracts and per-input determinism");
