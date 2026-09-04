@@ -9,7 +9,15 @@ import { ANTI_SIMILARITY, GROUP_PHASE13_POOLS } from "../js/canonical/group-phas
 const uiSource = fs.readFileSync(fileURLToPath(new URL("../js/canonical/engine-gate.js", import.meta.url)), "utf8");
 const wordCount = (value) => String(value || "").trim().split(/\s+/u).filter(Boolean).length;
 const unique = (values) => new Set(values).size === values.length;
-const softBackgroundSignal = /soft-focus|blurred|out-of-focus|ambient/iu;
+const SIMPLE_BACKGROUNDS = Object.freeze([
+  "Soft-focus parked cars line the background street.",
+  "A softly lit building blurs in the background.",
+  "Out-of-focus warm storefront light glows in the background.",
+  "Blurred distant streetlights dot the background.",
+  "A quiet, soft-focus street stretches in the background.",
+  "Blurred ambient streetlight glow fills the background."
+]);
+const hasSimpleBackground = (value) => SIMPLE_BACKGROUNDS.some((sentence) => String(value || "").includes(sentence));
 
 assert.match(uiSource, /name = "groupKind"|"groupKind"/u, "groupKind control must exist");
 assert.match(uiSource, /name = "groupVibe"|"groupVibe"/u, "groupVibe control must exist");
@@ -63,14 +71,16 @@ assert.ok(unique(poses), "additional poses must be unique");
 assert.ok(unique(faces), "additional faces must be unique");
 assert.ok(unique(ages), "additional apparent ages must be unique");
 assert.ok(outfits.every((outfit) => GROUP_PHASE13_POOLS.OUTFITS.friends.includes(outfit)), "seeded outfits must remain inside the selected kind pool");
+assert.ok(GROUP_PHASE13_POOLS.POSES.includes("hand in his pocket"), "Phase 16 replacement pose must be present");
+assert.ok(!GROUP_PHASE13_POOLS.POSES.some((pose) => /tea/iu.test(pose)), "pose pool must contain no tea reference");
 
 assert.equal(canonical.hard_constraints.vehicle_geometry.applicable, false, "street group must not activate vehicle geometry");
 assert.deepEqual(canonical.hard_constraints.anatomy, baseCanonical.hard_constraints.anatomy, "anatomy hard constraints must stay unchanged");
 assert.deepEqual(canonical.hard_constraints.camera_geometry, baseCanonical.hard_constraints.camera_geometry, "camera hard constraints must stay unchanged");
 assert.deepEqual(canonical.hard_constraints.capture_physics, baseCanonical.hard_constraints.capture_physics, "capture hard constraints must stay unchanged");
 assert.ok(prompt.includes(ANTI_SIMILARITY), "anti-similarity sentence must be present");
-assert.match(prompt, softBackgroundSignal, "outdoor group background must use soft depth-of-field wording");
-assert.doesNotMatch(prompt, /cafeteria worker|delivery rider|commuters/iu, "group background must avoid named roles");
+assert.ok(hasSimpleBackground(prompt), "outdoor group background must use one of the six Phase 16 simple sentences");
+assert.doesNotMatch(prompt, /tea|cafeteria/iu, "group prompt must contain no tea or cafeteria text");
 assert.doesNotMatch(prompt, /Range Rover|LHD|driver-left|steering directly ahead|driver's door|center console/iu, "group prompt must contain no vehicle or driver facts");
 assert.ok(wordCount(prompt) <= 250, `group prompt must stay <=250 words, got ${wordCount(prompt)}`);
 for (const person of additional) {
@@ -90,12 +100,14 @@ assert.equal(vehicleLeak.canonical.scene.type, "outdoor", "group scene must de-c
 assert.equal(vehicleLeak.canonical.scene.vehicle, null, "group scene must remove vehicle object");
 assert.equal(vehicleLeak.canonical.hard_constraints.vehicle_geometry.applicable, false, "group scene must disable vehicle geometry");
 assert.doesNotMatch(vehicleLeak.prompt, /Range Rover|Autobiography|LHD|driver-left|steering wheel|center console/iu, "de-conflicted group prompt must not emit car facts");
-assert.match(vehicleLeak.prompt, softBackgroundSignal, "de-conflicted outdoor group must keep soft background wording");
+assert.doesNotMatch(vehicleLeak.prompt, /tea|cafeteria/iu, "de-conflicted group prompt must contain no tea or cafeteria text");
+assert.ok(hasSimpleBackground(vehicleLeak.prompt), "de-conflicted outdoor group must use a simple Phase 16 background");
 assert.ok(wordCount(vehicleLeak.prompt) <= 250);
 
 const five = buildCanonicalV3UserOutput({ ...baseInput, groupCount: 5, groupKind: "family", groupVibe: "eid" });
 assert.equal(five.canonical.subjects.additional.length, 4);
 assert.ok(unique(five.canonical.subjects.additional.map((person) => person.expression)), "4 added people must all have unique expressions");
+assert.doesNotMatch(five.prompt, /tea|cafeteria/iu);
 assert.ok(wordCount(five.prompt) <= 250, `five-person prompt must stay <=250 words, got ${wordCount(five.prompt)}`);
 
 const seededBase = { ...baseInput, groupVibe: "laughing" };
@@ -111,15 +123,12 @@ assert.notEqual(hour20a.prompt, hour21.prompt, "different streetHour must produc
 assert.ok(wordCount(hour20a.prompt) <= 250);
 assert.ok(wordCount(hour21.prompt) <= 250);
 
-const daySample = buildCanonicalV3UserOutput({ ...baseInput, streetMood: "normal", streetHour: 10, lighting: "daylight", time: "day" });
-const nightSample = buildCanonicalV3UserOutput({ ...baseInput, streetMood: "latenight", streetHour: 23, lighting: "street-night", time: "night" });
-assert.match(daySample.prompt, /Soft-focus, distant pedestrians move in the ambient street background\./u, "day group must use Phase 15 soft background sentence");
-assert.match(nightSample.prompt, /Blurred distant streetlights and a single soft pedestrian figure\./u, "night group must use Phase 15 soft background sentence");
-assert.ok(wordCount(daySample.prompt) <= 250);
-assert.ok(wordCount(nightSample.prompt) <= 250);
+const sample = buildCanonicalV3UserOutput({ ...baseInput, groupCount: 3, groupVibe: "laughing", streetMood: "cafe", streetHour: 21, lighting: "street-night", time: "night" });
+assert.ok(hasSimpleBackground(sample.prompt), "sample group must include one simple background sentence");
+assert.match(sample.prompt, /Out-of-focus warm storefront light glows in the background\./u);
+assert.doesNotMatch(sample.prompt, /tea|cafeteria/iu, "sample prompt proves tea and cafeteria text are gone");
+assert.ok(wordCount(sample.prompt) <= 250);
 
-console.log(`PHASE15_DAY_WORDS=${wordCount(daySample.prompt)}`);
-console.log(`PHASE15_DAY_PROMPT=${daySample.prompt}`);
-console.log(`PHASE15_NIGHT_WORDS=${wordCount(nightSample.prompt)}`);
-console.log(`PHASE15_NIGHT_PROMPT=${nightSample.prompt}`);
-console.log("✓ Phase 15 soft group backgrounds preserve Phase 13/14 contracts and per-input determinism");
+console.log(`PHASE16_SAMPLE_WORDS=${wordCount(sample.prompt)}`);
+console.log(`PHASE16_SAMPLE_PROMPT=${sample.prompt}`);
+console.log("✓ Phase 16 removes tea/cafeteria text and preserves Phase 13/14/15 contracts");
