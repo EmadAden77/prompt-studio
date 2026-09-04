@@ -78,3 +78,15 @@ Step 2 is the frozen natural-imperfection variant. Step 3 adds the lighting-phys
 - Prompt-length cap: **7/7 Step 2**, **7/7 Step 3**, and **7/7 Step 4** prompts are at or below **250 words**.
 - Determinism: **10/10 identical outputs for every Step 2, Step 3, and Step 4 case**.
 - The Step 4 helper adds device-, light-, or motion-causal camera behavior only; it does not add environmental details or post-processing instructions.
+
+## Phase 13 — Group selfie diversity, anti-similarity, and Saudi street life
+
+Phase 13 adds deterministic per-person diversity for group captures while keeping the primary reference identity exclusive to the primary subject. Additional people rotate through frozen face, age, expression, pose, and kind-specific outfit pools without repeats inside one prompt.
+
+- Group kinds: **friends, family, work, team, kashta**.
+- Group vibes: **casual, laughing, win, eid, meal**.
+- Additional `reference_id` values remain **null**; only the primary subject retains the identity reference.
+- Group outputs de-conflict any vehicle scene into a neutral outdoor scene and set `vehicle_geometry.applicable=false`.
+- The prompt adds short per-person clauses, one explicit anti-similarity sentence, and one Saudi street-life sentence for outdoor groups.
+- For groups of four or more, per-person clauses compress to **age + outfit**.
+- Phase 13 tests require unique added faces, apparent ages, expressions, poses, and outfits; no driver/vehicle wording; deterministic **10/10** output; and a **≤250-word** group prompt budget.
