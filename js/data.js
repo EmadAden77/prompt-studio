@@ -100,6 +100,33 @@ export const SCENES = {
   }
 };
 
+export const STREET_MOODS = Object.freeze([
+  {value:"auto", label:"تلقائي حسب الساعة"},
+  {value:"dawn", label:"فجر هادئ"},
+  {value:"rush", label:"زحمة الذروة"},
+  {value:"normal", label:"شارع طبيعي"},
+  {value:"school", label:"وقت المدارس"},
+  {value:"prayer", label:"وقت الصلاة"},
+  {value:"cafe", label:"حركة المقاهي"},
+  {value:"latenight", label:"آخر الليل"},
+  {value:"dust", label:"غبار خفيف"},
+  {value:"souq", label:"سوق شعبي"},
+  {value:"event", label:"فعالية محلية"}
+]);
+
+export const HOUR_TO_MOOD = Object.freeze({
+  0:"latenight",1:"latenight",2:"latenight",3:"latenight",
+  4:"dawn",5:"dawn",
+  6:"rush",7:"rush",8:"rush",
+  9:"normal",10:"normal",11:"normal",
+  12:"school",13:"school",
+  14:"normal",15:"normal",16:"normal",
+  17:"rush",18:"rush",
+  19:"prayer",
+  20:"cafe",21:"cafe",22:"cafe",
+  23:"latenight"
+});
+
 export const BASE_TEMPLATES = {
   "bedroom:night:standard": {
     title: "الغرفة ليلاً",
