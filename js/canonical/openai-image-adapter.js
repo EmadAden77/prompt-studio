@@ -1,5 +1,5 @@
 const RESERVED_SCENE_FACT_KEYS = new Set([
-  "identity", "scene", "capture", "subjects", "camera", "camera_geometry", "lighting", "vehicle_geometry", "anatomy", "realism", "aesthetic", "drive_configuration", "driver_position", "steering_relation", "cluster_relation", "console_relation", "door_window_relation", "coordinate_system", "mirror_may_swap_physical_sides", "exterior_color", "interior", "seats", "console_trim", "steering_wheel", "roof", "source"
+  "identity", "scene", "capture", "subjects", "camera", "camera_geometry", "lighting", "vehicle_geometry", "anatomy", "realism", "aesthetic", "drive_configuration", "driver_position", "steering_relation", "cluster_relation", "console_relation", "door_window_relation", "coordinate_system", "mirror_may_swap_physical_sides", "exterior_color", "interior", "seats", "console_trim", "steering_wheel", "roof", "street_mood", "source"
 ]);
 
 const IDENTITY_LABELS = Object.freeze({
@@ -117,22 +117,66 @@ function describeSceneFacts(canonical) {
 const SAUDI_STREET_DAY_DETAILS = Object.freeze([
   "date palms line the median with visible drip-irrigation tubing.",
   "weathered asphalt shows patch repairs and sand gathered along the yellow-and-black curb.",
-  "a dusty white Toyota Land Cruiser and a silver Camry are parked with dark tinted windows.",
-  "Arabic storefront signage for a cafeteria and a pharmacy glows under daylight.",
-  "a delivery rider with an insulated food box weaves between lanes.",
-  "pedestrians in white thobes and a woman in a black abaya cross at a faded zebra line.",
-  "heat haze shimmers over the distant asphalt under a pale blue sky."
+  "a dusty white Toyota Land Cruiser and a silver Camry are parked with dark tinted windows."
 ]);
 const SAUDI_STREET_NIGHT_DETAILS = Object.freeze([
   "sodium-orange streetlights mix with cool white LED poles, leaving dark gaps between light pools.",
   "a shawarma storefront glows with visible grill light and Arabic signage.",
-  "parked SUVs show tinted windows reflecting storefront light and lit license plates.",
-  "a mosque minaret is softly illuminated in the background.",
-  "a group of men in thobes and shemaghs gather near a parked Lexus."
+  "parked SUVs show tinted windows reflecting storefront light and lit license plates."
 ]);
+const SAUDI_STREET_MOOD_DETAILS = Object.freeze({
+  dawn: Object.freeze([
+    "soft first light reaches quiet shopfronts and pale concrete facades.",
+    "a few delivery vans and white sedans move through lightly occupied lanes.",
+    "date palms and curbside sand catch the cool early-morning light."
+  ]),
+  rush: Object.freeze([
+    "dense commuter traffic fills the lanes around a signalized junction.",
+    "white Land Cruisers, Camrys, and compact sedans queue with dark tinted windows.",
+    "delivery riders filter between slow cars near active storefronts."
+  ]),
+  normal: SAUDI_STREET_DAY_DETAILS,
+  school: Object.freeze([
+    "yellow school buses and family SUVs cluster near a school entrance.",
+    "parents pause at the curb while traffic compresses into a short pickup queue.",
+    "students in school uniforms move along the shaded sidewalk."
+  ]),
+  prayer: Object.freeze([
+    "traffic thins beside a softly lit neighborhood mosque.",
+    "men in white thobes walk toward the mosque entrance from parked cars.",
+    "nearby shops remain lit while the street briefly grows quieter."
+  ]),
+  cafe: Object.freeze([
+    "busy coffee shops cast warm light onto the sidewalk and parked cars.",
+    "SUVs and sedans line the curb with tinted windows reflecting cafe signs.",
+    "small groups in thobes gather near outdoor tables and takeaway counters."
+  ]),
+  latenight: Object.freeze([
+    "traffic is sparse beneath alternating LED and sodium streetlights.",
+    "a late-night cafeteria remains open with a few cars at the curb.",
+    "quiet storefront reflections stretch across worn asphalt between dark gaps."
+  ]),
+  dust: Object.freeze([
+    "fine beige dust softens distant buildings and roadside contrast.",
+    "sand gathers along the curb and lightly coats parked vehicles.",
+    "streetlights and headlights diffuse gently through the dusty air."
+  ]),
+  souq: Object.freeze([
+    "closely spaced Arabic storefronts spill goods and warm light toward the sidewalk.",
+    "shoppers in thobes and abayas move between parked sedans and delivery vans.",
+    "handcarts and stacked cartons sit near weathered curb edges."
+  ]),
+  event: Object.freeze([
+    "temporary barriers guide vehicles around a busy local gathering.",
+    "families and small groups move between parked SUVs and illuminated entrances.",
+    "event lighting adds localized brightness while surrounding streets remain natural."
+  ])
+});
 export function describeSaudiStreetRealism(canonical) {
   if (!isObject(canonical) || canonical.scene?.type !== "outdoor") return "";
-  const details = canonical.lighting?.source_type === "daylight" ? SAUDI_STREET_DAY_DETAILS : SAUDI_STREET_NIGHT_DETAILS;
+  const mood = text(canonical.scene?.facts?.street_mood).toLowerCase();
+  const details = SAUDI_STREET_MOOD_DETAILS[mood]
+    ?? (canonical.lighting?.source_type === "daylight" ? SAUDI_STREET_DAY_DETAILS : SAUDI_STREET_NIGHT_DETAILS);
   return details.slice(0, 3).join(" ");
 }
 
