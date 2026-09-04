@@ -53,9 +53,7 @@ for (const forbidden of [
   /scene_leakage_detected/iu,
   /\bconflicts?\b/iu,
   /\bwinner\b/iu,
-  /\bloser\b/iu,
-  /left side of (?:the )?image/iu,
-  /right side of (?:the )?image/iu
+  /\bloser\b/iu
 ]) {
   assert.equal(forbidden.test(prompt), false, `prompt contains forbidden adapter/debug marker: ${forbidden}`);
 }
@@ -67,12 +65,14 @@ assert.match(prompt, /natural asymmetry/iu, "reference-preservation may retain n
 for (const phrase of [
   "vehicle-relative coordinates",
   "steering wheel is directly ahead of the driver's torso",
-  "center console is at the driver's physical right",
-  "driver door/window is at the driver's physical left"
+  "driver's door and side window appear on the right side of the image",
+  "center console on the left side of the image"
 ]) {
   assert.equal(count(prompt, phrase), 1, `vehicle relation must appear exactly once: ${phrase}`);
 }
 
+assert.equal(/center console is at the driver's physical/iu.test(prompt), false, "projected console relation must not be duplicated in vehicle-relative wording");
+assert.equal(/driver door\/window is at the driver's physical/iu.test(prompt), false, "projected door relation must not be duplicated in vehicle-relative wording");
 assert.equal(count(prompt, "supplied identity reference"), 1, "identity reference instruction must appear exactly once");
 
 console.log("✓ canonical-v3 OpenAI adapter isolation contract passed");
