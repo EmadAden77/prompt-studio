@@ -60,3 +60,5 @@ jobs:
         run: node tests/canonical-v3-comparison.mjs
       - name: Run Canonical V3 feature flag gate
         run: node tests/canonical-v3-feature-flag.mjs
+      - name: Run Phase 13 group selfie diversity tests
+        run: node tests/canonical-v3-group-phase13.mjs

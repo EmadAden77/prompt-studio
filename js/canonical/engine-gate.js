@@ -9,6 +9,21 @@ import {
   shouldUseCanonicalV3
 } from "./engine-feature-flag.js";
 
+const GROUP_KIND_OPTIONS = Object.freeze([
+  { value:"friends", label:"أصدقاء" },
+  { value:"family", label:"أقارب" },
+  { value:"work", label:"زملاء عمل" },
+  { value:"team", label:"فريق رياضي" },
+  { value:"kashta", label:"كشتة بر" }
+]);
+const GROUP_VIBE_OPTIONS = Object.freeze([
+  { value:"casual", label:"لقطة عادية" },
+  { value:"laughing", label:"ضحك" },
+  { value:"win", label:"احتفال فوز" },
+  { value:"eid", label:"تهنئة عيد" },
+  { value:"meal", label:"بعد عزومة" }
+]);
+
 function readStoredEngine() {
   try { return localStorage.getItem(ENGINE_STORAGE_KEY) || ""; }
   catch { return ""; }
@@ -154,6 +169,45 @@ function downloadCanonicalPrompt() {
   setStatus("Canonical V3 prompt downloaded.");
 }
 
+function makeSelectField(id, name, titleText, options) {
+  const field = document.createElement("label");
+  field.className = "field";
+  field.id = `${id}-field`;
+  field.htmlFor = id;
+  const title = document.createElement("span");
+  title.textContent = titleText;
+  const select = document.createElement("select");
+  select.id = id;
+  select.name = name;
+  for (const option of options) {
+    const node = document.createElement("option");
+    node.value = option.value;
+    node.textContent = option.label;
+    select.append(node);
+  }
+  field.append(title, select);
+  return { field, select };
+}
+
+function mountGroupControls() {
+  if (document.querySelector("#group-kind")) return;
+  const grid = document.querySelector("#group-selfie-fields .form-grid");
+  if (!grid) return;
+  const kind = makeSelectField("group-kind", "groupKind", "نوع المجموعة", GROUP_KIND_OPTIONS);
+  const vibe = makeSelectField("group-vibe", "groupVibe", "أجواء اللقطة", GROUP_VIBE_OPTIONS);
+  const first = grid.firstElementChild;
+  if (first) {
+    grid.insertBefore(vibe.field, first);
+    grid.insertBefore(kind.field, vibe.field);
+  } else {
+    grid.append(kind.field, vibe.field);
+  }
+  kind.select.value = "friends";
+  vibe.select.value = "casual";
+  kind.select.addEventListener("change", scheduleCanonicalRefresh);
+  vibe.select.addEventListener("change", scheduleCanonicalRefresh);
+}
+
 function mountStreetMoodControls() {
   if (document.querySelector("#street-mood")) return;
   const contextGrid = document.querySelector("#context-title")?.closest("section")?.querySelector(".form-grid");
@@ -239,6 +293,7 @@ document.addEventListener("click", (event) => {
 
 await import("../physics-app-v7.js?v=20260903-json-clean2");
 legacyAppReady = true;
+mountGroupControls();
 mountStreetMoodControls();
 
 globalThis.__PROMPT_STUDIO_ENGINE__ = Object.freeze({
