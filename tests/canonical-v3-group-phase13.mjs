@@ -9,6 +9,7 @@ import { ANTI_SIMILARITY, GROUP_PHASE13_POOLS } from "../js/canonical/group-phas
 const uiSource = fs.readFileSync(fileURLToPath(new URL("../js/canonical/engine-gate.js", import.meta.url)), "utf8");
 const wordCount = (value) => String(value || "").trim().split(/\s+/u).filter(Boolean).length;
 const unique = (values) => new Set(values).size === values.length;
+const softBackgroundSignal = /soft-focus|blurred|out-of-focus|ambient/iu;
 
 assert.match(uiSource, /name = "groupKind"|"groupKind"/u, "groupKind control must exist");
 assert.match(uiSource, /name = "groupVibe"|"groupVibe"/u, "groupVibe control must exist");
@@ -68,7 +69,8 @@ assert.deepEqual(canonical.hard_constraints.anatomy, baseCanonical.hard_constrai
 assert.deepEqual(canonical.hard_constraints.camera_geometry, baseCanonical.hard_constraints.camera_geometry, "camera hard constraints must stay unchanged");
 assert.deepEqual(canonical.hard_constraints.capture_physics, baseCanonical.hard_constraints.capture_physics, "capture hard constraints must stay unchanged");
 assert.ok(prompt.includes(ANTI_SIMILARITY), "anti-similarity sentence must be present");
-assert.match(prompt, /Behind them,/u, "outdoor group must include Saudi street background life");
+assert.match(prompt, softBackgroundSignal, "outdoor group background must use soft depth-of-field wording");
+assert.doesNotMatch(prompt, /cafeteria worker|delivery rider|commuters/iu, "group background must avoid named roles");
 assert.doesNotMatch(prompt, /Range Rover|LHD|driver-left|steering directly ahead|driver's door|center console/iu, "group prompt must contain no vehicle or driver facts");
 assert.ok(wordCount(prompt) <= 250, `group prompt must stay <=250 words, got ${wordCount(prompt)}`);
 for (const person of additional) {
@@ -88,6 +90,7 @@ assert.equal(vehicleLeak.canonical.scene.type, "outdoor", "group scene must de-c
 assert.equal(vehicleLeak.canonical.scene.vehicle, null, "group scene must remove vehicle object");
 assert.equal(vehicleLeak.canonical.hard_constraints.vehicle_geometry.applicable, false, "group scene must disable vehicle geometry");
 assert.doesNotMatch(vehicleLeak.prompt, /Range Rover|Autobiography|LHD|driver-left|steering wheel|center console/iu, "de-conflicted group prompt must not emit car facts");
+assert.match(vehicleLeak.prompt, softBackgroundSignal, "de-conflicted outdoor group must keep soft background wording");
 assert.ok(wordCount(vehicleLeak.prompt) <= 250);
 
 const five = buildCanonicalV3UserOutput({ ...baseInput, groupCount: 5, groupKind: "family", groupVibe: "eid" });
@@ -108,8 +111,15 @@ assert.notEqual(hour20a.prompt, hour21.prompt, "different streetHour must produc
 assert.ok(wordCount(hour20a.prompt) <= 250);
 assert.ok(wordCount(hour21.prompt) <= 250);
 
-console.log(`PHASE14_HOUR20_WORDS=${wordCount(hour20a.prompt)}`);
-console.log(`PHASE14_HOUR20_PROMPT=${hour20a.prompt}`);
-console.log(`PHASE14_HOUR21_WORDS=${wordCount(hour21.prompt)}`);
-console.log(`PHASE14_HOUR21_PROMPT=${hour21.prompt}`);
-console.log("✓ Phase 14 seeded group diversity preserves Phase 13 contracts and per-input determinism");
+const daySample = buildCanonicalV3UserOutput({ ...baseInput, streetMood: "normal", streetHour: 10, lighting: "daylight", time: "day" });
+const nightSample = buildCanonicalV3UserOutput({ ...baseInput, streetMood: "latenight", streetHour: 23, lighting: "street-night", time: "night" });
+assert.match(daySample.prompt, /Soft-focus, distant pedestrians move in the ambient street background\./u, "day group must use Phase 15 soft background sentence");
+assert.match(nightSample.prompt, /Blurred distant streetlights and a single soft pedestrian figure\./u, "night group must use Phase 15 soft background sentence");
+assert.ok(wordCount(daySample.prompt) <= 250);
+assert.ok(wordCount(nightSample.prompt) <= 250);
+
+console.log(`PHASE15_DAY_WORDS=${wordCount(daySample.prompt)}`);
+console.log(`PHASE15_DAY_PROMPT=${daySample.prompt}`);
+console.log(`PHASE15_NIGHT_WORDS=${wordCount(nightSample.prompt)}`);
+console.log(`PHASE15_NIGHT_PROMPT=${nightSample.prompt}`);
+console.log("✓ Phase 15 soft group backgrounds preserve Phase 13/14 contracts and per-input determinism");
