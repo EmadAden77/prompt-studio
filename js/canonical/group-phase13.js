@@ -129,7 +129,14 @@ function trimToBudget(prompt) {
   const removable = [
     "Authentic white balance matched to the dominant light source.",
     "Natural body proportions consistent with the environment.",
-    "Slight lens softness is visible toward the frame edges."
+    "Slight lens softness is visible toward the frame edges.",
+    "Realistic dynamic range with natural highlight rolloff.",
+    "Natural sensor noise is visible in shadow areas.",
+    "Localized highlights transition gradually into adjacent shadows.",
+    "Gentle directional contrast creates gradual shadow falloff across the scene.",
+    "Natural fabric wrinkles and folds.",
+    "Natural hair flyaways and loose strands.",
+    "Subtle skin texture with natural pores."
   ];
   for (const sentence of removable) {
     if (words(output) <= 250) break;
