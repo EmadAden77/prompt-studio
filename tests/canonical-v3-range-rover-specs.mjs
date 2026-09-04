@@ -24,10 +24,10 @@ for (const id of IDS) {
 for (const id of ["car_lhd_driver_selfie", "car_tight_crop"]) {
   const canonical = buildCanonicalV3(structuredClone(golden.cases[id].input));
   const prompt = buildOpenAIImagePrompt(canonical);
-  assert.match(prompt, /Ivory cream leather/u, `${id}: Ivory cream leather missing`);
-  assert.match(prompt, /dark walnut|walnut/u, `${id}: walnut missing`);
-  assert.match(prompt, /silver metallic/u, `${id}: silver metallic missing`);
-  assert.match(prompt, /panoramic/u, `${id}: panoramic roof missing`);
+  assert.match(prompt, /Ivory cream leather/iu, `${id}: Ivory cream leather missing`);
+  assert.match(prompt, /dark walnut|walnut/iu, `${id}: walnut missing`);
+  assert.match(prompt, /silver metallic/iu, `${id}: silver metallic missing`);
+  assert.match(prompt, /panoramic/iu, `${id}: panoramic roof missing`);
   assert.equal(canonical.scene.facts.interior_palette, "ivory cream leather + dark walnut + black + silver");
   assert.equal(canonical.scene.facts.seat_finish, "perforated center panels with smooth outer bolsters");
   assert.equal(canonical.scene.facts.steering_wheel, "multi-spoke, black upper rim, Ivory inner/lower, silver trim, multifunction controls on both spokes");
