@@ -23,7 +23,6 @@ This preserved baseline is the original Phase 5 result from commit `ce00c39`. It
 - Conflict records normalized per 100 cases: **142.9 old** vs **0 new**.
 - Canonical V3 determinism: **10/10 identical outputs for every case**.
 
-
 ## Phase 7 Step 2 — Three-way natural-imperfection comparison
 
 Phase 6 is the Canonical V3 adapter output before `describeNaturalImperfections()`. Phase 7 is the same resolved frozen Canonical V3 state with that read-only helper included. After the approved lighting-physics layer, the comparison removes its exact adapter-only sentence first, then removes only the natural-imperfection text to reconstruct the frozen Step 2 columns; no canonical field is modified.
@@ -78,3 +77,28 @@ Step 2 is the frozen natural-imperfection variant. Step 3 adds the lighting-phys
 - Prompt-length cap: **7/7 Step 2**, **7/7 Step 3**, and **7/7 Step 4** prompts are at or below **250 words**.
 - Determinism: **10/10 identical outputs for every Step 2, Step 3, and Step 4 case**.
 - The Step 4 helper adds device-, light-, or motion-causal camera behavior only; it does not add environmental details or post-processing instructions.
+
+## Phase 8 — Deterministic vehicle view projection
+
+Phase 8 adds the adapter-only `describeVehicleViewProjection(canonical, mirrorConvention)` helper. The frozen Canonical V3 schema is unchanged. `photographic` is the default convention and maps an LHD front-camera driver selfie to driver door/window on frame-right and center console on frame-left. `mirror_preview` swaps both image-space anchors. RHD reverses the mapping under each convention.
+
+The existing vehicle-relative sentence was compressed so it retains drive configuration, driver position, and steering-ahead-of-torso only. Console and door/window relations now appear only in the projection sentence, avoiding duplicate facts while preserving the validated image-space anchor.
+
+| Case | Phase 7 final words | Phase 8 words | Δ | Determinism | ≤250 |
+|---|---:|---:|---:|:---:|:---:|
+| Car LHD driver selfie | 242 | **249** | +7 | 10/10 | yes |
+| Car tight crop | 188 | **195** | +7 | 10/10 | yes |
+| Bedroom direct selfie | 199 | **199** | 0 | 10/10 | yes |
+| Mirror selfie | 148 | **148** | 0 | 10/10 | yes |
+| Group selfie | 154 | **154** | 0 | 10/10 | yes |
+| Accidental capture | 147 | **147** | 0 | 10/10 | yes |
+| Identity + eyewear | 196 | **196** | 0 | 10/10 | yes |
+
+### Phase 8 aggregate metrics
+
+- Average final prompt length: **184 words** across the seven golden cases.
+- Prompt-length cap: **7/7 prompts are at or below 250 words**; the Car LHD driver selfie is the maximum at **249 words**.
+- Determinism: **10/10 identical outputs for every golden case**.
+- Projection scope: vehicle scene + `subject_held_driver_selfie` + front camera only; other scene/capture combinations emit no projection sentence.
+- Default product convention: **photographic**, representing the standard non-mirrored saved-photo orientation.
+- Canonical mutation: **none**; hard constraints and authorities remain frozen and unchanged.
