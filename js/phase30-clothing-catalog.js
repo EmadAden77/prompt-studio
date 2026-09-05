@@ -19,6 +19,30 @@ const SECTION_LABELS = Object.freeze({
 });
 
 export const PHASE32_NEUTRAL_CUSTOM_OUTFIT = "تيشيرت أبيض بسيط + بنطلون قماش رمادي";
+export const PHASE34_NEUTRAL_CLOTHING = "casual cotton clothing";
+
+export const TRADITIONAL_CAR_OPTIONS = Object.freeze([
+  Object.freeze({
+    value:"thobe-redshemagh-iqal",
+    label:"ثوب أبيض + شماغ أحمر + عقال",
+    text:"crisp white thobe with a red-and-white checkered shemagh and black iqal, youthful style with one end casually thrown over the shoulder"
+  }),
+  Object.freeze({
+    value:"thobe-whiteghutra-iqal",
+    label:"ثوب أبيض + غترة بيضاء + عقال",
+    text:"white thobe with white ghutra and black iqal, neat drape"
+  }),
+  Object.freeze({
+    value:"thobe-bisht",
+    label:"ثوب أبيض + بشت بني",
+    text:"white thobe with brown bisht draped over the shoulders"
+  }),
+  Object.freeze({
+    value:"thobe-white",
+    label:"ثوب أبيض سادة",
+    text:"crisp white Saudi thobe with natural standing folds"
+  })
+]);
 
 const OUTFIT_GROUPS = Object.freeze({
   home: Object.freeze([
@@ -149,6 +173,7 @@ export const UNIFIED_CLOTHING_OPTIONS = Object.freeze(
 );
 
 const UNIFIED_BY_VALUE = new Map(UNIFIED_CLOTHING_OPTIONS.map((option) => [option.value, option]));
+const TRADITIONAL_CAR_BY_VALUE = new Map(TRADITIONAL_CAR_OPTIONS.map((option) => [option.value, option]));
 
 export function getUnifiedClothingCatalog() {
   return UNIFIED_CLOTHING_CATALOG.map((section) => ({
@@ -167,6 +192,20 @@ export function resolveUnifiedClothingOption(value) {
   if (!key) return null;
   const unified = UNIFIED_BY_VALUE.get(key);
   return unified ? cloneOption(unified) : null;
+}
+
+export function resolveClothingText(value, raw = {}) {
+  const key = String(value ?? "").trim();
+  if (key === "custom") {
+    return String(raw?.customClothing || "").trim() || PHASE34_NEUTRAL_CLOTHING;
+  }
+  if (!key) return PHASE34_NEUTRAL_CLOTHING;
+  const found = UNIFIED_BY_VALUE.get(key)
+    || TRADITIONAL_CAR_BY_VALUE.get(key)
+    || Object.values(SCENES)
+      .flatMap((scene) => Array.isArray(scene?.clothing) ? scene.clothing : [])
+      .find((item) => item?.value === key);
+  return found?.text ? String(found.text) : PHASE34_NEUTRAL_CLOTHING;
 }
 
 const flatSceneCatalog = getUnifiedClothingOptions();
