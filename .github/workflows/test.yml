@@ -82,3 +82,5 @@ jobs:
         run: node tests/canonical-v3-body-anatomy-phase26.mjs
       - name: Run Phase 27 glass realism lock tests
         run: node tests/canonical-v3-glass-realism-phase27.mjs
+      - name: Run Phase 28 Saudi realism modifier tests
+        run: node tests/canonical-v3-saudi-realism-phase28.mjs

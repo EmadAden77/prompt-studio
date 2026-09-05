@@ -2,6 +2,45 @@ import { SCENES, LIGHTING_OPTIONS } from "./data-phase20.js";
 
 export * from "./data-phase20.js";
 
+export const SAUDI_REALISM_MODIFIERS = Object.freeze({
+  streetsAndPlaces: Object.freeze([
+    Object.freeze({
+      id: "saudi_street_day",
+      label: "شارع نهاراً - واقعي",
+      prompt: "harsh midday sunlight, heat haze distortion over asphalt, faded yellow road markings, concrete jersey barriers with scuff marks, fine dust particles in the air, authentic Saudi residential street, uneven pavement"
+    }),
+    Object.freeze({
+      id: "saudi_street_night",
+      label: "شارع ليلاً - إضاءة واقعية",
+      prompt: "mixed lighting from yellow sodium lamps and cool white LED shop signs, glowing cat-eye road reflectors, subtle motion blur from passing cars, light reflecting off dusty windows"
+    })
+  ]),
+  authenticShops: Object.freeze([
+    Object.freeze({
+      id: "local_bakala",
+      label: "بقالة حارة",
+      prompt: "local Saudi bakala facade, generic faded dairy and soft drink color stickers on glass doors kept soft-focus and unreadable, cluttered storefront, harsh fluorescent lighting, metal rolling shutters closed partway, cardboard boxes"
+    }),
+    Object.freeze({
+      id: "local_barbershop",
+      label: "حلاق محلي",
+      prompt: "neighborhood barbershop, a flickering neon sign with warm glow, towels hanging inside, bright white lighting, glass window with faded soft-focus unreadable Arabic typography, small exhaust fan"
+    })
+  ]),
+  backgroundHumans: Object.freeze([
+    Object.freeze({
+      id: "realistic_crowd",
+      label: "حشود بخلفية واقعية",
+      prompt: "soft-focus background characters, people in everyday slightly wrinkled white thobes, casual traditional sandals, some in casually draped red and white shemaghs, women in black abayas walking naturally, passersby in casual work clothes"
+    }),
+    Object.freeze({
+      id: "human_imperfections",
+      label: "عيوب طبيعية",
+      prompt: "blurred background people with authentic skin texture and non-idealized facial features, candid non-posed behavior, looking at smartphones, holding paper karak cups, natural asymmetrical postures, ignoring the camera"
+    })
+  ])
+});
+
 export const CAR_EXTERIOR_SPEC = "2017 Range Rover Sport Autobiography Dynamic L494 in Fuji White, gloss black grille and side-vent surrounds, 22-inch dark alloy wheels, quad rectangular exhaust tips, LED headlights with DRL signature, panoramic glass roof, lightly tinted TRANSPARENT glass, never opaque black, showing natural reflections and faint glimpses of the Ivory interior, small Autobiography Dynamic badging and Saudi plate present, both soft-focus and never legible.";
 
 export const CAR_EXTERIOR_LOCATIONS = Object.freeze([

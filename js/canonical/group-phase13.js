@@ -1,4 +1,4 @@
-import { describeSaudiStreetRealism } from "./openai-image-adapter.js";
+import { describeSaudiRealism, describeSaudiStreetRealism } from "./openai-image-adapter.js";
 
 const FACES = Object.freeze([
   "round face full dark beard",
@@ -108,8 +108,9 @@ function backgroundLife(canonical) {
   return "Blurred ambient streetlight glow fills the background.";
 }
 function removeStreetDetailBlock(prompt, canonical) {
-  const block = describeSaudiStreetRealism(canonical);
-  return block ? prompt.replace(block, "").replace(/\s{2,}/gu, " ").trim() : prompt;
+  return [describeSaudiStreetRealism(canonical), describeSaudiRealism(canonical)]
+    .filter(Boolean)
+    .reduce((output, block) => output.replace(block, "").replace(/\s{2,}/gu, " ").trim(), prompt);
 }
 function trimToBudget(prompt) {
   let output = prompt.replace(/\s{2,}/gu, " ").trim();

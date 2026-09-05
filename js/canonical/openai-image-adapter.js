@@ -14,6 +14,7 @@ import phase24BuildOpenAIImagePrompt, {
   describeSelfiePerspective,
   describeEnvironmentScale
 } from "./openai-image-adapter-phase24.js";
+import { SAUDI_REALISM_MODIFIERS } from "../data.js";
 
 export * from "./openai-image-adapter-phase24.js";
 
@@ -134,12 +135,66 @@ export function buildOpenAIImagePrompt(canonical, options = {}) {
   const prompt = phase24BuildOpenAIImagePrompt(canonical, options);
   const headwear = describeHeadwear(canonical);
   const withHeadwear = headwear ? insertHeadwearWithinCap(prompt, canonical, headwear) : prompt;
-  const withBodyAuthority = insertPhase26Authority(withHeadwear, canonical);
+  const withSaudiRealism = insertSaudiRealism(withHeadwear, canonical);
+  const withBodyAuthority = insertPhase26Authority(withSaudiRealism, canonical);
   const withRequiredGymCue = ensureGymEffort(withBodyAuthority, canonical);
   const withRequiredCarExterior = ensureCarExterior(withRequiredGymCue, canonical);
   const withGlassRealism = insertGlassRealism(withRequiredCarExterior, canonical);
   const withLightingLast = moveLightingLast(withGlassRealism);
   return retainMicroRealism(enforcePhase26WordBudget(withLightingLast, canonical), canonical);
+}
+
+const AUTO_STREET_MOODS = Object.freeze(new Set(["auto", "dawn", "rush", "normal", "school", "prayer", "cafe", "latenight"]));
+
+function modifierById(group, id) {
+  return SAUDI_REALISM_MODIFIERS[group]?.find((item) => item.id === id)?.prompt ?? "";
+}
+
+function sentence(value) {
+  const cleaned = text(value).replace(/[.!?]+$/u, "");
+  return cleaned ? `${cleaned}.` : "";
+}
+
+export function describeSaudiRealism(canonical) {
+  const sceneId = text(canonical?.scene?.id);
+  const mood = text(canonical?.scene?.facts?.street_mood).toLowerCase();
+  let place = "";
+  if (sceneId === "street" && AUTO_STREET_MOODS.has(mood || "auto")) {
+    place = modifierById("streetsAndPlaces", canonical?.lighting?.source_type === "daylight" ? "saudi_street_day" : "saudi_street_night");
+  } else if (sceneId === "barbershop") {
+    place = modifierById("authenticShops", "local_barbershop");
+  } else if (sceneId === "grocery") {
+    place = modifierById("authenticShops", "local_bakala");
+  }
+  if (!place) return "";
+  const people = modifierById("backgroundHumans", sceneId === "street" ? "realistic_crowd" : "human_imperfections");
+  return [sentence(place), sentence(people)].filter(Boolean).join(" ");
+}
+
+function insertAfterLayer(prompt, anchor, addition) {
+  if (!addition || prompt.includes(addition)) return prompt;
+  if (anchor && prompt.includes(anchor)) return prompt.replace(anchor, `${anchor} ${addition}`);
+  return `${prompt} ${addition}`.trim();
+}
+
+function insertSaudiRealism(prompt, canonical, maxWords = 250) {
+  const realism = describeSaudiRealism(canonical);
+  if (!realism) return prompt;
+  let base = removeExact(prompt, describeSaudiStreetRealism(canonical));
+  const anchor = describePlaceRealism(canonical);
+  let candidate = insertAfterLayer(base, anchor, realism);
+  if (words(candidate) <= maxWords) return candidate;
+  for (const layer of [
+    describePostProcessing(canonical),
+    describeEnvironmentalDetails(canonical),
+    describeCameraArtifacts(canonical),
+    describeLightingPhysics(canonical)
+  ]) {
+    base = removeExact(base, layer);
+    candidate = insertAfterLayer(base, anchor, realism);
+    if (words(candidate) <= maxWords) return candidate;
+  }
+  return candidate;
 }
 
 function retainMicroRealism(prompt, canonical, maxWords = 250) {
