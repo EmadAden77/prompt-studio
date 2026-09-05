@@ -38,8 +38,9 @@ const dayExterior = canonical("carExterior", false);
 const nightExterior = canonical("carExterior", true);
 const interior = canonical("rangeRover", true, false);
 
-assert.match(CAR_EXTERIOR_SPEC, /lightly tinted TRANSPARENT glass, never opaque black/iu);
-assert.match(CAR_EXTERIOR_SPEC, /natural reflections and faint glimpses of the Ivory interior/iu);
+assert.match(CAR_EXTERIOR_SPEC, /transparent glass with natural reflections/iu);
+assert.match(CAR_EXTERIOR_SPEC, /never opaque black/iu);
+assert.match(CAR_EXTERIOR_SPEC, /faint Ivory-cabin view/iu);
 
 for (const current of [dayExterior, nightExterior, interior]) {
   const before = JSON.stringify(current);
@@ -54,9 +55,9 @@ for (const current of [dayExterior, nightExterior, interior]) {
   assert.equal(JSON.stringify(current.hard_constraints), hardBefore);
 }
 
-assert.match(describeGlassRealism(dayExterior), /clear glass with a light factory tint/iu);
-assert.match(describeGlassRealism(dayExterior), /Ivory headliner and seats are faintly visible/iu);
-assert.match(describeGlassRealism(nightExterior), /dim view into the cabin instead of black panels/iu);
+assert.match(describeGlassRealism(dayExterior), /Transparent windshield and side glass/iu);
+assert.match(describeGlassRealism(dayExterior), /faint view of the Ivory cabin/iu);
+assert.match(describeGlassRealism(nightExterior), /dim cabin view/iu);
 assert.match(describeGlassRealism(interior), /panoramic glass roof is transparent/iu);
 assert.match(describeGlassRealism(interior), /actual sky or night stars/iu);
 assert.match(describeGlassRealism(interior), /side windows show the real exterior with natural reflections/iu);
