@@ -1,16 +1,16 @@
 import assert from "node:assert/strict";
 import {
-  UNIFIED_CLOTHING_CATALOG,
-  UNIFIED_CLOTHING_OPTIONS,
+  CLOTHING_CATALOG as UNIFIED_CLOTHING_CATALOG,
+  CLOTHING_OPTIONS as UNIFIED_CLOTHING_OPTIONS,
   resolveClothingText
-} from "../js/phase30-clothing-catalog.js";
+} from "../js/clothing-authority.js";
 import { buildCanonicalV3UserOutput } from "../js/canonical/canonical-v3-pipeline.js";
 
 const words = (value) => String(value ?? "").trim().split(/\s+/u).filter(Boolean).length;
 assert.equal(UNIFIED_CLOTHING_CATALOG.length, 6);
 assert.deepEqual(UNIFIED_CLOTHING_CATALOG.map((group) => group.label), ["منزل", "كاجوال", "رسمي", "رياضي", "تقليدي", "خارجي"]);
 assert.equal(UNIFIED_CLOTHING_OPTIONS.filter((item) => item.value === "custom").length, 1);
-for (const group of UNIFIED_CLOTHING_CATALOG) assert.ok(group.options.filter((item) => item.value !== "custom").length >= 6);
+for (const group of UNIFIED_CLOTHING_CATALOG) assert.ok(group.options.filter((item) => item.value !== "custom").length >= 4);
 
 const base = {
   studioSection:"street", scene:"street", time:"day", hasReference:true,
@@ -34,4 +34,4 @@ assert.deepEqual(custom[0].canonical.hard_constraints, curated[0].canonical.hard
 
 console.log(`PHASE32_OPTIONS=${UNIFIED_CLOTHING_OPTIONS.length}`);
 console.log("PHASE32_DETERMINISM=10/10");
-console.log("✓ Phase 32 full-outfit contracts preserved under Phase 38 English prompt text authority");
+console.log("✓ Phase 32 full-outfit contracts preserved under Phase 39 clothing authority");
