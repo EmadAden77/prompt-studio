@@ -56,7 +56,7 @@ function resolveClothingDetails(raw, clean) {
   const sceneKey = garmentScene(raw, clean);
   const baseGarments = SCENES[sceneKey]?.clothing ?? [];
   const garments = sceneKey === "carExterior"
-    ? [...baseGarments, ...CAR_EXTERIOR_CLOTHING_OPTIONS]
+    ? [...CAR_EXTERIOR_CLOTHING_OPTIONS, ...baseGarments]
     : baseGarments;
   const selectedGarment = raw.clothing || clean.clothing;
   const customGarment = String(raw.customClothing || "").trim();
