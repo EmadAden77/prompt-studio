@@ -14,11 +14,11 @@ export const SECTION_CAPTURE_ROUTING = Object.freeze({
   solo: Object.freeze({ captureType:"direct_front_camera_selfie", intentType:"selfie", fallbackScene:"street" }),
   selfie: Object.freeze({ captureType:"direct_front_camera_selfie", intentType:"selfie", fallbackScene:"street" }),
   studio: Object.freeze({ captureType:"direct_front_camera_selfie", intentType:"selfie", fallbackScene:"street" }),
-  bedroom: Object.freeze({ captureType:"direct_front_camera_selfie", intentType:"selfie", scene:"bedroom" }),
-  gym: Object.freeze({ captureType:"direct_front_camera_selfie", intentType:"selfie", scene:"gym" }),
-  street: Object.freeze({ captureType:"direct_front_camera_selfie", intentType:"selfie", scene:"street" }),
-  carExterior: Object.freeze({ captureType:"direct_front_camera_selfie", intentType:"selfie", scene:"carExterior" }),
-  car: Object.freeze({ captureType:"subject_held_driver_selfie", intentType:"car", scene:"rangeRover" }),
+  bedroom: Object.freeze({ captureType:"direct_front_camera_selfie", intentType:"selfie", fallbackScene:"bedroom" }),
+  gym: Object.freeze({ captureType:"direct_front_camera_selfie", intentType:"selfie", fallbackScene:"gym" }),
+  street: Object.freeze({ captureType:"direct_front_camera_selfie", intentType:"selfie", fallbackScene:"street" }),
+  carExterior: Object.freeze({ captureType:"direct_front_camera_selfie", intentType:"selfie", scene:"carExterior", forceScene:true }),
+  car: Object.freeze({ captureType:"subject_held_driver_selfie", intentType:"car", scene:"rangeRover", forceScene:true }),
   group: Object.freeze({ captureType:"group_selfie", intentType:"group", fallbackScene:"street" }),
   accidental: Object.freeze({ captureType:"accidental_front_camera_capture", intentType:"accidental", fallbackScene:"street" })
 });
@@ -89,8 +89,9 @@ export function applySectionCaptureRouting(rawInput = {}) {
 
   raw.captureType = route.captureType;
   raw.intentType = route.intentType;
-  if (route.scene) raw.scene = route.scene;
-  else if (!REAL_SECTION_SCENES.has(String(raw.scene || ""))) raw.scene = route.fallbackScene;
+  const currentScene = String(raw.scene || "").trim();
+  if (route.forceScene && route.scene) raw.scene = route.scene;
+  else if (!REAL_SECTION_SCENES.has(currentScene)) raw.scene = route.fallbackScene || route.scene || "street";
 
   raw.pose = selfieSafePose(raw.pose, route.captureType);
   if (section === "carExterior") {
