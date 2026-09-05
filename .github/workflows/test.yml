@@ -98,3 +98,5 @@ jobs:
         run: node tests/canonical-v3-clothing-routing-phase34.mjs
       - name: Run Phase 35 carExterior runtime repair smoke test
         run: node tests/canonical-v3-car-exterior-runtime-phase35.mjs
+      - name: Run Phase 36 selfie lock and section routing tests
+        run: node tests/canonical-v3-selfie-lock-phase36.mjs

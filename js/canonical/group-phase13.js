@@ -32,6 +32,7 @@ const VIBE_TEXT = Object.freeze({
   meal: "The group gathers just after a shared meal."
 });
 const ANTI_SIMILARITY = "Each person is a clearly distinct individual with a unique facial structure, beard style, and apparent age; no two people share the same face, hairstyle, or outfit color, and none resemble the primary subject's reference identity.";
+const GENERIC_TALL_SELFIE_CAMERA = "Camera near eye level at 45–60 cm, no steep downward angle; relaxed upright posture, spine extension, enough upper torso to communicate the tall athletic frame.";
 
 function clone(value) { return JSON.parse(JSON.stringify(value)); }
 function freeze(value) {
@@ -112,9 +113,10 @@ function removeStreetDetailBlock(prompt, canonical) {
     .filter(Boolean)
     .reduce((output, block) => output.replace(block, "").replace(/\s{2,}/gu, " ").trim(), prompt);
 }
-function trimToBudget(prompt) {
+function trimToBudget(prompt, optionalSentences = []) {
   let output = prompt.replace(/\s{2,}/gu, " ").trim();
   const removable = [
+    ...optionalSentences,
     "Subtle natural eye reflection mirrors the surrounding environment.",
     "Subtle tone variation between forehead and cheeks.",
     "Faint natural pore detail across the cheeks.",
@@ -132,6 +134,7 @@ function trimToBudget(prompt) {
   ];
   for (const sentence of removable) {
     if (words(output) <= 250) break;
+    if (!sentence) continue;
     output = output.replace(sentence, "").replace(/\s{2,}/gu, " ").trim();
   }
   return output;
@@ -146,7 +149,7 @@ export function enrichGroupPromptPhase13(canonical, rawInput = {}, basePrompt = 
   const groupBlock = [countSentence, ...clauses, ANTI_SIMILARITY, vibe, life].filter(Boolean).join(" ");
   const withoutStreetBlock = removeStreetDetailBlock(basePrompt, canonical);
   const enriched = withoutStreetBlock.includes(countSentence) ? withoutStreetBlock.replace(countSentence, groupBlock) : `${groupBlock} ${withoutStreetBlock}`;
-  return trimToBudget(enriched);
+  return trimToBudget(enriched, [vibe, GENERIC_TALL_SELFIE_CAMERA]);
 }
 
 export const GROUP_PHASE13_POOLS = Object.freeze({ FACES, AGES, EXPRESSIONS, POSES, OUTFITS });
