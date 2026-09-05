@@ -59,7 +59,8 @@ const LOW_PRIORITY_PATTERNS = Object.freeze([
   /Natural wear appears on frequently touched surfaces\.\s*/iu,
   /Realistic dynamic range with natural highlight rolloff\.\s*/iu,
   /Natural sensor noise is visible in shadow areas\.\s*/iu,
-  /Subtle skin texture with natural pores\.\s*/iu
+  /Subtle skin texture with natural pores\.\s*/iu,
+  /Camera near eye level at 45–60 cm, no steep downward angle; relaxed upright posture, spine extension, enough upper torso to communicate the tall athletic frame\.\s*/iu
 ]);
 
 function keepWithinBudget(prompt, maxWords = 250) {
