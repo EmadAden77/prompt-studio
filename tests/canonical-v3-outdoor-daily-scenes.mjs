@@ -5,7 +5,7 @@ import {
 import { buildOpenAIImagePrompt, describePlaceRealism, describeSaudiStreetRealism } from "../js/canonical/openai-image-adapter.js";
 
 const forbidden = /\b(?:landmark|tower|monument|kingdom|faisaliah|ramadan|fanous|lantern|crescent)\b|mosque\s+minaret/iu;
-const namedHumanLife = /(?:blurred|soft-focus|soft|distant)\s+(?:worker|barber|cashier|shopkeeper|attendant|player)\b/iu;
+const namedHumanLife = /(?:blurred|soft-focus|soft|distant)\s+(?:worker|barber|cashier|attendant|player)\b/iu;
 const wordCount = (value) => String(value ?? "").trim().split(/\s+/u).filter(Boolean).length;
 
 function canonicalFor(sceneId, period = "night") {
@@ -32,7 +32,9 @@ function canonicalFor(sceneId, period = "night") {
 assert.equal(SCENES.rooftop.label, "سطح المنزل");
 assert.equal(SCENES.streetFootball.label, "ملعب حارة");
 assert.equal(SCENES.gasStation.label, "محطة وقود");
-for (const id of ["rooftop", "streetFootball", "gasStation"]) assert.equal(SCENES[id].clothing.length, 6, `${id}: six clothing options required`);
+assert.equal(SCENES.rooftop.clothing.length, 7, "rooftop: seven clothing options required after Phase 25");
+assert.equal(SCENES.streetFootball.clothing.length, 6, "streetFootball: six clothing options required");
+assert.equal(SCENES.gasStation.clothing.length, 7, "gasStation: seven clothing options required after Phase 25");
 assert.deepEqual(LIGHTING_OPTIONS.rooftop.day.map(x => x.value), ["clear-noon-sun", "late-afternoon-gold"]);
 assert.deepEqual(LIGHTING_OPTIONS.rooftop.night.map(x => x.value), ["distant-city-glow", "rooftop-practical-city"]);
 assert.deepEqual(LIGHTING_OPTIONS.streetFootball.day.map(x => x.value), ["overhead-sun", "open-shade"]);

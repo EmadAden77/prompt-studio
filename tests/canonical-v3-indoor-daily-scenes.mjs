@@ -29,7 +29,7 @@ function canonicalFor(sceneId, period = "night") {
 assert.equal(SCENES.barbershop.label, "صالون حلاقة سعودي");
 assert.equal(SCENES.grocery.label, "بقالة سعودية");
 assert.equal(SCENES.barbershop.clothing.length, 6);
-assert.equal(SCENES.grocery.clothing.length, 6);
+assert.equal(SCENES.grocery.clothing.length, 7);
 assert.deepEqual(LIGHTING_OPTIONS.barbershop.day.map(x => x.value), ["overhead-led", "window-daylight"]);
 assert.deepEqual(LIGHTING_OPTIONS.barbershop.night.map(x => x.value), ["overhead-fluorescent", "mixed-warm-fixtures"]);
 assert.deepEqual(LIGHTING_OPTIONS.grocery.day.map(x => x.value), ["ceiling-fluorescent", "window-interior"]);

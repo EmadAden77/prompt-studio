@@ -1,96 +1,26 @@
-import phase23BuildOpenAIImagePrompt, {
-  describeSaudiStreetRealism as describeSaudiStreetRealismPhase23,
+import phase24BuildOpenAIImagePrompt, {
+  describeSaudiStreetRealism,
+  describePlaceRealism,
   describePostProcessing,
   describeEnvironmentalDetails,
   describeCameraArtifacts,
   describeLightingPhysics,
   describeMicroRealism,
   describeNaturalImperfections
-} from "./openai-image-adapter-phase23.js";
+} from "./openai-image-adapter-phase24.js";
 
-export * from "./openai-image-adapter-phase23.js";
+export * from "./openai-image-adapter-phase24.js";
 
-const GYM_EFFORT = Object.freeze([
-  "Localized sweat sheen appears on the forehead, temples, and neck only.",
-  "A damp shirt patch sits at the upper back from exertion.",
-  "Flushed skin and visible forearm veins remain after the set.",
-  "Chalk dust rests on his palms while he sits mid-rest with elbows on knees."
-]);
-
-const GYM_EQUIPMENT = Object.freeze([
-  "Chrome bars show fine scratches and worn knurling from grip.",
-  "Bench upholstery is faded with slight cracking at the edges.",
-  "Weight plates carry chalk residue, dust, and edge scuffs.",
-  "Rubber flooring shows dropped-plate marks and scuff trails."
-]);
-
-const GYM_TRACES = Object.freeze([
-  "A water bottle and a draped towel rest on the bench beside him.",
-  "His phone and gym bag sit on the floor at the rack base.",
-  "One side of the bar holds a loaded plate while the other side is empty."
-]);
-
-const GYM_MIRROR = Object.freeze([
-  "The mirror carries fingerprints and a light smudge streak.",
-  "The reflection preserves the true background geometry with one coherent subject."
-]);
-
-const GYM_BACKGROUND = Object.freeze([
-  "A blurred figure mid-lift softens in the far rack background.",
-  "A distant figure remains in soft focus near the benches."
-]);
-
-const GYM_LIGHT = Object.freeze([
-  "Harsh overhead LED casts crisp shadows under equipment with darker corners.",
-  "Sweat shine catches the overhead light on shoulders and arms."
-]);
+export const HEADWEAR_LOCK = "a red-and-white fine checkered shemagh with one end casually thrown over the shoulder and the other hanging at the chest, held by a black doubled-cord iqal seated firmly on the crown, relaxed youthful drape, the shemagh lies flat under the iqal, not a turban";
 
 function text(value) { return typeof value === "string" ? value.trim() : ""; }
-function wordCount(value) { return text(value).split(/\s+/u).filter(Boolean).length; }
-function sentence(value) { const v = text(value); return !v ? "" : /[.!?]$/u.test(v) ? v : `${v}.`; }
-function isGym(canonical) { return canonical?.scene?.id === "gym"; }
-function isMirror(canonical) { return canonical?.capture?.type === "mirror_selfie"; }
+function words(value) { return text(value).split(/\s+/u).filter(Boolean).length; }
+function clothing(canonical) { return canonical?.subjects?.primary?.clothing ?? {}; }
 
-function stableSeed(canonical) {
-  return [
-    canonical?.scene?.id,
-    canonical?.capture?.type,
-    canonical?.subjects?.primary?.pose,
-    canonical?.subjects?.primary?.clothing?.garment,
-    canonical?.lighting?.description
-  ].map(text).join("|");
-}
-
-function stableIndex(seed, salt, length) {
-  let hash = 2166136261;
-  const value = `${salt}|${seed}`;
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return Math.abs(hash >>> 0) % length;
-}
-
-function pick(catalog, seed, salt) {
-  return catalog[stableIndex(seed, salt, catalog.length)];
-}
-
-export function describeGymRealism(canonical) {
-  if (!isGym(canonical)) return "";
-  const seed = stableSeed(canonical);
-  const prioritized = [
-    pick(GYM_EFFORT, seed, "effort"),
-    pick(GYM_EQUIPMENT, seed, "equipment"),
-    pick(GYM_TRACES, seed, "traces")
-  ];
-  if (isMirror(canonical)) prioritized.push(pick(GYM_MIRROR, seed, "mirror"));
-  else prioritized.push(pick(GYM_BACKGROUND, seed, "background"));
-  if (prioritized.length < 4) prioritized.push(pick(GYM_LIGHT, seed, "light"));
-  return prioritized.slice(0, 4).join(" ");
-}
-
-export function describeSaudiStreetRealism(canonical) {
-  return isGym(canonical) ? "" : describeSaudiStreetRealismPhase23(canonical);
+export function describeHeadwear(canonical) {
+  const selected = clothing(canonical);
+  const evidence = [selected.garment, selected.custom_modifier].map(text).join(" ");
+  return /shemagh|shimagh|ghutra/iu.test(evidence) && /iqal|agal/iu.test(evidence) ? HEADWEAR_LOCK : "";
 }
 
 function removeExact(prompt, layer) {
@@ -98,27 +28,59 @@ function removeExact(prompt, layer) {
   return prompt.replace(`${layer} `, "").replace(` ${layer}`, "").replace(layer, "").replace(/\s{2,}/gu, " ").trim();
 }
 
-function sceneAnchor(canonical) { return sentence(canonical?.scene?.description); }
-function insertAfterScene(prompt, canonical, addition) {
-  const anchor = sceneAnchor(canonical);
-  return anchor && prompt.includes(anchor) ? prompt.replace(anchor, `${anchor} ${addition}`) : `${prompt} ${addition}`.trim();
+function clothingSentenceBounds(prompt, canonical) {
+  const garment = text(clothing(canonical).garment);
+  const index = garment ? prompt.indexOf(garment) : -1;
+  if (index < 0) return null;
+  const previous = prompt.lastIndexOf(". ", index);
+  const start = previous < 0 ? 0 : previous + 2;
+  const next = prompt.indexOf(".", index);
+  if (next < 0) return null;
+  return { start, end: next + 1 };
 }
 
-function splitSentences(value) {
-  return text(value).match(/[^.!?]+[.!?]/gu)?.map((part) => part.trim()).filter(Boolean) ?? [];
+function insertAfterClothingSentence(prompt, canonical, headwear) {
+  if (!headwear) return prompt;
+  const addition = `${headwear}.`;
+  const bounds = clothingSentenceBounds(prompt, canonical);
+  if (!bounds) return `${prompt} ${addition}`.trim();
+  return `${prompt.slice(0, bounds.end)} ${addition}${prompt.slice(bounds.end)}`.replace(/\s{2,}/gu, " ").trim();
 }
 
-function removeLowPriorityGymText(prompt) {
+function compactIdentity(prompt) {
+  return prompt.replace(
+    /The primary subject preserves the supplied identity reference for [^.]+\./iu,
+    "The primary subject preserves the supplied identity reference for facial structure, skin tone, natural asymmetry, and reference-linked eyewear."
+  );
+}
+
+function compactClothingSentence(prompt, canonical) {
+  const bounds = clothingSentenceBounds(prompt, canonical);
+  if (!bounds) return prompt;
+  const primary = canonical?.subjects?.primary ?? {};
+  const garment = text(clothing(canonical).garment);
+  const pose = text(primary.pose) || "natural pose";
+  const expression = text(primary.expression) || "natural expression";
+  const compact = `The primary subject has ${pose}, ${expression}, wearing ${garment}, with body scale consistent with the environment.`;
+  return `${prompt.slice(0, bounds.start)}${compact}${prompt.slice(bounds.end)}`.replace(/\s{2,}/gu, " ").trim();
+}
+
+function removeLowPriority(prompt) {
   return prompt
     .replace(/Visual preferences:[^.]+\./iu, "")
+    .replace(/Scene details:[^.]+\./iu, "")
+    .replace(/Fuji White paint carries fine dust[^.]+\./iu, "")
+    .replace(/An elongated light-pole reflection[^.]+\./iu, "")
+    .replace(/Damp ground patches reflect[^.]+\./iu, "")
+    .replace(/His hand rests on the body[^.]+\./iu, "")
     .replace(/\s{2,}/gu, " ")
     .trim();
 }
 
-function insertGymWithinCap(prompt, canonical, realism, maxWords = 250) {
+function insertHeadwearWithinCap(prompt, canonical, headwear, maxWords = 250) {
   let base = prompt;
-  let candidate = insertAfterScene(base, canonical, realism);
-  if (wordCount(candidate) <= maxWords) return candidate;
+  let candidate = insertAfterClothingSentence(base, canonical, headwear);
+  if (words(candidate) <= maxWords) return candidate;
 
   for (const layer of [
     describePostProcessing(canonical),
@@ -126,28 +88,32 @@ function insertGymWithinCap(prompt, canonical, realism, maxWords = 250) {
     describeCameraArtifacts(canonical),
     describeLightingPhysics(canonical),
     describeMicroRealism(canonical),
-    describeNaturalImperfections(canonical)
+    describeNaturalImperfections(canonical),
+    describePlaceRealism(canonical),
+    describeSaudiStreetRealism(canonical)
   ]) {
     base = removeExact(base, layer);
-    candidate = insertAfterScene(base, canonical, realism);
-    if (wordCount(candidate) <= maxWords) return candidate;
+    candidate = insertAfterClothingSentence(base, canonical, headwear);
+    if (words(candidate) <= maxWords) return candidate;
   }
 
-  base = removeLowPriorityGymText(base);
-  const parts = splitSentences(realism);
-  let chosen = "";
-  for (const part of parts) {
-    const next = chosen ? `${chosen} ${part}` : part;
-    if (wordCount(insertAfterScene(base, canonical, next)) <= maxWords) chosen = next;
-  }
-  return chosen ? insertAfterScene(base, canonical, chosen) : base;
+  base = removeLowPriority(base);
+  candidate = insertAfterClothingSentence(base, canonical, headwear);
+  if (words(candidate) <= maxWords) return candidate;
+
+  base = compactIdentity(base);
+  candidate = insertAfterClothingSentence(base, canonical, headwear);
+  if (words(candidate) <= maxWords) return candidate;
+
+  base = compactClothingSentence(base, canonical);
+  candidate = insertAfterClothingSentence(base, canonical, headwear);
+  return words(candidate) <= maxWords ? candidate : candidate.split(/\s+/u).slice(0, maxWords).join(" ");
 }
 
 export function buildOpenAIImagePrompt(canonical, options = {}) {
-  let prompt = phase23BuildOpenAIImagePrompt(canonical, options);
-  if (!isGym(canonical)) return prompt;
-  prompt = removeExact(prompt, describeSaudiStreetRealismPhase23(canonical));
-  return insertGymWithinCap(prompt, canonical, describeGymRealism(canonical));
+  const prompt = phase24BuildOpenAIImagePrompt(canonical, options);
+  const headwear = describeHeadwear(canonical);
+  return headwear ? insertHeadwearWithinCap(prompt, canonical, headwear) : prompt;
 }
 
 export default buildOpenAIImagePrompt;

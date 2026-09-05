@@ -39,6 +39,19 @@ Object.assign(SCENES, {
   }
 });
 
+export const YOUTHFUL_RED_SHEMAGH_IQAL = Object.freeze({
+  value: "thobe-redshemagh-iqal",
+  label: "ثوب + شماغ أحمر + عقال",
+  text: "crisp white thobe with a red-and-white checkered shemagh and black iqal, youthful style"
+});
+
+for (const sceneId of ["street", "rangeRover", "majlis", "carExterior", "rooftop", "grocery", "gasStation"]) {
+  const clothing = SCENES[sceneId]?.clothing;
+  if (Array.isArray(clothing) && !clothing.some((option) => option.value === YOUTHFUL_RED_SHEMAGH_IQAL.value)) {
+    clothing.push({ ...YOUTHFUL_RED_SHEMAGH_IQAL });
+  }
+}
+
 Object.assign(LIGHTING_OPTIONS, {
   carExterior: {
     day: [
