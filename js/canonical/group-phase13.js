@@ -112,9 +112,10 @@ function removeStreetDetailBlock(prompt, canonical) {
     .filter(Boolean)
     .reduce((output, block) => output.replace(block, "").replace(/\s{2,}/gu, " ").trim(), prompt);
 }
-function trimToBudget(prompt) {
+function trimToBudget(prompt, optionalSentences = []) {
   let output = prompt.replace(/\s{2,}/gu, " ").trim();
   const removable = [
+    ...optionalSentences,
     "Subtle natural eye reflection mirrors the surrounding environment.",
     "Subtle tone variation between forehead and cheeks.",
     "Faint natural pore detail across the cheeks.",
@@ -132,6 +133,7 @@ function trimToBudget(prompt) {
   ];
   for (const sentence of removable) {
     if (words(output) <= 250) break;
+    if (!sentence) continue;
     output = output.replace(sentence, "").replace(/\s{2,}/gu, " ").trim();
   }
   return output;
@@ -146,7 +148,7 @@ export function enrichGroupPromptPhase13(canonical, rawInput = {}, basePrompt = 
   const groupBlock = [countSentence, ...clauses, ANTI_SIMILARITY, vibe, life].filter(Boolean).join(" ");
   const withoutStreetBlock = removeStreetDetailBlock(basePrompt, canonical);
   const enriched = withoutStreetBlock.includes(countSentence) ? withoutStreetBlock.replace(countSentence, groupBlock) : `${groupBlock} ${withoutStreetBlock}`;
-  return trimToBudget(enriched);
+  return trimToBudget(enriched, [life, vibe]);
 }
 
 export const GROUP_PHASE13_POOLS = Object.freeze({ FACES, AGES, EXPRESSIONS, POSES, OUTFITS });
