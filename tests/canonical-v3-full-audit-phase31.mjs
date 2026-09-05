@@ -51,7 +51,7 @@ assert.doesNotMatch(uiSource, /field\.hidden = activeSection\(\) === "carExterio
 assert.equal(UNIFIED_CLOTHING_CATALOG.length, 6);
 assert.deepEqual(UNIFIED_CLOTHING_CATALOG.map((group) => group.label), ["منزل", "كاجوال", "رسمي", "رياضي", "تقليدي", "خارجي"]);
 assert.ok(UNIFIED_CLOTHING_OPTIONS.length >= 15, "unified clothing catalog must contain at least 15 mapped garments");
-assert.equal(UNIFIED_CLOTHING_OPTIONS.every((item) => item.value && item.text), true, "all unified clothing values must map to prompt text");
+assert.equal(UNIFIED_CLOTHING_OPTIONS.filter((item) => item.value !== "custom").every((item) => item.value && item.text), true, "all non-custom clothing values must map to prompt text");
 
 // 4) gym/street are Canonical-enabled even when stored engine is legacy.
 const legacySelection = { engine: LEGACY_ENGINE };
@@ -73,7 +73,7 @@ assert.doesNotMatch(finalAdapterSource, /cafe:\s*"saudi_bufia"/u);
 
 const streetRaw = (streetMood) => ({
   studioSection:"street", intentType:"selfie", scene:"street", streetMood,
-  time:"day", hasReference:true, clothing:"tee-black", fabric:"cotton-jersey",
+  time:"day", hasReference:true, clothing:"casual-tee-black-jeans-blue", fabric:"cotton-jersey",
   fabricWeight:"light", ironState:"lightly-unpressed", wearState:"normal-day",
   clothingFit:"regular", pose:"standing-relaxed", expression:"neutral"
 });
@@ -125,8 +125,8 @@ assert.doesNotMatch(rangeRoverOutputs[0], /2022|beige/iu);
 const auditCases = [
   streetRaw("normal"),
   streetRaw("alley"),
-  { studioSection:"gym", intentType:"selfie", scene:"gym", time:"day", hasReference:true, clothing:"sport-tech-tee-pants", fabric:"technical-poly", fabricWeight:"light", ironState:"lightly-unpressed", wearState:"post-workout", clothingFit:"regular" },
-  { studioSection:"carExterior", intentType:"selfie", scene:"carExterior", time:"night", hasReference:true, carExteriorLocation:"parking", carExteriorPose:"door-open", carExteriorLighting:"interior-spill", clothing:"white-thobe", fabric:"cotton-poplin", fabricWeight:"medium", ironState:"normal-pressed", wearState:"normal-day", clothingFit:"regular" }
+  { studioSection:"gym", intentType:"selfie", scene:"gym", time:"day", hasReference:true, clothing:"sport-tee-black-shorts-gray", fabric:"technical-poly", fabricWeight:"light", ironState:"lightly-unpressed", wearState:"post-workout", clothingFit:"regular" },
+  { studioSection:"carExterior", intentType:"selfie", scene:"carExterior", time:"night", hasReference:true, carExteriorLocation:"parking", carExteriorPose:"door-open", carExteriorLighting:"interior-spill", clothing:"traditional-thobe-white-shemagh-red-iqal-black", fabric:"cotton-poplin", fabricWeight:"medium", ironState:"normal-pressed", wearState:"normal-day", clothingFit:"regular" }
 ];
 for (const raw of auditCases) {
   const outputs = Array.from({ length:10 }, () => buildCanonicalV3UserOutput(raw).prompt);

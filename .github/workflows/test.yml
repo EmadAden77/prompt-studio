@@ -90,3 +90,5 @@ jobs:
         run: node tests/canonical-v3-unified-clothing-phase30.mjs
       - name: Run Phase 31 full audit de-conflict tests
         run: node tests/canonical-v3-full-audit-phase31.mjs
+      - name: Run Phase 32 full-outfit colored clothing tests
+        run: node tests/canonical-v3-full-outfit-clothing-phase32.mjs

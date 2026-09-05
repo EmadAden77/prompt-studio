@@ -4,6 +4,7 @@ import { resolveCanonicalConflicts } from "./conflict-resolver.js";
 import { buildOpenAIImagePrompt } from "./openai-image-adapter.js";
 import { applyGroupPhase13, enrichGroupPromptPhase13 } from "./group-phase13.js";
 import { SCENES, LIGHTING_OPTIONS, CAR_EXTERIOR_LOCATIONS, CAR_EXTERIOR_POSES } from "../data.js";
+import { PHASE32_NEUTRAL_CUSTOM_OUTFIT } from "../phase30-clothing-catalog.js";
 
 const DAILY_SCENE_KEYS = new Set(["majlis", "kashta", "barbershop", "grocery", "rooftop", "streetFootball", "gasStation"]);
 const SECTION_GARMENT_SCENE = Object.freeze({
@@ -54,8 +55,11 @@ function resolveClothingDetails(raw, clean) {
   const sceneKey = garmentScene(raw, clean);
   const garments = SCENES[sceneKey]?.clothing ?? [];
   const selectedGarment = raw.clothing || clean.clothing;
+  const customGarment = String(raw.customClothing || "").trim();
   const preserveGroupBudget = raw.studioSection === "group" || clean.studioSection === "group";
-  const garment = preserveGroupBudget ? selectedGarment : (optionText(garments, selectedGarment) || clean.clothing);
+  const garment = selectedGarment === "custom"
+    ? (customGarment || PHASE32_NEUTRAL_CUSTOM_OUTFIT)
+    : (preserveGroupBudget ? (optionText(garments, selectedGarment) || selectedGarment) : (optionText(garments, selectedGarment) || clean.clothing));
   const fabricValue = raw.fabric || clean.fabric;
   const weightValue = raw.fabricWeight || clean.fabricWeight;
   const wearValue = raw.wearState || clean.wearState;
