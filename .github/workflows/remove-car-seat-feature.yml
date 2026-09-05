@@ -10,142 +10,37 @@ permissions:
   contents: write
 
 jobs:
-  phase31-patch:
+  phase31-final-source-clean:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Apply Phase 31 source de-conflicts
+      - name: Remove final stale Range Rover wording
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
-
-          def read(path): return Path(path).read_text()
-          def write(path, text): Path(path).write_text(text)
-          def must_replace(text, old, new, label):
-              if old not in text:
-                  raise SystemExit(f'missing expected source for {label}')
-              return text.replace(old, new)
-
-          # 1) Range Rover 2022 -> 2017 sync at the legacy source of truth.
-          p = 'js/data-base-phase16.js'
-          s = read(p)
-          s = s.replace('label: "رنج روفر سبورت 2022"', 'label: "رنج روفر 2017"')
-          s = s.replace('environment: "inside a stationary white 2022 Range Rover Sport, beige perforated leather upholstery, dark glossy wood center-console trim, left-hand-drive geometry, coherent dashboard and window reflections, parked safely in a plausible Saudi location"', 'environment: "inside a stationary 2017 Range Rover Sport Autobiography Dynamic, Ivory perforated leather, dark wood veneer, LHD"')
-          s = s.replace('رنج روفر 2022 ليلاً', 'رنج روفر 2017 ليلاً').replace('رنج روفر 2022 نهاراً', 'رنج روفر 2017 نهاراً')
-          s = s.replace('inside a white 2022 Range Rover Sport', 'inside a stationary 2017 Range Rover Sport Autobiography Dynamic')
-          s = s.replace('inside a stationary white 2022 Range Rover Sport', 'inside a stationary 2017 Range Rover Sport Autobiography Dynamic')
-          s = s.replace('beige perforated leather upholstery', 'Ivory perforated leather')
-          s = s.replace('beige leather', 'Ivory perforated leather')
-          # Explicit selectable special-place moods.
-          street_anchor = '  {value:"normal", label:"شارع طبيعي"},\n'
-          if '{value:"alley", label:"حارة شعبية"}' not in s:
-              s = must_replace(s, street_anchor, street_anchor + '  {value:"alley", label:"حارة شعبية"},\n  {value:"construction", label:"حفريات"},\n  {value:"bufia", label:"بوفية"},\n', 'street mood insertion')
-          write(p, s)
-
-          # Keep the older WikiPrompt dataset aligned with the same 2017 cabin contract.
-          p = 'js/wiki-selfie-data-v1.js'
-          s = read(p)
-          s = s.replace('label:"رنج روفر سبورت 2022"', 'label:"رنج روفر 2017"')
-          s = s.replace('inside a stationary white 2022 Range Rover Sport with beige perforated leather, dark wood trim and coherent left-hand-drive geometry, visible only as much as needed to establish the parked-car selfie', 'inside a stationary 2017 Range Rover Sport Autobiography Dynamic, Ivory perforated leather, dark wood veneer, LHD, visible only as much as needed to establish the parked-car selfie')
-          write(p, s)
-
-          # data.js must explicitly own the final rangeRover contract and transparent-glass exterior spec.
-          p = 'js/data.js'
-          s = read(p)
-          marker = 'export * from "./data-phase20.js";\n'
-          override = '''\n\nObject.assign(SCENES.rangeRover, {\n  label: "رنج روفر 2017",\n  environment: "inside a stationary 2017 Range Rover Sport Autobiography Dynamic, Ivory perforated leather, dark wood veneer, LHD"\n});\n'''
-          if 'Object.assign(SCENES.rangeRover' not in s:
-              s = must_replace(s, marker, marker + override, 'data.js rangeRover override')
-          s = s.replace('lightly tinted TRANSPARENT glass, never opaque black, showing natural reflections and faint glimpses of the Ivory interior', 'transparent glass, never opaque black, carrying natural reflections and faint glimpses of the Ivory interior')
-          s = s.replace('Fuji White paint and tinted glass', 'Fuji White paint and transparent glass')
-          s = s.replace('Fuji White paint, dark wheels, and glass', 'Fuji White paint, dark wheels, and transparent glass')
-          write(p, s)
-
-          # 4) Canonical V3 auto-enables for gym/street and owns their intent routing.
-          p = 'js/canonical/engine-feature-flag.js'
-          s = read(p)
-          s = s.replace('"accidental", "bedroom", "room"]', '"accidental", "bedroom", "room", "gym", "street"]')
-          s = s.replace('    case "solo":\n    case "selfie":\n    case "studio": return "selfie";', '    case "gym":\n    case "street":\n    case "solo":\n    case "selfie":\n    case "studio": return "selfie";')
-          s = s.replace('  return selection?.engine === CANONICAL_V3_ENGINE && isCanonicalV3Section(section);', '  const normalized = normalize(section);\n  if (["gym", "street"].includes(normalized)) return true;\n  return selection?.engine === CANONICAL_V3_ENGINE && isCanonicalV3Section(section);')
-          write(p, s)
-
-          # 5) New moods must survive Canonical scene validation.
-          p = 'js/canonical-v3-engine.js'
-          s = read(p)
-          s = s.replace('"dust","souq","event"]', '"dust","souq","event","alley","construction","bufia"]')
-          write(p, s)
-
-          # 5/6) Remove hidden mood semantics and synchronize transparent glass wording in the final adapter.
-          p = 'js/canonical/openai-image-adapter.js'
-          s = read(p)
-          s = s.replace('const AUTO_STREET_MOODS = Object.freeze(new Set(["auto", "dawn", "rush", "normal", "school", "prayer", "cafe", "latenight"]));', 'const AUTO_STREET_MOODS = Object.freeze(new Set(["auto", "dawn", "rush", "normal", "school", "prayer", "cafe", "latenight", "alley", "construction", "bufia"]));')
-          s = s.replace('const SPECIAL_PLACE_BY_MOOD = Object.freeze({ cafe: "saudi_bufia", normal: "old_service_alley", rush: "street_construction" });', 'const SPECIAL_PLACE_BY_MOOD = Object.freeze({ alley: "old_service_alley", construction: "street_construction", bufia: "saudi_bufia" });')
-          write(p, s)
-
-          # 6) Exterior adapter wording must match the transparent-glass lock, with no generic tinted-glass sentence.
-          p = 'js/canonical/openai-image-adapter-phase23.js'
-          s = read(p)
-          s = s.replace('lightly tinted TRANSPARENT glass, never opaque black, showing natural reflections and faint glimpses of the Ivory interior', 'transparent glass, never opaque black, carrying natural reflections and faint glimpses of the Ivory interior')
-          s = s.replace('Tinted glass mirrors the surroundings and the panoramic roof reflects the sky.', 'Transparent glass carries natural surroundings reflections while retaining a faint view into the Ivory cabin, and the panoramic roof reflects the sky.')
-          s = s.replace('Tinted glass carries natural reflection of the surroundings.', 'Transparent glass carries natural reflections and a faint view into the Ivory cabin.')
-          write(p, s)
-
-          # 7/8) Remove dead villa scale branch and make canonical export the exact legacy 13-item skin authority.
-          p = 'js/canonical/openai-image-adapter-base-phase16.js'
-          s = read(p)
-          s = s.replace('import { BODY_PROFILE } from "../data-base-phase16.js";', 'import { BODY_PROFILE, BASE_SKIN_TEXTURE } from "../data-base-phase16.js";\nexport { BASE_SKIN_TEXTURE };')
-          s = s.replace('  if (sceneId === "villa") return "His height reads naturally against the doorframe and gate.";\n', '')
-          write(p, s)
-
-          # 2/3) One unified clothing control; hide that standard field in carExterior only.
-          p = 'js/phase22-ui-runtime.js'
-          s = read(p)
-          old = '  const field = select.closest("label");\n  if (field) field.hidden = false;\n}'
-          new = '  const field = select.closest("label");\n  if (field) field.hidden = activeSection() === "carExterior";\n}'
-          if new not in s:
-              s = must_replace(s, old, new, 'carExterior standard clothing visibility')
-          write(p, s)
-
-          # 4/5) Add explicit mood choices to the mounted UI even when legacy data is cached.
-          p = 'js/canonical/engine-gate.js'
-          s = read(p)
-          insert = '''\n  const phase31Moods = [\n    { value:"alley", label:"حارة شعبية" },\n    { value:"construction", label:"حفريات" },\n    { value:"bufia", label:"بوفية" }\n  ];\n'''
-          anchor = '  moodSelect.id = "street-mood";\n  moodSelect.name = "streetMood";\n'
-          if 'const phase31Moods' not in s:
-              s = must_replace(s, anchor, anchor + insert, 'Phase31 mood UI')
-          s = s.replace('  for (const option of STREET_MOODS) {', '  for (const option of [...STREET_MOODS, ...phase31Moods].filter((item, index, all) => all.findIndex((candidate) => candidate.value === item.value) === index)) {')
-          write(p, s)
-
-          # Assertions before committing the source patch.
-          base = read('js/data-base-phase16.js')
-          rr = re.search(r'rangeRover:\s*\{(.+?)\n\s*\}\n\};', base, flags=re.S)
-          if not rr:
-              raise SystemExit('rangeRover block not found after patch')
-          rr_head = rr.group(1).split('clothing:')[0]
-          if re.search(r'2022|beige', rr_head, flags=re.I):
-              raise SystemExit('stale rangeRover 2022/beige remains in core label/environment')
-          if 'sceneId === "villa"' in read('js/canonical/openai-image-adapter-base-phase16.js'):
-              raise SystemExit('dead villa scale branch remains')
-          if 'normal: "old_service_alley"' in read('js/canonical/openai-image-adapter.js'):
-              raise SystemExit('hidden normal->alley mapping remains')
-          if 'Tinted glass' in read('js/canonical/openai-image-adapter-phase23.js'):
-              raise SystemExit('stale tinted glass wording remains in exterior adapter')
+          p = Path('js/data-base-phase16.js')
+          s = p.read_text()
+          s = s.replace('beige perforated leather and dark wood trim', 'Ivory perforated leather and dark wood veneer')
+          p.write_text(s)
+          # Scope the audit to Range Rover environment/template contracts, not clothing color names.
+          checks = []
+          for line in s.splitlines():
+              if 'rangeRover:' in line or 'Range Rover Sport' in line or 'رنج روفر' in line:
+                  checks.append(line)
+          stale = [line for line in checks if '2022' in line or 'beige perforated leather' in line.lower()]
+          if stale:
+              raise SystemExit('stale Range Rover contract wording remains: ' + '\n'.join(stale))
           PY
       - name: Commit source patch
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add js
-          if git diff --cached --quiet; then
-            echo 'No Phase 31 source changes required.'
-          else
+          git add js/data-base-phase16.js
+          if ! git diff --cached --quiet; then
             git commit -m 'Phase 31: full audit de-conflict pass'
             git push origin HEAD:phase-31/full-audit-deconflict
           fi
