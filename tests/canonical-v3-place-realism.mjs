@@ -29,7 +29,7 @@ function canonicalFor(sceneId, period = "night") {
 
 assert.equal(SCENES.majlis.label, "مجلس سعودي");
 assert.equal(SCENES.kashta.label, "كشتة بر");
-assert.equal(SCENES.majlis.clothing.length, 6);
+assert.equal(SCENES.majlis.clothing.length, 7);
 assert.equal(SCENES.kashta.clothing.length, 6);
 assert.deepEqual(LIGHTING_OPTIONS.majlis.night.map(x => x.value), ["warm-sconces", "incense-glow", "mixed-warm"]);
 assert.deepEqual(LIGHTING_OPTIONS.majlis.day.map(x => x.value), ["window-daylight", "open-shade"]);
