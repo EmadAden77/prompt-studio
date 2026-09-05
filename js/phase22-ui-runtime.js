@@ -202,7 +202,7 @@ function syncGarmentSelect() {
   if (!select) return;
   populateUnifiedClothingSelect(select, select.value);
   const field = select.closest("label");
-  if (field) field.hidden = activeSection() === "carExterior";
+  if (field) field.hidden = false;
 }
 
 function syncAll() {
