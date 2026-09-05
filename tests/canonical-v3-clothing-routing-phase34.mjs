@@ -18,7 +18,7 @@ const base = {
   scene:"carExterior",
   intentType:"selfie",
   time:"night",
-  hasReference:false,
+  hasReference:true,
   expression:"neutral",
   carExteriorLocation:"reststop",
   carExteriorPose:"front-grille",
