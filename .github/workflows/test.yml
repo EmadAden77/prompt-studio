@@ -66,3 +66,5 @@ jobs:
         run: node tests/canonical-v3-place-realism.mjs
       - name: Run Phase 18 micro-realism tests
         run: node tests/canonical-v3-micro-realism.mjs
+      - name: Run Phase 19 indoor daily-scene tests
+        run: node tests/canonical-v3-indoor-daily-scenes.mjs

@@ -2,7 +2,9 @@ import baseBuildOpenAIImagePrompt, {
   describeSaudiStreetRealism as describeSaudiStreetRealismBase,
   describeNaturalImperfections as describeNaturalImperfectionsBase,
   describePostProcessing as describePostProcessingBase,
-  describeEnvironmentalDetails as describeEnvironmentalDetailsBase
+  describeEnvironmentalDetails as describeEnvironmentalDetailsBase,
+  describeCameraArtifacts as describeCameraArtifactsBase,
+  describeLightingPhysics as describeLightingPhysicsBase
 } from "./openai-image-adapter-base-phase16.js";
 
 export * from "./openai-image-adapter-base-phase16.js";
@@ -76,6 +78,22 @@ export function describePlaceRealism(canonical) {
     realism.push("A distant parked Land Cruiser with dimmed lights blurs in the background.");
     return realism.join(" ");
   }
+  if (canonical.scene?.id === "barbershop") {
+    return [
+      "Hair clippings gather near the chair base and a barber cape hangs slightly crumpled on the hook.",
+      "The large mirror reflects the checkered floor and chrome chair leg with natural glass imperfections.",
+      "Overhead fluorescent tubes cast cool even light with warmer pools near the wall fixtures.",
+      "The mirror catches a blurred second chair and one soft figure in the background."
+    ].join(" ");
+  }
+  if (canonical.scene?.id === "grocery") {
+    return [
+      "A stack of date boxes and a plastic crate of water bottles sit near the entrance with slight shelf dust.",
+      "The glass beverage cooler glows softly with stacked cans and a condensed moisture film on the door.",
+      "Overhead fluorescent light casts cool tones while the counter area carries warmer bulb light.",
+      "A blurred seated figure rests behind the counter in soft focus."
+    ].join(" ");
+  }
   return "";
 }
 
@@ -134,7 +152,7 @@ function removeSuppressedStreetFallback(prompt, canonical) {
 
 function removeExactLayer(prompt, layer) {
   if (!layer) return prompt;
-  return prompt.replace(`${layer} `, "").replace(` ${layer}`, "").replace(layer, "").trim();
+  return prompt.replace(`${layer} `, "").replace(` ${layer}`, "").replace(layer, "").replace(/\s{2,}/gu, " ").trim();
 }
 
 function insertPlaceRealism(prompt, canonical, placeRealism) {
@@ -143,6 +161,23 @@ function insertPlaceRealism(prompt, canonical, placeRealism) {
   const sceneAnchor = describeSceneAnchor(canonical);
   if (sceneAnchor && prompt.includes(sceneAnchor)) return prompt.replace(sceneAnchor, `${sceneAnchor} ${placeRealism}`);
   return `${prompt} ${placeRealism}`.trim();
+}
+
+function insertPlaceWithinCap(prompt, canonical, placeRealism, maxWords = 250) {
+  let base = prompt;
+  let candidate = insertPlaceRealism(base, canonical, placeRealism);
+  if (wordCount(candidate) <= maxWords) return candidate;
+  for (const layer of [
+    describePostProcessingBase(canonical),
+    describeEnvironmentalDetailsBase(canonical),
+    describeCameraArtifactsBase(canonical),
+    describeLightingPhysicsBase(canonical)
+  ]) {
+    base = removeExactLayer(base, layer);
+    candidate = insertPlaceRealism(base, canonical, placeRealism);
+    if (wordCount(candidate) <= maxWords) return candidate;
+  }
+  return candidate;
 }
 
 function microSentences(value) { return value.match(/[^.!?]+[.!?]/gu)?.map((part) => part.trim()).filter(Boolean) ?? []; }
@@ -170,7 +205,7 @@ export function buildOpenAIImagePrompt(canonical, options = {}) {
   let prompt = baseBuildOpenAIImagePrompt(canonical, options);
   prompt = removeSuppressedStreetFallback(prompt, canonical);
   const placeRealism = describePlaceRealism(canonical);
-  if (placeRealism) prompt = insertPlaceRealism(prompt, canonical, placeRealism);
+  if (placeRealism) prompt = insertPlaceWithinCap(prompt, canonical, placeRealism);
 
   const micro = describeMicroRealism(canonical);
   const natural = describeNaturalImperfectionsBase(canonical);
@@ -182,6 +217,10 @@ export function buildOpenAIImagePrompt(canonical, options = {}) {
     }
     if (!result.inserted) {
       prompt = removeExactLayer(prompt, describeEnvironmentalDetailsBase(canonical));
+      result = insertMicroWithinCap(prompt, natural, micro);
+    }
+    if (!result.inserted) {
+      prompt = removeExactLayer(prompt, describeCameraArtifactsBase(canonical));
       result = insertMicroWithinCap(prompt, natural, micro);
     }
     prompt = result.prompt;
