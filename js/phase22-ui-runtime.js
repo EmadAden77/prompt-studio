@@ -9,6 +9,7 @@ import {
   UNIFIED_CLOTHING_CATALOG,
   getUnifiedClothingOptions
 } from "./phase30-clothing-catalog.js";
+import { CAR_EXTERIOR_CLOTHING_OPTIONS } from "./car-exterior-clothing-phase33.js";
 
 export const VISIBLE_SCENE_KEYS = Object.freeze([
   "bedroom",
@@ -56,8 +57,10 @@ export function garmentSceneForSection(section = "", selectedScene = "") {
   return selectedScene || SECTION_GARMENT_SCENE[section] || "street";
 }
 
-export function garmentOptionsForSection() {
-  return getUnifiedClothingOptions();
+export function garmentOptionsForSection(section = "") {
+  return section === "carExterior"
+    ? [...getUnifiedClothingOptions(), ...CAR_EXTERIOR_CLOTHING_OPTIONS]
+    : getUnifiedClothingOptions();
 }
 
 function appendOptions(select, options) {
@@ -69,18 +72,25 @@ function appendOptions(select, options) {
   }
 }
 
-export function populateUnifiedClothingSelect(select, preferredValue = "") {
+export function populateUnifiedClothingSelect(select, preferredValue = "", section = "") {
   if (!select) return;
   const previous = preferredValue || select.value;
   select.replaceChildren();
-  for (const section of UNIFIED_CLOTHING_CATALOG) {
+  for (const clothingSection of UNIFIED_CLOTHING_CATALOG) {
     const group = document.createElement("optgroup");
-    group.label = section.label;
-    group.dataset.clothingSection = section.id;
-    appendOptions(group, section.options);
+    group.label = clothingSection.label;
+    group.dataset.clothingSection = clothingSection.id;
+    appendOptions(group, clothingSection.options);
     select.append(group);
   }
-  const available = new Set(UNIFIED_CLOTHING_CATALOG.flatMap((section) => section.options.map((option) => option.value)));
+  if (section === "carExterior") {
+    const carGroup = document.createElement("optgroup");
+    carGroup.label = "جانب السيارة — خيارات إضافية";
+    carGroup.dataset.clothingSection = "carExterior-extra";
+    appendOptions(carGroup, CAR_EXTERIOR_CLOTHING_OPTIONS);
+    select.append(carGroup);
+  }
+  const available = new Set(garmentOptionsForSection(section).map((option) => option.value));
   select.value = available.has(previous) ? previous : "";
 }
 
@@ -200,7 +210,7 @@ function keepClothingDetailsVisible() {
 function syncGarmentSelect() {
   const select = document.querySelector("#clothing");
   if (!select) return;
-  populateUnifiedClothingSelect(select, select.value);
+  populateUnifiedClothingSelect(select, select.value, activeSection());
   const field = select.closest("label");
   if (field) field.hidden = false;
 }
