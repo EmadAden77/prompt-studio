@@ -5,22 +5,16 @@ import {
   CAR_EXTERIOR_POSES
 } from "./data.js";
 import { STUDIO_SECTION_OPTIONS } from "./studio-section-engine-v1.js";
+import {
+  UNIFIED_CLOTHING_CATALOG,
+  getUnifiedClothingOptions
+} from "./phase30-clothing-catalog.js";
 
 export const VISIBLE_SCENE_KEYS = Object.freeze([
   "bedroom",
   "gym",
   "street",
   "rangeRover",
-  "majlis",
-  "kashta",
-  "barbershop",
-  "grocery",
-  "rooftop",
-  "streetFootball",
-  "gasStation"
-]);
-
-const OWN_SCENE_CLOTHING_KEYS = new Set([
   "majlis",
   "kashta",
   "barbershop",
@@ -59,13 +53,35 @@ const SCENE_LABELS = Object.freeze({
 });
 
 export function garmentSceneForSection(section = "", selectedScene = "") {
-  if (OWN_SCENE_CLOTHING_KEYS.has(selectedScene)) return selectedScene;
-  return SECTION_GARMENT_SCENE[section] || "street";
+  return selectedScene || SECTION_GARMENT_SCENE[section] || "street";
 }
 
-export function garmentOptionsForSection(section = "", selectedScene = "") {
-  const sceneKey = garmentSceneForSection(section, selectedScene);
-  return SCENES[sceneKey]?.clothing ?? [];
+export function garmentOptionsForSection() {
+  return getUnifiedClothingOptions();
+}
+
+function appendOptions(select, options) {
+  for (const option of options) {
+    const node = document.createElement("option");
+    node.value = option.value;
+    node.textContent = option.label;
+    select.append(node);
+  }
+}
+
+export function populateUnifiedClothingSelect(select, preferredValue = "") {
+  if (!select) return;
+  const previous = preferredValue || select.value;
+  select.replaceChildren();
+  for (const section of UNIFIED_CLOTHING_CATALOG) {
+    const group = document.createElement("optgroup");
+    group.label = section.label;
+    group.dataset.clothingSection = section.id;
+    appendOptions(group, section.options);
+    select.append(group);
+  }
+  const available = new Set(UNIFIED_CLOTHING_CATALOG.flatMap((section) => section.options.map((option) => option.value)));
+  select.value = available.has(previous) ? previous : "";
 }
 
 function makeSelect(id, name, title, options) {
@@ -77,12 +93,7 @@ function makeSelect(id, name, title, options) {
   const select = document.createElement("select");
   select.id = id;
   select.name = name;
-  for (const option of options) {
-    const node = document.createElement("option");
-    node.value = option.value;
-    node.textContent = option.label;
-    select.append(node);
-  }
+  appendOptions(select, options);
   field.append(caption, select);
   return { field, select };
 }
@@ -117,12 +128,7 @@ function mountCarExteriorControls() {
     const previous = lighting.select.value;
     lighting.select.replaceChildren();
     const options = carLightingOptions();
-    for (const option of options) {
-      const node = document.createElement("option");
-      node.value = option.value;
-      node.textContent = option.label;
-      lighting.select.append(node);
-    }
+    appendOptions(lighting.select, options);
     if (options.some((item) => item.value === previous)) lighting.select.value = previous;
   };
   document.querySelector("#time")?.addEventListener("change", refreshLighting);
@@ -194,17 +200,7 @@ function keepClothingDetailsVisible() {
 function syncGarmentSelect() {
   const select = document.querySelector("#clothing");
   if (!select) return;
-  const options = garmentOptionsForSection(activeSection(), selectedScene());
-  const previous = select.value;
-  select.replaceChildren();
-  for (const option of options) {
-    const node = document.createElement("option");
-    node.value = option.value;
-    node.textContent = option.label;
-    select.append(node);
-  }
-  if (options.some((item) => item.value === previous)) select.value = previous;
-  else if (options[0]) select.value = options[0].value;
+  populateUnifiedClothingSelect(select, select.value);
   const field = select.closest("label");
   if (field) field.hidden = false;
 }
