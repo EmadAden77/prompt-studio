@@ -93,6 +93,8 @@ export function applySectionCaptureRouting(rawInput = {}) {
   if (route.forceScene && route.scene) raw.scene = route.scene;
   else if (!REAL_SECTION_SCENES.has(currentScene)) raw.scene = route.fallbackScene || route.scene || "street";
 
+  if (REAL_SECTION_SCENES.has(String(raw.scene || ""))) raw.customScene = "";
+
   raw.pose = selfieSafePose(raw.pose, route.captureType);
   if (section === "carExterior") {
     raw.carExteriorPose = selfieSafePose(raw.carExteriorPose, route.captureType) || "door-lean";
