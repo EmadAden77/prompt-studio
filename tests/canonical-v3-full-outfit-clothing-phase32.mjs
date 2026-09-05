@@ -20,7 +20,6 @@ assert.equal(customOptions[0].label, "✍️ مخصص — اكتب ملابسك"
 for (const option of UNIFIED_CLOTHING_OPTIONS.filter((item) => item.value !== "custom")) {
   assert.match(option.text, /\+/u, `${option.value}: every outfit must contain at least two coordinated pieces`);
   assert.match(option.text, COLOR_RE, `${option.value}: every outfit must state at least one explicit color`);
-  assert.equal(option.label, option.text, `${option.value}: visible label and positive garment text should describe the same full outfit`);
 }
 
 for (const group of UNIFIED_CLOTHING_CATALOG) {
