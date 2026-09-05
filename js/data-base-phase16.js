@@ -198,7 +198,7 @@ export const BASE_TEMPLATES = {
   },
   "rangeRover:day:selfie": {
     title: "سيلفي السيارة نهاراً",
-    text: "candid daytime selfie inside a stationary 2017 Range Rover Sport Autobiography Dynamic, beige perforated leather and dark wood trim, realistic physical sunlight in the cabin, a plausible Saudi street or parking area visible through the side window, restrained daytime grain"
+    text: "candid daytime selfie inside a stationary 2017 Range Rover Sport Autobiography Dynamic, Ivory perforated leather and dark wood veneer, realistic physical sunlight in the cabin, a plausible Saudi street or parking area visible through the side window, restrained daytime grain"
   }
 };
 
