@@ -51,7 +51,7 @@ assert.doesNotMatch(thobePrompt, /sleep/iu, "hidden sleep-set default leaked int
 assert.ok(words(thobePrompt) <= 250, `Phase 34 thobe prompt exceeds 250 words (${words(thobePrompt)})`);
 
 const outfit = stable({ ...base, clothing:"casual-tee-black-jeans-blue" });
-assert.match(outfit.prompt, /تيشيرت أسود ثقيل \+ جينز أزرق داكن/u, "unified full outfit top + bottom + color did not reach carExterior prompt");
+assert.match(outfit.prompt, /heavy black cotton T[- ]shirt with dark blue jeans/iu, "unified full outfit top + bottom + color did not reach carExterior prompt");
 assert.doesNotMatch(outfit.prompt, /sleep/iu, "sleep fallback leaked into unified outfit prompt");
 assert.ok(words(outfit.prompt) <= 250, `Phase 34 full-outfit prompt exceeds 250 words (${words(outfit.prompt)})`);
 

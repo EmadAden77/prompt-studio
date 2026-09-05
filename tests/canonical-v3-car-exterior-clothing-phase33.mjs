@@ -29,7 +29,7 @@ assert.match(thobePrompt, /black doubled-cord iqal/iu);
 assert.ok(words(thobePrompt) <= 250);
 
 const outfit = buildCanonicalV3UserOutput({ ...base, clothing:"casual-tee-black-jeans-blue" });
-assert.match(outfit.prompt, /تيشيرت أسود ثقيل \+ جينز أزرق داكن/u);
+assert.match(outfit.prompt, /heavy black cotton T[- ]shirt with dark blue jeans/iu);
 assert.ok(words(outfit.prompt) <= 250);
 const customText = "جاكيت كحلي خفيف + تيشيرت أبيض + بنطلون تشينو بيج";
 const custom = buildCanonicalV3UserOutput({ ...base, clothing:"custom", customClothing:customText });
@@ -40,4 +40,4 @@ assert.deepEqual(custom.canonical.hard_constraints, outfit.canonical.hard_constr
 
 console.log(`PHASE33_OPTIONS=${CAR_EXTERIOR_CLOTHING_OPTIONS.length}`);
 console.log("PHASE33_DETERMINISM=10/10");
-console.log("✓ Phase 33 clothing compatibility preserved under Phase 37 single authority");
+console.log("✓ Phase 33 clothing compatibility preserved under Phase 38 English prompt text authority");

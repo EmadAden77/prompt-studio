@@ -3,6 +3,7 @@ import {
   CLOTHING_SECTION_ORDER,
   CLOTHING_CATALOG,
   CLOTHING_OPTIONS,
+  CLOTHING_TOP_OPTIONS,
   TRADITIONAL,
   getClothingCatalog,
   getClothingOptions,
@@ -67,12 +68,23 @@ function ensureCustomClothingField(select) {
   return field;
 }
 
+function appendOption(select, option) {
+  const node = document.createElement("option");
+  node.value = option.value;
+  node.textContent = option.label;
+  select.append(node);
+}
+
 export function renderUnifiedClothingSelect(preferredValue = "") {
   if (typeof document === "undefined") return;
   const select = document.querySelector("#clothing");
   if (!select) return;
   const current = preferredValue || select.value;
   select.replaceChildren();
+
+  // Phase 38: custom is a top-level option before every optgroup, never nested in "home".
+  for (const option of CLOTHING_TOP_OPTIONS) appendOption(select, option);
+
   for (const section of CLOTHING_CATALOG) {
     const group = document.createElement("optgroup");
     group.label = section.label;

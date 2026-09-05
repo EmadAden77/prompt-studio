@@ -19,7 +19,7 @@ const base = {
 };
 const curated = Array.from({ length:10 }, () => buildCanonicalV3UserOutput({ ...base, clothing:"casual-tee-black-jeans-blue" }));
 assert.ok(curated.every((item) => item.prompt === curated[0].prompt));
-assert.match(curated[0].prompt, /تيشيرت أسود ثقيل \+ جينز أزرق داكن/u);
+assert.match(curated[0].prompt, /heavy black cotton T[- ]shirt with dark blue jeans/iu);
 assert.ok(words(curated[0].prompt) <= 250);
 
 const customText = "قميص كتان أبيض واسع + بنطلون كحلي مستقيم";
@@ -34,4 +34,4 @@ assert.deepEqual(custom[0].canonical.hard_constraints, curated[0].canonical.hard
 
 console.log(`PHASE32_OPTIONS=${UNIFIED_CLOTHING_OPTIONS.length}`);
 console.log("PHASE32_DETERMINISM=10/10");
-console.log("✓ Phase 32 full-outfit contracts preserved under Phase 37 clothing authority");
+console.log("✓ Phase 32 full-outfit contracts preserved under Phase 38 English prompt text authority");
