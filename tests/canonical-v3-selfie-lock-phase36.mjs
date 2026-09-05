@@ -69,9 +69,9 @@ const carOutputs = Array.from({ length:10 }, () => buildCanonicalV3UserOutput(ca
 const car = carOutputs[0];
 assert.equal(firstSentence(car.prompt), "A candid direct selfie.");
 assert.equal(car.canonical.scene.id, "carExterior");
+assert.equal(car.resolution.cleanInput.scene, "carExterior", "Phase 36: carExterior routing must remain canonical even when Phase 37 budget drops environment detail");
 assert.match(car.prompt, /2017 Range Rover Sport Autobiography Dynamic/iu);
 assert.match(car.prompt, /Fuji White/iu);
-assert.match(car.prompt, /sandy shoulder with sparse shrubs and an open horizon/iu);
 assert.match(car.prompt, /white thobe/iu);
 assert.match(car.prompt, /red-and-white fine checkered shemagh/iu);
 assert.match(car.prompt, /black doubled-cord iqal/iu);
@@ -88,4 +88,4 @@ console.log(`PHASE36_SECTIONS=${Object.keys(SECTION_CAPTURE_ROUTING).length}`);
 console.log(`PHASE36_CAR_EXTERIOR_WORDS=${words(car.prompt)}`);
 console.log("PHASE36_DETERMINISM=10/10");
 console.log(`PHASE36_CAR_EXTERIOR_PROMPT=${car.prompt}`);
-console.log("✓ Phase 36 selfie lock and full section routing de-conflict passed");
+console.log("✓ Phase 36 selfie lock and full section routing de-conflict passed under Phase 37 budget priority");

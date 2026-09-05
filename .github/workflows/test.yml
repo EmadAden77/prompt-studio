@@ -100,3 +100,5 @@ jobs:
         run: node tests/canonical-v3-car-exterior-runtime-phase35.mjs
       - name: Run Phase 36 selfie lock and section routing tests
         run: node tests/canonical-v3-selfie-lock-phase36.mjs
+      - name: Run Phase 37 master de-conflict tests
+        run: node tests/canonical-v3-master-deconflict-phase37.mjs
