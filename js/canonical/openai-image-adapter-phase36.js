@@ -55,7 +55,11 @@ const LOW_PRIORITY_PATTERNS = Object.freeze([
   /Lighting follows the selected real-world day or night source\.\s*/iu,
   /Captured with the selected physically plausible front-camera geometry\.\s*/iu,
   /; Autobiography Dynamic badging and Saudi plate, never legible/iu,
-  /Tires (?:have realistic contact shadow|cast realistic contact shadows)\.\s*/iu
+  /Tires (?:have realistic contact shadow|cast realistic contact shadows)\.\s*/iu,
+  /Natural wear appears on frequently touched surfaces\.\s*/iu,
+  /Realistic dynamic range with natural highlight rolloff\.\s*/iu,
+  /Natural sensor noise is visible in shadow areas\.\s*/iu,
+  /Subtle skin texture with natural pores\.\s*/iu
 ]);
 
 function keepWithinBudget(prompt, maxWords = 250) {
