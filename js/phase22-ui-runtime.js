@@ -5,8 +5,12 @@ import {
   CAR_EXTERIOR_POSES
 } from "./data.js";
 import { STUDIO_SECTION_OPTIONS } from "./studio-section-engine-v1.js";
-import { CLOTHING_CATALOG, getClothingOptions } from "./clothing-authority.js";
-// CAR_EXTERIOR_CLOTHING_CATALOG is now a compatibility alias only; the live UI uses CLOTHING_CATALOG for every section.
+import {
+  CLOTHING_CATALOG as UNIFIED_CLOTHING_CATALOG,
+  CLOTHING_TOP_OPTIONS,
+  getClothingOptions as getUnifiedClothingOptions
+} from "./clothing-authority.js";
+// CAR_EXTERIOR_CLOTHING_CATALOG is now a compatibility alias only; the live UI uses the clothing authority for every section.
 
 export const VISIBLE_SCENE_KEYS = Object.freeze([
   "bedroom", "gym", "street", "rangeRover", "majlis", "kashta",
@@ -28,7 +32,8 @@ export function garmentSceneForSection(section = "", selectedScene = "") {
   return selectedScene || SECTION_GARMENT_SCENE[section] || "street";
 }
 
-export function garmentOptionsForSection() { return getClothingOptions(); }
+export function garmentOptionsForSection() { return getUnifiedClothingOptions(); }
+export function shouldShowCustomClothing(value = "") { return String(value) === "custom"; }
 
 function appendOptions(select, options) {
   for (const option of options || []) {
@@ -39,10 +44,11 @@ function appendOptions(select, options) {
   }
 }
 
-function populateCatalog(select, catalog, preferredValue = "") {
+function populateCatalog(select, catalog, preferredValue = "", topOptions = []) {
   if (!select) return;
   const previous = preferredValue || select.value;
   select.replaceChildren();
+  appendOptions(select, topOptions);
   for (const clothingSection of catalog || []) {
     const group = document.createElement("optgroup");
     group.label = clothingSection?.label || clothingSection?.id || "";
@@ -50,12 +56,15 @@ function populateCatalog(select, catalog, preferredValue = "") {
     appendOptions(group, clothingSection?.options || []);
     select.append(group);
   }
-  const available = new Set((catalog || []).flatMap((section) => section?.options || []).map((option) => option?.value));
+  const available = new Set([
+    ...(topOptions || []).map((option) => option?.value),
+    ...(catalog || []).flatMap((section) => section?.options || []).map((option) => option?.value)
+  ]);
   select.value = available.has(previous) ? previous : (select.options[0]?.value || "");
 }
 
 export function populateUnifiedClothingSelect(select, preferredValue = "") {
-  populateCatalog(select, CLOTHING_CATALOG, preferredValue);
+  populateCatalog(select, UNIFIED_CLOTHING_CATALOG, preferredValue, CLOTHING_TOP_OPTIONS);
 }
 
 function makeSelect(id, name, title, options) {
@@ -77,10 +86,34 @@ function carLightingOptions() {
   return LIGHTING_OPTIONS.carExterior?.[time] ?? [];
 }
 
+function ensureCustomClothingField(select) {
+  if (typeof document === "undefined" || !select) return null;
+  let field = document.querySelector("#custom-clothing-field");
+  if (!field) {
+    field = document.createElement("label");
+    field.className = "field field-span-2";
+    field.id = "custom-clothing-field";
+    field.htmlFor = "custom-clothing";
+    const title = document.createElement("span");
+    title.textContent = "وصف الملابس المخصص";
+    const input = document.createElement("input");
+    input.id = "custom-clothing";
+    input.name = "customClothing";
+    input.type = "text";
+    input.placeholder = "مثال: قميص كتان أبيض + بنطلون كحلي";
+    const help = document.createElement("small");
+    help.textContent = "يُستخدم النص كما كتبته عند اختيار مخصص.";
+    field.append(title, input, help);
+    select.closest("label")?.after(field);
+  }
+  field.hidden = !shouldShowCustomClothing(select.value);
+  return field;
+}
+
 function syncCustomClothingVisibility() {
-  const selected = document.querySelector("#clothing")?.value;
-  const field = document.querySelector("#custom-clothing-field");
-  if (field) field.hidden = selected !== "custom";
+  const select = document.querySelector("#clothing");
+  const field = ensureCustomClothingField(select);
+  if (field) field.hidden = !shouldShowCustomClothing(select?.value);
 }
 
 function mountCarExteriorControls() {
@@ -177,6 +210,7 @@ function syncGarmentSelect() {
   const select = document.querySelector("#clothing");
   if (!select) return;
   populateUnifiedClothingSelect(select, select.value);
+  ensureCustomClothingField(select);
   syncCarExteriorVisibility();
 }
 
