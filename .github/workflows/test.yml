@@ -84,3 +84,5 @@ jobs:
         run: node tests/canonical-v3-glass-realism-phase27.mjs
       - name: Run Phase 28 Saudi realism modifier tests
         run: node tests/canonical-v3-saudi-realism-phase28.mjs
+      - name: Run Phase 29 Saudi realism completion tests
+        run: node tests/canonical-v3-saudi-realism-phase29.mjs
