@@ -4,7 +4,7 @@ import { resolveCanonicalConflicts } from "./conflict-resolver.js";
 import { buildOpenAIImagePrompt, describeHeadwear } from "./openai-image-adapter-phase36.js";
 import { applyGroupPhase13, enrichGroupPromptPhase13 } from "./group-phase13.js";
 import { SCENES, LIGHTING_OPTIONS, CAR_EXTERIOR_LOCATIONS, CAR_EXTERIOR_POSES } from "../data.js";
-import { resolveClothingText } from "../phase30-clothing-catalog.js";
+import { resolveClothingText } from "../clothing-authority.js";
 
 export const CAR_EXTERIOR_PROMPT_WORD_BUDGET = 280;
 const PHASE34_ROUTING_WORD_BUDGET = 250;
@@ -26,17 +26,6 @@ export const SECTION_CAPTURE_ROUTING = Object.freeze({
 const REAL_SECTION_SCENES = new Set(["bedroom","gym","street","carExterior","rangeRover","majlis","kashta","barbershop","grocery","rooftop","streetFootball","gasStation"]);
 const SELFIE_CAPTURE_TYPES = new Set(["direct_front_camera_selfie","subject_held_driver_selfie","group_selfie","mirror_selfie"]);
 const DAILY_SCENE_KEYS = new Set(["majlis", "kashta", "barbershop", "grocery", "rooftop", "streetFootball", "gasStation"]);
-const SECTION_GARMENT_SCENE = Object.freeze({
-  solo: "street",
-  street: "street",
-  bedroom: "bedroom",
-  gym: "gym",
-  car: "rangeRover",
-  carExterior: "carExterior",
-  accidental: "street",
-  custom: "street",
-  group: "street"
-});
 const WEAR_TEXT = Object.freeze({
   fresh: "fresh wear",
   "normal-day": "ordinary daily wear",
@@ -45,39 +34,24 @@ const WEAR_TEXT = Object.freeze({
   "home-used": "home-used wear",
   "post-workout": "post-workout wear"
 });
-const FIT_TEXT = Object.freeze({
-  slim: "slim fit",
-  regular: "regular fit",
-  relaxed: "relaxed fit",
-  oversized: "oversized fit"
-});
+const FIT_TEXT = Object.freeze({ slim:"slim fit", regular:"regular fit", relaxed:"relaxed fit", oversized:"oversized fit" });
 const IRON_TEXT = Object.freeze({
-  "fresh-pressed": "freshly pressed",
-  "normal-pressed": "normally pressed",
-  "lightly-unpressed": "lightly unpressed",
-  unpressed: "unpressed"
+  "fresh-pressed":"freshly pressed",
+  "normal-pressed":"normally pressed",
+  "lightly-unpressed":"lightly unpressed",
+  unpressed:"unpressed"
 });
 
-function optionText(options, value) {
-  return options?.find?.((item) => item.value === value)?.text || "";
-}
-function humanize(value) {
-  return String(value || "").trim().replace(/[_-]+/gu, " ").replace(/\s+/gu, " ");
-}
-function wordCount(value) {
-  return String(value || "").trim().split(/\s+/u).filter(Boolean).length;
-}
+function optionText(options, value) { return options?.find?.((item) => item.value === value)?.text || ""; }
+function humanize(value) { return String(value || "").trim().replace(/[_-]+/gu, " ").replace(/\s+/gu, " "); }
+function wordCount(value) { return String(value || "").trim().split(/\s+/u).filter(Boolean).length; }
 
 function selfieSafePose(value, captureType) {
   const pose = String(value || "").trim();
   if (!SELFIE_CAPTURE_TYPES.has(captureType) || !pose) return pose;
-  if (/both\s+hands?\s+(?:in\s+)?(?:the\s+)?pockets?/iu.test(pose) || /both-hands?-pockets?/iu.test(pose)) {
-    return "one hand in a pocket while the other holds the phone";
-  }
+  if (/both\s+hands?\s+(?:in\s+)?(?:the\s+)?pockets?/iu.test(pose) || /both-hands?-pockets?/iu.test(pose)) return "one hand in a pocket while the other holds the phone";
   if (/arms?\s+crossed|crossed-arms?/iu.test(pose)) return "one hand relaxed at his side";
-  if (/holding\s+(?:an?\s+)?object\s+with\s+both\s+hands|both-hands?-object/iu.test(pose)) {
-    return "free hand raising a peace sign";
-  }
+  if (/holding\s+(?:an?\s+)?object\s+with\s+both\s+hands|both-hands?-object/iu.test(pose)) return "free hand raising a peace sign";
   return pose;
 }
 
@@ -86,15 +60,12 @@ export function applySectionCaptureRouting(rawInput = {}) {
   const section = String(raw.studioSection || "").trim();
   const route = SECTION_CAPTURE_ROUTING[section];
   if (!route) return raw;
-
   raw.captureType = route.captureType;
   raw.intentType = route.intentType;
   const currentScene = String(raw.scene || "").trim();
   if (route.forceScene && route.scene) raw.scene = route.scene;
   else if (!REAL_SECTION_SCENES.has(currentScene)) raw.scene = route.fallbackScene || route.scene || "street";
-
   if (REAL_SECTION_SCENES.has(String(raw.scene || ""))) raw.customScene = "";
-
   raw.pose = selfieSafePose(raw.pose, route.captureType);
   if (section === "carExterior") {
     const requestedCarPose = String(raw.carExteriorPose || "").trim();
@@ -104,18 +75,8 @@ export function applySectionCaptureRouting(rawInput = {}) {
   return raw;
 }
 
-function garmentScene(raw, clean) {
-  if (DAILY_SCENE_KEYS.has(clean.scene)) return clean.scene;
-  return SECTION_GARMENT_SCENE[raw.studioSection] || SECTION_GARMENT_SCENE[clean.studioSection] || clean.scene || "street";
-}
-
 function resolveClothingDetails(raw, clean) {
-  const sceneKey = garmentScene(raw, clean);
-  const explicitValue = sceneKey === "carExterior"
-    ? (raw.carExteriorClothing || raw.clothing)
-    : raw.clothing;
-  const selectedGarment = explicitValue || clean.clothing;
-  const garment = resolveClothingText(selectedGarment, raw);
+  const garment = resolveClothingText(raw.carExteriorClothing || raw.clothing, raw);
   const fabricValue = raw.fabric || clean.fabric;
   const weightValue = raw.fabricWeight || clean.fabricWeight;
   const wearValue = raw.wearState || clean.wearState;
@@ -128,7 +89,7 @@ function resolveClothingDetails(raw, clean) {
   const ironText = IRON_TEXT[ironValue] || (ironValue ? humanize(ironValue) : "");
   const userModifier = String(raw.clothingCustom || clean.clothingCustom || "").trim();
   const clothingCustom = [ironText, userModifier].filter(Boolean).join("; ");
-  return { ...clean, clothing: garment, fabric, fabricWeight, wearState, clothingFit, clothingCustom };
+  return { ...clean, clothing:garment, fabric, fabricWeight, wearState, clothingFit, clothingCustom };
 }
 
 function phase23Input(rawInput, cleanInput) {
@@ -137,13 +98,12 @@ function phase23Input(rawInput, cleanInput) {
   clean = resolveClothingDetails(raw, clean);
   clean = {
     ...clean,
-    studioSection: raw.studioSection || clean.studioSection,
-    intentType: raw.intentType || clean.intentType,
-    captureType: raw.captureType || clean.captureType,
-    scene: raw.scene || clean.scene,
-    pose: raw.pose || clean.pose
+    studioSection:raw.studioSection || clean.studioSection,
+    intentType:raw.intentType || clean.intentType,
+    captureType:raw.captureType || clean.captureType,
+    scene:raw.scene || clean.scene,
+    pose:raw.pose || clean.pose
   };
-
   if (raw.studioSection === "carExterior") {
     const location = String(raw.carExteriorLocation || "villa");
     const pose = String(raw.carExteriorPose || "door-lean");
@@ -153,32 +113,23 @@ function phase23Input(rawInput, cleanInput) {
     const poseText = optionText(CAR_EXTERIOR_POSES, pose) || pose;
     return {
       ...clean,
-      studioSection: "carExterior",
-      intentType: "selfie",
-      captureType: "direct_front_camera_selfie",
-      scene: "carExterior",
-      customScene: `A parked Range Rover exterior selfie, ${locationText}, with the subject ${poseText}`,
-      pose: poseText,
-      lighting: optionText(LIGHTING_OPTIONS.carExterior?.[time], lightingId) || clean.lighting,
+      studioSection:"carExterior",
+      intentType:"selfie",
+      captureType:"direct_front_camera_selfie",
+      scene:"carExterior",
+      customScene:`A parked Range Rover exterior selfie, ${locationText}, with the subject ${poseText}`,
+      pose:poseText,
+      lighting:optionText(LIGHTING_OPTIONS.carExterior?.[time], lightingId) || clean.lighting,
       time,
-      sceneFacts: {
-        ...(clean.sceneFacts && typeof clean.sceneFacts === "object" ? clean.sceneFacts : {}),
-        carExteriorLocation: location,
-        carExteriorPose: pose
-      }
+      sceneFacts:{ ...(clean.sceneFacts && typeof clean.sceneFacts === "object" ? clean.sceneFacts : {}), carExteriorLocation:location, carExteriorPose:pose }
     };
   }
-
-  if (DAILY_SCENE_KEYS.has(clean.scene) && SCENES[clean.scene]?.environment) {
-    return { ...clean, customScene: SCENES[clean.scene].environment };
-  }
+  if (DAILY_SCENE_KEYS.has(clean.scene) && SCENES[clean.scene]?.environment) return { ...clean, customScene:SCENES[clean.scene].environment };
   return clean;
 }
 
 function enforcePhase34CarExteriorHeadwearBudget(prompt, canonical) {
-  if (canonical?.scene?.id !== "carExterior" || !describeHeadwear(canonical) || wordCount(prompt) <= PHASE34_ROUTING_WORD_BUDGET) {
-    return prompt;
-  }
+  if (canonical?.scene?.id !== "carExterior" || !describeHeadwear(canonical) || wordCount(prompt) <= PHASE34_ROUTING_WORD_BUDGET) return prompt;
   return String(prompt).replace(PHASE34_REDUNDANT_GLASS_SENTENCE, "").replace(/\s{2,}/gu, " ").trim();
 }
 

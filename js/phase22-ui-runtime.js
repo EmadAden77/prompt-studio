@@ -5,66 +5,30 @@ import {
   CAR_EXTERIOR_POSES
 } from "./data.js";
 import { STUDIO_SECTION_OPTIONS } from "./studio-section-engine-v1.js";
-import {
-  UNIFIED_CLOTHING_CATALOG,
-  getUnifiedClothingOptions
-} from "./phase30-clothing-catalog.js";
-import {
-  CAR_EXTERIOR_CLOTHING_CATALOG,
-  CAR_EXTERIOR_CLOTHING_OPTIONS
-} from "./car-exterior-clothing-phase33.js";
+import { CLOTHING_CATALOG, getClothingOptions } from "./clothing-authority.js";
+// CAR_EXTERIOR_CLOTHING_CATALOG is now a compatibility alias only; the live UI uses CLOTHING_CATALOG for every section.
 
 export const VISIBLE_SCENE_KEYS = Object.freeze([
-  "bedroom",
-  "gym",
-  "street",
-  "rangeRover",
-  "majlis",
-  "kashta",
-  "barbershop",
-  "grocery",
-  "rooftop",
-  "streetFootball",
-  "gasStation"
+  "bedroom", "gym", "street", "rangeRover", "majlis", "kashta",
+  "barbershop", "grocery", "rooftop", "streetFootball", "gasStation"
 ]);
 
 const SECTION_GARMENT_SCENE = Object.freeze({
-  solo: "street",
-  street: "street",
-  bedroom: "bedroom",
-  gym: "gym",
-  car: "rangeRover",
-  carExterior: "carExterior",
-  accidental: "street",
-  custom: "street",
-  group: "street"
+  solo:"street", street:"street", bedroom:"bedroom", gym:"gym", car:"rangeRover",
+  carExterior:"carExterior", accidental:"street", custom:"street", group:"street"
 });
-
 const DETAIL_FIELD_IDS = Object.freeze(["fabric", "fabric-weight", "iron-state", "wear-state", "clothing-fit"]);
-
 const SCENE_LABELS = Object.freeze({
-  bedroom: "غرفة نوم واقعية",
-  gym: "نادٍ سعودي حديث",
-  street: "شارع أو موقف سعودي",
-  rangeRover: "رنج روفر 2017",
-  majlis: "مجلس سعودي",
-  kashta: "كشتة بر",
-  barbershop: "صالون حلاقة سعودي",
-  grocery: "بقالة سعودية",
-  rooftop: "سطح المنزل",
-  streetFootball: "ملعب حارة",
-  gasStation: "محطة وقود"
+  bedroom:"غرفة نوم واقعية", gym:"نادٍ سعودي حديث", street:"شارع أو موقف سعودي", rangeRover:"رنج روفر 2017",
+  majlis:"مجلس سعودي", kashta:"كشتة بر", barbershop:"صالون حلاقة سعودي", grocery:"بقالة سعودية",
+  rooftop:"سطح المنزل", streetFootball:"ملعب حارة", gasStation:"محطة وقود"
 });
 
 export function garmentSceneForSection(section = "", selectedScene = "") {
   return selectedScene || SECTION_GARMENT_SCENE[section] || "street";
 }
 
-export function garmentOptionsForSection(section = "") {
-  return section === "carExterior"
-    ? CAR_EXTERIOR_CLOTHING_OPTIONS.map((option) => ({ ...option }))
-    : getUnifiedClothingOptions();
-}
+export function garmentOptionsForSection() { return getClothingOptions(); }
 
 function appendOptions(select, options) {
   for (const option of options || []) {
@@ -86,16 +50,12 @@ function populateCatalog(select, catalog, preferredValue = "") {
     appendOptions(group, clothingSection?.options || []);
     select.append(group);
   }
-  const available = new Set(
-    (catalog || []).flatMap((section) => section?.options || []).map((option) => option?.value)
-  );
+  const available = new Set((catalog || []).flatMap((section) => section?.options || []).map((option) => option?.value));
   select.value = available.has(previous) ? previous : (select.options[0]?.value || "");
 }
 
-export function populateUnifiedClothingSelect(select, preferredValue = "", section = "") {
-  if (!select) return;
-  const catalog = section === "carExterior" ? CAR_EXTERIOR_CLOTHING_CATALOG : UNIFIED_CLOTHING_CATALOG;
-  populateCatalog(select, catalog, preferredValue);
+export function populateUnifiedClothingSelect(select, preferredValue = "") {
+  populateCatalog(select, CLOTHING_CATALOG, preferredValue);
 }
 
 function makeSelect(id, name, title, options) {
@@ -112,30 +72,13 @@ function makeSelect(id, name, title, options) {
   return { field, select };
 }
 
-function makeCatalogSelect(id, name, title, catalog) {
-  const field = document.createElement("label");
-  field.className = "field field-span-2";
-  field.htmlFor = id;
-  const caption = document.createElement("span");
-  caption.textContent = title;
-  const select = document.createElement("select");
-  select.id = id;
-  select.name = name;
-  populateCatalog(select, catalog);
-  field.append(caption, select);
-  return { field, select };
-}
-
 function carLightingOptions() {
   const time = document.querySelector("#time")?.value === "day" ? "day" : "night";
   return LIGHTING_OPTIONS.carExterior?.[time] ?? [];
 }
 
 function syncCustomClothingVisibility() {
-  const carActive = activeSection() === "carExterior";
-  const selected = carActive
-    ? document.querySelector("#car-exterior-clothing")?.value
-    : document.querySelector("#clothing")?.value;
+  const selected = document.querySelector("#clothing")?.value;
   const field = document.querySelector("#custom-clothing-field");
   if (field) field.hidden = selected !== "custom";
 }
@@ -144,7 +87,6 @@ function mountCarExteriorControls() {
   if (document.querySelector("#car-exterior-fields")) return;
   const grid = document.querySelector("#pose")?.closest(".form-grid");
   if (!grid) return;
-
   const wrap = document.createElement("div");
   wrap.className = "field field-span-2";
   wrap.id = "car-exterior-fields";
@@ -153,21 +95,12 @@ function mountCarExteriorControls() {
   title.textContent = "إعدادات سيلفي بجانب السيارة";
   const inner = document.createElement("div");
   inner.className = "form-grid";
-
   const location = makeSelect("car-exterior-location", "carExteriorLocation", "موقع الوقوف", CAR_EXTERIOR_LOCATIONS);
   const pose = makeSelect("car-exterior-pose", "carExteriorPose", "الوضعية بجانب السيارة", CAR_EXTERIOR_POSES);
   const lighting = makeSelect("car-exterior-lighting", "carExteriorLighting", "الإضاءة", carLightingOptions());
-  const clothing = makeCatalogSelect("car-exterior-clothing", "carExteriorClothing", "الملابس", CAR_EXTERIOR_CLOTHING_CATALOG);
-  clothing.select.value = CAR_EXTERIOR_CLOTHING_OPTIONS.some((option) => option.value === "thobe-white")
-    ? "thobe-white"
-    : (clothing.select.options[0]?.value || "");
-
-  inner.append(location.field, pose.field, lighting.field, clothing.field);
+  inner.append(location.field, pose.field, lighting.field);
   wrap.append(title, inner);
   grid.prepend(wrap);
-
-  clothing.select.addEventListener("change", syncCustomClothingVisibility);
-
   const refreshLighting = () => {
     const previous = lighting.select.value;
     lighting.select.replaceChildren();
@@ -185,35 +118,21 @@ function decorateSectionCards() {
     if (option) card.dataset.studioSection = option.value;
   });
 }
-
-function activeSection() {
-  return document.querySelector("#studio-section")?.value || "";
-}
-
-function selectedScene() {
-  return document.querySelector("#scene")?.value || "";
-}
+function activeSection() { return document.querySelector("#studio-section")?.value || ""; }
+function selectedScene() { return document.querySelector("#scene")?.value || ""; }
 
 function syncCarExteriorVisibility() {
   const active = activeSection() === "carExterior";
   const fields = document.querySelector("#car-exterior-fields");
   if (fields) fields.hidden = !active;
-
   const standardPose = document.querySelector("#pose")?.closest("label");
   const standardPoseFamily = document.querySelector("#pose-family")?.closest("label");
   if (standardPose) standardPose.hidden = active;
   if (standardPoseFamily) standardPoseFamily.hidden = active;
-
-  const standardClothing = document.querySelector("#clothing");
-  const standardClothingField = standardClothing?.closest("label");
-  if (standardClothingField) standardClothingField.hidden = active;
-  if (standardClothing) standardClothing.disabled = active;
-
-  const carClothing = document.querySelector("#car-exterior-clothing");
-  const carClothingField = carClothing?.closest("label");
-  if (carClothingField) carClothingField.hidden = !active;
-  if (carClothing) carClothing.disabled = !active;
-
+  const clothing = document.querySelector("#clothing");
+  const clothingField = clothing?.closest("label");
+  if (clothingField) clothingField.hidden = false;
+  if (clothing) clothing.disabled = false;
   syncCustomClothingVisibility();
 }
 
@@ -257,9 +176,7 @@ function keepClothingDetailsVisible() {
 function syncGarmentSelect() {
   const select = document.querySelector("#clothing");
   if (!select) return;
-  if (activeSection() !== "carExterior") {
-    populateUnifiedClothingSelect(select, select.value, activeSection());
-  }
+  populateUnifiedClothingSelect(select, select.value);
   syncCarExteriorVisibility();
 }
 
@@ -290,9 +207,7 @@ export function installPhase22UI() {
         keepClothingDetailsVisible();
       }, 0);
     }
-    if (["time", "studio-section", "clothing", "car-exterior-clothing"].includes(event.target?.id)) {
-      setTimeout(syncAll, 0);
-    }
+    if (["time", "studio-section", "clothing"].includes(event.target?.id)) setTimeout(syncAll, 0);
   });
 }
 
