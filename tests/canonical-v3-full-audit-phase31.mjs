@@ -9,7 +9,10 @@ import {
   STREET_MOODS
 } from "../js/data-base-phase16.js";
 import { CAR_EXTERIOR_SPEC } from "../js/data.js";
-import { UNIFIED_CLOTHING_CATALOG, UNIFIED_CLOTHING_OPTIONS } from "../js/phase30-clothing-catalog.js";
+import {
+  CLOTHING_CATALOG as UNIFIED_CLOTHING_CATALOG,
+  CLOTHING_OPTIONS as UNIFIED_CLOTHING_OPTIONS
+} from "../js/clothing-authority.js";
 import {
   BASE_SKIN_TEXTURE as CANONICAL_BASE_SKIN_TEXTURE,
   buildOpenAIImagePrompt,
@@ -46,11 +49,11 @@ for (const relative of ["js/data-base-phase16.js", "js/wiki-selfie-data-v1.js", 
 const indexSource = read("index.html");
 const uiSource = read("js/phase22-ui-runtime.js");
 assert.equal((indexSource.match(/id="clothing"/gu) || []).length, 1, "exactly one standard clothing select must exist");
-assert.match(uiSource, /if \(field\) field\.hidden = false;/u, "unified clothing field must remain visible in every section including carExterior");
+assert.match(uiSource, /if \(clothingField\) clothingField\.hidden = false;/u, "unified clothing field must remain visible in every section including carExterior");
 assert.doesNotMatch(uiSource, /field\.hidden = activeSection\(\) === "carExterior"/u, "carExterior must not hide the only clothing select");
 assert.equal(UNIFIED_CLOTHING_CATALOG.length, 6);
 assert.deepEqual(UNIFIED_CLOTHING_CATALOG.map((group) => group.label), ["منزل", "كاجوال", "رسمي", "رياضي", "تقليدي", "خارجي"]);
-assert.ok(UNIFIED_CLOTHING_OPTIONS.length >= 15, "unified clothing catalog must contain at least 15 mapped garments");
+assert.ok(UNIFIED_CLOTHING_OPTIONS.length >= 90, "unified clothing authority must contain the full 90+ catalog");
 assert.equal(UNIFIED_CLOTHING_OPTIONS.filter((item) => item.value !== "custom").every((item) => item.value && item.text), true, "all non-custom clothing values must map to prompt text");
 
 // 4) gym/street are Canonical-enabled even when stored engine is legacy.
@@ -138,4 +141,4 @@ for (const raw of auditCases) {
 console.log(`PHASE31_UNIFIED_CLOTHING=${UNIFIED_CLOTHING_OPTIONS.length}`);
 console.log(`PHASE31_RANGE_ROVER_WORDS=${words(rangeRoverOutputs[0])}`);
 console.log("PHASE31_DETERMINISM=10/10");
-console.log("✓ Phase 31 full audit de-conflict contracts passed");
+console.log("✓ Phase 31 full audit de-conflict contracts passed under Phase 39 clothing authority");
