@@ -1,3 +1,4 @@
+import "../phase30-clothing-catalog.js";
 import { buildCanonicalV3 } from "../canonical-v3-engine.js";
 import { resolveCanonicalConflicts } from "./conflict-resolver.js";
 import { buildOpenAIImagePrompt } from "./openai-image-adapter.js";

@@ -86,3 +86,5 @@ jobs:
         run: node tests/canonical-v3-saudi-realism-phase28.mjs
       - name: Run Phase 29 Saudi realism completion tests
         run: node tests/canonical-v3-saudi-realism-phase29.mjs
+      - name: Run Phase 30 unified clothing catalog tests
+        run: node tests/canonical-v3-unified-clothing-phase30.mjs
