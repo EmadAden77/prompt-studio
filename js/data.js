@@ -46,7 +46,7 @@ export const SAUDI_REALISM_MODIFIERS = Object.freeze({
     Object.freeze({
       id: "realistic_crowd",
       label: "حشود بخلفية واقعية",
-      prompt: "soft-focus people in white thobes and black abayas"
+      prompt: "soft-focus background characters, people in everyday slightly wrinkled white thobes, casual traditional sandals, some in casually draped red and white shemaghs, women in black abayas walking naturally, passersby in casual work clothes"
     }),
     Object.freeze({
       id: "human_imperfections",
