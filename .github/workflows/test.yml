@@ -62,3 +62,5 @@ jobs:
         run: node tests/canonical-v3-feature-flag.mjs
       - name: Run Phase 13 group selfie diversity tests
         run: node tests/canonical-v3-group-phase13.mjs
+      - name: Run Phase 17 place realism tests
+        run: node tests/canonical-v3-place-realism.mjs
