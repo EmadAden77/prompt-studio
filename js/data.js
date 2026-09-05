@@ -17,17 +17,17 @@ export const SAUDI_REALISM_MODIFIERS = Object.freeze({
     Object.freeze({
       id: "saudi_bufia",
       label: "بوفية شعبية",
-      prompt: "small neighborhood Saudi bufia cafe with a stainless counter, stacked paper cups, a tea urn, simple plastic stools, sun-faded wall paint, and a generic soft-focus menu board with no legible text"
+      prompt: "Saudi bufia cafe: tea urn, plastic stools, sun-faded paint"
     }),
     Object.freeze({
       id: "old_service_alley",
       label: "زقاق قديم",
-      prompt: "older Saudi service alley with exposed utility wires, wall-mounted air-conditioning units, patched stucco, utility boxes, dusty curb edges, and irregular shade from closely spaced buildings"
+      prompt: "Saudi service alley: utility wires, air-conditioning units"
     }),
     Object.freeze({
       id: "street_construction",
       label: "أعمال شارع",
-      prompt: "ordinary Saudi street construction with temporary concrete barriers, dusty excavated edges, stacked paving blocks, a compact work vehicle in soft focus, and uneven temporary pedestrian routing"
+      prompt: "Saudi street construction: concrete barriers, stacked paving blocks"
     })
   ]),
   authenticShops: Object.freeze([
