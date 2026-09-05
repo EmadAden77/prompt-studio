@@ -7,6 +7,8 @@ import { SCENES, LIGHTING_OPTIONS, CAR_EXTERIOR_LOCATIONS, CAR_EXTERIOR_POSES } 
 import { PHASE32_NEUTRAL_CUSTOM_OUTFIT } from "../phase30-clothing-catalog.js";
 import { CAR_EXTERIOR_CLOTHING_OPTIONS } from "../car-exterior-clothing-phase33.js";
 
+export const CAR_EXTERIOR_PROMPT_WORD_BUDGET = 280;
+
 const DAILY_SCENE_KEYS = new Set(["majlis", "kashta", "barbershop", "grocery", "rooftop", "streetFootball", "gasStation"]);
 const SECTION_GARMENT_SCENE = Object.freeze({
   solo: "street",
@@ -39,7 +41,6 @@ const IRON_TEXT = Object.freeze({
   "lightly-unpressed": "lightly unpressed",
   unpressed: "unpressed"
 });
-const CAR_EXTERIOR_HEADWEAR_BUDGET_GARMENT = "crisp white thobe with red-and-white checkered shemagh and black iqal";
 
 function optionText(options, value) {
   return options?.find?.((item) => item.value === value)?.text || "";
@@ -62,12 +63,9 @@ function resolveClothingDetails(raw, clean) {
   const selectedGarment = raw.clothing || clean.clothing;
   const customGarment = String(raw.customClothing || "").trim();
   const preserveGroupBudget = raw.studioSection === "group" || clean.studioSection === "group";
-  const resolvedGarment = selectedGarment === "custom"
+  const garment = selectedGarment === "custom"
     ? (customGarment || PHASE32_NEUTRAL_CUSTOM_OUTFIT)
     : (preserveGroupBudget ? (optionText(garments, selectedGarment) || selectedGarment) : (optionText(garments, selectedGarment) || clean.clothing));
-  const garment = sceneKey === "carExterior" && selectedGarment === "thobe-redshemagh-iqal"
-    ? CAR_EXTERIOR_HEADWEAR_BUDGET_GARMENT
-    : resolvedGarment;
   const fabricValue = raw.fabric || clean.fabric;
   const weightValue = raw.fabricWeight || clean.fabricWeight;
   const wearValue = raw.wearState || clean.wearState;
