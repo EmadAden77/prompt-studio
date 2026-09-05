@@ -7,6 +7,7 @@ import {
   UNIFIED_CLOTHING_SECTION_ORDER,
   getUnifiedClothingOptions
 } from "../js/phase30-clothing-catalog.js";
+import { CAR_EXTERIOR_CLOTHING_OPTIONS } from "../js/car-exterior-clothing-phase33.js";
 import { garmentOptionsForSection } from "../js/phase22-ui-runtime.js";
 import { buildCanonicalV3UserOutput } from "../js/canonical/canonical-v3-pipeline.js";
 
@@ -29,8 +30,16 @@ for (const [sceneId, scene] of Object.entries(SCENES)) {
   assert.deepEqual(scene.clothing.map((option) => option.value), flat.map((option) => option.value), `${sceneId}: scene still has a separate clothing list`);
 }
 
-for (const section of ["solo", "street", "bedroom", "gym", "car", "carExterior", "accidental", "custom", "group"]) {
+for (const section of ["solo", "street", "bedroom", "gym", "car", "accidental", "custom", "group"]) {
   assert.deepEqual(garmentOptionsForSection(section, "").map((option) => option.value), unifiedValues, `${section}: UI did not receive the unified clothing list`);
+}
+assert.deepEqual(
+  garmentOptionsForSection("carExterior", "").map((option) => option.value),
+  CAR_EXTERIOR_CLOTHING_OPTIONS.map((option) => option.value),
+  "carExterior must use the Phase 33 wide catalog while the base unified catalog remains unchanged"
+);
+for (const value of ["casual-tee-black-jeans-blue", "formal-poplin-white-suit-black", "sport-tee-black-shorts-gray", "outdoor-leather-brown-tee-white-jeans-blue", "custom"]) {
+  assert.ok(garmentOptionsForSection("carExterior", "").some((option) => option.value === value), `carExterior Phase 33 catalog lost unified option ${value}`);
 }
 
 const uiSource = fs.readFileSync(new URL("../js/phase22-ui-runtime.js", import.meta.url), "utf8");
@@ -62,4 +71,4 @@ for (const sample of crossSceneCases) {
 
 console.log(`PHASE30_GROUPS=${UNIFIED_CLOTHING_CATALOG.length}`);
 console.log(`PHASE32_OUTFITS=${UNIFIED_CLOTHING_OPTIONS.length}`);
-console.log("✓ Unified clothing catalog and optgroup contracts passed");
+console.log("✓ Unified clothing catalog and optgroup contracts passed with Phase 33 carExterior specialization");
