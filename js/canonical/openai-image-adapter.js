@@ -161,9 +161,10 @@ function sentence(value) {
 export function describeSaudiRealism(canonical) {
   const sceneId = text(canonical?.scene?.id);
   const mood = text(canonical?.scene?.facts?.street_mood).toLowerCase();
+  const requestedMood = text(canonical?.scene?.street_mood_request).toLowerCase();
   let place = "";
   if (sceneId === "street" && AUTO_STREET_MOODS.has(mood || "auto")) {
-    const specialPlace = SPECIAL_PLACE_BY_MOOD[mood];
+    const specialPlace = requestedMood && requestedMood !== "auto" ? SPECIAL_PLACE_BY_MOOD[mood] : "";
     place = specialPlace
       ? modifierById("streetsAndPlaces", specialPlace)
       : modifierById("streetsAndPlaces", canonical?.lighting?.source_type === "daylight" ? "saudi_street_day" : "saudi_street_night");
