@@ -57,7 +57,11 @@ export const BASE_NEGATIVE = [
   "fashion-model thinness",
   "bodybuilder bulk",
   "camera-induced shoulder narrowing",
-  "camera-induced height compression"
+  "camera-induced height compression",
+  "opaque black windows",
+  "solid black glass",
+  "blacked-out windows",
+  "black panel roof"
 ];
 
 export const SCENES = {

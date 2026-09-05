@@ -80,3 +80,5 @@ jobs:
         run: node tests/canonical-v3-headwear-phase25.mjs
       - name: Run Phase 26 body anatomy authority tests
         run: node tests/canonical-v3-body-anatomy-phase26.mjs
+      - name: Run Phase 27 glass realism lock tests
+        run: node tests/canonical-v3-glass-realism-phase27.mjs

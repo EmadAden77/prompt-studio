@@ -137,8 +137,53 @@ export function buildOpenAIImagePrompt(canonical, options = {}) {
   const withBodyAuthority = insertPhase26Authority(withHeadwear, canonical);
   const withRequiredGymCue = ensureGymEffort(withBodyAuthority, canonical);
   const withRequiredCarExterior = ensureCarExterior(withRequiredGymCue, canonical);
-  const withLightingLast = moveLightingLast(withRequiredCarExterior);
-  return enforcePhase26WordBudget(withLightingLast, canonical);
+  const withGlassRealism = insertGlassRealism(withRequiredCarExterior, canonical);
+  const withLightingLast = moveLightingLast(withGlassRealism);
+  return retainMicroRealism(enforcePhase26WordBudget(withLightingLast, canonical), canonical);
+}
+
+function retainMicroRealism(prompt, canonical, maxWords = 250) {
+  const signals = describeMicroRealism(canonical).match(/[^.!?]+[.!?]/gu)?.map((part) => part.trim()) ?? [];
+  if (!signals.length || signals.some((signal) => prompt.includes(signal))) return prompt;
+  const signal = signals.sort((a, b) => words(a) - words(b))[0];
+  const lightingIndex = prompt.lastIndexOf("Lighting ");
+  let candidate = lightingIndex < 0
+    ? `${prompt} ${signal}`
+    : `${prompt.slice(0, lightingIndex)}${signal} ${prompt.slice(lightingIndex)}`;
+  if (words(candidate) > maxWords) {
+    candidate = candidate.replace(/Lighting uses daylight and the selected [^.]+ setup\./iu, "Lighting uses daylight.");
+  }
+  if (words(candidate) > maxWords) {
+    candidate = candidate.replace(/Subject wearing thobe white\./iu, "Wearing white thobe.");
+  }
+  return words(candidate) <= maxWords ? candidate : prompt;
+}
+
+function isNightGlassScene(canonical) {
+  const source = text(canonical?.lighting?.source_type).toLowerCase();
+  if (source === "daylight") return false;
+  const evidence = [canonical?.lighting?.description, canonical?.lighting?.id].map(text).join(" ");
+  return /\bnight\b|streetlight|interior spill|villa porch|\bdrl\b|\bdim\b/iu.test(evidence) || source === "practical" || source === "mixed";
+}
+
+export function describeGlassRealism(canonical) {
+  if (canonical?.scene?.id === "carExterior") {
+    if (isNightGlassScene(canonical)) return "At night the glass shows reflected streetlights and a dim view into the cabin instead of black panels; it remains transparent, never opaque black.";
+    return "The windshield and side windows are clear glass with a light factory tint, carrying sky and environment reflections; the Ivory headliner and seats are faintly visible through the side glass; glass is never solid black.";
+  }
+  if (canonical?.scene?.id === "rangeRover" || canonical?.scene?.type === "vehicle") {
+    return "The panoramic glass roof is transparent, revealing the actual sky or night stars above, not a black panel; side windows show the real exterior with natural reflections.";
+  }
+  return "";
+}
+
+function insertGlassRealism(prompt, canonical) {
+  const glass = describeGlassRealism(canonical);
+  if (!glass || prompt.includes(glass)) return prompt;
+  const lightingIndex = Math.max(prompt.lastIndexOf("Lighting uses "), prompt.lastIndexOf("Lighting follows "));
+  return lightingIndex < 0
+    ? `${prompt} ${glass}`.trim()
+    : `${prompt.slice(0, lightingIndex)}${glass} ${prompt.slice(lightingIndex)}`.replace(/\s{2,}/gu, " ").trim();
 }
 
 function moveLightingLast(prompt) {
@@ -184,10 +229,6 @@ function ensureCarExterior(prompt, canonical) {
   if (canonical?.scene?.id !== "carExterior" || /Fuji White/iu.test(prompt)) return prompt;
   const genericScene = text(canonical?.scene?.description);
   const exterior = describeCarExterior(canonical)
-    .replace(
-      /2017 Range Rover Sport Autobiography Dynamic L494 in Fuji White, gloss black grille and side-vent surrounds, 22-inch dark alloy wheels, quad rectangular exhaust tips, LED headlights with DRL signature, panoramic glass roof, tinted rear glass, small Autobiography Dynamic badging and Saudi plate present, both soft-focus and never legible\./iu,
-      "2017 Range Rover Sport Autobiography Dynamic L494 in Fuji White, dark wheels, quad rectangular exhaust tips, LED headlights, panoramic roof, tinted glass, with badge and Saudi plate soft-focus and never legible."
-    )
     .replace(/The vehicle is parked on a driveway before a Saudi villa with beige stone cladding, high wall, metal gate, and a palm tree, with the subject /iu, "Beside a Saudi villa driveway and gate, the subject ")
     .replace(/The vehicle is in a marked outdoor lot with white lines, concrete wheel stops, and a few other parked cars, with the subject /iu, "In a marked outdoor parking lot, the subject ");
   const contact = "Tires have realistic contact shadow; tinted glass carries natural environment reflection.";
@@ -220,12 +261,14 @@ function enforcePhase26WordBudget(prompt, canonical, maxWords = 250) {
 
   if (canonical?.scene?.id === "carExterior") {
     compacted = compacted
-      .replace(
-        /2017 Range Rover Sport Autobiography Dynamic L494 in Fuji White, gloss black grille and side-vent surrounds, 22-inch dark alloy wheels, quad rectangular exhaust tips, LED headlights with DRL signature, panoramic glass roof, tinted rear glass, small Autobiography Dynamic badging and Saudi plate present, both soft-focus and never legible\./iu,
-        "2017 Range Rover Sport Autobiography Dynamic L494 in Fuji White, dark wheels, quad rectangular exhaust tips, LED headlights, panoramic roof, tinted glass, with badge and Saudi plate soft-focus and never legible."
-      )
       .replace(/The vehicle is parked on a driveway before a Saudi villa with beige stone cladding, high wall, metal gate, and a palm tree, with the subject /iu, "Beside a Saudi villa driveway and gate, the subject ")
-      .replace(/The vehicle is in a marked outdoor lot with white lines, concrete wheel stops, and a few other parked cars, with the subject /iu, "In a marked outdoor parking lot, the subject ");
+      .replace(/The vehicle is in a marked outdoor lot with white lines, concrete wheel stops, and a few other parked cars, with the subject /iu, "In a marked outdoor parking lot, the subject ")
+      .replace(/Alloy wheels show light brake dust and the tires sit with realistic contact shadow on the ground\./iu, "Tires have realistic contact shadow.")
+      .replace(/The tires sit with realistic contact shadow on the ground\./iu, "Tires cast realistic contact shadows.")
+      .replace(/Tinted glass mirrors the surroundings and the panoramic roof reflects the sky\./iu, "")
+      .replace(/Tinted glass carries natural reflection of the surroundings\./iu, "")
+      .replace(/a parked-car exterior selfie setting with realistic ground contact, generic Saudi surroundings, and natural environmental reflections\./iu,
+        text(canonical?.scene?.facts?.carExteriorLocation) === "villa" ? "Beside a Saudi villa driveway and gate." : "In an ordinary outdoor parking setting.");
     if (words(compacted) <= maxWords) return compacted;
     for (const pattern of [
       /A single soft catchlight in each eye[^.]*\./iu,
@@ -240,12 +283,20 @@ function enforcePhase26WordBudget(prompt, canonical, maxWords = 250) {
       compacted = removeSentence(compacted, pattern);
       if (words(compacted) <= maxWords) return compacted;
     }
+    compacted = compacted
+      .replace(/ with visible weave and natural standing folds/iu, "")
+      .replace(/Beside a Saudi villa driveway and gate, the subject standing beside the open driver door\./iu, "At the villa, subject beside the open driver door.")
+      .replace(/Tires have realistic contact shadow; tinted glass carries natural environment reflection\./iu, "Tires have realistic contact shadow.")
+      .replace(/small Autobiography Dynamic badging and Saudi plate present, both soft-focus and never legible/iu, "Autobiography Dynamic badging and Saudi plate, never legible");
+    if (words(compacted) <= maxWords) return compacted;
   }
 
   compacted = compactIdentity(compacted);
   if (words(compacted) <= maxWords) return compacted;
 
   compacted = compacted
+    .replace(/\bpose pose\b/giu, "pose")
+    .replace(/\bexpression expression\b/giu, "expression")
     .replace(
       /The primary subject has a ([^,.]+) pose, a ([^,.]+) expression, and wearing ([^.]+)\./iu,
       "Subject: $1 pose, $2 expression, wearing $3."
@@ -256,16 +307,33 @@ function enforcePhase26WordBudget(prompt, canonical, maxWords = 250) {
     )
     .replace(
       /(Xiaomi 15 Ultra[^:]*front camera): (\d+) cm, (-?\d+)° yaw, (-?\d+)° pitch, (-?\d+)° roll, (\d+) mm, and ([^.]+) crop\./iu,
-      "$1: $2cm, yaw $3°, pitch $4°, roll $5°, $6mm, $7 crop."
+      "$1: $2cm, yaw$3°, pitch$4°, roll$5°, $6mm, $7."
     );
   if (words(compacted) <= maxWords) return compacted;
 
   for (const pattern of [
     /Faint natural pore detail across the cheeks\./iu,
     /Soft contact shadows ground the subject and nearby objects to their surfaces\./iu,
-    /Subtle natural eye reflection mirrors the surrounding environment\./iu
+    /Subtle natural eye reflection mirrors the surrounding environment\./iu,
+    /Subtle tone variation between forehead and cheeks\./iu,
+    /A single soft catchlight in each eye matches the dominant light source\./iu
   ]) {
     compacted = removeSentence(compacted, pattern);
+    if (words(compacted) <= maxWords) return compacted;
+  }
+
+  compacted = compacted.replace(/Subject: [^,.]+ pose, [^,.]+ expression, wearing ([^.]+)\./iu, "Subject wearing $1.");
+  if (words(compacted) <= maxWords) return compacted;
+
+  if (describeHeadwear(canonical)) {
+    const bounds = clothingSentenceBounds(compacted, canonical);
+    if (bounds) {
+      const primary = canonical?.subjects?.primary ?? {};
+      const replacement = `Subject: ${text(primary.pose) || "natural pose"}, ${text(primary.expression) || "natural expression"}, wearing selected white thobe.`;
+      compacted = `${compacted.slice(0, bounds.start)}${replacement}${compacted.slice(bounds.end)}`.replace(/\s{2,}/gu, " ").trim();
+      if (words(compacted) <= maxWords) return compacted;
+    }
+    compacted = removeSentence(compacted, /Natural fabric wrinkles and folds\./iu);
     if (words(compacted) <= maxWords) return compacted;
   }
 
@@ -283,7 +351,7 @@ function enforcePhase26WordBudget(prompt, canonical, maxWords = 250) {
   compacted = compacted
     .replace(
       /Inside a stationary 2017 Range Rover Sport Autobiography Dynamic \(L494\) in Fuji White\. The Ebony\/Ivory luxury cabin has Ivory perforated leather seats, dark wood veneer on the center console and door trim, a black-and-Ivory leather multifunction steering wheel, and a panoramic glass roof\./iu,
-      "Inside stationary 2017 Range Rover Sport Autobiography Dynamic L494 in Fuji White. Its cabin retains Ivory perforated leather, dark wood veneer, panoramic glass roof."
+      "Inside stationary 2017 Range Rover Sport Autobiography Dynamic L494, Fuji White; Ivory perforated leather, dark wood veneer, panoramic glass roof."
     );
   if (words(compacted) <= maxWords) return compacted;
 
@@ -296,8 +364,7 @@ function enforcePhase26WordBudget(prompt, canonical, maxWords = 250) {
   for (const pattern of [
     /Scene details:[^.]+\./iu,
     /A candid (?:driver|direct|group|mirror) selfie\./iu,
-    /Captured with the selected physically plausible front-camera geometry\./iu,
-    /The tires sit with realistic contact shadow on the ground\./iu
+    /Captured with the selected physically plausible front-camera geometry\./iu
   ]) {
     compacted = removeSentence(compacted, pattern);
     if (words(compacted) <= maxWords) return compacted;

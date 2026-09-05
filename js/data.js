@@ -2,7 +2,7 @@ import { SCENES, LIGHTING_OPTIONS } from "./data-phase20.js";
 
 export * from "./data-phase20.js";
 
-export const CAR_EXTERIOR_SPEC = "2017 Range Rover Sport Autobiography Dynamic L494 in Fuji White, gloss black grille and side-vent surrounds, 22-inch dark alloy wheels, quad rectangular exhaust tips, LED headlights with DRL signature, panoramic glass roof, tinted rear glass, small Autobiography Dynamic badging and Saudi plate present, both soft-focus and never legible.";
+export const CAR_EXTERIOR_SPEC = "2017 Range Rover Sport Autobiography Dynamic L494 in Fuji White, gloss black grille and side-vent surrounds, 22-inch dark alloy wheels, quad rectangular exhaust tips, LED headlights with DRL signature, panoramic glass roof, lightly tinted TRANSPARENT glass, never opaque black, showing natural reflections and faint glimpses of the Ivory interior, small Autobiography Dynamic badging and Saudi plate present, both soft-focus and never legible.";
 
 export const CAR_EXTERIOR_LOCATIONS = Object.freeze([
   { value: "villa", label: "أمام فيلا", text: "parked on a driveway before a Saudi villa with beige stone cladding, high wall, metal gate, and a palm tree" },
