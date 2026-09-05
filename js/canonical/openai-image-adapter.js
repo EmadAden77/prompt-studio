@@ -146,8 +146,8 @@ export function buildOpenAIImagePrompt(canonical, options = {}) {
   return retainMicroRealism(enforcePhase26WordBudget(withLightingLast, canonical), canonical);
 }
 
-const AUTO_STREET_MOODS = Object.freeze(new Set(["auto", "dawn", "rush", "normal", "school", "prayer", "cafe", "latenight"]));
-const SPECIAL_PLACE_BY_MOOD = Object.freeze({ cafe: "saudi_bufia", normal: "old_service_alley", rush: "street_construction" });
+const AUTO_STREET_MOODS = Object.freeze(new Set(["auto", "dawn", "rush", "normal", "school", "prayer", "cafe", "latenight", "alley", "construction", "bufia"]));
+const SPECIAL_PLACE_BY_MOOD = Object.freeze({ alley: "old_service_alley", construction: "street_construction", bufia: "saudi_bufia" });
 
 function modifierById(group, id) {
   return SAUDI_REALISM_MODIFIERS[group]?.find((item) => item.id === id)?.prompt ?? "";
@@ -278,8 +278,8 @@ function isNightGlassScene(canonical) {
 
 export function describeGlassRealism(canonical) {
   if (canonical?.scene?.id === "carExterior") {
-    if (isNightGlassScene(canonical)) return "At night the glass shows reflected streetlights and a dim view into the cabin instead of black panels; it remains transparent, never opaque black.";
-    return "The windshield and side windows are clear glass with a light factory tint, carrying sky and environment reflections; the Ivory headliner and seats are faintly visible through the side glass; glass is never solid black.";
+    if (isNightGlassScene(canonical)) return "At night, transparent glass carries streetlight reflections and a dim cabin view; never opaque black.";
+    return "Transparent windshield and side glass carry natural reflections and a faint view of the Ivory cabin; never opaque black.";
   }
   if (canonical?.scene?.id === "rangeRover" || canonical?.scene?.type === "vehicle") {
     return "The panoramic glass roof is transparent, revealing the actual sky or night stars above, not a black panel; side windows show the real exterior with natural reflections.";
@@ -341,7 +341,7 @@ function ensureCarExterior(prompt, canonical) {
   const exterior = describeCarExterior(canonical)
     .replace(/The vehicle is parked on a driveway before a Saudi villa with beige stone cladding, high wall, metal gate, and a palm tree, with the subject /iu, "Beside a Saudi villa driveway and gate, the subject ")
     .replace(/The vehicle is in a marked outdoor lot with white lines, concrete wheel stops, and a few other parked cars, with the subject /iu, "In a marked outdoor parking lot, the subject ");
-  const contact = "Tires have realistic contact shadow; tinted glass carries natural environment reflection.";
+  const contact = "Tires have realistic contact shadow.";
   const replacement = [exterior, contact].filter(Boolean).join(" ");
   const withoutLegacyTireCue = removeSentence(prompt, /The tires sit with realistic contact shadow on the ground\./iu);
   return genericScene && withoutLegacyTireCue.includes(`${genericScene}.`)
@@ -396,7 +396,7 @@ function enforcePhase26WordBudget(prompt, canonical, maxWords = 250) {
     compacted = compacted
       .replace(/ with visible weave and natural standing folds/iu, "")
       .replace(/Beside a Saudi villa driveway and gate, the subject standing beside the open driver door\./iu, "At the villa, subject beside the open driver door.")
-      .replace(/Tires have realistic contact shadow; tinted glass carries natural environment reflection\./iu, "Tires have realistic contact shadow.")
+      .replace(/Tires have realistic contact shadow\./iu, "Tires have realistic contact shadow.")
       .replace(/small Autobiography Dynamic badging and Saudi plate present, both soft-focus and never legible/iu, "Autobiography Dynamic badging and Saudi plate, never legible");
     if (words(compacted) <= maxWords) return compacted;
   }

@@ -21,7 +21,7 @@ const CAR_CORE = `CAR CORE — ${PROMPT_VERSION}
 - IMAGE A is REQUIRED and is the sole identity authority for the real subject: preserve face shape, facial proportions, skin tone/texture, hairline, hair density, beard pattern, age, build, and natural asymmetry. Do not create a look-alike.
 - IMAGE A controls identity only. The selected template is the highest authority for camera angle, camera distance, framing, crop, gaze and pose visibility. Never widen or recompose the frame merely to show anatomy, clothing, steering wheel, cabin details or background requested elsewhere.
 - IMAGE B / CABIN REFERENCE is OPTIONAL. If supplied, it becomes the immutable environment authority for all VISIBLE cabin geometry, materials, colors, controls, seat shapes, dashboard, wheel, console, doors, mirrors, pillars, roof, sunroof and window state.
-- If no cabin reference is supplied, use the project default vehicle: a coherent white 2022 Range Rover Sport, Saudi left-hand drive, with realistic light-beige cabin materials and authentic continuous front/rear cabin architecture. Do not mix generations or invent decorative controls.
+- If no cabin reference is supplied, use the project default vehicle: a coherent 2017 Range Rover Sport Autobiography Dynamic in Fuji White, Saudi left-hand drive, with realistic Ivory cabin materials and authentic continuous front/rear cabin architecture. Do not mix generations or invent decorative controls.
 - Vehicle remains parked and stationary for the complete photographic event. No driving, road motion, steering effort, acceleration or braking.`;
 
 const REALISM_CORE = `REALISM CORE — CAPTURED, NOT RENDERED
@@ -127,7 +127,7 @@ function clothingPrompt(item) {
 }
 
 function choicesLine(cfg) {
-  return `CHOICES\nHAIR: ${cfg.hair?.prompt ?? "Preserve IMAGE A hair exactly."}\nEXPRESSION: ${cfg.expression?.prompt ?? "Natural relaxed expression."}\nCLOTHING: ${clothingPrompt(cfg.clothing)}\nCABIN REFERENCE: ${cfg.hasCabin ? "IMAGE B supplied — immutable environment lock for visible cabin only." : "No IMAGE B supplied — build the coherent default white 2022 Range Rover Sport cabin only where the selected crop reveals it."}`;
+  return `CHOICES\nHAIR: ${cfg.hair?.prompt ?? "Preserve IMAGE A hair exactly."}\nEXPRESSION: ${cfg.expression?.prompt ?? "Natural relaxed expression."}\nCLOTHING: ${clothingPrompt(cfg.clothing)}\nCABIN REFERENCE: ${cfg.hasCabin ? "IMAGE B supplied — immutable environment lock for visible cabin only." : "No IMAGE B supplied — build the coherent default 2017 Range Rover Sport Autobiography Dynamic in Fuji White cabin only where the selected crop reveals it."}`;
 }
 
 function buildCarPrompt(tpl, cfg) {

@@ -24,13 +24,15 @@ assert.deepEqual(resolvePromptEngineSelection({ search:"?engine=unknown", storag
 
 const canonicalSelection = resolvePromptEngineSelection({ search:"?engine=canonical-v3" });
 for (const [section, intent] of [
-  ["solo", "selfie"], ["selfie", "selfie"], ["studio", "selfie"], ["car", "car"], ["carExterior", "carExterior"], ["group", "group"], ["accidental", "accidental"], ["bedroom", "room"], ["room", "room"]
+  ["solo", "selfie"], ["selfie", "selfie"], ["studio", "selfie"], ["car", "car"], ["carExterior", "carExterior"], ["group", "group"], ["accidental", "accidental"], ["bedroom", "room"], ["room", "room"], ["gym", "selfie"], ["street", "selfie"]
 ]) {
   assert.equal(isCanonicalV3Section(section), true, `${section} must be Canonical V3-capable`);
   assert.equal(canonicalIntentForSection(section), intent);
   assert.equal(shouldUseCanonicalV3(section, canonicalSelection), true);
 }
-for (const section of ["gym", "street", "custom", ""]) assert.equal(isCanonicalV3Section(section), false, `${section || "empty"} must remain on legacy fallback`);
+for (const section of ["custom", ""]) assert.equal(isCanonicalV3Section(section), false, `${section || "empty"} must remain on legacy fallback`);
+assert.equal(shouldUseCanonicalV3("gym", resolvePromptEngineSelection()), true, "gym auto-enables Canonical V3");
+assert.equal(shouldUseCanonicalV3("street", resolvePromptEngineSelection()), true, "street auto-enables Canonical V3");
 assert.equal(shouldUseCanonicalV3("car", resolvePromptEngineSelection()), false, "legacy is the default");
 
 assert.equal(STUDIO_SECTION_OPTIONS.some((item) => item.value === "carExterior" && /سيلفي بجانب السيارة/u.test(item.label)), true);

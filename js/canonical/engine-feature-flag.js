@@ -3,7 +3,7 @@ export const CANONICAL_V3_ENGINE = "canonical-v3";
 export const ENGINE_STORAGE_KEY = "wikiprompt-selfie-studio:engine";
 
 const VALID_ENGINES = new Set([LEGACY_ENGINE, CANONICAL_V3_ENGINE]);
-const CANONICAL_V3_SECTIONS = new Set(["solo", "selfie", "studio", "car", "carexterior", "group", "accidental", "bedroom", "room"]);
+const CANONICAL_V3_SECTIONS = new Set(["solo", "selfie", "studio", "car", "carexterior", "group", "accidental", "bedroom", "room", "gym", "street"]);
 
 function normalize(value) {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
@@ -33,6 +33,8 @@ export function canonicalIntentForSection(section) {
     case "accidental": return "accidental";
     case "bedroom":
     case "room": return "room";
+    case "gym":
+    case "street":
     case "solo":
     case "selfie":
     case "studio": return "selfie";
@@ -41,6 +43,8 @@ export function canonicalIntentForSection(section) {
 }
 
 export function shouldUseCanonicalV3(section, selection) {
+  const normalized = normalize(section);
+  if (["gym", "street"].includes(normalized)) return true;
   return selection?.engine === CANONICAL_V3_ENGINE && isCanonicalV3Section(section);
 }
 

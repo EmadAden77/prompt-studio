@@ -1,4 +1,5 @@
-import { BODY_PROFILE } from "../data-base-phase16.js";
+import { BODY_PROFILE, BASE_SKIN_TEXTURE } from "../data-base-phase16.js";
+export { BASE_SKIN_TEXTURE };
 
 const RESERVED_SCENE_FACT_KEYS = new Set([
   "identity", "scene", "capture", "subjects", "camera", "camera_geometry", "lighting", "vehicle_geometry", "anatomy", "realism", "aesthetic", "drive_configuration", "driver_position", "steering_relation", "cluster_relation", "console_relation", "door_window_relation", "coordinate_system", "mirror_may_swap_physical_sides", "exterior_color", "interior", "seats", "console_trim", "steering_wheel", "roof", "street_mood", "source"
@@ -80,7 +81,6 @@ export function describeEnvironmentScale(canonical) {
   if (sceneId === "rangeRover" || canonical.scene?.type === "vehicle") return "Shoulders fill seatback; head nears headliner; steering wheel proportionally smaller for 195 cm driver.";
   if (sceneId === "carExterior") return "Shoulder and head height relative to roofline, door frame, and handle reflect a genuine 195 cm adult.";
   if (sceneId === "rooftop") return "The tall frame is visible against the perimeter wall height.";
-  if (sceneId === "villa") return "His height reads naturally against the doorframe and gate.";
   if (sceneId === "street" || sceneId === "streetFootball" || canonical.scene?.type === "outdoor") return "His stature reads noticeably above average-height people and everyday objects nearby.";
   return "";
 }

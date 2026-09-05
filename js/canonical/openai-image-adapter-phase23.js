@@ -10,7 +10,7 @@ import phase20BuildOpenAIImagePrompt, {
 
 export * from "./openai-image-adapter-phase20.js";
 
-const FROZEN_EXTERIOR_SPEC = "2017 Range Rover Sport Autobiography Dynamic L494 in Fuji White, gloss black grille and side-vent surrounds, 22-inch dark alloy wheels, quad rectangular exhaust tips, LED headlights with DRL signature, panoramic glass roof, lightly tinted TRANSPARENT glass, never opaque black, showing natural reflections and faint glimpses of the Ivory interior, small Autobiography Dynamic badging and Saudi plate present, both soft-focus and never legible.";
+const FROZEN_EXTERIOR_SPEC = "2017 Range Rover Sport Autobiography Dynamic L494, Fuji White, gloss black grille and vent surrounds, 22-inch dark alloys, quad rectangular exhaust tips, LED DRLs, panoramic glass roof, transparent glass with natural reflections and a faint Ivory-cabin view, never opaque black; Autobiography Dynamic badging and Saudi plate, never legible.";
 
 const LOCATIONS = Object.freeze({
   villa: "parked on a driveway before a Saudi villa with beige stone cladding, high wall, metal gate, and a palm tree",
@@ -73,7 +73,7 @@ export function describeCarExteriorRealism(canonical) {
   const phrases = [
     "Fuji White paint carries fine dust on lower panels and wheel arches with environment reflections stretched across the doors.",
     "Alloy wheels show light brake dust and the tires sit with realistic contact shadow on the ground.",
-    "Tinted glass mirrors the surroundings and the panoramic roof reflects the sky."
+    "Transparent glass carries natural surroundings reflections while retaining a faint view into the Ivory cabin, and the panoramic roof reflects the sky."
   ];
   if (isNight(canonical)) phrases.push("An elongated light-pole reflection runs along the hood and roof.");
   if (isNight(canonical) && isDamp(canonical)) phrases.push("Damp ground patches reflect the overhead light near the tires.");
@@ -110,7 +110,7 @@ function requiredExteriorSentences(canonical) {
   const required = [
     FROZEN_EXTERIOR_SPEC,
     "Alloy wheels show light brake dust and the tires sit with realistic contact shadow on the ground.",
-    "Tinted glass mirrors the surroundings and the panoramic roof reflects the sky."
+    "Transparent glass carries natural surroundings reflections while retaining a faint view into the Ivory cabin, and the panoramic roof reflects the sky."
   ];
   const interior = interiorSentence(canonical);
   if (interior) required.splice(1, 0, interior);
@@ -165,7 +165,7 @@ function insertWithinCap(prompt, canonical, maxWords = 250) {
     const compactRequired = [
       FROZEN_EXTERIOR_SPEC,
       "The tires sit with realistic contact shadow on the ground.",
-      "Tinted glass carries natural reflection of the surroundings."
+      "Transparent glass carries natural reflections and a faint view into the Ivory cabin."
     ];
     const interior = interiorSentence(canonical);
     if (interior) compactRequired.splice(1, 0, interior);
