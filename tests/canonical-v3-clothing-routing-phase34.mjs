@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { resolveClothingText, TRADITIONAL_CAR_OPTIONS } from "../js/phase30-clothing-catalog.js";
+import { resolveClothingText, TRADITIONAL as TRADITIONAL_CAR_OPTIONS } from "../js/clothing-authority.js";
 import { buildCanonicalV3UserOutput } from "../js/canonical/canonical-v3-pipeline.js";
 import { HEADWEAR_LOCK, describeHeadwear } from "../js/canonical/openai-image-adapter.js";
 
@@ -11,7 +11,7 @@ assert.equal(
   "crisp white thobe with a red-and-white checkered shemagh and black iqal, youthful style with one end casually thrown over the shoulder",
   "traditional car clothing text authority drifted"
 );
-assert.equal(resolveClothingText("missing-value"), "casual cotton clothing", "unknown clothing must use neutral fallback");
+assert.equal(resolveClothingText("missing-value"), "", "unknown clothing must stay empty under the Phase 37 authority contract");
 
 const base = {
   studioSection:"carExterior",
@@ -70,4 +70,4 @@ console.log(`PHASE34_OUTFIT_WORDS=${words(outfit.prompt)}`);
 console.log(`PHASE34_CUSTOM_WORDS=${words(custom.prompt)}`);
 console.log("PHASE34_DETERMINISM=10/10");
 console.log(`PHASE34_THOBE_SAMPLE=${thobePrompt}`);
-console.log("✓ Phase 34 clothing routing authority contracts passed");
+console.log("✓ Phase 34 clothing routing authority contracts passed under Phase 39 clothing authority");
