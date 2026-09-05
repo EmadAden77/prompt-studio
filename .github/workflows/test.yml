@@ -88,3 +88,5 @@ jobs:
         run: node tests/canonical-v3-saudi-realism-phase29.mjs
       - name: Run Phase 30 unified clothing catalog tests
         run: node tests/canonical-v3-unified-clothing-phase30.mjs
+      - name: Run Phase 31 full audit de-conflict tests
+        run: node tests/canonical-v3-full-audit-phase31.mjs
