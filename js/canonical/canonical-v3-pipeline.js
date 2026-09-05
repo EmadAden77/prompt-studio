@@ -97,7 +97,9 @@ export function applySectionCaptureRouting(rawInput = {}) {
 
   raw.pose = selfieSafePose(raw.pose, route.captureType);
   if (section === "carExterior") {
-    raw.carExteriorPose = selfieSafePose(raw.carExteriorPose, route.captureType) || "door-lean";
+    const requestedCarPose = String(raw.carExteriorPose || "").trim();
+    const safeCarPose = selfieSafePose(requestedCarPose, route.captureType);
+    raw.carExteriorPose = safeCarPose !== requestedCarPose ? "front-grille" : (requestedCarPose || "door-lean");
   }
   return raw;
 }
