@@ -41,7 +41,7 @@ Describe and solve the required physical state directly before relying on reject
 function parallaxCalibration(mode) {
   if (mode === "exterior") {
     return `3D PARALLAX CALIBRATION
-- Preserve the subject's true 193 cm world-space height and the Range Rover's real parked dimensions while allowing the 22–24mm near-field selfie projection to change apparent screen size naturally.
+- Preserve the subject's true 195 cm world-space height and the Range Rover's real parked dimensions while allowing the 22–24mm near-field selfie projection to change apparent screen size naturally.
 - The face and upper torso are normally much closer to the front camera than most vehicle surfaces, so near-field perspective expansion may make the subject appear proportionally larger on screen. This is physically correct and must not be compensated by shrinking the person, enlarging the SUV or moving the phone beyond arm reach.
 - Subject, vehicle, curbs, wheels and background share one perspective solution and one ground plane. Apparent size changes only through real distance, orientation and lens projection.`;
   }

@@ -13,7 +13,7 @@ const LOCATIONS = Object.freeze([
 
 const BODY_PROFILES = Object.freeze([
   { id:"reference", name_ar:"من IMAGE A · تلقائي", prompt:"Use IMAGE A as the body-proportion authority. Do not infer exact height or weight that the reference does not support." },
-  { id:"athletic_183_82", name_ar:"رياضي · 183 سم / 82 كجم", prompt:"Body profile: athletic adult, approximately 183 cm tall and 82 kg. Preserve IMAGE A identity and natural build; use these values only for large-scale proportion logic against seats, doors, roofline and standing height, never to reshape the face." },
+  { id:"lean_athletic_195_88", name_ar:"رياضي · 195 سم / 88 كجم", prompt:"Body profile: athletic adult, approximately 195 cm tall and 88 kg. Preserve IMAGE A identity and natural build; use these values only for large-scale proportion logic against seats, doors, roofline and standing height, never to reshape the face." },
   { id:"custom", name_ar:"مخصص", prompt:"Use the user's custom body-profile text only for large-scale body/car proportion logic. Facial identity remains locked to IMAGE A." }
 ]);
 

@@ -11,9 +11,17 @@ export const BASE_SKIN_TEXTURE = [
   "hyper-realistic anatomical accuracy",
   "documentary photography style",
   "unretouched",
-  "natural skin oil reflection",
-  "athletic male, 183 cm, 82 kg"
+  "natural skin oil reflection"
 ];
+
+export const BODY_PROFILE = Object.freeze({
+  height_cm: 195,
+  weight_kg: 88,
+  bmi: 23.1,
+  build: "lean-athletic",
+  frame: "tall skeletal with medium-to-moderate shoulder breadth",
+  mass_distribution: "ribcage, shoulders, arms, glutes, thighs, calves"
+});
 
 export const BASE_NEGATIVE = [
   "plastic skin",
@@ -36,7 +44,20 @@ export const BASE_NEGATIVE = [
   "extra fingers",
   "missing fingers",
   "fused fingers",
-  "anatomical nonsense"
+  "anatomical nonsense",
+  "short-looking body proportions",
+  "skinny frame",
+  "narrow skeletal frame",
+  "pencil-thin arms",
+  "thin neck",
+  "collapsed chest",
+  "oversized head relative to body",
+  "large-head-small-body proportions",
+  "compressed torso",
+  "fashion-model thinness",
+  "bodybuilder bulk",
+  "camera-induced shoulder narrowing",
+  "camera-induced height compression"
 ];
 
 export const SCENES = {
@@ -281,4 +302,4 @@ export const CAMERA = {
 
 export const IDENTITY_LOCK = "SINGLE-REFERENCE IDENTITY LOCK: use only the exact person from the one attached reference image, preserve facial structure, feature spacing, age appearance, skin tone, natural asymmetry, hairline, beard pattern and visible hair density; if a feature is partly obscured in the reference, infer it conservatively only from the same image and do not substitute or invent another identity";
 
-export const ANATOMY_AND_CAPTURE_LOCK = "one adult male only, athletic build at 183 cm and 82 kg, anatomically connected head, torso, arms, hands, legs and feet, five fingers on each visible hand, clothing and body contacts obey gravity and compression, reflections and mirrors follow correct geometry, captured not rendered";
+export const ANATOMY_AND_CAPTURE_LOCK = "one adult male only, anatomically connected head, torso, arms, hands, legs and feet, five fingers on each visible hand, clothing and body contacts obey gravity and compression, reflections and mirrors follow correct geometry, captured not rendered";

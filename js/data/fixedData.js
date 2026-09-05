@@ -7,10 +7,10 @@ export const FIXED_DATA = Object.freeze({
     gender: "male",
     ethnicity: "Middle Eastern",
     age: 35,
-    height_cm: 183,
-    weight_kg: 82,
+    height_cm: 195,
+    weight_kg: 88,
     build: "lightly athletic",
-    description: "Middle Eastern man, 35 years old, 183 cm tall, 82 kg, with a lightly athletic build"
+    description: "Middle Eastern man, 35 years old, 195 cm tall, 88 kg, with a lightly athletic build"
   }),
   room: Object.freeze({
     type: "bedroom",

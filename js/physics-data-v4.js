@@ -12,7 +12,7 @@ export const BASE_SKIN_TEXTURE = [
   "documentary photography style",
   "unretouched",
   "natural skin oil reflection",
-  "athletic male, 183 cm, 82 kg"
+  "athletic male, 195 cm, 88 kg"
 ];
 
 export const BASE_NEGATIVE = [
@@ -492,4 +492,4 @@ export const CAMERA = {
 
 export const IDENTITY_LOCK = "SINGLE-REFERENCE IDENTITY LOCK: use only the exact person from the one attached reference image, preserve facial structure, feature spacing, age appearance, skin tone, natural asymmetry, hairline, beard pattern and visible hair density; if a feature is partly obscured in the reference, infer it conservatively only from the same image and do not substitute or invent another identity";
 
-export const ANATOMY_AND_CAPTURE_LOCK = "one adult male only, athletic build at 183 cm and 82 kg, anatomically connected head, torso, arms, hands, legs and feet, five fingers on each visible hand, clothing and body contacts obey gravity and compression, reflections and mirrors follow correct geometry, captured not rendered";
+export const ANATOMY_AND_CAPTURE_LOCK = "one adult male only, athletic build at 195 cm and 88 kg, anatomically connected head, torso, arms, hands, legs and feet, five fingers on each visible hand, clothing and body contacts obey gravity and compression, reflections and mirrors follow correct geometry, captured not rendered";

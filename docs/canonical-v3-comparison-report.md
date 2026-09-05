@@ -30,23 +30,23 @@ Phase 6 is the Canonical V3 adapter output before `describeNaturalImperfections(
 
 | Case | Legacy words | Phase 6 words | Phase 7 words | P7 Δ vs P6 | Legacy repeat | P6 repeat | P7 repeat | Legacy realism | P6 realism | P7 realism | Legacy det. | P6 det. | P7 det. | P7 ≤250 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|:---:|:---:|:---:|:---:|
-| Car LHD driver selfie | 368 | 216 | 228 | +12 | 5 | 2 | 2 | 0 | 0 | 2 | 10/10 | 10/10 | 10/10 | yes |
-| Car tight crop | 363 | 202 | 209 | +7 | 5 | 2 | 2 | 0 | 0 | 1 | 10/10 | 10/10 | 10/10 | yes |
-| Bedroom direct selfie | 230 | 188 | 207 | +19 | 2 | 1 | 2 | 0 | 0 | 3 | 10/10 | 10/10 | 10/10 | yes |
-| Mirror selfie | 235 | 148 | 155 | +7 | 2 | 1 | 2 | 0 | 0 | 1 | 10/10 | 10/10 | 10/10 | yes |
-| Group selfie | 259 | 191 | 198 | +7 | 2 | 1 | 2 | 0 | 0 | 1 | 10/10 | 10/10 | 10/10 | yes |
-| Accidental capture | 284 | 140 | 147 | +7 | 3 | 1 | 2 | 0 | 0 | 1 | 10/10 | 10/10 | 10/10 | yes |
-| Identity + eyewear | 215 | 185 | 204 | +19 | 2 | 1 | 2 | 0 | 0 | 3 | 10/10 | 10/10 | 10/10 | yes |
+| Car LHD driver selfie | 368 | 218 | 230 | +12 | 5 | 1 | 1 | 0 | 0 | 2 | 10/10 | 10/10 | 10/10 | yes |
+| Car tight crop | 363 | 216 | 223 | +7 | 5 | 1 | 1 | 0 | 0 | 1 | 10/10 | 10/10 | 10/10 | yes |
+| Bedroom direct selfie | 230 | 210 | 229 | +19 | 2 | 1 | 1 | 0 | 0 | 3 | 10/10 | 10/10 | 10/10 | yes |
+| Mirror selfie | 235 | 202 | 209 | +7 | 2 | 1 | 1 | 0 | 0 | 1 | 10/10 | 10/10 | 10/10 | yes |
+| Group selfie | 259 | 217 | 224 | +7 | 2 | 0 | 0 | 0 | 0 | 1 | 10/10 | 10/10 | 10/10 | yes |
+| Accidental capture | 284 | 165 | 172 | +7 | 3 | 1 | 1 | 0 | 0 | 1 | 10/10 | 10/10 | 10/10 | yes |
+| Identity + eyewear | 215 | 207 | 226 | +19 | 2 | 1 | 1 | 0 | 0 | 3 | 10/10 | 10/10 | 10/10 | yes |
 
 ### Phase 7 aggregate metrics
 
-- Average prompt length: **279 words legacy**, **181 words Phase 6**, and **193 words Phase 7** (Phase 7 is **+12 words** versus Phase 6).
-- Repeated semantic-fact signals: **21 legacy**, **9 Phase 6**, and **14 Phase 7** across the seven cases.
+- Average prompt length: **279 words legacy**, **205 words Phase 6**, and **216 words Phase 7** (Phase 7 is **+11 words** versus Phase 6).
+- Repeated semantic-fact signals: **21 legacy**, **6 Phase 6**, and **6 Phase 7** across the seven cases.
 - Natural-imperfection signals: **0 legacy**, **0 Phase 6**, and **12 Phase 7** across the seven cases.
 - Prompt-length cap: **7/7 Phase 6** and **7/7 Phase 7** prompts are at or below **250 words**.
 - Determinism: **10/10 identical outputs for every legacy, Phase 6, and Phase 7 case**.
 - Conflict records normalized per 100 cases: **142.9 legacy** vs **0 Canonical V3**; the Phase 6 and Phase 7 variants resolve the same canonical state.
-- The Phase 7 column has one additional body-scale/proportion repeat in **5/7 cases**. This is a measurement finding only; Step 2 does not alter the Imperfection Engine wording.
+- The Phase 7 column has one additional body-scale/proportion repeat in **0/7 cases**. This is a measurement finding only; Step 2 does not alter the Imperfection Engine wording.
 
 ### Measurement notes
 
@@ -62,18 +62,18 @@ Step 2 is the frozen natural-imperfection variant. Step 3 adds the lighting-phys
 
 | Case | P7.2 words | P7.3 words | P7.4 words | P7.4 Δ vs P7.3 | P7.2 repeat | P7.3 repeat | P7.4 repeat | Imperfections | Lighting | Artifacts | P7.2 det. | P7.3 det. | P7.4 det. | P7.4 ≤250 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|:---:|:---:|:---:|:---:|
-| Car LHD driver selfie | 228 | 238 | 247 | +9 | 2 | 2 | 2 | 2 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
-| Car tight crop | 209 | 219 | 228 | +9 | 2 | 2 | 2 | 1 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
-| Bedroom direct selfie | 207 | 217 | 226 | +9 | 2 | 2 | 2 | 3 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
-| Mirror selfie | 155 | 165 | 174 | +9 | 2 | 2 | 2 | 1 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
-| Group selfie | 198 | 208 | 217 | +9 | 2 | 2 | 2 | 1 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
-| Accidental capture | 147 | 157 | 173 | +16 | 2 | 2 | 2 | 1 | 1 | 2 | 10/10 | 10/10 | 10/10 | yes |
-| Identity + eyewear | 204 | 214 | 223 | +9 | 2 | 2 | 2 | 3 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
+| Car LHD driver selfie | 230 | 240 | 249 | +9 | 1 | 1 | 1 | 2 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
+| Car tight crop | 223 | 233 | 242 | +9 | 1 | 1 | 1 | 1 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
+| Bedroom direct selfie | 229 | 239 | 248 | +9 | 1 | 1 | 1 | 3 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
+| Mirror selfie | 209 | 219 | 228 | +9 | 1 | 1 | 1 | 1 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
+| Group selfie | 224 | 234 | 243 | +9 | 0 | 0 | 0 | 1 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
+| Accidental capture | 172 | 182 | 198 | +16 | 1 | 1 | 1 | 1 | 1 | 2 | 10/10 | 10/10 | 10/10 | yes |
+| Identity + eyewear | 226 | 236 | 245 | +9 | 1 | 1 | 1 | 3 | 1 | 1 | 10/10 | 10/10 | 10/10 | yes |
 
 ### Phase 7 Step 4 aggregate metrics
 
-- Average prompt length: **193 words Step 2**, **203 words Step 3**, and **213 words Step 4** (Step 4 is **+10 words** versus Step 3).
-- Repeated semantic-fact signals: **14 Step 2**, **14 Step 3**, and **14 Step 4** across the seven cases.
+- Average prompt length: **216 words Step 2**, **226 words Step 3**, and **236 words Step 4** (Step 4 is **+10 words** versus Step 3).
+- Repeated semantic-fact signals: **6 Step 2**, **6 Step 3**, and **6 Step 4** across the seven cases.
 - Natural-imperfection signals: **12 Step 2**; lighting-physics signals: **7 Step 3**; camera-artifact signals: **8 Step 4**.
 - Prompt-length cap: **7/7 Step 2**, **7/7 Step 3**, and **7/7 Step 4** prompts are at or below **250 words**.
 - Determinism: **10/10 identical outputs for every Step 2, Step 3, and Step 4 case**.

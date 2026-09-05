@@ -340,7 +340,7 @@ export const IDENTITY_LOCK =
   "SINGLE-REFERENCE IDENTITY LOCK: use exactly one attached reference image as the sole identity authority. Preserve facial structure, proportions, feature spacing, apparent age, skin tone, natural asymmetry, eye and brow geometry, nose, lips, jaw, chin, ears, hairline, visible hair density, beard density, beard gaps and facial-hair growth pattern. Do not beautify, symmetrize, de-age, reshape, slim or substitute the face.";
 
 export const SUBJECT_BODY =
-  "one adult male, lightly athletic build, 183 cm and 82 kg; anatomy remains connected and physically plausible, with exactly five fingers on every visible hand.";
+  "one adult male, lightly athletic build, 195 cm and 88 kg; anatomy remains connected and physically plausible, with exactly five fingers on every visible hand.";
 
 export const SMARTPHONE_REALISM =
   "RAW SMARTPHONE REALISM: candid unedited phone capture, ordinary skin texture, visible but non-exaggerated pores, slight tonal variation, small natural blemishes, restrained sharpening, realistic auto-exposure, limited highlight recovery, subtle sensor noise appropriate to the light level, slight handheld imperfection and no artificial portrait-mode cutout.";

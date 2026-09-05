@@ -48,7 +48,7 @@ export class PromptEngine {
 
   buildNaturalBrief(c) {
     const personDescription = this.identityEngine.fixedData?.person?.description
-      ?? "Middle Eastern man, 35 years old, 183 cm tall, 82 kg, with a lightly athletic build";
+      ?? "Middle Eastern man, 35 years old, 195 cm tall, 88 kg, with a lightly athletic build";
     const sceneName = c.scene?.name_en ?? "the selected bedroom reference";
     const poseName = c.pose?.name_en?.toLowerCase() ?? "positioned naturally in the selected scene";
     const lightingName = c.lighting?.name_en?.toLowerCase() ?? "the selected physically motivated lighting";

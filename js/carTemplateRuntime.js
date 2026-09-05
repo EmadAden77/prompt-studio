@@ -92,7 +92,7 @@ function clothingText(clothing) {
 function carPrompt(engine, config, template, time) {
   const mode = captureMode();
   const personDescription = engine.identityEngine.fixedData?.person?.description
-    ?? "Middle Eastern man, 35 years old, 183 cm tall, 82 kg, with a lightly athletic build";
+    ?? "Middle Eastern man, 35 years old, 195 cm tall, 88 kg, with a lightly athletic build";
   const aspect = ["9:16", "1:1", "16:9"].includes(config.aspect) ? config.aspect : "9:16";
   const expression = config.expression?.prompt ?? "Use a natural relaxed expression without reshaping identity.";
   const hair = config.hair?.prompt ?? "Preserve the identity-defined hair density, hairline, length, and growth pattern; alter arrangement only according to the selected hairstyle.";

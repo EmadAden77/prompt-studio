@@ -1,3 +1,5 @@
+import { BODY_PROFILE } from "../data-base-phase16.js";
+
 const RESERVED_SCENE_FACT_KEYS = new Set([
   "identity", "scene", "capture", "subjects", "camera", "camera_geometry", "lighting", "vehicle_geometry", "anatomy", "realism", "aesthetic", "drive_configuration", "driver_position", "steering_relation", "cluster_relation", "console_relation", "door_window_relation", "coordinate_system", "mirror_may_swap_physical_sides", "exterior_color", "interior", "seats", "console_trim", "steering_wheel", "roof", "street_mood", "source"
 ]);
@@ -56,13 +58,31 @@ function describePrimarySubject(canonical) {
   if (pose) facts.push(`a ${pose} pose`);
   if (expression) facts.push(`a ${expression} expression`);
   if (clothing) facts.push(`wearing ${clothing}`);
-  const body = primary.body_scale;
-  if (isObject(body)) {
-    if (Number.isFinite(body.height_cm)) facts.push(`${body.height_cm} cm height`);
-    if (Number.isFinite(body.weight_kg)) facts.push(`${body.weight_kg} kg body weight`);
-    if (body.preserve_environment_scale === true && canonical.scene?.type !== "vehicle") facts.push("body scale consistent with the surrounding environment");
-  }
   return facts.length ? `The primary subject has ${naturalList(facts)}.` : "";
+}
+
+export function describeBodyAnatomy(canonical) {
+  if (!isObject(canonical)) return "";
+  return `Tall ${BODY_PROFILE.height_cm} cm, ${BODY_PROFILE.weight_kg} kg ${BODY_PROFILE.build} build: medium-to-moderately-broad shoulders visibly wider than the waist, moderately developed chest, subtle deltoid roundness, long proportional limbs with filled-not-thin arms, proportionate adult male neck, and head anatomically scaled to tall frame. No facial alteration/lengthening.`;
+}
+
+export function describeSelfiePerspective(canonical) {
+  if (!isObject(canonical)) return "";
+  const selfie = canonical.hard_constraints?.selfie_geometry;
+  const captureType = text(canonical.capture?.type);
+  if (selfie?.applicable === false || captureType === "third_person" || captureType === "accidental_front_camera_capture") return "";
+  return "Camera near eye level at 45–60 cm, no steep downward angle; relaxed upright posture, spine extension, enough upper torso to communicate the tall athletic frame.";
+}
+
+export function describeEnvironmentScale(canonical) {
+  if (!isObject(canonical)) return "";
+  const sceneId = text(canonical.scene?.id);
+  if (sceneId === "rangeRover" || canonical.scene?.type === "vehicle") return "Shoulders fill seatback; head nears headliner; steering wheel proportionally smaller for 195 cm driver.";
+  if (sceneId === "carExterior") return "Shoulder and head height relative to roofline, door frame, and handle reflect a genuine 195 cm adult.";
+  if (sceneId === "rooftop") return "The tall frame is visible against the perimeter wall height.";
+  if (sceneId === "villa") return "His height reads naturally against the doorframe and gate.";
+  if (sceneId === "street" || sceneId === "streetFootball" || canonical.scene?.type === "outdoor") return "His stature reads noticeably above average-height people and everyday objects nearby.";
+  return "";
 }
 
 export function describeNaturalImperfections(canonical) {
