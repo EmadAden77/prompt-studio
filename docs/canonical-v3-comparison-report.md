@@ -23,6 +23,7 @@ This preserved baseline is the original Phase 5 result from commit `ce00c39`. It
 - Conflict records normalized per 100 cases: **142.9 old** vs **0 new**.
 - Canonical V3 determinism: **10/10 identical outputs for every case**.
 
+
 ## Phase 7 Step 2 — Three-way natural-imperfection comparison
 
 Phase 6 is the Canonical V3 adapter output before `describeNaturalImperfections()`. Phase 7 is the same resolved frozen Canonical V3 state with that read-only helper included. After the approved lighting-physics layer, the comparison removes its exact adapter-only sentence first, then removes only the natural-imperfection text to reconstruct the frozen Step 2 columns; no canonical field is modified.
@@ -77,22 +78,3 @@ Step 2 is the frozen natural-imperfection variant. Step 3 adds the lighting-phys
 - Prompt-length cap: **7/7 Step 2**, **7/7 Step 3**, and **7/7 Step 4** prompts are at or below **250 words**.
 - Determinism: **10/10 identical outputs for every Step 2, Step 3, and Step 4 case**.
 - The Step 4 helper adds device-, light-, or motion-causal camera behavior only; it does not add environmental details or post-processing instructions.
-
-## Phase 17 — Saudi majlis + desert kashta place realism
-
-Phase 17 adds two scene-specific realism contracts while leaving Canonical V3 hard constraints unchanged. The adapter layer is deterministic and read-only: place details are injected immediately after scene facts, and the kashta scene suppresses the generic Saudi-street fallback so desert prompts remain context-specific.
-
-| Scene | Lived-in clutter | Wear / dust | Uneven lighting | Real materials | Soft background life | Determinism | Prompt cap |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Majlis | tea glass + date plate | faint dallah fingerprints | warm sconce light pools | velvet weave + brass | n/a indoor | 10/10 | ≤250 |
-| Kashta night | tea glasses + blanket + kettle | tire tracks + weathered kettle | campfire flicker | sand + fabric + metal | distant blurred Land Cruiser | 10/10 | ≤250 |
-| Kashta day | blanket + kettle | sand dust + vehicle lower-panel dust | low golden sun | sand + fabric + metal | distant blurred Land Cruiser | 10/10 | ≤250 |
-
-### Phase 17 contracts
-
-- `SCENES` now exposes `majlis` and `kashta`, each with six context-matched clothing options.
-- Scene-specific lighting catalogs cover majlis day/night and kashta day/night, with dedicated mood selectors for both scenes.
-- `describePlaceRealism()` emits deterministic positive-description realism text. Tea glasses and kettles remain on scene surfaces rather than being assigned to a person.
-- Outdoor kashta prompts include a distant parked Land Cruiser blurred in the background, with no background people or named human roles introduced by the Phase 17 layer.
-- Kashta bypasses the generic Saudi-street realism fallback, preventing street storefront, curb, or traffic details from contaminating the desert scene.
-- `tests/canonical-v3-place-realism.mjs` gates required phrases, soft-background evidence, 250-word maximums, hard-constraint immutability, and 10/10 deterministic output.
