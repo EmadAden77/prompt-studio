@@ -1,59 +1,182 @@
-name: Phase 31 Budget Patch Runner
+# Idempotent cleanup guard: safe to rerun on an already-clean main branch.
+name: Repository Emergency Cleanup Guard
 
 on:
+  workflow_dispatch:
   push:
-    branches: [phase-31/full-audit-deconflict]
+    branches: [main]
     paths:
       - '.github/workflows/remove-car-seat-feature.yml'
+      - 'index.html'
+      - 'styles-v2.css'
+      - 'styles-wikiprompt.css'
+      - 'styles.css'
+      - 'js/**'
+      - 'tests/**'
+
+concurrency:
+  group: emergency-cleanup-main
+  cancel-in-progress: true
 
 permissions:
   contents: write
 
 jobs:
-  phase31-glass-budget:
+  cleanup-and-verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Compact duplicated glass contract without losing semantics
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Apply idempotent repository cleanup
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
 
-          old_spec = '2017 Range Rover Sport Autobiography Dynamic L494 in Fuji White, gloss black grille and side-vent surrounds, 22-inch dark alloy wheels, quad rectangular exhaust tips, LED headlights with DRL signature, panoramic glass roof, transparent glass, never opaque black, carrying natural reflections and faint glimpses of the Ivory interior, small Autobiography Dynamic badging and Saudi plate present, both soft-focus and never legible.'
-          new_spec = '2017 Range Rover Sport Autobiography Dynamic L494, Fuji White, gloss black grille and vent surrounds, 22-inch dark alloys, quad rectangular exhaust tips, LED DRLs, panoramic glass roof, transparent glass with natural reflections and a faint Ivory-cabin view, never opaque black; Autobiography Dynamic badging and Saudi plate, never legible.'
+          # Remove known obsolete entrypoints if an old branch or accidental merge restores them.
+          for stale in (Path('tests/run-tests.mjs'), Path('js/app.js')):
+              if stale.exists():
+                  stale.unlink()
+                  print(f'removed obsolete file: {stale}')
 
-          for file in ['js/data.js', 'js/canonical/openai-image-adapter-phase23.js']:
-              p = Path(file)
-              s = p.read_text()
-              if old_spec not in s:
-                  raise SystemExit(f'missing exterior spec in {file}')
-              p.write_text(s.replace(old_spec, new_spec))
+          # Keep exactly one car-seat cleanup/guard workflow.
+          workflow_dir = Path('.github/workflows')
+          keep = workflow_dir / 'remove-car-seat-feature.yml'
+          for candidate in workflow_dir.glob('remove-car-seat-feature*.yml'):
+              if candidate != keep:
+                  candidate.unlink()
+                  print(f'removed duplicate workflow: {candidate}')
 
-          p = Path('js/canonical/openai-image-adapter.js')
-          s = p.read_text()
-          s = s.replace('At night the glass shows reflected streetlights and a dim view into the cabin instead of black panels; it remains transparent, never opaque black.', 'At night, transparent glass carries streetlight reflections and a dim cabin view; never opaque black.')
-          s = s.replace('The windshield and side windows are clear glass with a light factory tint, carrying sky and environment reflections; the Ivory headliner and seats are faintly visible through the side glass; glass is never solid black.', 'Transparent windshield and side glass carry natural reflections and a faint view of the Ivory cabin; never opaque black.')
-          s = s.replace('const contact = "Tires have realistic contact shadow; tinted glass carries natural environment reflection.";', 'const contact = "Tires have realistic contact shadow.";')
-          s = s.replace('.replace(/Tires have realistic contact shadow; tinted glass carries natural environment reflection\\./iu, "Tires have realistic contact shadow.")', '.replace(/Tires have realistic contact shadow\\./iu, "Tires have realistic contact shadow.")')
-          p.write_text(s)
+          # Consolidate the current WikiPrompt UI styles without changing cascade order.
+          base_css = Path('styles-v2.css')
+          extension_css = Path('styles-wikiprompt.css')
+          index = Path('index.html')
+          marker = '/* === WikiPrompt extensions (consolidated) === */'
+          if extension_css.exists():
+              if not base_css.exists():
+                  raise SystemExit('styles-v2.css is missing; refusing destructive CSS consolidation')
+              base_text = base_css.read_text()
+              extension_text = extension_css.read_text()
+              if marker not in base_text:
+                  base_css.write_text(base_text.rstrip() + '\n\n' + marker + '\n' + extension_text.lstrip())
+              page = index.read_text()
+              page = re.sub(r'\n\s*<link\s+rel="stylesheet"\s+href="styles-wikiprompt\.css[^\"]*"\s*/?>', '', page, count=1)
+              page = page.replace('styles-v2.css?v=20260901-nav2', 'styles-v2.css?v=20260903-emergency-cleanup')
+              index.write_text(page)
+              extension_css.unlink()
+              print('consolidated styles-wikiprompt.css into styles-v2.css')
 
-          p = Path('tests/canonical-v3-glass-realism-phase27.mjs')
-          s = p.read_text()
-          s = s.replace('assert.match(CAR_EXTERIOR_SPEC, /lightly tinted TRANSPARENT glass, never opaque black/iu);', 'assert.match(CAR_EXTERIOR_SPEC, /transparent glass with natural reflections/iu);\nassert.match(CAR_EXTERIOR_SPEC, /never opaque black/iu);')
-          s = s.replace('assert.match(CAR_EXTERIOR_SPEC, /natural reflections and faint glimpses of the Ivory interior/iu);', 'assert.match(CAR_EXTERIOR_SPEC, /faint Ivory-cabin view/iu);')
-          s = s.replace('assert.match(describeGlassRealism(dayExterior), /clear glass with a light factory tint/iu);', 'assert.match(describeGlassRealism(dayExterior), /Transparent windshield and side glass/iu);')
-          s = s.replace('assert.match(describeGlassRealism(dayExterior), /Ivory headliner and seats are faintly visible/iu);', 'assert.match(describeGlassRealism(dayExterior), /faint view of the Ivory cabin/iu);')
-          s = s.replace('assert.match(describeGlassRealism(nightExterior), /dim view into the cabin instead of black panels/iu);', 'assert.match(describeGlassRealism(nightExterior), /dim cabin view/iu);')
-          p.write_text(s)
+          # Delete the root legacy stylesheet only when no HTML page references it.
+          legacy_css = Path('styles.css')
+          if legacy_css.exists():
+              references = []
+              for html in Path('.').glob('*.html'):
+                  if re.search(r'href=["\']styles\.css(?:\?[^"\']*)?["\']', html.read_text()):
+                      references.append(str(html))
+              if references:
+                  print('keeping styles.css; referenced by: ' + ', '.join(references))
+              else:
+                  legacy_css.unlink()
+                  print('removed unreferenced legacy styles.css')
+
+          # The selector/state API must not exist in any active source or test file.
+          forbidden = re.compile(r'carSeat|car-seat|getCarSeatOptions|CAR_SEAT_OPTIONS|seat_position|occupant_seat|موضع الجلوس داخل السيارة|مقعد السائق الأمامي الأيسر')
+          hits = []
+          allowed_suffixes = {'.js', '.mjs', '.html', '.json', '.css'}
+          for path in Path('.').rglob('*'):
+              if not path.is_file() or '.git' in path.parts:
+                  continue
+              if path == keep or path.suffix.lower() not in allowed_suffixes:
+                  continue
+              try:
+                  text = path.read_text()
+              except UnicodeDecodeError:
+                  continue
+              for line_number, line in enumerate(text.splitlines(), 1):
+                  if forbidden.search(line):
+                      hits.append(f'{path}:{line_number}:{line.strip()}')
+          if hits:
+              print('\n'.join(hits[:200]))
+              raise SystemExit(f'car-seat selector/state remnants remain in {len(hits)} location(s)')
+
+          # Contract checks for the current application entrypoint and CSS consolidation.
+          page = index.read_text()
+          direct_legacy_entry = 'js/physics-app-v7.js' in page
+          canonical_gate_entry = 'js/canonical/engine-gate.js' in page
+          if not direct_legacy_entry and not canonical_gate_entry:
+              raise SystemExit('index.html reaches neither the legacy v7 app nor the Canonical V3 engine gate')
+          if canonical_gate_entry:
+              gate = Path('js/canonical/engine-gate.js')
+              if not gate.exists() or 'physics-app-v7.js' not in gate.read_text():
+                  raise SystemExit('Canonical V3 engine gate no longer preserves the legacy v7 application path')
+          if 'js/app.js' in page:
+              raise SystemExit('legacy js/app.js is still referenced by index.html')
+          if 'styles-wikiprompt.css' in page:
+              raise SystemExit('index.html still references the split WikiPrompt stylesheet')
+          if marker not in base_css.read_text():
+              raise SystemExit('consolidated WikiPrompt CSS marker is missing from styles-v2.css')
           PY
-      - name: Commit compact glass contract
+
+      - name: Syntax check current JavaScript
+        shell: bash
+        run: |
+          while IFS= read -r -d '' file; do
+            node --check "$file"
+          done < <(find js -type f -name '*.js' -print0)
+
+      - name: Run all essential tests from test.yml
+        shell: bash
+        run: |
+          node tests/v2-deployment.mjs
+          node tests/physics-v5-wikiprompt.mjs
+          node tests/custom-scene.mjs
+          node tests/clothing-physics.mjs
+          node tests/realism-core.mjs
+          node tests/advanced-realism.mjs
+          node tests/auto-realism-suite.mjs
+          node tests/visual-selfie-angle-monitor.mjs
+          node tests/canonical-v3-adapter-isolation.mjs
+          node tests/canonical-v3-comparison.mjs
+          node tests/canonical-v3-feature-flag.mjs
+
+      - name: Delete stale merged or closed branches
+        shell: bash
+        run: |
+          branches=(
+            'codex/live-geometry-preview'
+            'codex/distance-aware-smartphone-capture'
+            'codex/external-generator-setups'
+            'codex/context-resolution-guards'
+            'codex/driver-selfie-geometry-lock'
+          )
+          for branch in "${branches[@]}"; do
+            if git ls-remote --exit-code --heads origin "refs/heads/$branch" >/dev/null 2>&1; then
+              git push origin --delete "$branch"
+              echo "deleted stale branch: $branch"
+            else
+              echo "already absent: $branch"
+            fi
+          done
+
+      - name: Commit cleanup if needed
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add js/data.js js/canonical/openai-image-adapter-phase23.js js/canonical/openai-image-adapter.js tests/canonical-v3-glass-realism-phase27.mjs
-          git commit -m 'Phase 31: full audit de-conflict pass'
-          git push origin HEAD:phase-31/full-audit-deconflict
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No repository cleanup changes required.'
+          else
+            git commit -m 'Emergency repository cleanup and CSS consolidation'
+            git push origin HEAD:main
+          fi
