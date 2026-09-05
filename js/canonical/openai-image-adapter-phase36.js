@@ -54,7 +54,8 @@ const LOW_PRIORITY_PATTERNS = Object.freeze([
   /At night, transparent glass carries streetlight reflections and a dim cabin view; never opaque black\.\s*/iu,
   /Lighting follows the selected real-world day or night source\.\s*/iu,
   /Captured with the selected physically plausible front-camera geometry\.\s*/iu,
-  /; Autobiography Dynamic badging and Saudi plate, never legible/iu
+  /; Autobiography Dynamic badging and Saudi plate, never legible/iu,
+  /Tires (?:have realistic contact shadow|cast realistic contact shadows)\.\s*/iu
 ]);
 
 function keepWithinBudget(prompt, maxWords = 250) {
