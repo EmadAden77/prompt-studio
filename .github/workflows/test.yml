@@ -102,3 +102,5 @@ jobs:
         run: node tests/canonical-v3-selfie-lock-phase36.mjs
       - name: Run Phase 37 master de-conflict tests
         run: node tests/canonical-v3-master-deconflict-phase37.mjs
+      - name: Run Phase 38 post-Phase-37 output audit
+        run: node tests/canonical-v3-post37-output-audit-phase38.mjs
