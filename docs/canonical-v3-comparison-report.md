@@ -30,8 +30,8 @@ Phase 6 is the Canonical V3 adapter output before `describeNaturalImperfections(
 
 | Case | Legacy words | Phase 6 words | Phase 7 words | P7 Δ vs P6 | Legacy repeat | P6 repeat | P7 repeat | Legacy realism | P6 realism | P7 realism | Legacy det. | P6 det. | P7 det. | P7 ≤250 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|:---:|:---:|:---:|:---:|
-| Car LHD driver selfie | 368 | 219 | 231 | +12 | 5 | 1 | 1 | 0 | 0 | 2 | 10/10 | 10/10 | 10/10 | yes |
-| Car tight crop | 363 | 219 | 226 | +7 | 5 | 1 | 1 | 0 | 0 | 1 | 10/10 | 10/10 | 10/10 | yes |
+| Car LHD driver selfie | 365 | 219 | 231 | +12 | 4 | 1 | 1 | 0 | 0 | 2 | 10/10 | 10/10 | 10/10 | yes |
+| Car tight crop | 360 | 219 | 226 | +7 | 4 | 1 | 1 | 0 | 0 | 1 | 10/10 | 10/10 | 10/10 | yes |
 | Bedroom direct selfie | 230 | 210 | 229 | +19 | 2 | 1 | 1 | 0 | 0 | 3 | 10/10 | 10/10 | 10/10 | yes |
 | Mirror selfie | 235 | 202 | 209 | +7 | 2 | 1 | 1 | 0 | 0 | 1 | 10/10 | 10/10 | 10/10 | yes |
 | Group selfie | 259 | 223 | 230 | +7 | 2 | 1 | 1 | 0 | 0 | 1 | 10/10 | 10/10 | 10/10 | yes |
@@ -40,8 +40,8 @@ Phase 6 is the Canonical V3 adapter output before `describeNaturalImperfections(
 
 ### Phase 7 aggregate metrics
 
-- Average prompt length: **279 words legacy**, **206 words Phase 6**, and **218 words Phase 7** (Phase 7 is **+12 words** versus Phase 6).
-- Repeated semantic-fact signals: **21 legacy**, **7 Phase 6**, and **7 Phase 7** across the seven cases.
+- Average prompt length: **278 words legacy**, **206 words Phase 6**, and **218 words Phase 7** (Phase 7 is **+12 words** versus Phase 6).
+- Repeated semantic-fact signals: **19 legacy**, **7 Phase 6**, and **7 Phase 7** across the seven cases.
 - Natural-imperfection signals: **0 legacy**, **0 Phase 6**, and **12 Phase 7** across the seven cases.
 - Prompt-length cap: **7/7 Phase 6** and **7/7 Phase 7** prompts are at or below **250 words**.
 - Determinism: **10/10 identical outputs for every legacy, Phase 6, and Phase 7 case**.
