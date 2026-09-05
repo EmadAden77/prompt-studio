@@ -50,7 +50,9 @@ const LOW_PRIORITY_PATTERNS = Object.freeze([
   /Slight lens softness is visible toward the frame edges\.\s*/iu,
   /Localized highlights transition gradually into adjacent shadows\.\s*/iu,
   /Gentle directional contrast creates gradual shadow falloff across the scene\.\s*/iu,
-  /Transparent glass carries natural reflections and a faint view into the Ivory cabin\.\s*/iu
+  /Transparent glass carries natural reflections and a faint view into the Ivory cabin\.\s*/iu,
+  /At night, transparent glass carries streetlight reflections and a dim cabin view; never opaque black\.\s*/iu,
+  /Lighting follows the selected real-world day or night source\.\s*/iu
 ]);
 
 function keepWithinBudget(prompt, maxWords = 250) {
