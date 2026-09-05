@@ -28,6 +28,8 @@ const SCENE_LABELS = Object.freeze({
   rooftop:"سطح المنزل", streetFootball:"ملعب حارة", gasStation:"محطة وقود"
 });
 
+let rememberedClothingValue = "";
+
 export function garmentSceneForSection(section = "", selectedScene = "") {
   return selectedScene || SECTION_GARMENT_SCENE[section] || "street";
 }
@@ -209,7 +211,9 @@ function keepClothingDetailsVisible() {
 function syncGarmentSelect() {
   const select = document.querySelector("#clothing");
   if (!select) return;
-  populateUnifiedClothingSelect(select, select.value);
+  const preferred = rememberedClothingValue || select.value;
+  populateUnifiedClothingSelect(select, preferred);
+  rememberedClothingValue = select.value || rememberedClothingValue;
   ensureCustomClothingField(select);
   syncCarExteriorVisibility();
 }
@@ -227,6 +231,15 @@ function syncAll() {
 export function installPhase22UI() {
   if (typeof document === "undefined") return;
   queueMicrotask(syncAll);
+  document.addEventListener("change", (event) => {
+    if (event.target?.id !== "clothing") return;
+    rememberedClothingValue = event.target.value || rememberedClothingValue;
+    queueMicrotask(() => {
+      syncGarmentSelect();
+      keepClothingDetailsVisible();
+      syncCustomClothingVisibility();
+    });
+  }, true);
   document.addEventListener("click", (event) => {
     const card = event.target?.closest?.("#studio-section-grid .studio-section-card");
     if (card) setTimeout(syncAll, 0);
@@ -242,6 +255,11 @@ export function installPhase22UI() {
       }, 0);
     }
     if (["time", "studio-section", "clothing"].includes(event.target?.id)) setTimeout(syncAll, 0);
+    else setTimeout(() => {
+      syncGarmentSelect();
+      keepClothingDetailsVisible();
+      syncCustomClothingVisibility();
+    }, 0);
   });
 }
 

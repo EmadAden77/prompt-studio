@@ -36,6 +36,10 @@ assert.match(uiSource, /id\s*=\s*"custom-clothing-field"/u, "Phase 22 UI must cr
 assert.match(uiSource, /field\.hidden\s*=\s*!shouldShowCustomClothing/u, "custom field visibility must be driven by the selected clothing value");
 assert.match(uiSource, /CLOTHING_CATALOG\s+as\s+UNIFIED_CLOTHING_CATALOG/u, "UI must import the authority catalog directly");
 assert.match(uiSource, /getClothingOptions\s+as\s+getUnifiedClothingOptions/u, "UI must import the authority option helper directly");
+assert.match(uiSource, /let\s+rememberedClothingValue\s*=\s*""/u, "mobile/native select choice must have an authority-backed remembered value");
+assert.match(uiSource, /event\.target\?\.id\s*!==\s*"clothing"[\s\S]*rememberedClothingValue\s*=\s*event\.target\.value[\s\S]*\},\s*true\);/u, "clothing choice must be captured before legacy target listeners can repopulate the select");
+assert.match(uiSource, /const\s+preferred\s*=\s*rememberedClothingValue\s*\|\|\s*select\.value/u, "authority select refresh must restore the remembered mobile choice");
+assert.match(uiSource, /else\s+setTimeout\(\(\)\s*=>\s*\{[\s\S]*syncGarmentSelect\(\)/u, "non-clothing field changes must not erase the selected authority outfit");
 assert.doesNotMatch(uiSource, /phase30-clothing-catalog\.js/u, "UI must not import Phase 30 legacy catalog");
 assert.doesNotMatch(pipelineSource, /phase30-clothing-catalog\.js/u, "pipeline must not import Phase 30 legacy catalog");
 assert.equal(fs.existsSync(new URL("../js/phase30-clothing-catalog.js", import.meta.url)), false, "legacy Phase 30 catalog file must be deleted");
@@ -68,4 +72,5 @@ console.log(`PHASE39_OPTIONS=${fullOptions.length}`);
 console.log(`PHASE39_SAMPLE_WORDS=${words(runs[0].prompt)}`);
 console.log(`PHASE39_SAMPLE_PROMPT=${runs[0].prompt}`);
 console.log("PHASE39_DETERMINISM=10/10");
-console.log("✓ Phase 39 unified UI clothing authority passed");
+console.log("PHASE40_MOBILE_CLOTHING_PERSISTENCE=PASS");
+console.log("✓ Phase 39 unified UI clothing authority passed with Phase 40 mobile selection persistence");
