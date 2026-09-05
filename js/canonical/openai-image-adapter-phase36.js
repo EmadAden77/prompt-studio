@@ -52,7 +52,9 @@ const LOW_PRIORITY_PATTERNS = Object.freeze([
   /Gentle directional contrast creates gradual shadow falloff across the scene\.\s*/iu,
   /Transparent glass carries natural reflections and a faint view into the Ivory cabin\.\s*/iu,
   /At night, transparent glass carries streetlight reflections and a dim cabin view; never opaque black\.\s*/iu,
-  /Lighting follows the selected real-world day or night source\.\s*/iu
+  /Lighting follows the selected real-world day or night source\.\s*/iu,
+  /Captured with the selected physically plausible front-camera geometry\.\s*/iu,
+  /; Autobiography Dynamic badging and Saudi plate, never legible/iu
 ]);
 
 function keepWithinBudget(prompt, maxWords = 250) {
