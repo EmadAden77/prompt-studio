@@ -1,4 +1,5 @@
 import phase23BuildOpenAIImagePrompt, {
+  describeSaudiStreetRealism as describeSaudiStreetRealismPhase23,
   describePostProcessing,
   describeEnvironmentalDetails,
   describeCameraArtifacts,
@@ -88,6 +89,10 @@ export function describeGymRealism(canonical) {
   return prioritized.slice(0, 4).join(" ");
 }
 
+export function describeSaudiStreetRealism(canonical) {
+  return isGym(canonical) ? "" : describeSaudiStreetRealismPhase23(canonical);
+}
+
 function removeExact(prompt, layer) {
   if (!layer) return prompt;
   return prompt.replace(`${layer} `, "").replace(` ${layer}`, "").replace(layer, "").replace(/\s{2,}/gu, " ").trim();
@@ -139,8 +144,9 @@ function insertGymWithinCap(prompt, canonical, realism, maxWords = 250) {
 }
 
 export function buildOpenAIImagePrompt(canonical, options = {}) {
-  const prompt = phase23BuildOpenAIImagePrompt(canonical, options);
+  let prompt = phase23BuildOpenAIImagePrompt(canonical, options);
   if (!isGym(canonical)) return prompt;
+  prompt = removeExact(prompt, describeSaudiStreetRealismPhase23(canonical));
   return insertGymWithinCap(prompt, canonical, describeGymRealism(canonical));
 }
 
