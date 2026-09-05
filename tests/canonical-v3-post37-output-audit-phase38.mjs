@@ -3,12 +3,12 @@ import { buildCanonicalV3UserOutput } from "../js/canonical/canonical-v3-pipelin
 import { FULL_OUTFITS, TRADITIONAL, resolveClothingText } from "../js/clothing-authority.js";
 
 const sections = ["solo", "selfie", "bedroom", "gym", "street", "carExterior", "car", "group", "accidental"];
-const colored = FULL_OUTFITS.flatMap((group) => group.options || []).filter((item) => item?.value && item.value !== "custom").slice(0, 6);
-const traditional = Object.entries(TRADITIONAL).map(([value, text]) => ({ value, text }));
+const colored = Object.values(FULL_OUTFITS).map((group) => group?.[0]).filter((item) => item?.value && item.value !== "custom");
+const traditional = TRADITIONAL;
 const exactCount = (text, needle) => String(text).split(needle).length - 1;
 const words = (text) => String(text).trim().split(/\s+/u).filter(Boolean).length;
 
-assert.ok(colored.length >= 6, "Phase 38 requires representatives from the six colored outfit groups");
+assert.equal(colored.length, 6, "Phase 38 requires one representative from each of the six colored outfit groups");
 assert.ok(traditional.length >= 4, "Traditional clothing catalog must remain available");
 
 for (const section of sections) {
