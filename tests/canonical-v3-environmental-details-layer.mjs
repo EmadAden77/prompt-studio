@@ -5,7 +5,8 @@ import { buildCanonicalV3, hourToMood } from "../js/canonical-v3-engine.js";
 import {
   buildOpenAIImagePrompt,
   describeEnvironmentalDetails,
-  describeSaudiStreetRealism
+  describeSaudiStreetRealism,
+  describeMicroRealism
 } from "../js/canonical/openai-image-adapter.js";
 
 const GOLDEN_URL = new URL("./golden/current-engine/legacy-v2-semantic-goldens.json", import.meta.url);
@@ -72,10 +73,9 @@ for (const id of GOLDEN_CASE_IDS) {
   assert.equal(JSON.stringify(canonical.lighting), beforeLighting, `${id}: adapter must not mutate lighting state`);
   assert.equal(Object.isFrozen(canonical.hard_constraints), true, `${id}: hard constraints must remain frozen`);
   assert.ok(signals.length <= 2, `${id}: helper must remain sparse`);
-  for (const phrase of signals) {
-    assert.equal(count(helperOutput, phrase), 1, `${id}: helper must emit each phrase once`);
-    assert.equal(count(prompt, phrase), 1, `${id}: prompt must emit each phrase once`);
-  }
+  for (const phrase of signals) assert.equal(count(helperOutput, phrase), 1, `${id}: helper must emit each phrase once`);
+  const microSignals = describeMicroRealism(canonical).match(/[^.!?]+[.!?]/gu) ?? [];
+  assert.ok(microSignals.some((part) => prompt.includes(part.trim())), `${id}: prompt must retain a micro-realism detail under the 250-word cap`);
   if (canonical.scene?.type === "outdoor") {
     const active = canonical.lighting?.source_type === "daylight" ? SAUDI_STREET_DAY : SAUDI_STREET_NIGHT;
     assert.ok(streetSignals(streetOutput, active).length >= 2, `${id}: street helper must emit at least two active-set signals`);
@@ -110,7 +110,6 @@ assert.equal(/street mood is rush/iu.test(rushPrompt), false, "reserved street_m
 
 const cafeAuto = canonicalFor({ streetMood:"auto", streetHour:21, lighting:"street-night", time:"night" });
 assert.equal(cafeAuto.scene.facts.street_mood, "cafe", "hour 21 auto mode must resolve to cafe");
-const cafePrompt = buildOpenAIImagePrompt(cafeAuto);
 assert.deepEqual(streetSignals(describeSaudiStreetRealism(cafeAuto), MOOD_DETAILS.cafe), MOOD_DETAILS.cafe, "cafe auto mode must emit the cafe detail set");
 
 const manualDust = canonicalFor({ streetMood:"dust", streetHour:7, lighting:"street-night", time:"night" });
@@ -144,4 +143,4 @@ assert.deepEqual(detailSignals(describeEnvironmentalDetails(directionalVehicleCa
 const plainRoomCanonical = canonicalFor({ intentType:"room", scene:"bedroom", lightDirection:null });
 assert.equal(describeEnvironmentalDetails(plainRoomCanonical), ENVIRONMENTAL_DETAIL_PHRASES.lived_in_room, "a room without a more specific supported detail must use the lived-in fallback");
 
-console.log("✓ canonical-v3 environmental details, Saudi street moods, and Phase 12 auto-hour contracts passed");
+console.log("✓ canonical-v3 environmental details, Saudi street moods, and Phase 12 auto-hour contracts passed with Phase 18 cap arbitration");

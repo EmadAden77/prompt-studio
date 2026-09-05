@@ -46,18 +46,9 @@ function vibeOf(raw) { const value = String(raw?.groupVibe || "casual").trim().t
 
 function groupSeed(raw) {
   raw = raw || {};
-  const key = [
-    raw.groupKind || "friends",
-    raw.groupVibe || "casual",
-    raw.groupCount || 3,
-    raw.streetMood || "auto",
-    raw.streetHour || new Date().getHours()
-  ].join("|");
+  const key = [raw.groupKind || "friends", raw.groupVibe || "casual", raw.groupCount || 3, raw.streetMood || "auto", raw.streetHour || new Date().getHours()].join("|");
   let h = 2166136261;
-  for (let i = 0; i < key.length; i += 1) {
-    h ^= key.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
+  for (let i = 0; i < key.length; i += 1) { h ^= key.charCodeAt(i); h = Math.imul(h, 16777619); }
   return Math.abs(h >>> 0) % 5;
 }
 
@@ -67,56 +58,34 @@ export function applyGroupPhase13(canonical, rawInput = {}) {
   const kind = kindOf(rawInput);
   const offset = groupSeed(rawInput);
   const additional = Array.isArray(next.subjects?.additional) ? next.subjects.additional : [];
-
   if (next.scene?.type === "vehicle") {
     next.scene.type = "outdoor";
     next.scene.id = "street";
     next.scene.description = "an ordinary outdoor street or parking environment";
     next.scene.vehicle = null;
-    if (next.scene.facts) {
-      for (const key of ["exterior_color", "interior", "seats", "console_trim", "steering_wheel", "roof"]) delete next.scene.facts[key];
-    }
+    if (next.scene.facts) for (const key of ["exterior_color", "interior", "seats", "console_trim", "steering_wheel", "roof"]) delete next.scene.facts[key];
   }
-
   if (next.hard_constraints?.vehicle_geometry) {
     next.hard_constraints.vehicle_geometry = {
-      applicable: false,
-      drive_configuration: null,
-      driver_position: null,
-      steering_relation: null,
-      cluster_relation: null,
-      console_relation: null,
-      door_window_relation: null,
-      coordinate_system: null,
-      mirror_may_swap_physical_sides: false,
-      adapter_can_modify: false
+      applicable: false, drive_configuration: null, driver_position: null, steering_relation: null, cluster_relation: null,
+      console_relation: null, door_window_relation: null, coordinate_system: null, mirror_may_swap_physical_sides: false, adapter_can_modify: false
     };
   }
-
   additional.forEach((person, index) => {
     const poolIndex = (index + offset) % FACES.length;
     person.reference_id = null;
     person.expression = EXPRESSIONS[(index + offset) % EXPRESSIONS.length];
     person.pose = POSES[(index + offset) % POSES.length];
     person.clothing = {
-      garment: OUTFITS[kind][(index + offset) % OUTFITS[kind].length],
-      fabric: null,
-      fabric_weight: null,
-      fit: null,
-      wear_state: null,
+      garment: OUTFITS[kind][(index + offset) % OUTFITS[kind].length], fabric: null, fabric_weight: null, fit: null, wear_state: null,
       custom_modifier: `${FACES[poolIndex]}, apparent age ${AGES[(index + offset) % AGES.length]}`
     };
   });
-
   return freeze(next);
 }
 
-function shortAge(modifier) {
-  return /apparent age\s+(~?\d+)/iu.exec(String(modifier || ""))?.[1] || "~30";
-}
-function faceText(modifier) {
-  return String(modifier || "").split(", apparent age")[0].trim();
-}
+function shortAge(modifier) { return /apparent age\s+(~?\d+)/iu.exec(String(modifier || ""))?.[1] || "~30"; }
+function faceText(modifier) { return String(modifier || "").split(", apparent age")[0].trim(); }
 function groupPersonClauses(canonical) {
   const additional = canonical.subjects?.additional || [];
   const compact = canonical.subjects?.count >= 4;
@@ -145,6 +114,10 @@ function removeStreetDetailBlock(prompt, canonical) {
 function trimToBudget(prompt) {
   let output = prompt.replace(/\s{2,}/gu, " ").trim();
   const removable = [
+    "Subtle natural eye reflection mirrors the surrounding environment.",
+    "Subtle tone variation between forehead and cheeks.",
+    "Faint natural pore detail across the cheeks.",
+    "Soft contact shadows ground the subject and nearby objects to their surfaces.",
     "Authentic white balance matched to the dominant light source.",
     "Natural body proportions consistent with the environment.",
     "Slight lens softness is visible toward the frame edges.",
@@ -171,9 +144,7 @@ export function enrichGroupPromptPhase13(canonical, rawInput = {}, basePrompt = 
   const life = backgroundLife(canonical);
   const groupBlock = [countSentence, ...clauses, ANTI_SIMILARITY, vibe, life].filter(Boolean).join(" ");
   const withoutStreetBlock = removeStreetDetailBlock(basePrompt, canonical);
-  const enriched = withoutStreetBlock.includes(countSentence)
-    ? withoutStreetBlock.replace(countSentence, groupBlock)
-    : `${groupBlock} ${withoutStreetBlock}`;
+  const enriched = withoutStreetBlock.includes(countSentence) ? withoutStreetBlock.replace(countSentence, groupBlock) : `${groupBlock} ${withoutStreetBlock}`;
   return trimToBudget(enriched);
 }
 

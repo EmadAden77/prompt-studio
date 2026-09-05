@@ -64,3 +64,5 @@ jobs:
         run: node tests/canonical-v3-group-phase13.mjs
       - name: Run Phase 17 place realism tests
         run: node tests/canonical-v3-place-realism.mjs
+      - name: Run Phase 18 micro-realism tests
+        run: node tests/canonical-v3-micro-realism.mjs
