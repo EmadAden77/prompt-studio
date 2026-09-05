@@ -12,7 +12,7 @@ const INTENT_SOURCE_ORDER = Object.freeze([
   "scene_evidence",
   "deterministic_fallback"
 ]);
-const STREET_MOOD_SET = new Set(["dawn","rush","normal","school","prayer","cafe","latenight","dust","souq","event"]);
+const STREET_MOOD_SET = new Set(["dawn","rush","normal","school","prayer","cafe","latenight","dust","souq","event","alley","construction","bufia"]);
 
 export const CANONICAL_V3_AUTHORITY_PRIORITY = Object.freeze([
   Object.freeze({ owner: "hard_constraint", priority: 100 }),

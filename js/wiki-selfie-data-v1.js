@@ -59,9 +59,9 @@ export const SCENES = {
     environment:"an ordinary lived-in Saudi bedroom, visible only as much as needed to establish the selfie context"
   },
   rangeRover: {
-    label:"رنج روفر سبورت 2022",
+    label:"رنج روفر 2017",
     family:"car",
-    environment:"inside a stationary white 2022 Range Rover Sport with beige perforated leather, dark wood trim and coherent left-hand-drive geometry, visible only as much as needed to establish the parked-car selfie"
+    environment:"inside a stationary 2017 Range Rover Sport Autobiography Dynamic, Ivory perforated leather, dark wood veneer, LHD, visible only as much as needed to establish the parked-car selfie"
   },
   gym: {
     label:"نادٍ سعودي حديث",

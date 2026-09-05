@@ -222,7 +222,13 @@ function mountStreetMoodControls() {
   const moodSelect = document.createElement("select");
   moodSelect.id = "street-mood";
   moodSelect.name = "streetMood";
-  for (const option of STREET_MOODS) {
+
+  const phase31Moods = [
+    { value:"alley", label:"حارة شعبية" },
+    { value:"construction", label:"حفريات" },
+    { value:"bufia", label:"بوفية" }
+  ];
+  for (const option of [...STREET_MOODS, ...phase31Moods].filter((item, index, all) => all.findIndex((candidate) => candidate.value === item.value) === index)) {
     const node = document.createElement("option");
     node.value = option.value;
     node.textContent = option.label;

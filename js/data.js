@@ -2,6 +2,12 @@ import { SCENES, LIGHTING_OPTIONS } from "./data-phase20.js";
 
 export * from "./data-phase20.js";
 
+
+Object.assign(SCENES.rangeRover, {
+  label: "رنج روفر 2017",
+  environment: "inside a stationary 2017 Range Rover Sport Autobiography Dynamic, Ivory perforated leather, dark wood veneer, LHD"
+});
+
 export const SAUDI_REALISM_MODIFIERS = Object.freeze({
   streetsAndPlaces: Object.freeze([
     Object.freeze({
@@ -56,7 +62,7 @@ export const SAUDI_REALISM_MODIFIERS = Object.freeze({
   ])
 });
 
-export const CAR_EXTERIOR_SPEC = "2017 Range Rover Sport Autobiography Dynamic L494 in Fuji White, gloss black grille and side-vent surrounds, 22-inch dark alloy wheels, quad rectangular exhaust tips, LED headlights with DRL signature, panoramic glass roof, lightly tinted TRANSPARENT glass, never opaque black, showing natural reflections and faint glimpses of the Ivory interior, small Autobiography Dynamic badging and Saudi plate present, both soft-focus and never legible.";
+export const CAR_EXTERIOR_SPEC = "2017 Range Rover Sport Autobiography Dynamic L494 in Fuji White, gloss black grille and side-vent surrounds, 22-inch dark alloy wheels, quad rectangular exhaust tips, LED headlights with DRL signature, panoramic glass roof, transparent glass, never opaque black, carrying natural reflections and faint glimpses of the Ivory interior, small Autobiography Dynamic badging and Saudi plate present, both soft-focus and never legible.";
 
 export const CAR_EXTERIOR_LOCATIONS = Object.freeze([
   { value: "villa", label: "أمام فيلا", text: "parked on a driveway before a Saudi villa with beige stone cladding, high wall, metal gate, and a palm tree" },
@@ -109,7 +115,7 @@ for (const sceneId of ["street", "rangeRover", "majlis", "carExterior", "rooftop
 Object.assign(LIGHTING_OPTIONS, {
   carExterior: {
     day: [
-      { value: "harsh-noon", label: "شمس ظهر قوية", text: "harsh noon sunlight creates crisp reflections across Fuji White paint, dark wheels, and glass with short grounded shadows" },
+      { value: "harsh-noon", label: "شمس ظهر قوية", text: "harsh noon sunlight creates crisp reflections across Fuji White paint, dark wheels, and transparent glass with short grounded shadows" },
       { value: "golden-low", label: "شمس ذهبية منخفضة", text: "low golden sunlight stretches warm reflections along the body panels and creates long soft-edged ground shadows" },
       { value: "overcast-soft", label: "غائم ناعم", text: "soft overcast daylight reveals paint curvature, wheel detail, glass reflections, and fine dust with restrained contrast" }
     ],
@@ -117,7 +123,7 @@ Object.assign(LIGHTING_OPTIONS, {
       { value: "streetlight-reflection", label: "انعكاس إنارة شارع", text: "streetlights create elongated reflections along the hood, roof, and side panels with natural dark gaps between light pools" },
       { value: "villa-porch", label: "إضاءة مدخل الفيلا", text: "warm villa porch light mixes with cooler ambient night light across the parked vehicle and driveway" },
       { value: "interior-spill", label: "تسرب إضاءة المقصورة", text: "soft interior light spills from the open driver door into the night while exterior surfaces retain surrounding reflections" },
-      { value: "drl-on", label: "إضاءة DRL", text: "the DRL signature glows cleanly while surrounding practical lights reflect across the Fuji White paint and tinted glass" }
+      { value: "drl-on", label: "إضاءة DRL", text: "the DRL signature glows cleanly while surrounding practical lights reflect across the Fuji White paint and transparent glass" }
     ]
   }
 });

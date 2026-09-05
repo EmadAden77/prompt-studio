@@ -146,8 +146,8 @@ export function buildOpenAIImagePrompt(canonical, options = {}) {
   return retainMicroRealism(enforcePhase26WordBudget(withLightingLast, canonical), canonical);
 }
 
-const AUTO_STREET_MOODS = Object.freeze(new Set(["auto", "dawn", "rush", "normal", "school", "prayer", "cafe", "latenight"]));
-const SPECIAL_PLACE_BY_MOOD = Object.freeze({ cafe: "saudi_bufia", normal: "old_service_alley", rush: "street_construction" });
+const AUTO_STREET_MOODS = Object.freeze(new Set(["auto", "dawn", "rush", "normal", "school", "prayer", "cafe", "latenight", "alley", "construction", "bufia"]));
+const SPECIAL_PLACE_BY_MOOD = Object.freeze({ alley: "old_service_alley", construction: "street_construction", bufia: "saudi_bufia" });
 
 function modifierById(group, id) {
   return SAUDI_REALISM_MODIFIERS[group]?.find((item) => item.id === id)?.prompt ?? "";
