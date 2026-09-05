@@ -4,8 +4,7 @@ import { resolveCanonicalConflicts } from "./conflict-resolver.js";
 import { buildOpenAIImagePrompt } from "./openai-image-adapter.js";
 import { applyGroupPhase13, enrichGroupPromptPhase13 } from "./group-phase13.js";
 import { SCENES, LIGHTING_OPTIONS, CAR_EXTERIOR_LOCATIONS, CAR_EXTERIOR_POSES } from "../data.js";
-import { PHASE32_NEUTRAL_CUSTOM_OUTFIT } from "../phase30-clothing-catalog.js";
-import { CAR_EXTERIOR_CLOTHING_OPTIONS } from "../car-exterior-clothing-phase33.js";
+import { resolveClothingText } from "../phase30-clothing-catalog.js";
 
 export const CAR_EXTERIOR_PROMPT_WORD_BUDGET = 280;
 
@@ -56,16 +55,14 @@ function garmentScene(raw, clean) {
 
 function resolveClothingDetails(raw, clean) {
   const sceneKey = garmentScene(raw, clean);
-  const baseGarments = SCENES[sceneKey]?.clothing ?? [];
-  const garments = sceneKey === "carExterior"
-    ? [...CAR_EXTERIOR_CLOTHING_OPTIONS, ...baseGarments]
-    : baseGarments;
-  const selectedGarment = raw.clothing || clean.clothing;
-  const customGarment = String(raw.customClothing || "").trim();
-  const preserveGroupBudget = raw.studioSection === "group" || clean.studioSection === "group";
-  const garment = selectedGarment === "custom"
-    ? (customGarment || PHASE32_NEUTRAL_CUSTOM_OUTFIT)
-    : (preserveGroupBudget ? (optionText(garments, selectedGarment) || selectedGarment) : (optionText(garments, selectedGarment) || clean.clothing));
+  const explicitValue = sceneKey === "carExterior"
+    ? (raw.carExteriorClothing || raw.clothing)
+    : raw.clothing;
+  const selectedGarment = explicitValue || clean.clothing;
+  const hasExplicitSelection = Boolean(String(explicitValue || "").trim());
+  const garment = hasExplicitSelection
+    ? resolveClothingText(selectedGarment, raw)
+    : resolveClothingText(selectedGarment, raw);
   const fabricValue = raw.fabric || clean.fabric;
   const weightValue = raw.fabricWeight || clean.fabricWeight;
   const wearValue = raw.wearState || clean.wearState;
