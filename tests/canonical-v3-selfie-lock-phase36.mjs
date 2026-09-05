@@ -4,6 +4,7 @@ import { buildOpenAIImagePrompt, SELFIE_ARM_LOCK } from "../js/canonical/openai-
 
 const words = (value) => String(value ?? "").trim().split(/\s+/u).filter(Boolean).length;
 const firstSentence = (value) => String(value ?? "").match(/^[^.!?]+[.!?]/u)?.[0]?.trim() || "";
+const withoutSelfieLock = (value) => String(value ?? "").replace(SELFIE_ARM_LOCK, "");
 
 const expectedOpening = Object.freeze({
   direct_front_camera_selfie:"A candid direct selfie.",
@@ -44,9 +45,9 @@ for (const [studioSection, route] of Object.entries(SECTION_CAPTURE_ROUTING)) {
   assert.equal(first.canonical.capture.type, route.captureType, `Phase 36: ${studioSection} capture routing mismatch`);
   assert.equal(firstSentence(first.prompt), expectedOpening[route.captureType], `Phase 36: ${studioSection} opening sentence mismatch`);
   assert.ok(outputs.every((item) => item.prompt === first.prompt), `Phase 36: ${studioSection} determinism must be 10/10`);
-  assert.doesNotMatch(first.prompt, /both hands in pockets/iu, `Phase 36: ${studioSection} leaked impossible selfie pose`);
+  assert.doesNotMatch(withoutSelfieLock(first.prompt), /both hands in pockets/iu, `Phase 36: ${studioSection} leaked impossible selfie pose outside the lock`);
   assert.ok(words(first.prompt) <= 250, `Phase 36: ${studioSection} exceeds 250 words (${words(first.prompt)})`);
-  if (studioSection !== "custom") assert.doesNotMatch(first.prompt, /a user-defined scene/iu, `Phase 36: ${studioSection} leaked custom scene`);
+  assert.doesNotMatch(first.prompt, /a user-defined scene/iu, `Phase 36: ${studioSection} leaked custom scene`);
   if (route.captureType !== "accidental_front_camera_capture") {
     assert.match(first.prompt, new RegExp(SELFIE_ARM_LOCK.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "u"), `Phase 36: ${studioSection} selfie arm lock missing`);
   }
@@ -74,7 +75,7 @@ assert.match(car.prompt, /white thobe/iu);
 assert.match(car.prompt, /red-and-white fine checkered shemagh/iu);
 assert.match(car.prompt, /black doubled-cord iqal/iu);
 assert.match(car.prompt, /One arm extends toward the camera holding the phone/iu);
-assert.doesNotMatch(car.prompt, /a user-defined scene|both hands in pockets|sleep/iu);
+assert.doesNotMatch(withoutSelfieLock(car.prompt), /a user-defined scene|both hands in pockets|sleep/iu);
 assert.ok(words(car.prompt) <= 250, `Phase 36: carExterior exceeds 250 words (${words(car.prompt)})`);
 assert.ok(carOutputs.every((item) => item.prompt === car.prompt), "Phase 36: carExterior determinism must be 10/10");
 
