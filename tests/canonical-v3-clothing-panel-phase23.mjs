@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { SCENES } from "../js/data.js";
 import { garmentOptionsForSection, garmentSceneForSection } from "../js/phase22-ui-runtime.js";
+import { getClothingOptions } from "../js/clothing-authority.js";
 import { buildCanonicalV3UserOutput } from "../js/canonical/canonical-v3-pipeline.js";
 import { buildOpenAIImagePrompt } from "../js/canonical/openai-image-adapter.js";
 import { CAR_EXTERIOR_CLOTHING_OPTIONS } from "../js/car-exterior-clothing-phase33.js";
@@ -9,6 +9,7 @@ import { CAR_EXTERIOR_CLOTHING_OPTIONS } from "../js/car-exterior-clothing-phase
 const wordCount = (value) => String(value ?? "").trim().split(/\s+/u).filter(Boolean).length;
 const uiSource = fs.readFileSync(new URL("../js/phase22-ui-runtime.js", import.meta.url), "utf8");
 const indexSource = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+const authorityOptions = getClothingOptions();
 
 assert.equal((indexSource.match(/id="clothing"/gu) || []).length, 1, "index must expose exactly one standard garment select");
 assert.doesNotMatch(uiSource, /id\s*=\s*["']car-exterior-clothing["']/u, "carExterior duplicate garment select must be removed");
@@ -29,18 +30,26 @@ const sectionExpectations = {
 };
 for (const [section, scene] of Object.entries(sectionExpectations)) {
   assert.equal(garmentSceneForSection(section, ""), scene, `${section}: wrong garment scene`);
-  assert.ok(garmentOptionsForSection(section, "").length > 0, `${section}: garment list missing`);
+  assert.deepEqual(
+    garmentOptionsForSection(section, "").map((option) => option.value),
+    authorityOptions.map((option) => option.value),
+    `${section}: garment list must come from clothing-authority.js`
+  );
 }
 for (const scene of ["majlis", "kashta", "barbershop", "grocery", "rooftop", "streetFootball", "gasStation"]) {
-  assert.equal(garmentSceneForSection("solo", scene), scene, `${scene}: own garment list must override solo street default`);
-  assert.deepEqual(garmentOptionsForSection("solo", scene), SCENES[scene].clothing, `${scene}: garment list mismatch`);
+  assert.equal(garmentSceneForSection("solo", scene), scene, `${scene}: selected scene must still route correctly`);
+  assert.deepEqual(
+    garmentOptionsForSection("solo", scene).map((option) => option.value),
+    authorityOptions.map((option) => option.value),
+    `${scene}: UI must keep the unified authority clothing list instead of scene-specific clothing`
+  );
 }
 assert.deepEqual(
-  garmentOptionsForSection("carExterior", ""),
-  CAR_EXTERIOR_CLOTHING_OPTIONS.map((option) => ({ ...option })),
-  "carExterior garment list must use the Phase 33 wide catalog"
+  garmentOptionsForSection("carExterior", "").map((option) => option.value),
+  CAR_EXTERIOR_CLOTHING_OPTIONS.map((option) => option.value),
+  "carExterior Phase 33 wrapper must mirror the authority catalog"
 );
-assert.ok(garmentOptionsForSection("carExterior", "").length >= 20, "carExterior wide garment list must expose at least 20 options");
+assert.ok(garmentOptionsForSection("carExterior", "").length >= 90, "carExterior must expose the 90+ authority catalog");
 
 const raw = {
   studioSection: "carExterior",
@@ -68,9 +77,6 @@ assert.match(clothing.wear_state, /ordinary daily wear/iu);
 assert.match(clothing.fit, /regular fit/iu);
 assert.match(clothing.custom_modifier, /normally pressed/iu);
 assert.match(clothing.custom_modifier, /plain cuffs/iu);
-// Phase 38 English headwear wording can trigger the dedicated headwear lock; the 250-word
-// adapter budget may then omit lower-priority material prose, but the structured canonical
-// clothing physics above must remain intact and deterministic.
 assert.match(output.prompt, /white thobe/iu);
 assert.match(output.prompt, /red-and-white/iu);
 assert.match(output.prompt, /black iqal/iu);
@@ -80,4 +86,4 @@ assert.equal(repeated.every((value) => value === repeated[0]), true, "Phase 23 d
 assert.equal(JSON.stringify(output.canonical.hard_constraints), hardBefore, "hard constraints changed during adapter runs");
 
 console.log(`PHASE23_CAR_EXTERIOR_WORDS=${wordCount(output.prompt)}`);
-console.log("✓ Phase 23 unified clothing panel contracts passed with Phase 38 English prompt text authority");
+console.log("✓ Phase 23 clothing panel contracts passed under Phase 39 unified authority UI");
