@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import {
-  PHASE32_NEUTRAL_CUSTOM_OUTFIT,
+  PHASE34_NEUTRAL_CLOTHING,
   UNIFIED_CLOTHING_CATALOG,
-  UNIFIED_CLOTHING_OPTIONS
+  UNIFIED_CLOTHING_OPTIONS,
+  resolveClothingText
 } from "../js/phase30-clothing-catalog.js";
 import { buildCanonicalV3UserOutput } from "../js/canonical/canonical-v3-pipeline.js";
 
@@ -23,15 +24,16 @@ for (const option of UNIFIED_CLOTHING_OPTIONS.filter((item) => item.value !== "c
 }
 
 for (const group of UNIFIED_CLOTHING_CATALOG) {
-  assert.ok(group.options.filter((item) => item.value !== "custom").length >= 6, `${group.id}: expected 6-8 curated outfits`);
+  assert.ok(group.options.filter((item) => item.value !== "custom").length >= 6, `${group.id}: expected a curated outfit set`);
 }
 
 const catalogSource = fs.readFileSync(new URL("../js/phase30-clothing-catalog.js", import.meta.url), "utf8");
 const pipelineSource = fs.readFileSync(new URL("../js/canonical/canonical-v3-pipeline.js", import.meta.url), "utf8");
 assert.match(catalogSource, /name = "customClothing"/u, "custom clothing input must be named customClothing");
 assert.match(catalogSource, /field\.hidden = select\.value !== "custom"/u, "custom input must only show for custom selection");
-assert.match(pipelineSource, /selectedGarment === "custom"/u, "pipeline must explicitly resolve custom clothing");
-assert.match(pipelineSource, /raw\.customClothing/u, "pipeline must read raw.customClothing");
+assert.match(catalogSource, /export function resolveClothingText/u, "Phase 34 clothing authority must own custom resolution");
+assert.match(catalogSource, /raw\?\.customClothing/u, "clothing authority must read raw.customClothing");
+assert.match(pipelineSource, /resolveClothingText/u, "pipeline must route clothing through the shared authority");
 
 const base = {
   studioSection:"street",
@@ -61,11 +63,12 @@ const customOutputs = Array.from({ length:10 }, () => buildCanonicalV3UserOutput
 assert.equal(customOutputs.every((item) => item.prompt === customOutputs[0].prompt), true, "custom outfit determinism failed");
 assert.ok(customOutputs[0].prompt.includes(customText), "custom clothing text must flow into the positive prompt verbatim");
 assert.equal(customOutputs[0].canonical.subjects.primary.clothing.garment, customText, "custom garment must remain verbatim in canonical state");
+assert.equal(resolveClothingText("custom", customRaw), customText, "shared authority must preserve custom text verbatim");
 assert.ok(words(customOutputs[0].prompt) <= 250, `custom prompt exceeds 250 words (${words(customOutputs[0].prompt)})`);
 
 const emptyCustom = buildCanonicalV3UserOutput({ ...base, clothing:"custom", customClothing:"" });
-assert.equal(emptyCustom.canonical.subjects.primary.clothing.garment, PHASE32_NEUTRAL_CUSTOM_OUTFIT, "empty custom clothing must use the neutral fallback outfit");
-assert.ok(emptyCustom.prompt.includes(PHASE32_NEUTRAL_CUSTOM_OUTFIT));
+assert.equal(emptyCustom.canonical.subjects.primary.clothing.garment, PHASE34_NEUTRAL_CLOTHING, "Phase 34 supersedes the old empty-custom fallback");
+assert.ok(emptyCustom.prompt.includes(PHASE34_NEUTRAL_CLOTHING));
 
 assert.deepEqual(
   customOutputs[0].canonical.hard_constraints,
@@ -78,4 +81,4 @@ console.log(`PHASE32_OPTIONS=${UNIFIED_CLOTHING_OPTIONS.length}`);
 console.log(`PHASE32_CURATED_WORDS=${words(curatedOutputs[0].prompt)}`);
 console.log(`PHASE32_CUSTOM_WORDS=${words(customOutputs[0].prompt)}`);
 console.log("PHASE32_DETERMINISM=10/10");
-console.log("✓ Phase 32 full-outfit colored clothing + custom input contracts passed");
+console.log("✓ Phase 32 full-outfit colored clothing + custom input contracts passed under Phase 34 authority");
