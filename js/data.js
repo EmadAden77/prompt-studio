@@ -13,6 +13,21 @@ export const SAUDI_REALISM_MODIFIERS = Object.freeze({
       id: "saudi_street_night",
       label: "شارع ليلاً - إضاءة واقعية",
       prompt: "mixed lighting from yellow sodium lamps and cool white LED shop signs, glowing cat-eye road reflectors, subtle motion blur from passing cars, light reflecting off dusty windows"
+    }),
+    Object.freeze({
+      id: "saudi_bufia",
+      label: "بوفية شعبية",
+      prompt: "Saudi bufia cafe: tea urn, plastic stools, sun-faded paint"
+    }),
+    Object.freeze({
+      id: "old_service_alley",
+      label: "زقاق قديم",
+      prompt: "Saudi service alley: utility wires, air-conditioning units"
+    }),
+    Object.freeze({
+      id: "street_construction",
+      label: "أعمال شارع",
+      prompt: "Saudi street construction: concrete barriers, stacked paving blocks"
     })
   ]),
   authenticShops: Object.freeze([

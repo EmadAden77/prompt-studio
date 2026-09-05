@@ -136,7 +136,9 @@ export function buildOpenAIImagePrompt(canonical, options = {}) {
   const headwear = describeHeadwear(canonical);
   const withHeadwear = headwear ? insertHeadwearWithinCap(prompt, canonical, headwear) : prompt;
   const withSaudiRealism = insertSaudiRealism(withHeadwear, canonical);
-  const withBodyAuthority = insertPhase26Authority(withSaudiRealism, canonical);
+  const withPhase29Camera = insertPhase29CameraArtifacts(withSaudiRealism, canonical);
+  const withCandidSpeech = insertCandidSpeech(withPhase29Camera, canonical);
+  const withBodyAuthority = insertPhase26Authority(withCandidSpeech, canonical);
   const withRequiredGymCue = ensureGymEffort(withBodyAuthority, canonical);
   const withRequiredCarExterior = ensureCarExterior(withRequiredGymCue, canonical);
   const withGlassRealism = insertGlassRealism(withRequiredCarExterior, canonical);
@@ -145,6 +147,7 @@ export function buildOpenAIImagePrompt(canonical, options = {}) {
 }
 
 const AUTO_STREET_MOODS = Object.freeze(new Set(["auto", "dawn", "rush", "normal", "school", "prayer", "cafe", "latenight"]));
+const SPECIAL_PLACE_BY_MOOD = Object.freeze({ cafe: "saudi_bufia", normal: "old_service_alley", rush: "street_construction" });
 
 function modifierById(group, id) {
   return SAUDI_REALISM_MODIFIERS[group]?.find((item) => item.id === id)?.prompt ?? "";
@@ -158,9 +161,13 @@ function sentence(value) {
 export function describeSaudiRealism(canonical) {
   const sceneId = text(canonical?.scene?.id);
   const mood = text(canonical?.scene?.facts?.street_mood).toLowerCase();
+  const requestedMood = text(canonical?.scene?.street_mood_request).toLowerCase();
   let place = "";
   if (sceneId === "street" && AUTO_STREET_MOODS.has(mood || "auto")) {
-    place = modifierById("streetsAndPlaces", canonical?.lighting?.source_type === "daylight" ? "saudi_street_day" : "saudi_street_night");
+    const specialPlace = requestedMood && requestedMood !== "auto" ? SPECIAL_PLACE_BY_MOOD[mood] : "";
+    place = specialPlace
+      ? modifierById("streetsAndPlaces", specialPlace)
+      : modifierById("streetsAndPlaces", canonical?.lighting?.source_type === "daylight" ? "saudi_street_day" : "saudi_street_night");
   } else if (sceneId === "barbershop") {
     place = modifierById("authenticShops", "local_barbershop");
   } else if (sceneId === "grocery") {
@@ -169,6 +176,20 @@ export function describeSaudiRealism(canonical) {
   if (!place) return "";
   const people = modifierById("backgroundHumans", sceneId === "street" ? "realistic_crowd" : "human_imperfections");
   return [sentence(place), sentence(people)].filter(Boolean).join(" ");
+}
+
+export function describePhase29CameraArtifacts(canonical) {
+  if (text(canonical?.lighting?.source_type).toLowerCase() !== "daylight") return "";
+  const sceneId = text(canonical?.scene?.id);
+  if (!["street", "carExterior", "rooftop", "gasStation", "grocery"].includes(sceneId)) return "";
+  return "Slight edge chromatic aberration, natural sun flare, grainy shadows, and slightly blown highlights.";
+}
+
+export function describeCandidSpeech(canonical) {
+  const primary = canonical?.subjects?.primary ?? {};
+  const evidence = [primary.pose, primary.expression].map(text).join(" ");
+  if (!/mid[- ]speech|speaking|talking|conversation/iu.test(evidence)) return "";
+  return "Caught naturally mid-sentence with lips slightly parted and a small conversational hand gesture; the eyes remain naturally open with identity-preserving shape.";
 }
 
 function insertAfterLayer(prompt, anchor, addition) {
@@ -195,6 +216,40 @@ function insertSaudiRealism(prompt, canonical, maxWords = 250) {
     if (words(candidate) <= maxWords) return candidate;
   }
   return candidate;
+}
+
+function removePostProcessingSentences(prompt) {
+  return prompt
+    .replace(/Realistic dynamic range with natural highlight rolloff\./iu, "")
+    .replace(/Authentic white balance matched to the dominant light source\./iu, "")
+    .replace(/Minimal retouching preserves natural skin and fabric texture\./iu, "")
+    .replace(/\s{2,}/gu, " ")
+    .trim();
+}
+
+function insertPhase29CameraArtifacts(prompt, canonical, maxWords = 250) {
+  const artifact = describePhase29CameraArtifacts(canonical);
+  if (!artifact || prompt.includes(artifact)) return prompt;
+  let candidate = insertAfterLayer(prompt, describeCameraArtifacts(canonical), artifact);
+  if (words(candidate) <= maxWords) return candidate;
+
+  let base = removePostProcessingSentences(prompt);
+  candidate = insertAfterLayer(base, describeCameraArtifacts(canonical), artifact);
+  if (words(candidate) <= maxWords) return candidate;
+
+  base = removeExact(base, describeEnvironmentalDetails(canonical));
+  candidate = insertAfterLayer(base, describeCameraArtifacts(canonical), artifact);
+  return words(candidate) <= maxWords ? candidate : prompt;
+}
+
+function insertCandidSpeech(prompt, canonical, maxWords = 250) {
+  const speech = describeCandidSpeech(canonical);
+  if (!speech || prompt.includes(speech)) return prompt;
+  let candidate = insertAfterLayer(prompt, describeNaturalImperfections(canonical), speech);
+  if (words(candidate) <= maxWords) return candidate;
+  const base = removeExact(prompt, describePostProcessing(canonical));
+  candidate = insertAfterLayer(base, describeNaturalImperfections(canonical), speech);
+  return words(candidate) <= maxWords ? candidate : prompt;
 }
 
 function retainMicroRealism(prompt, canonical, maxWords = 250) {

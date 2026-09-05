@@ -312,7 +312,15 @@ function resolveScene(raw, intent, conflicts) {
   } : null;
 
   return {
-    scene: { type, id, description, facts, vehicle, room },
+    scene: {
+      type,
+      id,
+      description,
+      facts,
+      vehicle,
+      room,
+      street_mood_request: id === "street" ? (requestedStreetMood || null) : null
+    },
     sceneLeakageDetected
   };
 }
