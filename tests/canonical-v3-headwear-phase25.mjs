@@ -74,9 +74,9 @@ for (const sceneId of SCENE_IDS) {
   assert.match(prompt, /thrown over the shoulder/iu, `${sceneId}: validated Variant B drape missing`);
   assert.ok(prompt.includes(`${HEADWEAR_LOCK}.`), `${sceneId}: exact headwear sentence missing`);
 
-  const garmentIndex = prompt.indexOf(option.text);
-  const clothingSentenceEnd = prompt.indexOf(".", garmentIndex);
-  assert.ok(garmentIndex >= 0 && clothingSentenceEnd >= 0, `${sceneId}: clothing sentence not found`);
+  const wearingIndex = prompt.indexOf("wearing ");
+  const clothingSentenceEnd = wearingIndex >= 0 ? prompt.indexOf(".", wearingIndex) : -1;
+  assert.ok(wearingIndex >= 0 && clothingSentenceEnd >= 0, `${sceneId}: clothing sentence not found`);
   assert.equal(prompt.slice(clothingSentenceEnd + 1).trimStart().startsWith(`${HEADWEAR_LOCK}.`), true, `${sceneId}: headwear lock must follow clothing sentence immediately`);
 
   assert.ok(wordCount(prompt) <= 250, `${sceneId}: prompt exceeds 250 words (${wordCount(prompt)})`);

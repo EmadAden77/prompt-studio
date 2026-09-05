@@ -30,7 +30,9 @@ function removeExact(prompt, layer) {
 
 function clothingSentenceBounds(prompt, canonical) {
   const garment = text(clothing(canonical).garment);
-  const index = garment ? prompt.indexOf(garment) : -1;
+  let index = garment ? prompt.indexOf(garment) : -1;
+  if (index < 0) index = prompt.indexOf(" wearing ");
+  if (index < 0) index = prompt.indexOf("wearing ");
   if (index < 0) return null;
   const previous = prompt.lastIndexOf(". ", index);
   const start = previous < 0 ? 0 : previous + 2;
@@ -77,6 +79,22 @@ function removeLowPriority(prompt) {
     .trim();
 }
 
+function removeExtraOptional(prompt) {
+  return prompt
+    .replace(/A single soft catchlight in each eye[^.]+\./iu, "")
+    .replace(/Subtle natural eye reflection[^.]+\./iu, "")
+    .replace(/Subtle skin texture with natural pores\./iu, "")
+    .replace(/Natural hair flyaways and loose strands\./iu, "")
+    .replace(/Natural fabric wrinkles and folds\./iu, "")
+    .replace(/Localized highlights transition gradually into adjacent shadows\./iu, "")
+    .replace(/\s{2,}/gu, " ")
+    .trim();
+}
+
+function compactCamera(prompt) {
+  return prompt.replace(/Captured with [^.]+\./iu, "Captured with the selected physically plausible front-camera geometry.");
+}
+
 function insertHeadwearWithinCap(prompt, canonical, headwear, maxWords = 250) {
   let base = prompt;
   let candidate = insertAfterClothingSentence(base, canonical, headwear);
@@ -97,17 +115,13 @@ function insertHeadwearWithinCap(prompt, canonical, headwear, maxWords = 250) {
     if (words(candidate) <= maxWords) return candidate;
   }
 
-  base = removeLowPriority(base);
-  candidate = insertAfterClothingSentence(base, canonical, headwear);
-  if (words(candidate) <= maxWords) return candidate;
+  for (const compact of [removeLowPriority, compactIdentity, compactClothingSentence, removeExtraOptional, compactCamera]) {
+    base = compact === compactClothingSentence ? compact(base, canonical) : compact(base);
+    candidate = insertAfterClothingSentence(base, canonical, headwear);
+    if (words(candidate) <= maxWords) return candidate;
+  }
 
-  base = compactIdentity(base);
-  candidate = insertAfterClothingSentence(base, canonical, headwear);
-  if (words(candidate) <= maxWords) return candidate;
-
-  base = compactClothingSentence(base, canonical);
-  candidate = insertAfterClothingSentence(base, canonical, headwear);
-  return words(candidate) <= maxWords ? candidate : candidate.split(/\s+/u).slice(0, maxWords).join(" ");
+  return candidate;
 }
 
 export function buildOpenAIImagePrompt(canonical, options = {}) {
