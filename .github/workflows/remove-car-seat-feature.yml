@@ -1,182 +1,54 @@
-# Idempotent cleanup guard: safe to rerun on an already-clean main branch.
-name: Repository Emergency Cleanup Guard
+name: Phase 31 Audit Patch Runner
 
 on:
-  workflow_dispatch:
   push:
-    branches: [main]
+    branches: [phase-31/full-audit-deconflict]
     paths:
       - '.github/workflows/remove-car-seat-feature.yml'
-      - 'index.html'
-      - 'styles-v2.css'
-      - 'styles-wikiprompt.css'
-      - 'styles.css'
-      - 'js/**'
-      - 'tests/**'
-
-concurrency:
-  group: emergency-cleanup-main
-  cancel-in-progress: true
 
 permissions:
   contents: write
 
 jobs:
-  cleanup-and-verify:
+  phase31-test-contract:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Apply idempotent repository cleanup
+      - name: Update changed engine contract and scan stale source
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import re
+          p = Path('tests/canonical-v3-feature-flag.mjs')
+          s = p.read_text()
+          s = s.replace('["solo", "selfie"], ["selfie", "selfie"], ["studio", "selfie"], ["car", "car"], ["carExterior", "carExterior"], ["group", "group"], ["accidental", "accidental"], ["bedroom", "room"], ["room", "room"]', '["solo", "selfie"], ["selfie", "selfie"], ["studio", "selfie"], ["car", "car"], ["carExterior", "carExterior"], ["group", "group"], ["accidental", "accidental"], ["bedroom", "room"], ["room", "room"], ["gym", "selfie"], ["street", "selfie"]')
+          s = s.replace('for (const section of ["gym", "street", "custom", ""]) assert.equal(isCanonicalV3Section(section), false, `${section || "empty"} must remain on legacy fallback`);', 'for (const section of ["custom", ""]) assert.equal(isCanonicalV3Section(section), false, `${section || "empty"} must remain on legacy fallback`);\nassert.equal(shouldUseCanonicalV3("gym", resolvePromptEngineSelection()), true, "gym auto-enables Canonical V3");\nassert.equal(shouldUseCanonicalV3("street", resolvePromptEngineSelection()), true, "street auto-enables Canonical V3");')
+          p.write_text(s)
 
-          # Remove known obsolete entrypoints if an old branch or accidental merge restores them.
-          for stale in (Path('tests/run-tests.mjs'), Path('js/app.js')):
-              if stale.exists():
-                  stale.unlink()
-                  print(f'removed obsolete file: {stale}')
-
-          # Keep exactly one car-seat cleanup/guard workflow.
-          workflow_dir = Path('.github/workflows')
-          keep = workflow_dir / 'remove-car-seat-feature.yml'
-          for candidate in workflow_dir.glob('remove-car-seat-feature*.yml'):
-              if candidate != keep:
-                  candidate.unlink()
-                  print(f'removed duplicate workflow: {candidate}')
-
-          # Consolidate the current WikiPrompt UI styles without changing cascade order.
-          base_css = Path('styles-v2.css')
-          extension_css = Path('styles-wikiprompt.css')
-          index = Path('index.html')
-          marker = '/* === WikiPrompt extensions (consolidated) === */'
-          if extension_css.exists():
-              if not base_css.exists():
-                  raise SystemExit('styles-v2.css is missing; refusing destructive CSS consolidation')
-              base_text = base_css.read_text()
-              extension_text = extension_css.read_text()
-              if marker not in base_text:
-                  base_css.write_text(base_text.rstrip() + '\n\n' + marker + '\n' + extension_text.lstrip())
-              page = index.read_text()
-              page = re.sub(r'\n\s*<link\s+rel="stylesheet"\s+href="styles-wikiprompt\.css[^\"]*"\s*/?>', '', page, count=1)
-              page = page.replace('styles-v2.css?v=20260901-nav2', 'styles-v2.css?v=20260903-emergency-cleanup')
-              index.write_text(page)
-              extension_css.unlink()
-              print('consolidated styles-wikiprompt.css into styles-v2.css')
-
-          # Delete the root legacy stylesheet only when no HTML page references it.
-          legacy_css = Path('styles.css')
-          if legacy_css.exists():
-              references = []
-              for html in Path('.').glob('*.html'):
-                  if re.search(r'href=["\']styles\.css(?:\?[^"\']*)?["\']', html.read_text()):
-                      references.append(str(html))
-              if references:
-                  print('keeping styles.css; referenced by: ' + ', '.join(references))
-              else:
-                  legacy_css.unlink()
-                  print('removed unreferenced legacy styles.css')
-
-          # The selector/state API must not exist in any active source or test file.
-          forbidden = re.compile(r'carSeat|car-seat|getCarSeatOptions|CAR_SEAT_OPTIONS|seat_position|occupant_seat|موضع الجلوس داخل السيارة|مقعد السائق الأمامي الأيسر')
-          hits = []
-          allowed_suffixes = {'.js', '.mjs', '.html', '.json', '.css'}
-          for path in Path('.').rglob('*'):
-              if not path.is_file() or '.git' in path.parts:
-                  continue
-              if path == keep or path.suffix.lower() not in allowed_suffixes:
-                  continue
-              try:
-                  text = path.read_text()
-              except UnicodeDecodeError:
-                  continue
-              for line_number, line in enumerate(text.splitlines(), 1):
-                  if forbidden.search(line):
-                      hits.append(f'{path}:{line_number}:{line.strip()}')
-          if hits:
-              print('\n'.join(hits[:200]))
-              raise SystemExit(f'car-seat selector/state remnants remain in {len(hits)} location(s)')
-
-          # Contract checks for the current application entrypoint and CSS consolidation.
-          page = index.read_text()
-          direct_legacy_entry = 'js/physics-app-v7.js' in page
-          canonical_gate_entry = 'js/canonical/engine-gate.js' in page
-          if not direct_legacy_entry and not canonical_gate_entry:
-              raise SystemExit('index.html reaches neither the legacy v7 app nor the Canonical V3 engine gate')
-          if canonical_gate_entry:
-              gate = Path('js/canonical/engine-gate.js')
-              if not gate.exists() or 'physics-app-v7.js' not in gate.read_text():
-                  raise SystemExit('Canonical V3 engine gate no longer preserves the legacy v7 application path')
-          if 'js/app.js' in page:
-              raise SystemExit('legacy js/app.js is still referenced by index.html')
-          if 'styles-wikiprompt.css' in page:
-              raise SystemExit('index.html still references the split WikiPrompt stylesheet')
-          if marker not in base_css.read_text():
-              raise SystemExit('consolidated WikiPrompt CSS marker is missing from styles-v2.css')
+          stale_rr = []
+          stale_glass = []
+          for source in Path('js').rglob('*.js'):
+              text = source.read_text()
+              for n, line in enumerate(text.splitlines(), 1):
+                  if re.search(r'Range Rover|rangeRover|رنج روفر', line, re.I) and '2022' in line:
+                      stale_rr.append(f'{source}:{n}:{line.strip()}')
+                  if re.search(r'tinted rear glass', line, re.I):
+                      stale_glass.append(f'{source}:{n}:{line.strip()}')
+          if stale_rr:
+              raise SystemExit('stale 2022 Range Rover refs:\n' + '\n'.join(stale_rr[:100]))
+          if stale_glass:
+              raise SystemExit('stale tinted rear glass refs:\n' + '\n'.join(stale_glass[:100]))
           PY
-
-      - name: Syntax check current JavaScript
-        shell: bash
-        run: |
-          while IFS= read -r -d '' file; do
-            node --check "$file"
-          done < <(find js -type f -name '*.js' -print0)
-
-      - name: Run all essential tests from test.yml
-        shell: bash
-        run: |
-          node tests/v2-deployment.mjs
-          node tests/physics-v5-wikiprompt.mjs
-          node tests/custom-scene.mjs
-          node tests/clothing-physics.mjs
-          node tests/realism-core.mjs
-          node tests/advanced-realism.mjs
-          node tests/auto-realism-suite.mjs
-          node tests/visual-selfie-angle-monitor.mjs
-          node tests/canonical-v3-adapter-isolation.mjs
-          node tests/canonical-v3-comparison.mjs
-          node tests/canonical-v3-feature-flag.mjs
-
-      - name: Delete stale merged or closed branches
-        shell: bash
-        run: |
-          branches=(
-            'codex/live-geometry-preview'
-            'codex/distance-aware-smartphone-capture'
-            'codex/external-generator-setups'
-            'codex/context-resolution-guards'
-            'codex/driver-selfie-geometry-lock'
-          )
-          for branch in "${branches[@]}"; do
-            if git ls-remote --exit-code --heads origin "refs/heads/$branch" >/dev/null 2>&1; then
-              git push origin --delete "$branch"
-              echo "deleted stale branch: $branch"
-            else
-              echo "already absent: $branch"
-            fi
-          done
-
-      - name: Commit cleanup if needed
+      - name: Commit test contract update
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          if git diff --cached --quiet; then
-            echo 'No repository cleanup changes required.'
-          else
-            git commit -m 'Emergency repository cleanup and CSS consolidation'
-            git push origin HEAD:main
+          git add tests/canonical-v3-feature-flag.mjs
+          if ! git diff --cached --quiet; then
+            git commit -m 'Phase 31: full audit de-conflict pass'
+            git push origin HEAD:phase-31/full-audit-deconflict
           fi
