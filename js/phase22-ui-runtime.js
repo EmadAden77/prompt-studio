@@ -67,28 +67,35 @@ export function garmentOptionsForSection(section = "") {
 }
 
 function appendOptions(select, options) {
-  for (const option of options) {
+  for (const option of options || []) {
     const node = document.createElement("option");
-    node.value = option.value;
-    node.textContent = option.label;
+    node.value = option?.value || "";
+    node.textContent = option?.label || option?.value || "";
     select.append(node);
   }
 }
 
-export function populateUnifiedClothingSelect(select, preferredValue = "", section = "") {
+function populateCatalog(select, catalog, preferredValue = "") {
   if (!select) return;
   const previous = preferredValue || select.value;
-  const catalog = section === "carExterior" ? CAR_EXTERIOR_CLOTHING_CATALOG : UNIFIED_CLOTHING_CATALOG;
   select.replaceChildren();
-  for (const clothingSection of catalog) {
+  for (const clothingSection of catalog || []) {
     const group = document.createElement("optgroup");
-    group.label = clothingSection.label;
-    group.dataset.clothingSection = clothingSection.id;
-    appendOptions(group, clothingSection.options);
+    group.label = clothingSection?.label || clothingSection?.id || "";
+    group.dataset.clothingSection = clothingSection?.id || "";
+    appendOptions(group, clothingSection?.options || []);
     select.append(group);
   }
-  const available = new Set(garmentOptionsForSection(section).map((option) => option.value));
-  select.value = available.has(previous) ? previous : "";
+  const available = new Set(
+    (catalog || []).flatMap((section) => section?.options || []).map((option) => option?.value)
+  );
+  select.value = available.has(previous) ? previous : (select.options[0]?.value || "");
+}
+
+export function populateUnifiedClothingSelect(select, preferredValue = "", section = "") {
+  if (!select) return;
+  const catalog = section === "carExterior" ? CAR_EXTERIOR_CLOTHING_CATALOG : UNIFIED_CLOTHING_CATALOG;
+  populateCatalog(select, catalog, preferredValue);
 }
 
 function makeSelect(id, name, title, options) {
@@ -105,9 +112,32 @@ function makeSelect(id, name, title, options) {
   return { field, select };
 }
 
+function makeCatalogSelect(id, name, title, catalog) {
+  const field = document.createElement("label");
+  field.className = "field field-span-2";
+  field.htmlFor = id;
+  const caption = document.createElement("span");
+  caption.textContent = title;
+  const select = document.createElement("select");
+  select.id = id;
+  select.name = name;
+  populateCatalog(select, catalog);
+  field.append(caption, select);
+  return { field, select };
+}
+
 function carLightingOptions() {
   const time = document.querySelector("#time")?.value === "day" ? "day" : "night";
   return LIGHTING_OPTIONS.carExterior?.[time] ?? [];
+}
+
+function syncCustomClothingVisibility() {
+  const carActive = activeSection() === "carExterior";
+  const selected = carActive
+    ? document.querySelector("#car-exterior-clothing")?.value
+    : document.querySelector("#clothing")?.value;
+  const field = document.querySelector("#custom-clothing-field");
+  if (field) field.hidden = selected !== "custom";
 }
 
 function mountCarExteriorControls() {
@@ -127,14 +157,16 @@ function mountCarExteriorControls() {
   const location = makeSelect("car-exterior-location", "carExteriorLocation", "موقع الوقوف", CAR_EXTERIOR_LOCATIONS);
   const pose = makeSelect("car-exterior-pose", "carExteriorPose", "الوضعية بجانب السيارة", CAR_EXTERIOR_POSES);
   const lighting = makeSelect("car-exterior-lighting", "carExteriorLighting", "الإضاءة", carLightingOptions());
-  inner.append(location.field, pose.field, lighting.field);
+  const clothing = makeCatalogSelect("car-exterior-clothing", "carExteriorClothing", "الملابس", CAR_EXTERIOR_CLOTHING_CATALOG);
+  clothing.select.value = CAR_EXTERIOR_CLOTHING_OPTIONS.some((option) => option.value === "thobe-white")
+    ? "thobe-white"
+    : (clothing.select.options[0]?.value || "");
+
+  inner.append(location.field, pose.field, lighting.field, clothing.field);
   wrap.append(title, inner);
   grid.prepend(wrap);
 
-  const clothing = document.querySelector("#clothing");
-  if (clothing && activeSection() === "carExterior") {
-    populateUnifiedClothingSelect(clothing, clothing.value, "carExterior");
-  }
+  clothing.select.addEventListener("change", syncCustomClothingVisibility);
 
   const refreshLighting = () => {
     const previous = lighting.select.value;
@@ -166,10 +198,23 @@ function syncCarExteriorVisibility() {
   const active = activeSection() === "carExterior";
   const fields = document.querySelector("#car-exterior-fields");
   if (fields) fields.hidden = !active;
+
   const standardPose = document.querySelector("#pose")?.closest("label");
   const standardPoseFamily = document.querySelector("#pose-family")?.closest("label");
   if (standardPose) standardPose.hidden = active;
   if (standardPoseFamily) standardPoseFamily.hidden = active;
+
+  const standardClothing = document.querySelector("#clothing");
+  const standardClothingField = standardClothing?.closest("label");
+  if (standardClothingField) standardClothingField.hidden = active;
+  if (standardClothing) standardClothing.disabled = active;
+
+  const carClothing = document.querySelector("#car-exterior-clothing");
+  const carClothingField = carClothing?.closest("label");
+  if (carClothingField) carClothingField.hidden = !active;
+  if (carClothing) carClothing.disabled = !active;
+
+  syncCustomClothingVisibility();
 }
 
 function repopulateSceneSelect(preferred = "") {
@@ -212,9 +257,10 @@ function keepClothingDetailsVisible() {
 function syncGarmentSelect() {
   const select = document.querySelector("#clothing");
   if (!select) return;
-  populateUnifiedClothingSelect(select, select.value, activeSection());
-  const field = select.closest("label");
-  if (field) field.hidden = false;
+  if (activeSection() !== "carExterior") {
+    populateUnifiedClothingSelect(select, select.value, activeSection());
+  }
+  syncCarExteriorVisibility();
 }
 
 function syncAll() {
@@ -224,6 +270,7 @@ function syncAll() {
   exposeSceneSelectForDailyScenes();
   syncGarmentSelect();
   keepClothingDetailsVisible();
+  syncCustomClothingVisibility();
 }
 
 export function installPhase22UI() {
@@ -243,7 +290,9 @@ export function installPhase22UI() {
         keepClothingDetailsVisible();
       }, 0);
     }
-    if (event.target?.id === "time" || event.target?.id === "studio-section") setTimeout(syncAll, 0);
+    if (["time", "studio-section", "clothing", "car-exterior-clothing"].includes(event.target?.id)) {
+      setTimeout(syncAll, 0);
+    }
   });
 }
 

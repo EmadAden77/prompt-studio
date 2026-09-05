@@ -96,3 +96,5 @@ jobs:
         run: node tests/canonical-v3-car-exterior-clothing-phase33.mjs
       - name: Run Phase 34 clothing routing authority tests
         run: node tests/canonical-v3-clothing-routing-phase34.mjs
+      - name: Run Phase 35 carExterior runtime repair smoke test
+        run: node tests/canonical-v3-car-exterior-runtime-phase35.mjs
