@@ -42,11 +42,12 @@ for (const relative of ["js/data-base-phase16.js", "js/wiki-selfie-data-v1.js", 
   assert.deepEqual(staleLines, [], `${relative}: stale 2022 Range Rover source remains`);
 }
 
-// 2/3) One unified clothing select/catalog; carExterior hides the standard field.
+// 2/3) One unified clothing select/catalog; the same select remains visible in carExterior.
 const indexSource = read("index.html");
 const uiSource = read("js/phase22-ui-runtime.js");
 assert.equal((indexSource.match(/id="clothing"/gu) || []).length, 1, "exactly one standard clothing select must exist");
-assert.match(uiSource, /field\.hidden = activeSection\(\) === "carExterior"/u, "carExterior must hide the standard clothing field");
+assert.match(uiSource, /if \(field\) field\.hidden = false;/u, "unified clothing field must remain visible in every section including carExterior");
+assert.doesNotMatch(uiSource, /field\.hidden = activeSection\(\) === "carExterior"/u, "carExterior must not hide the only clothing select");
 assert.equal(UNIFIED_CLOTHING_CATALOG.length, 6);
 assert.deepEqual(UNIFIED_CLOTHING_CATALOG.map((group) => group.label), ["منزل", "كاجوال", "رسمي", "رياضي", "تقليدي", "خارجي"]);
 assert.ok(UNIFIED_CLOTHING_OPTIONS.length >= 15, "unified clothing catalog must contain at least 15 mapped garments");
