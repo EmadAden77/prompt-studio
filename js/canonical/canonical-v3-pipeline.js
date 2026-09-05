@@ -5,6 +5,7 @@ import { buildOpenAIImagePrompt } from "./openai-image-adapter.js";
 import { applyGroupPhase13, enrichGroupPromptPhase13 } from "./group-phase13.js";
 import { SCENES, LIGHTING_OPTIONS, CAR_EXTERIOR_LOCATIONS, CAR_EXTERIOR_POSES } from "../data.js";
 import { PHASE32_NEUTRAL_CUSTOM_OUTFIT } from "../phase30-clothing-catalog.js";
+import { CAR_EXTERIOR_CLOTHING_OPTIONS } from "../car-exterior-clothing-phase33.js";
 
 const DAILY_SCENE_KEYS = new Set(["majlis", "kashta", "barbershop", "grocery", "rooftop", "streetFootball", "gasStation"]);
 const SECTION_GARMENT_SCENE = Object.freeze({
@@ -53,7 +54,10 @@ function garmentScene(raw, clean) {
 
 function resolveClothingDetails(raw, clean) {
   const sceneKey = garmentScene(raw, clean);
-  const garments = SCENES[sceneKey]?.clothing ?? [];
+  const baseGarments = SCENES[sceneKey]?.clothing ?? [];
+  const garments = sceneKey === "carExterior"
+    ? [...baseGarments, ...CAR_EXTERIOR_CLOTHING_OPTIONS]
+    : baseGarments;
   const selectedGarment = raw.clothing || clean.clothing;
   const customGarment = String(raw.customClothing || "").trim();
   const preserveGroupBudget = raw.studioSection === "group" || clean.studioSection === "group";
