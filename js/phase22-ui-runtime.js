@@ -9,7 +9,10 @@ import {
   UNIFIED_CLOTHING_CATALOG,
   getUnifiedClothingOptions
 } from "./phase30-clothing-catalog.js";
-import { CAR_EXTERIOR_CLOTHING_OPTIONS } from "./car-exterior-clothing-phase33.js";
+import {
+  CAR_EXTERIOR_CLOTHING_CATALOG,
+  CAR_EXTERIOR_CLOTHING_OPTIONS
+} from "./car-exterior-clothing-phase33.js";
 
 export const VISIBLE_SCENE_KEYS = Object.freeze([
   "bedroom",
@@ -59,7 +62,7 @@ export function garmentSceneForSection(section = "", selectedScene = "") {
 
 export function garmentOptionsForSection(section = "") {
   return section === "carExterior"
-    ? [...getUnifiedClothingOptions(), ...CAR_EXTERIOR_CLOTHING_OPTIONS]
+    ? CAR_EXTERIOR_CLOTHING_OPTIONS.map((option) => ({ ...option }))
     : getUnifiedClothingOptions();
 }
 
@@ -75,20 +78,14 @@ function appendOptions(select, options) {
 export function populateUnifiedClothingSelect(select, preferredValue = "", section = "") {
   if (!select) return;
   const previous = preferredValue || select.value;
+  const catalog = section === "carExterior" ? CAR_EXTERIOR_CLOTHING_CATALOG : UNIFIED_CLOTHING_CATALOG;
   select.replaceChildren();
-  for (const clothingSection of UNIFIED_CLOTHING_CATALOG) {
+  for (const clothingSection of catalog) {
     const group = document.createElement("optgroup");
     group.label = clothingSection.label;
     group.dataset.clothingSection = clothingSection.id;
     appendOptions(group, clothingSection.options);
     select.append(group);
-  }
-  if (section === "carExterior") {
-    const carGroup = document.createElement("optgroup");
-    carGroup.label = "جانب السيارة — خيارات إضافية";
-    carGroup.dataset.clothingSection = "carExterior-extra";
-    appendOptions(carGroup, CAR_EXTERIOR_CLOTHING_OPTIONS);
-    select.append(carGroup);
   }
   const available = new Set(garmentOptionsForSection(section).map((option) => option.value));
   select.value = available.has(previous) ? previous : "";
@@ -133,6 +130,11 @@ function mountCarExteriorControls() {
   inner.append(location.field, pose.field, lighting.field);
   wrap.append(title, inner);
   grid.prepend(wrap);
+
+  const clothing = document.querySelector("#clothing");
+  if (clothing && activeSection() === "carExterior") {
+    populateUnifiedClothingSelect(clothing, clothing.value, "carExterior");
+  }
 
   const refreshLighting = () => {
     const previous = lighting.select.value;
