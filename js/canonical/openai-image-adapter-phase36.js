@@ -71,7 +71,7 @@ function deconflictRepeatedPose(prompt, canonical) {
   const posePattern = new RegExp(escapeRegExp(pose), "giu");
   const matches = String(prompt || "").match(posePattern) || [];
   if (matches.length < 2) return prompt;
-  const sceneClause = new RegExp(`,?\\s*with the subject\\s+${escapeRegExp(pose)}`, "iu");
+  const sceneClause = new RegExp(`,?\\s*(?:with\\s+the\\s+subject|the\\s+subject)\\s+${escapeRegExp(pose)}`, "iu");
   return String(prompt || "").replace(sceneClause, "").replace(/\s{2,}/gu, " ").trim();
 }
 
