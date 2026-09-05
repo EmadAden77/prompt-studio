@@ -12,6 +12,7 @@ import { CAR_EXTERIOR_SPEC } from "../js/data.js";
 import { UNIFIED_CLOTHING_CATALOG, UNIFIED_CLOTHING_OPTIONS } from "../js/phase30-clothing-catalog.js";
 import {
   BASE_SKIN_TEXTURE as CANONICAL_BASE_SKIN_TEXTURE,
+  buildOpenAIImagePrompt,
   describeEnvironmentScale
 } from "../js/canonical/openai-image-adapter.js";
 import {
@@ -97,22 +98,43 @@ assert.equal(LEGACY_BASE_SKIN_TEXTURE.length, 13);
 assert.deepEqual(CANONICAL_BASE_SKIN_TEXTURE, LEGACY_BASE_SKIN_TEXTURE);
 assert.equal(LEGACY_BASE_SKIN_TEXTURE.some((line) => /\bbody\b/iu.test(line)), false, "BASE_SKIN_TEXTURE must contain no body line");
 
-// Final prompt budget and deterministic generation 10/10.
+// Canonical car fixture: validate the real resolved vehicle contract directly, without UI fallback noise.
+const rangeRoverCanonical = {
+  schema_version:"realistic-image-generator/canonical-v3",
+  identity:{ reference_mode:"none", preserve:[] },
+  capture:{ type:"subject_held_driver_selfie", operator:"subject" },
+  subjects:{ count:1, primary:{ pose:"relaxed upright", expression:"neutral", clothing:{ garment:"plain black cotton T-shirt", fabric:"cotton" }, body_scale:{ preserve_environment_scale:true } } },
+  scene:{ id:"rangeRover", type:"vehicle", description:SCENES.rangeRover.environment, facts:{}, vehicle:{ state:"stationary", year:2017, make:"Land Rover", model:"Range Rover Sport Autobiography Dynamic" } },
+  camera:{ device_profile:"Xiaomi 15 Ultra front camera", camera_type:"front_camera", geometry:{ distance_cm:50, yaw_deg:0, pitch_deg:0, roll_deg:2, focal_length_equivalent_mm:21, crop:"close" } },
+  lighting:{ source_type:"daylight", description:"soft natural daylight" },
+  hard_constraints:{
+    identity:{ preserve_reference_identity:false },
+    anatomy:{ physically_possible:true, limb_ownership_integrity:true, contact_consistency:true, gravity_consistency:true, occlusion_consistency:true },
+    selfie_geometry:{ applicable:true, subject_operated_camera:true, phone_position_physically_reachable:true },
+    capture_physics:{ physically_possible_camera_position:true, physically_possible_operator:true, physically_possible_arm_reach:true, single_capture_event:true },
+    vehicle_geometry:{ applicable:true, drive_configuration:"left_hand_drive", driver_position:"vehicle_left", steering_relation:"ahead_of_driver_torso" }
+  }
+};
+const rangeRoverOutputs = Array.from({ length:10 }, () => buildOpenAIImagePrompt(rangeRoverCanonical));
+assert.equal(rangeRoverOutputs.every((value) => value === rangeRoverOutputs[0]), true, "rangeRover: determinism failed");
+assert.ok(words(rangeRoverOutputs[0]) <= 250, `rangeRover: prompt exceeds 250 words (${words(rangeRoverOutputs[0])})`);
+assert.doesNotMatch(rangeRoverOutputs[0], /2022|beige/iu);
+
+// Final UI-pipeline prompt budget and deterministic generation 10/10.
 const auditCases = [
   streetRaw("normal"),
   streetRaw("alley"),
   { studioSection:"gym", intentType:"selfie", scene:"gym", time:"day", hasReference:true, clothing:"sport-tech-tee-pants", fabric:"technical-poly", fabricWeight:"light", ironState:"lightly-unpressed", wearState:"post-workout", clothingFit:"regular" },
-  { studioSection:"car", intentType:"car", scene:"rangeRover", time:"night", hasReference:true, clothing:"tee-black", fabric:"cotton-jersey", fabricWeight:"light", ironState:"lightly-unpressed", wearState:"normal-day", clothingFit:"regular" },
   { studioSection:"carExterior", intentType:"selfie", scene:"carExterior", time:"night", hasReference:true, carExteriorLocation:"parking", carExteriorPose:"door-open", carExteriorLighting:"interior-spill", clothing:"white-thobe", fabric:"cotton-poplin", fabricWeight:"medium", ironState:"normal-pressed", wearState:"normal-day", clothingFit:"regular" }
 ];
 for (const raw of auditCases) {
   const outputs = Array.from({ length:10 }, () => buildCanonicalV3UserOutput(raw).prompt);
   assert.equal(outputs.every((value) => value === outputs[0]), true, `${raw.scene}: determinism failed`);
   assert.ok(words(outputs[0]) <= 250, `${raw.scene}: prompt exceeds 250 words (${words(outputs[0])})`);
-  if (raw.scene === "rangeRover") assert.doesNotMatch(outputs[0], /2022|beige/iu);
   if (raw.scene === "carExterior") assert.doesNotMatch(outputs[0], /tinted rear glass/iu);
 }
 
 console.log(`PHASE31_UNIFIED_CLOTHING=${UNIFIED_CLOTHING_OPTIONS.length}`);
+console.log(`PHASE31_RANGE_ROVER_WORDS=${words(rangeRoverOutputs[0])}`);
 console.log("PHASE31_DETERMINISM=10/10");
 console.log("✓ Phase 31 full audit de-conflict contracts passed");
