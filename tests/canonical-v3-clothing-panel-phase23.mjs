@@ -44,7 +44,7 @@ const raw = {
   carExteriorPose: "door-open",
   carExteriorLighting: "interior-spill",
   time: "night",
-  clothing: "white-thobe",
+  clothing: "traditional-thobe-white-shemagh-red-iqal-black",
   fabric: "cotton-poplin",
   fabricWeight: "medium",
   ironState: "normal-pressed",
@@ -55,7 +55,7 @@ const raw = {
 const output = buildCanonicalV3UserOutput(raw);
 const hardBefore = JSON.stringify(output.canonical.hard_constraints);
 const clothing = output.canonical.subjects.primary.clothing;
-assert.match(clothing.garment, /clean white cotton thobe/iu);
+assert.match(clothing.garment, /ثوب أبيض \+ شماغ أحمر \+ عقال أسود/u);
 assert.match(clothing.fabric, /cotton poplin/iu);
 assert.match(clothing.fabric_weight, /medium fabric weight/iu);
 assert.match(clothing.wear_state, /ordinary daily wear/iu);
