@@ -72,3 +72,5 @@ jobs:
         run: node tests/canonical-v3-outdoor-daily-scenes.mjs
       - name: Run Phase 21 exterior car realism tests
         run: node tests/canonical-v3-car-exterior.mjs
+      - name: Run Phase 23 unified clothing panel tests
+        run: node tests/canonical-v3-clothing-panel-phase23.mjs
