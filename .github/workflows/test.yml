@@ -92,3 +92,5 @@ jobs:
         run: node tests/canonical-v3-full-audit-phase31.mjs
       - name: Run Phase 32 full-outfit colored clothing tests
         run: node tests/canonical-v3-full-outfit-clothing-phase32.mjs
+      - name: Run Phase 33 wide carExterior clothing tests
+        run: node tests/canonical-v3-car-exterior-clothing-phase33.mjs
