@@ -74,3 +74,5 @@ jobs:
         run: node tests/canonical-v3-car-exterior.mjs
       - name: Run Phase 23 unified clothing panel tests
         run: node tests/canonical-v3-clothing-panel-phase23.mjs
+      - name: Run Phase 24 gym anti-AI realism tests
+        run: node tests/canonical-v3-gym-realism-phase24.mjs
