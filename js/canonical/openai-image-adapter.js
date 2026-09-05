@@ -182,7 +182,7 @@ export function describePhase29CameraArtifacts(canonical) {
   if (text(canonical?.lighting?.source_type).toLowerCase() !== "daylight") return "";
   const sceneId = text(canonical?.scene?.id);
   if (!["street", "carExterior", "rooftop", "gasStation", "grocery"].includes(sceneId)) return "";
-  return "Slight chromatic aberration at frame edges and a small natural sun flare; grainy shadows and slightly blown highlights appear where direct sunlight hits.";
+  return "Slight edge chromatic aberration, natural sun flare, grainy shadows, and slightly blown highlights.";
 }
 
 export function describeCandidSpeech(canonical) {
@@ -218,12 +218,26 @@ function insertSaudiRealism(prompt, canonical, maxWords = 250) {
   return candidate;
 }
 
+function removePostProcessingSentences(prompt) {
+  return prompt
+    .replace(/Realistic dynamic range with natural highlight rolloff\./iu, "")
+    .replace(/Authentic white balance matched to the dominant light source\./iu, "")
+    .replace(/Minimal retouching preserves natural skin and fabric texture\./iu, "")
+    .replace(/\s{2,}/gu, " ")
+    .trim();
+}
+
 function insertPhase29CameraArtifacts(prompt, canonical, maxWords = 250) {
   const artifact = describePhase29CameraArtifacts(canonical);
   if (!artifact || prompt.includes(artifact)) return prompt;
   let candidate = insertAfterLayer(prompt, describeCameraArtifacts(canonical), artifact);
   if (words(candidate) <= maxWords) return candidate;
-  const base = removeExact(prompt, describePostProcessing(canonical));
+
+  let base = removePostProcessingSentences(prompt);
+  candidate = insertAfterLayer(base, describeCameraArtifacts(canonical), artifact);
+  if (words(candidate) <= maxWords) return candidate;
+
+  base = removeExact(base, describeEnvironmentalDetails(canonical));
   candidate = insertAfterLayer(base, describeCameraArtifacts(canonical), artifact);
   return words(candidate) <= maxWords ? candidate : prompt;
 }
