@@ -70,3 +70,5 @@ jobs:
         run: node tests/canonical-v3-indoor-daily-scenes.mjs
       - name: Run Phase 20 outdoor daily-scene tests
         run: node tests/canonical-v3-outdoor-daily-scenes.mjs
+      - name: Run Phase 21 exterior car realism tests
+        run: node tests/canonical-v3-car-exterior.mjs
