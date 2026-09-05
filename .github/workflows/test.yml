@@ -94,3 +94,5 @@ jobs:
         run: node tests/canonical-v3-full-outfit-clothing-phase32.mjs
       - name: Run Phase 33 wide carExterior clothing tests
         run: node tests/canonical-v3-car-exterior-clothing-phase33.mjs
+      - name: Run Phase 34 clothing routing authority tests
+        run: node tests/canonical-v3-clothing-routing-phase34.mjs
