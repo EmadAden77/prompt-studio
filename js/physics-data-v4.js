@@ -117,8 +117,8 @@ export const SCENES = {
     ]
   },
   rangeRover: {
-    label: "رنج روفر سبورت 2022",
-    environment: "inside a stationary white 2022 Range Rover Sport, beige perforated leather upholstery, dark glossy wood center-console trim, left-hand-drive geometry, coherent dashboard and window reflections, parked safely in a plausible Saudi location",
+    label: "رنج روفر 2017",
+    environment: "inside a stationary 2017 Range Rover Sport Autobiography Dynamic in Fuji White, Ivory perforated leather, dark glossy wood center-console trim, left-hand-drive geometry, coherent dashboard and window reflections, parked safely in a plausible Saudi location",
     clothing: [
       { value: "button-shirt", label: "قميص قطني", text: "a neat cotton button-down shirt with natural seated compression and realistic sleeve folds" },
       { value: "polo", label: "بولو كاجوال", text: "a matte cotton polo with realistic seated creasing" },
@@ -141,8 +141,8 @@ export const BASE_TEMPLATES = {
     text: "candid night street photograph in Saudi Arabia, sodium-vapor orange streetlights mixing with modern white LEDs, reflective asphalt only where it is genuinely damp or polished, ambient storefront glow, naturally dark gaps between light pools"
   },
   "rangeRover:night:standard": {
-    title: "رنج روفر 2022 ليلاً",
-    text: "candid night photograph inside a white 2022 Range Rover Sport, beige perforated leather upholstery and dark glossy wood center console, restrained cabin ambient light and dashboard-screen glow, streetlights reflecting coherently in the windshield, realistic low-light noise"
+    title: "رنج روفر 2017 ليلاً",
+    text: "candid night photograph inside a stationary 2017 Range Rover Sport Autobiography Dynamic in Fuji White, Ivory perforated leather and dark glossy wood center console, restrained cabin ambient light and dashboard-screen glow, streetlights reflecting coherently in the windshield, realistic low-light noise"
   },
   "bedroom:night:selfie": {
     title: "سيلفي الغرفة ليلاً",
@@ -161,8 +161,8 @@ export const BASE_TEMPLATES = {
     text: "candid midday street photograph in Saudi Arabia, harsh direct sunlight, deep defined shadows on traditional and modern architecture, heat haze only in distant sunlit areas, clear blue sky, realistic exposure tradeoffs between bright asphalt and shaded faces"
   },
   "rangeRover:day:standard": {
-    title: "رنج روفر 2022 نهاراً",
-    text: "candid daylight portrait inside a stationary white 2022 Range Rover Sport, panoramic sunroof and side windows casting source-consistent light patterns on beige leather and dark wood trim, bright exterior held within believable phone-camera dynamic range"
+    title: "رنج روفر 2017 نهاراً",
+    text: "candid daylight portrait inside a stationary 2017 Range Rover Sport Autobiography Dynamic in Fuji White, panoramic sunroof and side windows casting source-consistent light patterns on Ivory perforated leather and dark wood trim, bright exterior held within believable phone-camera dynamic range"
   },
   "street:night:selfie": {
     title: "سيلفي الشارع ليلاً",
@@ -170,7 +170,7 @@ export const BASE_TEMPLATES = {
   },
   "rangeRover:day:selfie": {
     title: "سيلفي السيارة نهاراً",
-    text: "candid daytime selfie inside a stationary white 2022 Range Rover Sport, beige perforated leather and dark wood trim, realistic physical sunlight in the cabin, a plausible Saudi street or parking area visible through the side window, restrained daytime grain"
+    text: "candid daytime selfie inside a stationary 2017 Range Rover Sport Autobiography Dynamic in Fuji White, Ivory perforated leather and dark wood trim, realistic physical sunlight in the cabin, a plausible Saudi street or parking area visible through the side window, restrained daytime grain"
   }
 };
 
@@ -179,7 +179,7 @@ export const FALLBACK_TEMPLATES = {
   "gym:day:selfie": "candid daytime selfie inside a modern Saudi gym, daylight and visible LED fixtures illuminating the face consistently with the equipment and mirrors, realistic near-field phone perspective",
   "gym:night:selfie": "candid nighttime selfie inside a modern Saudi gym, practical LED fixtures as the dominant sources, restrained color spill only from visible equipment or signs, realistic low-light phone noise",
   "street:day:selfie": "candid daytime selfie on a Saudi street, harsh sunlight or open shade selected consistently, realistic near-field phone perspective and bright-day exposure tradeoffs",
-  "rangeRover:night:selfie": "candid nighttime selfie inside a stationary white 2022 Range Rover Sport, dashboard and exterior practical lights kept physically consistent, restrained low-light noise and coherent windshield reflections"
+  "rangeRover:night:selfie": "candid nighttime selfie inside a stationary 2017 Range Rover Sport Autobiography Dynamic in Fuji White, dashboard and exterior practical lights kept physically consistent, restrained low-light noise and coherent windshield reflections"
 };
 
 export const LIGHTING_OPTIONS = {

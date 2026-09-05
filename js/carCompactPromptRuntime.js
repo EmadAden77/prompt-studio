@@ -9,7 +9,7 @@ const OUTPUT_ID = "finalPrompt";
 const patchFlag = Symbol.for("promptStudio.carCompactPromptRuntime.installed");
 
 const LIGHTING = Object.freeze({
-  N1: "N1 night lighting: mixed warm sodium spill and cool white parking LED entering through the real cabin glass, with directional color separation, realistic inverse-square falloff for nearby practicals, light-beige interior bounce, deep cabin shadows and natural low-light sensor noise.",
+  N1: "N1 night lighting: mixed warm sodium spill and cool white parking LED entering through the real cabin glass, with directional color separation, realistic inverse-square falloff for nearby practicals, Ivory interior bounce, deep cabin shadows and natural low-light sensor noise.",
   N2: "N2 night lighting: irregular real storefront and sign spill through the windows, mixed with ordinary street practicals, with natural color contamination, glass reflections and cabin shadows.",
   N3: "N3 gas-station lighting: cool-white overhead canopy practicals entering through the glass, localized reflections on trim and windows, realistic cabin shadow falloff and modest highlight clipping.",
   N4: "N4 midday lighting: strong natural Saudi daylight through the windshield and side glass, brighter exterior exposure, deeper cabin shadows, physically plausible interior bounce and restrained smartphone HDR.",
@@ -48,7 +48,7 @@ function cleanClothing(clothing) {
 function cabinSentence(hasCabin) {
   return hasCabin
     ? "ENVIRONMENT LOCK (IMAGE B): use IMAGE B as the exact authority for every visible cabin detail. Preserve seat shape, stitching, headrest, dashboard, trim, glass, controls, colors, materials and geometry without redesigning, cleaning, mirroring, replacing or beautifying anything."
-    : "ENVIRONMENT LOCK: use one coherent 2022 Range Rover Sport parked in Saudi Arabia with a realistic light-beige interior. Preserve internally consistent seat, headrest, dashboard, trim, glass and control geometry; show only what the selected crop naturally includes.";
+    : "ENVIRONMENT LOCK: use one coherent 2017 Range Rover Sport Autobiography Dynamic parked in Saudi Arabia with a realistic Ivory interior. Preserve internally consistent seat, headrest, dashboard, trim, glass and control geometry; show only what the selected crop naturally includes.";
 }
 
 function sceneSentence(tpl) {
@@ -132,7 +132,7 @@ function exteriorDepthThroughGlass() {
 function cabinMaterialResponse() {
   return `CABIN MATERIAL RESPONSE LOCK
 - Different cabin materials must remain optically distinct under the SAME selected lighting and exposure. Do not render the interior as one uniformly glossy synthetic material.
-- Light-beige leather or leather-like upholstery: broad soft highlights, visible grain only at supported distance, gentle compression and crease response at loaded seat/contact zones; never plastic shine or perfectly uniform pores.
+- Light-Ivory perforated leather or leather-like upholstery: broad soft highlights, visible grain only at supported distance, gentle compression and crease response at loaded seat/contact zones; never plastic shine or perfectly uniform pores.
 - Matte dashboard and soft-touch plastics: low specular response with broad weak reflections and restrained texture; no wet gloss unless the actual reference material is glossy.
 - Piano-black or other high-gloss trim, when actually present: sharper view-dependent reflections with rapid falloff away from the reflection angle, but never mirror-perfect unless the real surface behaves that way.
 - Metal/chrome details: localized brighter specular highlights tied to source position, without glowing edges or painted white streaks.
@@ -212,7 +212,7 @@ function buildPrompt() {
   const scene = sceneSentence(tpl);
 
   return `ROLE & TASK
-Create one physically coherent, raw-looking candid smartphone selfie of the exact man from IMAGE A inside a stationary 2022 Range Rover Sport parked in Saudi Arabia. The result should behave like an ordinary Xiaomi 15 Ultra front-camera capture, not a polished studio portrait or CGI render.
+Create one physically coherent, raw-looking candid smartphone selfie of the exact man from IMAGE A inside a stationary 2017 Range Rover Sport Autobiography Dynamic parked in Saudi Arabia. The result should behave like an ordinary Xiaomi 15 Ultra front-camera capture, not a polished studio portrait or CGI render.
 
 ${skinSentence()} Preserve ${cleanHair(hair)}.
 
