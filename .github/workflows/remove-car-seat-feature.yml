@@ -10,18 +10,46 @@ permissions:
   contents: write
 
 jobs:
-  phase31-test-contract:
+  phase31-purge-stale-car:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Update changed engine contract and scan stale source
+      - name: Purge stale Range Rover contracts and update feature test
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import re
+
+          replacements = [
+              ('stationary white 2022 Range Rover Sport', 'stationary 2017 Range Rover Sport Autobiography Dynamic in Fuji White'),
+              ('inside a white 2022 Range Rover Sport', 'inside a stationary 2017 Range Rover Sport Autobiography Dynamic in Fuji White'),
+              ('white 2022 Range Rover Sport', '2017 Range Rover Sport Autobiography Dynamic in Fuji White'),
+              ('WHITE 2022 RANGE ROVER SPORT', '2017 RANGE ROVER SPORT AUTOBIOGRAPHY DYNAMIC · FUJI WHITE'),
+              ('Range Rover Sport 2022', 'Range Rover Sport Autobiography Dynamic 2017'),
+              ('2022 Range Rover Sport', '2017 Range Rover Sport Autobiography Dynamic'),
+              ('رنج روفر سبورت 2022 أبيض', 'رنج روفر 2017 Fuji White'),
+              ('رنج روفر سبورت 2022', 'رنج روفر 2017'),
+              ('رنج روفر 2022', 'رنج روفر 2017'),
+              ('beige perforated leather upholstery', 'Ivory perforated leather'),
+              ('beige perforated leather', 'Ivory perforated leather'),
+              ('light-beige cabin materials', 'Ivory cabin materials'),
+              ('light-beige interior', 'Ivory interior'),
+              ('beige leather', 'Ivory perforated leather'),
+          ]
+          changed = []
+          for source in Path('js').rglob('*.js'):
+              text = source.read_text()
+              next_text = text
+              for old, new in replacements:
+                  next_text = next_text.replace(old, new)
+              if next_text != text:
+                  source.write_text(next_text)
+                  changed.append(str(source))
+
+          # Update the pre-Phase31 feature flag regression contract.
           p = Path('tests/canonical-v3-feature-flag.mjs')
           s = p.read_text()
           s = s.replace('["solo", "selfie"], ["selfie", "selfie"], ["studio", "selfie"], ["car", "car"], ["carExterior", "carExterior"], ["group", "group"], ["accidental", "accidental"], ["bedroom", "room"], ["room", "room"]', '["solo", "selfie"], ["selfie", "selfie"], ["studio", "selfie"], ["car", "car"], ["carExterior", "carExterior"], ["group", "group"], ["accidental", "accidental"], ["bedroom", "room"], ["room", "room"], ["gym", "selfie"], ["street", "selfie"]')
@@ -41,13 +69,14 @@ jobs:
               raise SystemExit('stale 2022 Range Rover refs:\n' + '\n'.join(stale_rr[:100]))
           if stale_glass:
               raise SystemExit('stale tinted rear glass refs:\n' + '\n'.join(stale_glass[:100]))
+          print('updated:', ', '.join(changed))
           PY
-      - name: Commit test contract update
+      - name: Commit audited sources
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add tests/canonical-v3-feature-flag.mjs
+          git add js tests/canonical-v3-feature-flag.mjs
           if ! git diff --cached --quiet; then
             git commit -m 'Phase 31: full audit de-conflict pass'
             git push origin HEAD:phase-31/full-audit-deconflict
