@@ -3,7 +3,7 @@ export const CANONICAL_V3_ENGINE = "canonical-v3";
 export const ENGINE_STORAGE_KEY = "wikiprompt-selfie-studio:engine";
 
 const VALID_ENGINES = new Set([LEGACY_ENGINE, CANONICAL_V3_ENGINE]);
-const CANONICAL_V3_SECTIONS = new Set(["solo", "selfie", "studio", "car", "group", "accidental", "bedroom", "room"]);
+const CANONICAL_V3_SECTIONS = new Set(["solo", "selfie", "studio", "car", "carexterior", "group", "accidental", "bedroom", "room"]);
 
 function normalize(value) {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
@@ -15,15 +15,9 @@ export function resolvePromptEngineSelection({ search = "", storageValue = "" } 
     urlValue = normalize(new URLSearchParams(search).get("engine"));
   } catch {}
 
-  if (VALID_ENGINES.has(urlValue)) {
-    return Object.freeze({ engine: urlValue, source: "url", defaulted: false });
-  }
-
+  if (VALID_ENGINES.has(urlValue)) return Object.freeze({ engine: urlValue, source: "url", defaulted: false });
   const stored = normalize(storageValue);
-  if (VALID_ENGINES.has(stored)) {
-    return Object.freeze({ engine: stored, source: "localStorage", defaulted: false });
-  }
-
+  if (VALID_ENGINES.has(stored)) return Object.freeze({ engine: stored, source: "localStorage", defaulted: false });
   return Object.freeze({ engine: LEGACY_ENGINE, source: "default", defaulted: true });
 }
 
@@ -34,6 +28,7 @@ export function isCanonicalV3Section(section) {
 export function canonicalIntentForSection(section) {
   switch (normalize(section)) {
     case "car": return "car";
+    case "carexterior": return "carExterior";
     case "group": return "group";
     case "accidental": return "accidental";
     case "bedroom":

@@ -3,7 +3,9 @@ import phase20BuildOpenAIImagePrompt, {
   describePostProcessing,
   describeEnvironmentalDetails,
   describeCameraArtifacts,
-  describeLightingPhysics
+  describeLightingPhysics,
+  describeMicroRealism,
+  describeNaturalImperfections
 } from "./openai-image-adapter-phase20.js";
 
 export * from "./openai-image-adapter-phase20.js";
@@ -48,16 +50,22 @@ function hasBodyContact(canonical) {
   return ["door-lean", "front-fender", "hood-sit"].includes(text(facts(canonical).carExteriorPose));
 }
 
-export function describeCarExterior(canonical) {
-  if (canonical?.scene?.id !== "carExterior") return "";
+function locationPoseSentence(canonical) {
   const location = LOCATIONS[text(facts(canonical).carExteriorLocation)] || LOCATIONS.villa;
   const poseId = text(facts(canonical).carExteriorPose) || "door-lean";
   const pose = POSES[poseId] || POSES["door-lean"];
-  const parts = [FROZEN_EXTERIOR_SPEC, `The vehicle is ${location}, with the subject ${pose}.`];
-  if (poseId === "door-open") {
-    parts.push(`The open door reveals Ivory perforated leather, dark wood veneer, and the black-and-Ivory wheel${isNight(canonical) ? ", with the interior light spilling at night" : ""}.`);
-  }
-  return parts.join(" ");
+  return `The vehicle is ${location}, with the subject ${pose}.`;
+}
+
+function interiorSentence(canonical) {
+  const poseId = text(facts(canonical).carExteriorPose) || "door-lean";
+  if (poseId !== "door-open") return "";
+  return `The open door reveals Ivory perforated leather, dark wood veneer, and the black-and-Ivory wheel${isNight(canonical) ? ", with the interior light spilling at night" : ""}.`;
+}
+
+export function describeCarExterior(canonical) {
+  if (canonical?.scene?.id !== "carExterior") return "";
+  return [FROZEN_EXTERIOR_SPEC, locationPoseSentence(canonical), interiorSentence(canonical)].filter(Boolean).join(" ");
 }
 
 export function describeCarExteriorRealism(canonical) {
@@ -85,31 +93,100 @@ function insertAfterScene(prompt, canonical, addition) {
   const anchor = sceneAnchor(canonical);
   return anchor && prompt.includes(anchor) ? prompt.replace(anchor, `${anchor} ${addition}`) : `${prompt} ${addition}`.trim();
 }
-function insertWithinCap(prompt, canonical, addition, maxWords = 250) {
-  let base = prompt;
-  let candidate = insertAfterScene(base, canonical, addition);
-  if (words(candidate) <= maxWords) return candidate;
-  for (const layer of [describePostProcessing(canonical), describeEnvironmentalDetails(canonical), describeCameraArtifacts(canonical), describeLightingPhysics(canonical)]) {
-    base = removeExact(base, layer);
-    candidate = insertAfterScene(base, canonical, addition);
-    if (words(candidate) <= maxWords) return candidate;
-  }
-  const sentences = addition.match(/[^.!?]+[.!?]/gu)?.map((x) => x.trim()).filter(Boolean) ?? [];
+function firstSentence(value) {
+  return value.match(/[^.!?]+[.!?]/u)?.[0]?.trim() || "";
+}
+function removeLowPriorityCarSentences(prompt) {
+  return prompt
+    .replace(/Scene details:\s*carExteriorPose is [^.]+\./iu, "")
+    .replace(/Visual preferences:[^.]+\./iu, "")
+    .replace(/\s{2,}/gu, " ")
+    .trim();
+}
+function compactLightingSentence(prompt) {
+  return prompt.replace(/Lighting uses [^.]+\./iu, "Lighting follows the selected real-world day or night source.");
+}
+function requiredExteriorSentences(canonical) {
+  const required = [
+    FROZEN_EXTERIOR_SPEC,
+    "Alloy wheels show light brake dust and the tires sit with realistic contact shadow on the ground.",
+    "Tinted glass mirrors the surroundings and the panoramic roof reflects the sky."
+  ];
+  const interior = interiorSentence(canonical);
+  if (interior) required.splice(1, 0, interior);
+  return required;
+}
+function optionalExteriorSentences(canonical) {
+  const optional = [
+    locationPoseSentence(canonical),
+    "Fuji White paint carries fine dust on lower panels and wheel arches with environment reflections stretched across the doors."
+  ];
+  if (isNight(canonical)) optional.push("An elongated light-pole reflection runs along the hood and roof.");
+  if (isNight(canonical) && isDamp(canonical)) optional.push("Damp ground patches reflect the overhead light near the tires.");
+  if (hasBodyContact(canonical)) optional.push("His hand rests on the body with natural finger spread and a faint reflection under the palm.");
+  return optional;
+}
+function fitSentences(prompt, canonical, sentences, maxWords = 250) {
   let chosen = "";
   for (const part of sentences) {
     const next = chosen ? `${chosen} ${part}` : part;
-    const nextPrompt = insertAfterScene(base, canonical, next);
-    if (words(nextPrompt) <= maxWords) chosen = next;
+    if (words(insertAfterScene(prompt, canonical, next)) <= maxWords) chosen = next;
   }
-  return chosen ? insertAfterScene(base, canonical, chosen) : base;
+  return chosen;
+}
+function insertWithinCap(prompt, canonical, maxWords = 250) {
+  let base = prompt;
+  const required = requiredExteriorSentences(canonical);
+  const optional = optionalExteriorSentences(canonical);
+  const full = [...required, ...optional].join(" ");
+  let candidate = insertAfterScene(base, canonical, full);
+  if (words(candidate) <= maxWords) return candidate;
+
+  for (const layer of [describePostProcessing(canonical), describeEnvironmentalDetails(canonical), describeCameraArtifacts(canonical), describeLightingPhysics(canonical)]) {
+    base = removeExact(base, layer);
+    candidate = insertAfterScene(base, canonical, full);
+    if (words(candidate) <= maxWords) return candidate;
+  }
+
+  const micro = describeMicroRealism(canonical);
+  const microFirst = firstSentence(micro);
+  base = removeExact(base, micro);
+  base = removeExact(base, describeNaturalImperfections(canonical));
+  base = removeLowPriorityCarSentences(base);
+  candidate = insertAfterScene(base, canonical, full);
+  if (words(candidate) <= maxWords) return candidate;
+
+  base = compactLightingSentence(base);
+  candidate = insertAfterScene(base, canonical, full);
+  if (words(candidate) <= maxWords) return candidate;
+
+  let requiredText = fitSentences(base, canonical, required, maxWords);
+  if (requiredText.split(/(?<=[.!?])\s+/u).length < required.length) {
+    const compactRequired = [
+      FROZEN_EXTERIOR_SPEC,
+      "The tires sit with realistic contact shadow on the ground.",
+      "Tinted glass carries natural reflection of the surroundings."
+    ];
+    const interior = interiorSentence(canonical);
+    if (interior) compactRequired.splice(1, 0, interior);
+    requiredText = fitSentences(base, canonical, compactRequired, maxWords);
+  }
+
+  let finalText = requiredText;
+  for (const part of optional) {
+    const next = finalText ? `${finalText} ${part}` : part;
+    if (words(insertAfterScene(base, canonical, next)) <= maxWords) finalText = next;
+  }
+  let finalPrompt = finalText ? insertAfterScene(base, canonical, finalText) : base;
+  if (microFirst && words(`${finalPrompt} ${microFirst}`) <= maxWords) finalPrompt = `${finalPrompt} ${microFirst}`;
+  return finalPrompt;
 }
 
 export function buildOpenAIImagePrompt(canonical, options = {}) {
   let prompt = phase20BuildOpenAIImagePrompt(canonical, options);
   if (canonical?.scene?.id !== "carExterior") return prompt;
   prompt = removeExact(prompt, describeSaudiStreetRealismPhase20(canonical));
-  const block = [describeCarExterior(canonical), describeCarExteriorRealism(canonical)].filter(Boolean).join(" ");
-  return insertWithinCap(prompt, canonical, block);
+  return insertWithinCap(prompt, canonical);
 }
 
 export default buildOpenAIImagePrompt;

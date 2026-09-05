@@ -1,8 +1,9 @@
 export const STUDIO_SECTION_DEFAULTS = Object.freeze({ studioSection:"solo" });
 export const STUDIO_SECTION_OPTIONS = Object.freeze([
   { value:"solo", label:"🤳 السيلفي الفردي", description:"شخص واحد، وضعيات وزوايا وملابس وإضاءة خاصة بالسيلفي الفردي" },
-  { value:"group", label:"👥 السيلفي الجماعي", description:"قسم مستقل لعدد الأشخاص وصاحب الهاتف وتوزيع المجموعة، مع اختيار غرفة النوم أو النادي أو الشارع" },
+  { value:"group", label:"👥 السيلفي الجماعي", description:"قسم مستقل لعدد الأشخاص وصاحب الهاتف وتوزيع المجموعة، مع اختيار المشهد" },
   { value:"car", label:"🚙 التصوير داخل السيارة", description:"مقاعد السيارة والمقصورة ووضعيات وإضاءة السيارة فقط" },
+  { value:"carExterior", label:"🚘 سيلفي بجانب السيارة", description:"بجانب الرنج روفر 2017: مواقع الوقوف والوضعيات والإضاءة" },
   { value:"bedroom", label:"🏠 التصوير في غرفة النوم", description:"السرير والاستلقاء والأريكة وملابس وإضاءة الغرفة فقط" },
   { value:"gym", label:"🏋️ التصوير في الجيم", description:"وضعيات وملابس وإضاءة الجيم فقط" },
   { value:"street", label:"🌆 التصوير الخارجي والشارع", description:"الوقوف والمشي والمواقف والإضاءة الخارجية فقط" },
@@ -14,6 +15,7 @@ const CONFIG = Object.freeze({
   solo:{ scenarioMode:"custom", scene:"custom", groupMode:"single", captureMode:"normal", customFallback:"an ordinary everyday location used only as minimal supporting context" },
   group:{ scenarioMode:"group", scene:"my_bedroom_text", groupMode:"group", captureMode:"normal" },
   car:{ scenarioMode:"car", scene:"rangeRover", groupMode:"single", captureMode:"normal" },
+  carExterior:{ scenarioMode:"custom", scene:"custom", groupMode:"single", captureMode:"normal", customFallback:"a parked 2017 Range Rover exterior selfie setting" },
   bedroom:{ scenarioMode:"bedroom", scene:"my_bedroom_text", groupMode:"single", captureMode:"normal" },
   gym:{ scenarioMode:"gym", scene:"gym", groupMode:"single", captureMode:"normal" },
   street:{ scenarioMode:"street", scene:"street", groupMode:"single", captureMode:"normal" },
@@ -48,4 +50,8 @@ export function buildStudioSectionLock(raw = {}) {
     negative:disabled.map((label) => `inactive ${label} section leakage`),
     qa:[{ label:"قسم التصوير", value:`${active.label} — يعمل منفردًا` }]
   };
+}
+
+if (typeof document !== "undefined") {
+  queueMicrotask(() => { void import("./phase22-ui-runtime.js"); });
 }

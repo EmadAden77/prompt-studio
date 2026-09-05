@@ -12,6 +12,8 @@ import {
 import { buildCanonicalV3UserOutput } from "../js/canonical/canonical-v3-pipeline.js";
 import { buildCanonicalV3 } from "../js/canonical-v3-engine.js";
 import { buildOpenAIImagePrompt } from "../js/canonical/openai-image-adapter.js";
+import { STUDIO_SECTION_OPTIONS } from "../js/studio-section-engine-v1.js";
+import { VISIBLE_SCENE_KEYS } from "../js/phase22-ui-runtime.js";
 
 assert.equal(ENGINE_STORAGE_KEY, "wikiprompt-selfie-studio:engine");
 assert.deepEqual(resolvePromptEngineSelection(), { engine: LEGACY_ENGINE, source: "default", defaulted: true });
@@ -22,7 +24,7 @@ assert.deepEqual(resolvePromptEngineSelection({ search:"?engine=unknown", storag
 
 const canonicalSelection = resolvePromptEngineSelection({ search:"?engine=canonical-v3" });
 for (const [section, intent] of [
-  ["solo", "selfie"], ["selfie", "selfie"], ["studio", "selfie"], ["car", "car"], ["group", "group"], ["accidental", "accidental"], ["bedroom", "room"], ["room", "room"]
+  ["solo", "selfie"], ["selfie", "selfie"], ["studio", "selfie"], ["car", "car"], ["carExterior", "carExterior"], ["group", "group"], ["accidental", "accidental"], ["bedroom", "room"], ["room", "room"]
 ]) {
   assert.equal(isCanonicalV3Section(section), true, `${section} must be Canonical V3-capable`);
   assert.equal(canonicalIntentForSection(section), intent);
@@ -30,6 +32,27 @@ for (const [section, intent] of [
 }
 for (const section of ["gym", "street", "custom", ""]) assert.equal(isCanonicalV3Section(section), false, `${section || "empty"} must remain on legacy fallback`);
 assert.equal(shouldUseCanonicalV3("car", resolvePromptEngineSelection()), false, "legacy is the default");
+
+assert.equal(STUDIO_SECTION_OPTIONS.some((item) => item.value === "carExterior" && /سيلفي بجانب السيارة/u.test(item.label)), true);
+assert.deepEqual(VISIBLE_SCENE_KEYS, ["bedroom","gym","street","rangeRover","majlis","kashta","barbershop","grocery","rooftop","streetFootball","gasStation"]);
+
+const exteriorOutput = buildCanonicalV3UserOutput({
+  studioSection:"carExterior",
+  intentType:"carExterior",
+  hasReference:true,
+  carExteriorLocation:"grocery",
+  carExteriorPose:"door-open",
+  carExteriorLighting:"interior-spill",
+  carExteriorClothing:"white-thobe",
+  time:"night"
+});
+assert.equal(exteriorOutput.canonical.scene.id, "carExterior");
+assert.equal(exteriorOutput.canonical.scene.facts.carExteriorLocation, "grocery");
+assert.equal(exteriorOutput.canonical.scene.facts.carExteriorPose, "door-open");
+assert.match(exteriorOutput.prompt, /Fuji White/iu);
+assert.match(exteriorOutput.prompt, /small grocery/iu);
+assert.match(exteriorOutput.prompt, /open driver door/iu);
+assert.ok(exteriorOutput.prompt.trim().split(/\s+/u).filter(Boolean).length <= 250);
 
 const carOutput = buildCanonicalV3UserOutput({
   studioSection:"car",
@@ -91,4 +114,4 @@ const indexSource = fs.readFileSync(new URL("../index.html", import.meta.url), "
 assert.match(indexSource, /js\/canonical\/engine-gate\.js\?v=20260903-phase6/u, "live page must load the Phase 6 gate");
 assert.equal(/<script type="module" src="js\/physics-app-v7\.js\?v=20260903-json-clean2"><\/script>/u.test(indexSource), false, "index must not bypass the gate");
 
-console.log("✓ canonical-v3 feature flag and 2017 Range Rover spec contract passed");
+console.log("✓ canonical-v3 feature flag, Phase 22 UI routing, and 2017 Range Rover spec contract passed");
