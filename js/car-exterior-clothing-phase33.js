@@ -1,27 +1,9 @@
-import { UNIFIED_CLOTHING_CATALOG } from "./phase30-clothing-catalog.js";
+import {
+  UNIFIED_CLOTHING_CATALOG,
+  TRADITIONAL_CAR_OPTIONS
+} from "./phase30-clothing-catalog.js";
 
-export const CAR_EXTERIOR_TRADITIONAL_OPTIONS = Object.freeze([
-  Object.freeze({
-    value:"thobe-redshemagh-iqal",
-    label:"ثوب أبيض + شماغ أحمر + عقال",
-    text:"crisp white thobe with a red-and-white checkered shemagh and black iqal, youthful style with one end casually thrown over the shoulder"
-  }),
-  Object.freeze({
-    value:"thobe-whiteghutra-iqal",
-    label:"ثوب أبيض + غترة بيضاء + عقال",
-    text:"white thobe with white ghutra and black iqal, neat drape"
-  }),
-  Object.freeze({
-    value:"thobe-bisht",
-    label:"ثوب أبيض + بشت بني",
-    text:"white thobe with brown bisht draped over the shoulders"
-  }),
-  Object.freeze({
-    value:"thobe-white",
-    label:"ثوب أبيض سادة",
-    text:"crisp white Saudi thobe with natural standing folds"
-  })
-]);
+export const CAR_EXTERIOR_TRADITIONAL_OPTIONS = TRADITIONAL_CAR_OPTIONS;
 
 const CAR_EXTERIOR_BASE_SECTION_IDS = Object.freeze(["casual", "formal", "sport", "outdoor"]);
 
