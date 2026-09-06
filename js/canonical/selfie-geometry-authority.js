@@ -58,7 +58,7 @@ function autoRule(raw, section) {
   let chosen = autoDefaults(id);
 
   if (id === "carExterior" && night && location === "villa") {
-    chosen = { angle:"high", angleDegrees:8, pose:"door-lean", framing:"front quarter vehicle view with the DRL visible and a slightly awkward car crop" };
+    chosen = { angle:"high", angleDegrees:8, pose:"door-lean", framing:"front quarter, DRL visible, slightly awkward car crop" };
   } else if (id === "carExterior" && !night && location === "parking") {
     chosen = { angle:"eye", angleDegrees:0, pose:"front-grille", framing:"front grille selfie with the hood edge entering the lower frame" };
   } else if (id === "street" && night) {
