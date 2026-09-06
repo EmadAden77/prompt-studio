@@ -23,7 +23,7 @@ const text=value=>String(value??"").trim();
 const clean=value=>text(value).replace(/\s+/gu," ");
 const NEUTRAL_VALUES=new Set([
   "","auto","none","default","off","normal","natural-auto","natural","neutral","close","eye",
-  "light","lightly-unpressed","home-used","relaxed","riyadh","minimal"
+  "light","lightly-unpressed","home-used","relaxed","riyadh","minimal","night-charcoal-closed"
 ]);
 const meaningful=(key,value)=>{
   const v=clean(value);
@@ -47,6 +47,11 @@ const SECTION_GUIDANCE=Object.freeze({
 });
 
 const FIELD_DEFS=Object.freeze([
+  ["city","City"],
+  ["identityNotes","Identity note"],
+  ["customScene","Custom scene"],
+  ["customSceneDetails","Custom scene details"],
+  ["clothingCustom","Custom clothing"],
   ["hair","Hair styling"],
   ["skin","Skin state"],
   ["fabric","Fabric"],
