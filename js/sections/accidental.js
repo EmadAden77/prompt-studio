@@ -15,7 +15,7 @@ export const SECTION = deepFreeze({
     composition:["phone motion focus and exposure accidents"],
     interaction:[],
     exclusions:["posed selfie"],
-    routing:{ intentType:"accidental", sceneMode:"selectable", defaultScene:"street" },
+    routing:{ intentType:"accidental", sceneMode:"fallback", defaultScene:"street" },
     ui:{ scenarioMode:"custom", scene:"custom", groupMode:"single", captureMode:"accidental", customFallback:"an ordinary lived-in indoor room or everyday place", showScenePicker:false }
   }
 });
