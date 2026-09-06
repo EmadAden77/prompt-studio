@@ -4,7 +4,7 @@ import { CAR_EXTERIOR_SPEC } from "../data.js";
 export * from "./openai-image-adapter.js";
 
 export const SELFIE_ARM_LOCK = "One arm extends toward the camera holding the phone; the other hand stays free or relaxed — never both hands in pockets or both hands occupied.";
-export const IDENTITY_STRICT_LOCK = "Identity strictly preserved from the reference image: facial and head shape, facial proportions, feature spacing, eyes, eyebrows, nose, lips, jaw and chin, ears, skin tone, hairline, beard and moustache pattern, reference-linked eyewear, apparent age and natural asymmetry remain unchanged; no beautification, face slimming or lengthening, symmetry correction or de-aging regardless of angle, distance, clothing or lighting.";
+export const IDENTITY_STRICT_LOCK = "Identity strictly preserved from the reference image: face and head shape, facial proportions, feature spacing, eyes, eyebrows, nose, lips, jaw/chin, ears, skin tone, hairline, beard/moustache pattern, reference-linked eyewear, apparent age and natural asymmetry remain unchanged; no beautification, face slimming/lengthening, symmetry correction or de-aging regardless of angle, distance, clothing or lighting.";
 export const PROTECTED_LIGHTING_PREFIX = "Lighting follows the selected real-world";
 
 const DIRECT_SELFIE_TYPES = new Set(["direct_front_camera_selfie", "subject_held_driver_selfie", "mirror_selfie"]);
