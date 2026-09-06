@@ -4,6 +4,25 @@ const DEFAULT_LOCATION = "villa";
 const DEFAULT_POSE = "door-lean";
 const FORBIDDEN_SELFIE_POSES = new Set(["key-fob"]);
 
+const COMPACT_LOCATION_TEXT = Object.freeze({
+  villa:"Villa driveway",
+  grocery:"small grocery curb",
+  parking:"marked outdoor parking lot",
+  street:"yellow-and-black street curb",
+  reststop:"sandy rest-stop shoulder",
+  mall:"outdoor mall parking"
+});
+
+const COMPACT_POSE_TEXT = Object.freeze({
+  "door-lean":"leaning on the closed driver door",
+  "door-open":"beside the open driver door",
+  "front-grille":"beside the front grille",
+  "rear-tailgate":"near the rear tailgate",
+  "front-fender":"at the front fender with the free hand on the body",
+  "rear-quarter":"at the rear three-quarter corner",
+  "hood-sit":"sitting on the front hood edge"
+});
+
 function text(value) { return typeof value === "string" ? value.trim() : ""; }
 function optionByValue(options, value) { return options.find((item) => item.value === value) || null; }
 
@@ -50,6 +69,13 @@ export function resolveCarExteriorSelection(raw = {}) {
     lightingText:lightingOption?.text || "",
     lightingOptions:Object.freeze(lightingOptions.map((item) => Object.freeze({ ...item })))
   });
+}
+
+export function describeCompactCarExteriorSelection(raw = {}) {
+  const selection = resolveCarExteriorSelection(raw);
+  const location = COMPACT_LOCATION_TEXT[selection.location] || selection.locationText;
+  const pose = COMPACT_POSE_TEXT[selection.pose] || selection.poseText;
+  return `${location}; subject ${pose}; tires grounded by realistic contact shadow.`;
 }
 
 export function isCarExteriorSelfiePoseAllowed(value) {
