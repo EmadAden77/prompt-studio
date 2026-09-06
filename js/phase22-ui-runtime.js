@@ -163,9 +163,19 @@ function decorateSectionCards() {
 function activeSection() { return document.querySelector("#studio-section")?.value || ""; }
 function selectedScene() { return document.querySelector("#scene")?.value || ""; }
 
-function setFieldHidden(selector, hidden) {
+function setFieldState(selector, hidden, disabled = hidden) {
   const node = document.querySelector(selector);
-  if (node) node.hidden = hidden;
+  if (!node) return;
+  node.hidden = hidden;
+  for (const control of node.matches?.("input,select,textarea") ? [node] : node.querySelectorAll?.("input,select,textarea") || []) {
+    control.disabled = disabled;
+  }
+}
+
+function setControlFieldState(control, hidden) {
+  const field = control?.closest("label");
+  if (field) field.hidden = hidden;
+  if (control) control.disabled = hidden;
 }
 
 function syncCarExteriorVisibility() {
@@ -180,32 +190,27 @@ function syncCarExteriorVisibility() {
     if (select) select.disabled = !active;
   }
 
-  const standardPose = document.querySelector("#pose")?.closest("label");
-  const standardPoseFamily = document.querySelector("#pose-family")?.closest("label");
-  if (standardPose) standardPose.hidden = active;
-  if (standardPoseFamily) standardPoseFamily.hidden = active;
+  setControlFieldState(document.querySelector("#pose"), active);
+  setControlFieldState(document.querySelector("#pose-family"), active);
 
-  // carExterior has dedicated location/pose/lighting authority. Hide legacy/custom
-  // controls that would otherwise look active while being ignored by Canonical V3.
-  const genericLighting = document.querySelector("#lighting")?.closest("label");
-  if (genericLighting) genericLighting.hidden = active;
-  setFieldHidden("#custom-scene-field", active);
-  setFieldHidden("#custom-scene-details-field", active);
-  setFieldHidden("#scene-profile-field", active);
+  // carExterior has dedicated location/pose/lighting authority. Hide and disable
+  // legacy/custom controls so FormData cannot leak stale values into Canonical V3.
+  setControlFieldState(document.querySelector("#lighting"), active);
+  setFieldState("#custom-scene-field", active);
+  setFieldState("#custom-scene-details-field", active);
+  setFieldState("#scene-profile-field", active);
 
-  // These legacy manual realism/context panels are not authorities in the hardened
-  // carExterior Canonical path. The automatic realism layers still run in the adapter.
-  setFieldHidden("#post-processing-panel", active);
-  setFieldHidden('[aria-labelledby="realism-core-title"]', active);
-  setFieldHidden('[aria-labelledby="advanced-realism-title"]', active);
-  setFieldHidden(".context-secondary-panel", active);
+  // Manual legacy realism/context panels are not authorities in the hardened
+  // carExterior path. Automatic realism layers still run inside the adapter.
+  setFieldState("#post-processing-panel", active);
+  setFieldState('[aria-labelledby="realism-core-title"]', active);
+  setFieldState('[aria-labelledby="advanced-realism-title"]', active);
+  setFieldState(".context-secondary-panel", active);
 
-  // Reference identity is authoritative for hair/skin in carExterior. Avoid exposing
-  // styling knobs that can imply identity drift while keeping expression active.
-  const hairField = document.querySelector("#hair")?.closest("label");
-  const skinField = document.querySelector("#skin")?.closest("label");
-  if (hairField) hairField.hidden = active;
-  if (skinField) skinField.hidden = active;
+  // Reference identity is authoritative for hair/skin in carExterior. Do not expose
+  // styling knobs that can imply face/identity drift; expression remains active.
+  setControlFieldState(document.querySelector("#hair"), active);
+  setControlFieldState(document.querySelector("#skin"), active);
 
   const clothing = document.querySelector("#clothing");
   const clothingField = clothing?.closest("label");
