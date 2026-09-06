@@ -127,7 +127,7 @@ function carSelectionSatisfied(requiredText,out){
 
 function selectionSatisfied(requiredText,out,sectionId){
   if(out.includes(requiredText)) return true;
-  if(sectionId==="car") return carSelectionSatisfied(requiredText,out);
+  if(sectionId==="car"||/Car-interior lock:/iu.test(out)) return carSelectionSatisfied(requiredText,out);
   return false;
 }
 
