@@ -56,7 +56,9 @@ function buildUserAtoms(raw, base) {
   const expressionKey=text(raw?.expression);
   const expression=EXPRESSIONS[expressionKey] || (expressionKey ? `Expression: ${expressionKey}.` : "");
   const section=text(base?.section?.id || raw?.studioSection);
-  const poseKey=text(section==="carExterior" ? raw?.carExteriorPose : raw?.selfiePose || raw?.pose);
+  const requestedPose=text(section==="carExterior" ? raw?.carExteriorPose : raw?.selfiePose || raw?.pose);
+  const resolvedPose=text(base?.geometry?.pose);
+  const poseKey=requestedPose && requestedPose!=="auto" ? requestedPose : resolvedPose;
   const pose=section==="carExterior" ? CAR_POSES[poseKey] : (poseKey && poseKey!=="auto" ? `Pose: ${poseKey}.` : "");
   const locationKey=text(raw?.carExteriorLocation);
   const location=section==="carExterior" && locationKey ? (CAR_LOCATIONS[locationKey] || `At the selected ${locationKey} exterior location.`) : "";
@@ -80,6 +82,7 @@ function classifyBaseSentence(s, base) {
 function removeSuperseded(parts) {
   return parts.filter(s => !/^(?:Subject wearing|Expression:|expression:|Neutral closed-mouth expression|Focused neutral|Relaxed serious|Small natural closed-mouth smile|Natural relaxed smile|Natural open laugh|The capture is unmistakably at night|The capture is in )/iu.test(s)
     && !/^Night physics:|^Low-light phone exposure|^Raised phone ISO|^Natural movement (?:adds|leaves)|^Moving cars can|^Shadow integrity follows|^Flash mode lights|^Direct phone flash lights|^Exposure (?:favors|keeps)|^Night processing|^Computational shadow lift/iu.test(s)
+    && !/^(?:He naturally leans one side of his upper body against the closed driver door|He stands naturally beside the open driver door|He stands naturally beside the front grille|He stands naturally beside the rear tailgate|He stands naturally beside the front fender|He stands naturally beside the rear quarter|He sits naturally on the front edge of the hood)/iu.test(s)
     && !/^(?:In a marked outdoor parking lot|Beside a Saudi residential villa driveway|At the curb beside a small neighborhood grocery|On a sandy roadside shoulder|At an ordinary roadside)/iu.test(s));
 }
 
