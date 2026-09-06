@@ -11,6 +11,8 @@ export const SECTION = deepFreeze({
   lighting:["car"],
   realismLayers:["cabin-material","glass","micro","imperfections","lighting-physics","camera-artifacts"],
   rules:{
+    sectionScope:["seats","cabin","driver-seat poses","car lighting"],
+    wikiPromptPolicy:"strict-car-selfie",
     hard:[
       "interior only",
       "stationary vehicle",
@@ -19,6 +21,7 @@ export const SECTION = deepFreeze({
       "steering wheel directly ahead of torso",
       "driver door and side window remain on the driver's physical left",
       "center console remains on the driver's physical right",
+      "never convert vehicle-relative geometry into image-frame left/right instructions",
       "seat and cabin geometry",
       "one physically possible selfie capture event",
       "car-interior controls cannot be overridden by city, street, crowd, background-density, hair, skin, fabric-state or unrelated environment controls"
@@ -38,7 +41,8 @@ export const SECTION = deepFreeze({
       "city landmark staging",
       "busy street or crowd staging",
       "generic background-density injection",
-      "fabric-state override that contradicts the selected garment"
+      "fabric-state override that contradicts the selected garment",
+      "technical camera jargon in final ChatGPT Images prompt"
     ],
     routing:{ intentType:"car", sceneMode:"fixed", defaultScene:"rangeRover" },
     wiring:{
