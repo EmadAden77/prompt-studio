@@ -17,7 +17,7 @@ import { SECTION_REGISTRY, getSection } from "../sections/index.js";
 export const CAR_EXTERIOR_PROMPT_WORD_BUDGET = 280;
 const PHASE34_ROUTING_WORD_BUDGET = 250;
 const PHASE34_REDUNDANT_GLASS_SENTENCE = "Transparent glass carries natural reflections and a faint view into the Ivory cabin.";
-const PHASE42_CAR_EXTERIOR_SPEC = "2017 Range Rover Sport Autobiography Dynamic L494, Fuji White, gloss black grille and vent surrounds, 22-inch dark alloys, quad rectangular exhaust tips, LED DRLs, panoramic glass roof, transparent glass with natural reflections and a faint Ivory-cabin view, never opaque black; Autobiography Dynamic badging and Saudi plate, never legible.";
+const PHASE42_CAR_EXTERIOR_SPEC = "2017 Range Rover Sport Autobiography Dynamic L494, Fuji White, gloss black grille and vent surrounds, 22-inch dark alloys, quad rectangular exhaust tips, LED DRLs, panoramic glass roof, transparent glass with natural reflections and faint Ivory-cabin view, never opaque black; Autobiography Dynamic badging and Saudi plate, never legible.";
 const LEGACY_SECTION_ALIASES = Object.freeze({ selfie:"solo", studio:"solo" });
 const DAILY_SCENE_KEYS = new Set(["majlis", "kashta", "barbershop", "grocery", "rooftop", "streetFootball", "gasStation"]);
 const REAL_SECTION_SCENES = new Set([
@@ -55,6 +55,13 @@ function activeSectionById(id) { const key = String(id || "").trim(); return get
 function hasAuthority(section, authority) { return section?.rules?.routing?.authority === authority; }
 function naturalBodyCompact() { return "Tall 195 cm, 88 kg lean-athletic; broad-shouldered with proportional limbs."; }
 function sentenceCase(value) { const text = String(value || "").trim(); return text ? `${text.charAt(0).toUpperCase()}${text.slice(1)}` : text; }
+function compactCarExteriorLocation(value) {
+  return String(value || "")
+    .replace(/parked on a driveway before a Saudi villa with beige stone cladding, high wall, metal gate, and a palm tree/iu, "parked before a Saudi villa with beige stone, gate and palm")
+    .replace(/in a marked outdoor lot with white lines, concrete wheel stops, and a few other parked cars/iu, "in a marked outdoor lot with white lines, wheel stops and parked cars")
+    .replace(/at the curb before a small grocery with shelves and a glowing beverage cooler behind glass/iu, "at a small grocery curb with shelves and a glowing beverage cooler")
+    .replace(/parallel parked along a yellow-and-black curb on weathered asphalt/iu, "parallel parked along a yellow-and-black curb");
+}
 
 function selfieSafePose(value, captureType) {
   const pose = String(value || "").trim();
@@ -203,8 +210,9 @@ function replacePhase41Lighting(prompt, description, time) {
 
 function normalizePhase41CarExteriorAuthority(prompt, routedInput) {
   const selection = resolveCarExteriorSelection(routedInput);
+  const location = sentenceCase(compactCarExteriorLocation(selection.locationText));
   const cabin = selection.pose === "door-open" ? " Open door reveals Ivory perforated leather, dark wood and black and Ivory wheel." : "";
-  const authority = `${sentenceCase(selection.locationText)}, subject ${selection.poseText}. Tires have realistic contact shadow.${cabin}`;
+  const authority = `${location}, subject ${selection.poseText}. Tires have realistic contact shadow.${cabin}`;
   const kept = phase41SentenceParts(prompt).filter((sentence) => {
     if (/2017 Range Rover Sport Autobiography Dynamic/iu.test(sentence)) return true;
     if (/^A parked Range Rover exterior selfie/iu.test(sentence)) return false;
@@ -226,6 +234,8 @@ function compactPhase41CarExteriorProtectedText(prompt, canonical) {
     .replace(/Tall 195 cm, 88 kg lean-athletic build: medium-to-moderately-broad shoulders visibly wider than the waist, moderately developed chest, subtle deltoid roundness, long proportional limbs with filled-not-thin arms, proportionate adult male neck, and head anatomically scaled to tall frame\./iu, naturalBodyCompact())
     .replace(/Tall 195 cm, 88 kg lean-athletic build: shoulders wider than waist, developed chest\/deltoids, long proportional limbs, filled arms, adult male neck, head scaled to the tall frame\./iu, naturalBodyCompact())
     .replace(/Tall 195 cm, 88 kg lean-athletic; broad-shouldered; proportional-limbed\./iu, naturalBodyCompact())
+    .replace(/\bNo facial alteration\/lengthening\.\s*/iu, "")
+    .replace(/\bstanding beside the open driver door;\s*neutral;\s*(white thobe with red-and-white shemagh and black iqal)\./iu, "neutral; $1.")
     .replace(/Subject:\s*([^,]+),\s*([^,]+),\s*wearing ([^.]+)\./iu, "$1; $2; $3.")
     .replace(/\s{2,}/gu, " ")
     .trim();
