@@ -139,8 +139,6 @@ function compactPhase40CarExteriorBudget(prompt, maxWords = 250) {
   let compacted = String(prompt || "").replace(/\s{2,}/gu, " ").trim();
   if (wordCount(compacted) <= maxWords) return compacted;
 
-  // Location prose can be verbose. Compact it before touching identity, selfie-arm,
-  // clothing/headwear, vehicle, cabin or selected-lighting evidence.
   const sceneCompactors = [
     [/A parked Range Rover exterior selfie, parked on a driveway before a Saudi villa with beige stone cladding, high wall, metal gate, and a palm tree\./iu, "A parked Range Rover exterior selfie on a Saudi villa driveway with beige stone, gate and palm tree."],
     [/A parked Range Rover exterior selfie, at the curb before a small grocery with shelves and a glowing beverage cooler behind glass\./iu, "A parked Range Rover exterior selfie at a small grocery curb."],
@@ -155,6 +153,13 @@ function compactPhase40CarExteriorBudget(prompt, maxWords = 250) {
   }
 
   const compactors = [
+    // The following detailed HEADWEAR_LOCK already carries the shemagh/iqal style,
+    // so under pressure keep the garment sentence to the unique thobe fact instead
+    // of repeating the same headwear semantics twice.
+    [
+      /Subject:\s*([^.]*?),\s*wearing crisp white thobe with a red-and-white checkered shemagh and black iqal, youthful style with one end casually thrown over the shoulder\./iu,
+      "Subject: $1, wearing crisp white thobe."
+    ],
     [
       /Camera near eye level at 45–60 cm, no steep downward angle; relaxed upright posture, spine extension, enough upper torso to communicate the tall athletic frame\./iu,
       "Camera near eye level at 45–60 cm, no steep downward angle; relaxed posture preserves tall-frame perspective."
