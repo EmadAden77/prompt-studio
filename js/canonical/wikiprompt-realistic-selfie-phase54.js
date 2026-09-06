@@ -19,6 +19,17 @@ export const WIKIPROMPT_REALISTIC_SELFIE_RULES = Object.freeze({
   inactiveSectionLeakageForbidden:true
 });
 
+export const WIKIPROMPT_CAR_SELFIE_RULES = Object.freeze({
+  actionFirst:"Begin with one natural seated driver action, not a static catalog pose.",
+  contextConsistency:"Only parked-car seats, cabin materials, driver-seat pose and physically motivated car lighting may shape the scene.",
+  subtleImperfections:"Use restrained phone-photo and lived-in cabin imperfections only; never random clutter or unrelated realism props.",
+  simpleCameraLanguage:"Use front-camera, arm-reach and close/wider selfie language; avoid ISO, focal-length, aperture, yaw/pitch/roll jargon in the final ChatGPT Images prompt.",
+  observableBackground:"Background is cabin-only: seatback, door trim, glass and roof when angle-visible; outside through glass stays soft and anonymous.",
+  naturalPropIntegration:"Only ordinary car-context objects may appear when explicitly selected; never product-display placement.",
+  mirrorRule:"Not applicable to a direct front-camera car selfie; preserve vehicle-relative LHD relationships without assigning image-frame left/right.",
+  forbiddenLeakage:Object.freeze(["named city","landmark","crowd","busy street","car exterior pose","passenger-seat relocation","driving motion","studio light","ring light"])
+});
+
 const text=value=>String(value??"").trim();
 const clean=value=>text(value).replace(/\s+/gu," ");
 const NEUTRAL_VALUES=new Set([
@@ -36,7 +47,7 @@ const meaningful=(key,value)=>{
 const SECTION_GUIDANCE=Object.freeze({
   solo:"Keep the moment activity-led and candid; supporting details must match the selected place rather than inventing a staged setup.",
   group:"Keep one clear phone-holder and a shared candid group moment; people remain distinct and naturally distributed instead of posing identically.",
-  car:"Keep the subject naturally seated in the stationary driver position; only the selected cabin, seat, driver pose and physically motivated car lighting may shape the interior scene. Generic city, street, crowd, background-density, hair, skin, fabric-state or unrelated environment controls must not be injected into the car-interior prompt.",
+  car:"Keep the subject naturally seated in the stationary driver position. The car section is strictly seats, cabin, driver-seat poses and car lighting. Do not inject generic city, street, crowd, background-density, hair, skin, fabric-state, accessory, environment or post-processing controls into the car-interior prompt.",
   carExterior:"Keep the vehicle as contextual support to the selfie; preserve the selected L494 geometry and pose without turning the frame into a product display.",
   bedroom:"Keep the room lived-in rather than staged; furniture contact, clothing and small imperfections must match the subject's actual action.",
   gym:"Keep the scene workout-consistent; athletic context, subtle exertion cues and accessories must fit the activity while explicit user clothing remains authoritative.",
@@ -114,6 +125,7 @@ export function buildWikiPromptSectionContract(rawInput={},base={}){
     section:id,
     source:WIKIPROMPT_REALISTIC_SELFIE_SOURCE,
     rules:WIKIPROMPT_REALISTIC_SELFIE_RULES,
+    specialization:id==="car"?WIKIPROMPT_CAR_SELFIE_RULES:null,
     guidance,
     fieldEvidence:evidence,
     mirrorRequired:id==="mirror",
