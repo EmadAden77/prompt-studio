@@ -56,9 +56,9 @@ const ten=Array.from({length:10},()=>JSON.stringify(buildCanonicalV3UserOutput(r
 assert.ok(ten.every(v=>v===ten[0]),"Phase 51 contract determinism must be 10/10");
 
 const engineGate=fs.readFileSync(new URL("../js/canonical/engine-gate.js",import.meta.url),"utf8");
-assert.match(engineGate,/from\s+["']\.\/canonical-v3-phase51\.js["']/u,"live engine gate must use Phase 51");
+assert.match(engineGate,/from\s+["']\.\/canonical-v3-phase52\.js["']/u,"live engine gate must use Phase 52 while Phase 51 remains the visual-QA behavior contract");
 
 console.log(`PHASE51_CRITERIA=${out.phase51.visualQualityContract.criteria.length}`);
 console.log(`PHASE51_PROMPT_WORDS=${words(out.prompt)}`);
 console.log("PHASE51_DETERMINISM=10/10");
-console.log("Phase 51 visual quality evaluation engine: PASS");
+console.log("Phase 51 visual quality evaluation engine: PASS under Phase 52 live gate");
