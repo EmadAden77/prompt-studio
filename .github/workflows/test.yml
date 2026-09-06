@@ -110,3 +110,5 @@ jobs:
         run: node tests/canonical-v3-master-phase39.mjs
       - name: Run Phase 40 carExterior deep audit
         run: node tests/canonical-v3-car-exterior-deep-audit-phase40.mjs
+      - name: Run Phase 40 section module architecture
+        run: node tests/canonical-v3-section-modules-phase40.mjs

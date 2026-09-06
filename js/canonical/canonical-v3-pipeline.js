@@ -5,27 +5,44 @@ import { applyGroupPhase13, enrichGroupPromptPhase13 } from "./group-phase13.js"
 import { SCENES } from "../data.js";
 import { resolveClothingText } from "../clothing-authority.js";
 import { describeMissingCarExteriorSelectionEvidence, resolveCarExteriorSelection } from "../car-exterior-authority.js";
+import { SECTION_REGISTRY, getSection } from "../sections/index.js";
 
 export const CAR_EXTERIOR_PROMPT_WORD_BUDGET = 280;
 const PHASE34_ROUTING_WORD_BUDGET = 250;
 const PHASE34_REDUNDANT_GLASS_SENTENCE = "Transparent glass carries natural reflections and a faint view into the Ivory cabin.";
-
-export const SECTION_CAPTURE_ROUTING = Object.freeze({
-  solo: Object.freeze({ captureType:"direct_front_camera_selfie", intentType:"selfie", fallbackScene:"street" }),
-  selfie: Object.freeze({ captureType:"direct_front_camera_selfie", intentType:"selfie", fallbackScene:"street" }),
-  studio: Object.freeze({ captureType:"direct_front_camera_selfie", intentType:"selfie", fallbackScene:"street" }),
-  bedroom: Object.freeze({ captureType:"direct_front_camera_selfie", intentType:"selfie", fallbackScene:"bedroom" }),
-  gym: Object.freeze({ captureType:"direct_front_camera_selfie", intentType:"selfie", fallbackScene:"gym" }),
-  street: Object.freeze({ captureType:"direct_front_camera_selfie", intentType:"selfie", fallbackScene:"street" }),
-  carExterior: Object.freeze({ captureType:"direct_front_camera_selfie", intentType:"selfie", scene:"carExterior", forceScene:true }),
-  car: Object.freeze({ captureType:"subject_held_driver_selfie", intentType:"car", scene:"rangeRover", forceScene:true }),
-  group: Object.freeze({ captureType:"group_selfie", intentType:"group", fallbackScene:"street" }),
-  accidental: Object.freeze({ captureType:"accidental_front_camera_capture", intentType:"accidental", fallbackScene:"street" })
-});
-
-const REAL_SECTION_SCENES = new Set(["bedroom","gym","street","carExterior","rangeRover","majlis","kashta","barbershop","grocery","rooftop","streetFootball","gasStation"]);
-const SELFIE_CAPTURE_TYPES = new Set(["direct_front_camera_selfie","subject_held_driver_selfie","group_selfie","mirror_selfie"]);
+const LEGACY_SECTION_ALIASES = Object.freeze({ selfie:"solo", studio:"solo" });
 const DAILY_SCENE_KEYS = new Set(["majlis", "kashta", "barbershop", "grocery", "rooftop", "streetFootball", "gasStation"]);
+const REAL_SECTION_SCENES = new Set([
+  ...Object.values(SECTION_REGISTRY).flatMap((section) => section.scenes),
+  ...DAILY_SCENE_KEYS,
+  "rangeRover",
+  "carExterior"
+].filter((scene) => scene && scene !== "custom"));
+const SELFIE_CAPTURE_TYPES = new Set([
+  ...Object.values(SECTION_REGISTRY).map((section) => section.captureType).filter((type) => /selfie/iu.test(String(type))),
+  "mirror_selfie"
+]);
+
+function compatibilityRoute(section) {
+  const routing = section.rules?.routing || {};
+  const defaultScene = routing.defaultScene || section.scenes[0] || "street";
+  const route = {
+    captureType:section.captureType,
+    intentType:routing.intentType || "selfie"
+  };
+  if (routing.sceneMode === "fixed") {
+    route.scene = defaultScene;
+    route.forceScene = true;
+  } else {
+    route.fallbackScene = defaultScene;
+  }
+  return Object.freeze(route);
+}
+
+export const SECTION_CAPTURE_ROUTING = Object.freeze(Object.fromEntries(
+  Object.values(SECTION_REGISTRY).map((section) => [section.id, compatibilityRoute(section)])
+));
+
 const WEAR_TEXT = Object.freeze({
   fresh: "fresh wear",
   "normal-day": "ordinary daily wear",
@@ -44,6 +61,12 @@ const IRON_TEXT = Object.freeze({
 
 function humanize(value) { return String(value || "").trim().replace(/[_-]+/gu, " ").replace(/\s+/gu, " "); }
 function wordCount(value) { return String(value || "").trim().split(/\s+/u).filter(Boolean).length; }
+function normalizeScene(value) { return String(value || "") === "my_bedroom_text" ? "bedroom" : String(value || ""); }
+function activeSectionById(id) {
+  const key = String(id || "").trim();
+  return getSection(key) || getSection(LEGACY_SECTION_ALIASES[key]);
+}
+function hasAuthority(section, authority) { return section?.rules?.routing?.authority === authority; }
 
 function selfieSafePose(value, captureType) {
   const pose = String(value || "").trim();
@@ -56,17 +79,30 @@ function selfieSafePose(value, captureType) {
 
 export function applySectionCaptureRouting(rawInput = {}) {
   const raw = rawInput && typeof rawInput === "object" ? { ...rawInput } : {};
-  const section = String(raw.studioSection || "").trim();
-  const route = SECTION_CAPTURE_ROUTING[section];
-  if (!route) return raw;
-  raw.captureType = route.captureType;
-  raw.intentType = route.intentType;
-  const currentScene = String(raw.scene || "").trim();
-  if (route.forceScene && route.scene) raw.scene = route.scene;
-  else if (!REAL_SECTION_SCENES.has(currentScene)) raw.scene = route.fallbackScene || route.scene || "street";
-  if (REAL_SECTION_SCENES.has(String(raw.scene || ""))) raw.customScene = "";
-  raw.pose = selfieSafePose(raw.pose, route.captureType);
-  if (section === "carExterior") {
+  const requestedSection = String(raw.studioSection || "").trim();
+  const section = activeSectionById(requestedSection);
+  if (!section) return raw;
+
+  raw.studioSection = section.id;
+  raw.captureType = section.captureType;
+  const routing = section.rules?.routing || {};
+  raw.intentType = routing.intentType || raw.intentType || "selfie";
+
+  const currentScene = normalizeScene(raw.scene);
+  const defaultScene = routing.defaultScene || section.scenes[0] || "street";
+  if (routing.sceneMode === "fixed") raw.scene = defaultScene;
+  else if (routing.sceneMode === "preserve-custom") raw.scene = currentScene || defaultScene;
+  else if (routing.sceneMode === "fallback") raw.scene = REAL_SECTION_SCENES.has(currentScene) ? currentScene : defaultScene;
+  else raw.scene = section.scenes.includes(currentScene) ? currentScene : defaultScene;
+
+  if (routing.sceneMode !== "preserve-custom" && REAL_SECTION_SCENES.has(String(raw.scene || ""))) raw.customScene = "";
+  raw.pose = selfieSafePose(raw.pose, section.captureType);
+  raw.sectionClothingSource = section.clothingSource;
+  raw.sectionPoses = [...section.poses];
+  raw.sectionLighting = [...section.lighting];
+  raw.sectionRealismLayers = [...section.realismLayers];
+
+  if (hasAuthority(section, "carExterior")) {
     const selection = resolveCarExteriorSelection(raw);
     raw.time = selection.time;
     raw.carExteriorLocation = selection.location;
@@ -77,7 +113,7 @@ export function applySectionCaptureRouting(rawInput = {}) {
 }
 
 function resolveClothingDetails(raw, clean) {
-  const selectedClothing = raw.clothing || (raw.studioSection === "carExterior" ? raw.carExteriorClothing : "");
+  const selectedClothing = raw.clothing || raw.carExteriorClothing || "";
   const garment = resolveClothingText(selectedClothing, raw);
   const fabricValue = raw.fabric || clean.fabric;
   const weightValue = raw.fabricWeight || clean.fabricWeight;
@@ -91,29 +127,42 @@ function resolveClothingDetails(raw, clean) {
   const ironText = IRON_TEXT[ironValue] || (ironValue ? humanize(ironValue) : "");
   const userModifier = String(raw.clothingCustom || clean.clothingCustom || "").trim();
   const clothingCustom = [ironText, userModifier].filter(Boolean).join("; ");
-  return { ...clean, clothing:garment, fabric, fabricWeight, wearState, clothingFit, clothingCustom };
+  return {
+    ...clean,
+    clothing:garment,
+    fabric,
+    fabricWeight,
+    wearState,
+    clothingFit,
+    clothingCustom,
+    sectionClothingSource:raw.sectionClothingSource || clean.sectionClothingSource,
+    sectionPoses:raw.sectionPoses || clean.sectionPoses,
+    sectionLighting:raw.sectionLighting || clean.sectionLighting,
+    sectionRealismLayers:raw.sectionRealismLayers || clean.sectionRealismLayers
+  };
 }
 
 function phase23Input(rawInput, cleanInput) {
   const raw = rawInput && typeof rawInput === "object" ? rawInput : {};
+  const section = activeSectionById(raw.studioSection);
   let clean = cleanInput && typeof cleanInput === "object" ? cleanInput : {};
   clean = resolveClothingDetails(raw, clean);
   clean = {
     ...clean,
-    studioSection:raw.studioSection || clean.studioSection,
-    intentType:raw.intentType || clean.intentType,
-    captureType:raw.captureType || clean.captureType,
+    studioSection:section?.id || raw.studioSection || clean.studioSection,
+    intentType:raw.intentType || section?.rules?.routing?.intentType || clean.intentType,
+    captureType:section?.captureType || raw.captureType || clean.captureType,
     scene:raw.scene || clean.scene,
     pose:raw.pose || clean.pose
   };
-  if (raw.studioSection === "carExterior") {
+  if (hasAuthority(section, "carExterior")) {
     const selection = resolveCarExteriorSelection(raw);
     return {
       ...clean,
-      studioSection:"carExterior",
-      intentType:"selfie",
-      captureType:"direct_front_camera_selfie",
-      scene:"carExterior",
+      studioSection:section.id,
+      intentType:section.rules.routing.intentType,
+      captureType:section.captureType,
+      scene:section.rules.routing.defaultScene,
       customScene:`A parked Range Rover exterior selfie, ${selection.locationText}, with the subject ${selection.poseText}`,
       pose:selection.poseText,
       lighting:selection.lightingText || clean.lighting,
@@ -153,25 +202,10 @@ function compactPhase40CarExteriorBudget(prompt, maxWords = 250) {
   }
 
   const compactors = [
-    // The following detailed HEADWEAR_LOCK already carries the shemagh/iqal style,
-    // so under pressure keep the garment sentence to the unique thobe fact instead
-    // of repeating the same headwear semantics twice.
-    [
-      /Subject:\s*([^.]*?),\s*wearing crisp white thobe with a red-and-white checkered shemagh and black iqal, youthful style with one end casually thrown over the shoulder\./iu,
-      "Subject: $1, wearing crisp white thobe."
-    ],
-    [
-      /Camera near eye level at 45–60 cm, no steep downward angle; relaxed upright posture, spine extension, enough upper torso to communicate the tall athletic frame\./iu,
-      "Camera near eye level at 45–60 cm, no steep downward angle; relaxed posture preserves tall-frame perspective."
-    ],
-    [
-      /The capture uses a physically possible camera position, a physically possible camera operator, and one coherent capture event\./iu,
-      "One physically possible front-camera capture event."
-    ],
-    [
-      /Shoulder and head height relative to roofline, door frame, and handle reflect a genuine 195 cm adult\./iu,
-      "Roofline, door and handle scale reads as a genuine 195 cm adult."
-    ],
+    [/Subject:\s*([^.]*?),\s*wearing crisp white thobe with a red-and-white checkered shemagh and black iqal, youthful style with one end casually thrown over the shoulder\./iu, "Subject: $1, wearing crisp white thobe."],
+    [/Camera near eye level at 45–60 cm, no steep downward angle; relaxed upright posture, spine extension, enough upper torso to communicate the tall athletic frame\./iu, "Camera near eye level at 45–60 cm, no steep downward angle; relaxed posture preserves tall-frame perspective."],
+    [/The capture uses a physically possible camera position, a physically possible camera operator, and one coherent capture event\./iu, "One physically possible front-camera capture event."],
+    [/Shoulder and head height relative to roofline, door frame, and handle reflect a genuine 195 cm adult\./iu, "Roofline, door and handle scale reads as a genuine 195 cm adult."],
     [/Captured with the selected physically plausible front-camera geometry\./iu, "Plausible front-camera geometry."],
     [/Slight lens softness is visible toward the frame edges\.\s*/iu, ""],
     [/Subtle tone variation between forehead and cheeks\.\s*/iu, ""],
@@ -199,7 +233,8 @@ function compactPhase40CarExteriorBudget(prompt, maxWords = 250) {
 }
 
 function enforcePhase40FinalCarExteriorSelection(prompt, routedInput) {
-  if (String(routedInput?.studioSection || "") !== "carExterior") return prompt;
+  const section = activeSectionById(routedInput?.studioSection);
+  if (!hasAuthority(section, "carExterior")) return prompt;
   const selection = resolveCarExteriorSelection(routedInput);
   const source = String(prompt || "");
   const missingSelection = describeMissingCarExteriorSelectionEvidence(source, routedInput);
@@ -218,6 +253,7 @@ function enforcePhase40FinalCarExteriorSelection(prompt, routedInput) {
 
 export function buildCanonicalV3UserOutput(rawInput = {}, sceneData = undefined) {
   const routedInput = applySectionCaptureRouting(rawInput);
+  const section = activeSectionById(routedInput.studioSection);
   const resolution = resolveCanonicalConflicts(routedInput, sceneData);
   const cleanInput = phase23Input(routedInput, resolution.cleanInput);
   const baseCanonical = buildCanonicalV3(cleanInput);
@@ -225,7 +261,7 @@ export function buildCanonicalV3UserOutput(rawInput = {}, sceneData = undefined)
   const basePrompt = enforcePhase34CarExteriorHeadwearBudget(buildOpenAIImagePrompt(canonical), canonical);
   const enrichedPrompt = enrichGroupPromptPhase13(canonical, cleanInput, basePrompt);
   const prompt = enforcePhase40FinalCarExteriorSelection(enrichedPrompt, routedInput);
-  return Object.freeze({ resolution, canonical, prompt });
+  return Object.freeze({ resolution, section, canonical, prompt });
 }
 
 export default buildCanonicalV3UserOutput;

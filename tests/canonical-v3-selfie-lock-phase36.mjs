@@ -52,7 +52,11 @@ for (const [studioSection, route] of Object.entries(SECTION_CAPTURE_ROUTING)) {
     assert.match(first.prompt, new RegExp(SELFIE_ARM_LOCK.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "u"), `Phase 36: ${studioSection} selfie arm lock missing`);
   }
   assert.ok(words(first.prompt) <= 250, `Phase 36: ${studioSection} exceeds 250 words (${words(first.prompt)})`);
-  assert.doesNotMatch(first.prompt, /a user-defined scene/iu, `Phase 36: ${studioSection} leaked custom scene`);
+  if (studioSection === "custom") {
+    assert.match(first.prompt, /a user-defined scene/iu, "Phase 36: custom section must preserve the user-written place");
+  } else {
+    assert.doesNotMatch(first.prompt, /a user-defined scene/iu, `Phase 36: ${studioSection} leaked custom scene`);
+  }
 }
 
 const carInput = {
@@ -90,4 +94,4 @@ console.log(`PHASE36_SECTIONS=${Object.keys(SECTION_CAPTURE_ROUTING).length}`);
 console.log(`PHASE36_CAR_EXTERIOR_WORDS=${words(car.prompt)}`);
 console.log("PHASE36_DETERMINISM=10/10");
 console.log(`PHASE36_CAR_EXTERIOR_PROMPT=${car.prompt}`);
-console.log("✓ Phase 36 selfie lock and full section routing de-conflict passed under Phase 40 carExterior authority");
+console.log("✓ Phase 36 selfie lock and full section routing de-conflict passed under Phase 40 section registry authority");
