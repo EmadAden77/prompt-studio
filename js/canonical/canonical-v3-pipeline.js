@@ -262,6 +262,9 @@ function enforcePhase41SectionWiring(prompt, canonical, routedInput, section) {
   const expressionSelected = Boolean(String(routedInput?.expression || "").trim());
   const clothingSelected = Boolean(String(routedInput?.clothing || routedInput?.carExteriorClothing || "").trim());
   if (section.id === "carExterior") source = normalizePhase41CarExteriorAuthority(source, routedInput);
+  if (section.id === "group") {
+    source = source.replace(/Tall 195 cm, 88 kg lean-athletic build: medium-to-moderately-broad shoulders visibly wider than the waist, moderately developed chest, subtle deltoid roundness, long proportional limbs with filled-not-thin arms, proportionate adult male neck, and head anatomically scaled to tall frame\./iu, "Tall 195 cm, 88 kg lean-athletic build.");
+  }
   if (wiring.selfieArmLock && !source.includes(SELFIE_ARM_LOCK)) source = insertAfterOpening(source, SELFIE_ARM_LOCK);
   if (wiring.body && !bodyEvidencePresent) {
     const fallbackBody = section.id === "carExterior" ? "Tall 195 cm, 88 kg lean-athletic build: shoulders wider than waist, developed chest/deltoids, long proportional limbs, filled arms, adult male neck, head scaled to the tall frame." : body;
@@ -281,7 +284,14 @@ function enforcePhase41SectionWiring(prompt, canonical, routedInput, section) {
     if (wiring.pose && poseSelected && pose) required.push(pose);
     if (wiring.expression && expressionSelected && expression) required.push(expression);
   }
-  if (wiring.groupFields && section.id === "group") { const holder = String(routedInput?.cameraHolder || "A").trim(); const distribution = String(routedInput?.groupArrangement || "natural-auto").trim(); const clause = `Phone holder: ${holder}; group distribution: ${distribution}.`; if (!source.includes(distribution) || !/phone holder/iu.test(source)) source = `${source} ${clause}`.trim(); required.push(distribution,"people are present in the group composition","Phone holder:","group distribution:"); }
+  if (wiring.groupFields && section.id === "group") {
+    const holder = String(routedInput?.cameraHolder || "A").trim();
+    const distribution = String(routedInput?.groupArrangement || "natural-auto").trim();
+    const clause = `Phone holder: ${holder}; group distribution: ${distribution}.`;
+    if (!source.includes(distribution) || !/phone holder/iu.test(source)) source = `${source} ${clause}`.trim();
+    const groupGarments = (canonical?.subjects?.additional || []).map((person) => String(person?.clothing?.garment || "").trim()).filter(Boolean);
+    required.push(...groupGarments, distribution, "people are present in the group composition", "Phone holder:", "group distribution:");
+  }
   if (Array.isArray(wiring.accidentalFields) && section.id === "accidental") { const details = wiring.accidentalFields.map((field) => [field,String(routedInput?.[field] || "").trim()]).filter(([,value]) => value); if (details.length) { const clause = `Accidental details: ${details.map(([field,value]) => `${field} ${value}`).join("; ")}.`; if (!details.every(([,value]) => source.includes(value))) source = `${source} ${clause}`.trim(); required.push(...details.map(([,value]) => value),"Accidental details:"); } }
   if (wiring.lighting && lighting) { source = replacePhase41Lighting(source, lighting, routedInput?.time); required.push(lighting); }
   source = phase41Deduplicate(source);
