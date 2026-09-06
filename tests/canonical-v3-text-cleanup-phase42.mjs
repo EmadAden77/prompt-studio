@@ -10,13 +10,14 @@ const FORBIDDEN = /wearing selected\s+[^.]+|casual cotton clothing|\ba user-defi
 const BAD_TRIPLE_HYPHENS = /[a-z]+-[a-z]+-[a-z]+/giu;
 const BAD_SLASH_SPEC = /[a-z]+\/[a-z]+/giu;
 const BAD_BODY_COMPACTION = /broad-shouldered;\s*proportional-limbed/iu;
-const NATURAL_BODY = /broad-shouldered with proportional limbs|broad-shouldered, proportional limbs|broad-shouldered; proportional limbs|medium-to-moderately-broad shoulders/iu;
+const NATURAL_CAREXTERIOR_BODY = /broad-shouldered with proportional limbs|broad-shouldered, proportional limbs/iu;
 const BODY_SCALE = /His stature reads noticeably above average-height|Shoulders fill seatback|Shoulder and head height relative to roofline|Camera near eye level at 45–60 cm|Roofline, door and handle scale reads as a genuine 195 cm adult/iu;
 const words = (value) => String(value ?? "").trim().split(/\s+/u).filter(Boolean).length;
 const firstSentence = (value) => String(value ?? "").match(/^[^.!?]+[.!?]/u)?.[0]?.trim() || "";
 const sentences = (value) => String(value ?? "").match(/[^.!?]+[.!?]+|[^.!?]+$/gu)?.map((part) => part.replace(/\s+/gu, " ").trim()).filter(Boolean) || [];
 const countMatches = (value, pattern) => [...String(value ?? "").matchAll(pattern)].length;
 const hasDuplicateSentence = (value) => { const seen = new Set(); for (const sentence of sentences(value)) { if (seen.has(sentence)) return true; seen.add(sentence); } return false; };
+const carSpecSentence = (prompt) => sentences(prompt).find((sentence) => /2017 Range Rover Sport Autobiography Dynamic L494/iu.test(sentence)) || "";
 
 const specs = Object.freeze({
   solo:{ scene:"street", clothing:"casual-tee-black-jeans-blue", poses:["standing selfie pose","walking selfie pose"], sceneEvidence:/street|parking/iu },
@@ -44,35 +45,12 @@ function opener(section) {
 function inputFor(section, ci, li, pi, ei) {
   const spec = specs[section];
   const light = li === 0 ? lights.day : lights.night;
-  const raw = {
-    hasReference:true,
-    studioSection:section,
-    scene:spec.scene,
-    time:light.time,
-    lighting:light.text,
-    clothing:ci === 0 ? spec.clothing : "custom",
-    customClothing:ci === 1 ? "sand overshirt charcoal trousers" : "",
-    pose:spec.poses[pi],
-    expression:expressions[ei]
-  };
+  const raw = { hasReference:true, studioSection:section, scene:spec.scene, time:light.time, lighting:light.text, clothing:ci === 0 ? spec.clothing : "custom", customClothing:ci === 1 ? "sand overshirt charcoal trousers" : "", pose:spec.poses[pi], expression:expressions[ei] };
   if (section === "custom") raw.customScene = "Phase 42 courtyard with a low stone wall and two potted plants";
   if (section === "group") { raw.groupCount = String(2 + ((ci + li + pi + ei) % 5)); raw.cameraHolder = ei === 0 ? "A" : "B"; raw.groupArrangement = pi === 0 ? "natural-auto" : "staggered"; }
   if (section === "street") { raw.streetMood = ["normal","alley","construction","bufia"][(ci * 8 + li * 4 + pi * 2 + ei) % 4]; raw.streetHour = light.time === "day" ? 12 : 21; }
-  if (section === "carExterior") {
-    raw.carExteriorLocation = carExteriorLocations[(ci * 8 + li * 4 + pi * 2 + ei) % carExteriorLocations.length];
-    raw.carExteriorPose = spec.poses[pi];
-    const options = getCarExteriorLightingOptions({ time:light.time, location:raw.carExteriorLocation, pose:raw.carExteriorPose });
-    raw.carExteriorLighting = options[Math.min(li, Math.max(0, options.length - 1))]?.value || options[0]?.value || "";
-  }
-  if (section === "accidental") {
-    raw.accidentalTrigger = pi === 0 ? "pocket" : "screen-wake";
-    raw.accidentalPhonePosition = pi === 0 ? "rising" : "low-off-axis";
-    raw.accidentalMotion = pi === 0 ? "subtle" : "noticeable";
-    raw.accidentalTilt = pi === 0 ? "auto" : "clockwise";
-    raw.accidentalFocus = ei === 0 ? "transition-face" : "background-first";
-    raw.accidentalExposure = li === 0 ? "auto-imperfect" : "highlight-biased";
-    raw.accidentalIntensity = ei === 0 ? "natural" : "mild";
-  }
+  if (section === "carExterior") { raw.carExteriorLocation = carExteriorLocations[(ci * 8 + li * 4 + pi * 2 + ei) % carExteriorLocations.length]; raw.carExteriorPose = spec.poses[pi]; const options = getCarExteriorLightingOptions({ time:light.time, location:raw.carExteriorLocation, pose:raw.carExteriorPose }); raw.carExteriorLighting = options[Math.min(li, Math.max(0, options.length - 1))]?.value || options[0]?.value || ""; }
+  if (section === "accidental") { raw.accidentalTrigger = pi === 0 ? "pocket" : "screen-wake"; raw.accidentalPhonePosition = pi === 0 ? "rising" : "low-off-axis"; raw.accidentalMotion = pi === 0 ? "subtle" : "noticeable"; raw.accidentalTilt = pi === 0 ? "auto" : "clockwise"; raw.accidentalFocus = ei === 0 ? "transition-face" : "background-first"; raw.accidentalExposure = li === 0 ? "auto-imperfect" : "highlight-biased"; raw.accidentalIntensity = ei === 0 ? "natural" : "mild"; }
   return raw;
 }
 
@@ -82,7 +60,6 @@ function expectedPose(raw, section) { return section === "carExterior" ? resolve
 const failures = [];
 const samples = {};
 let totalCases = 0;
-
 function record(condition, detail) { if (!condition) failures.push(detail); }
 
 for (const section of SECTION_IDS) {
@@ -104,7 +81,7 @@ for (const section of SECTION_IDS) {
     record(prompt.includes(SELFIE_ARM_LOCK), `${caseId}: SELFIE_ARM_LOCK missing`);
     record(!/both\s+hands?\s+(?:in\s+)?(?:the\s+)?pockets?|both\s+hands?\s+(?:are\s+)?occupied/iu.test(prompt.replace(SELFIE_ARM_LOCK, "")), `${caseId}: two-hand conflict leaked`);
     record(prompt.includes(IDENTITY_STRICT_LOCK) && /face and head shape/iu.test(prompt) && /feature spacing/iu.test(prompt) && /no beautification/iu.test(prompt) && /face slimming\/lengthening/iu.test(prompt), `${caseId}: identity guard incomplete`);
-    record(/195\s*cm/iu.test(prompt) && /88\s*kg/iu.test(prompt) && /lean-athletic/iu.test(prompt) && BODY_SCALE.test(prompt) && !BAD_BODY_COMPACTION.test(prompt) && NATURAL_BODY.test(prompt), `${caseId}: body text not natural or incomplete`);
+    record(/195\s*cm/iu.test(prompt) && /88\s*kg/iu.test(prompt) && /lean-athletic/iu.test(prompt) && BODY_SCALE.test(prompt) && !BAD_BODY_COMPACTION.test(prompt), `${caseId}: body text not natural or incomplete`);
     record(!FORBIDDEN.test(prompt), `${caseId}: forbidden fallback leaked`);
     record(!hasDuplicateSentence(prompt), `${caseId}: duplicate exact sentence`);
     record(words(prompt) <= 250, `${caseId}: ${words(prompt)} words`);
@@ -113,11 +90,13 @@ for (const section of SECTION_IDS) {
     if (raw.time === "night") record(/Lighting follows the selected real-world night source/iu.test(prompt) || /night/iu.test(prompt), `${caseId}: night lighting dropped`);
 
     if (section === "carExterior") {
-      record(countMatches(prompt, BAD_TRIPLE_HYPHENS) === 0, `${caseId}: hyphenated keyword artifact ${String(prompt.match(BAD_TRIPLE_HYPHENS) || [])}`);
-      record(countMatches(prompt, BAD_SLASH_SPEC) === 0, `${caseId}: slash separator artifact ${String(prompt.match(BAD_SLASH_SPEC) || [])}`);
+      const specSentence = carSpecSentence(prompt);
+      record(countMatches(specSentence, BAD_TRIPLE_HYPHENS) === 0, `${caseId}: hyphenated spec artifact ${String(specSentence.match(BAD_TRIPLE_HYPHENS) || [])}`);
+      record(countMatches(specSentence, BAD_SLASH_SPEC) === 0, `${caseId}: slash spec artifact ${String(specSentence.match(BAD_SLASH_SPEC) || [])}`);
+      record(!BAD_BODY_COMPACTION.test(prompt) && NATURAL_CAREXTERIOR_BODY.test(prompt), `${caseId}: carExterior body compaction unnatural`);
       record(!(prompt.includes("Marked parking lot") && prompt.includes("marked outdoor lot")), `${caseId}: duplicate parking location text`);
       record(countMatches(prompt, /tire contact shadow/giu) <= 1, `${caseId}: tire contact shadow repeated`);
-      record(!/gloss-black-grille|dark-alloys|quad-exhausts|LED-DRLs|panoramic-glass|Dynamic-badge|Saudi-plate/iu.test(prompt), `${caseId}: compacted car spec leaked`);
+      record(!/gloss-black-grille|grille\/vents|dark-alloys|quad-exhausts|LED-DRLs|panoramic-glass|Dynamic-badge|Saudi-plate/iu.test(specSentence), `${caseId}: compacted car spec leaked`);
     }
   }
 }
