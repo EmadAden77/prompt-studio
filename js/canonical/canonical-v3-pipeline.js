@@ -4,7 +4,7 @@ import { buildOpenAIImagePrompt, describeHeadwear } from "./openai-image-adapter
 import { applyGroupPhase13, enrichGroupPromptPhase13 } from "./group-phase13.js";
 import { SCENES } from "../data.js";
 import { resolveClothingText } from "../clothing-authority.js";
-import { resolveCarExteriorSelection } from "../car-exterior-authority.js";
+import { describeCompactCarExteriorSelection, resolveCarExteriorSelection } from "../car-exterior-authority.js";
 
 export const CAR_EXTERIOR_PROMPT_WORD_BUDGET = 280;
 const PHASE34_ROUTING_WORD_BUDGET = 250;
@@ -137,6 +137,23 @@ function enforcePhase34CarExteriorHeadwearBudget(prompt, canonical) {
   return String(prompt).replace(PHASE34_REDUNDANT_GLASS_SENTENCE, "").replace(/\s{2,}/gu, " ").trim();
 }
 
+function enforcePhase40FinalCarExteriorSelection(prompt, routedInput) {
+  if (String(routedInput?.studioSection || "") !== "carExterior") return prompt;
+  const required = describeCompactCarExteriorSelection(routedInput);
+  const source = String(prompt || "");
+  if (source.includes(required)) return source;
+
+  const groundingSentence = /[^.!?]*(?:tires grounded by realistic contact shadow|Tires have realistic contact shadow|Tires cast realistic contact shadows)\./iu;
+  if (groundingSentence.test(source)) {
+    return source.replace(groundingSentence, required).replace(/\s{2,}/gu, " ").trim();
+  }
+
+  const lightingIndex = Math.max(source.lastIndexOf("Lighting follows "), source.lastIndexOf("Lighting uses "));
+  return lightingIndex < 0
+    ? `${source} ${required}`.replace(/\s{2,}/gu, " ").trim()
+    : `${source.slice(0, lightingIndex)}${required} ${source.slice(lightingIndex)}`.replace(/\s{2,}/gu, " ").trim();
+}
+
 export function buildCanonicalV3UserOutput(rawInput = {}, sceneData = undefined) {
   const routedInput = applySectionCaptureRouting(rawInput);
   const resolution = resolveCanonicalConflicts(routedInput, sceneData);
@@ -144,7 +161,8 @@ export function buildCanonicalV3UserOutput(rawInput = {}, sceneData = undefined)
   const baseCanonical = buildCanonicalV3(cleanInput);
   const canonical = applyGroupPhase13(baseCanonical, cleanInput);
   const basePrompt = enforcePhase34CarExteriorHeadwearBudget(buildOpenAIImagePrompt(canonical), canonical);
-  const prompt = enrichGroupPromptPhase13(canonical, cleanInput, basePrompt);
+  const enrichedPrompt = enrichGroupPromptPhase13(canonical, cleanInput, basePrompt);
+  const prompt = enforcePhase40FinalCarExteriorSelection(enrichedPrompt, routedInput);
   return Object.freeze({ resolution, canonical, prompt });
 }
 
