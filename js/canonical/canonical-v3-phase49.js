@@ -1,4 +1,5 @@
 import { buildCanonicalV3UserOutput as buildPhase48CanonicalV3UserOutput } from "./canonical-v3-phase48.js";
+import { describeHeadwear } from "./openai-image-adapter.js";
 
 function text(v){ return String(v ?? "").trim(); }
 function words(v){ return text(v).split(/\s+/u).filter(Boolean).length; }
@@ -44,6 +45,12 @@ export function describeNightPhysics(canonical, raw = {}, sectionId = "") {
   return [sourceRule,sensorRule,motionRule,shadowRule,exposureRule,nightGuard].join(" ");
 }
 
+function ensureAuthorityHeadwear(prompt, canonical){
+  const headwear=text(describeHeadwear(canonical));
+  if(!headwear || !/shemagh|ghutra|iqal/iu.test(headwear) || String(prompt).includes(headwear)) return prompt;
+  return dedupe(`${prompt} ${headwear}`);
+}
+
 function insertAfterLighting(prompt, physics){
   if(!physics) return prompt;
   const parts=sentences(prompt).filter(s=>!/^Night physics:|^Low-light phone exposure|^Natural movement adds|^Moving cars (?:may|can)|^Shadow integrity follows|^Flash mode lights|^Exposure favors|^(?:Computational )?Night processing/iu.test(s));
@@ -56,7 +63,7 @@ function insertAfterLighting(prompt, physics){
 function keepBudget(prompt, base, physics){
   const max=base.section?.id==="carExterior"?280:250;
   let parts=sentences(dedupe(prompt));
-  const protectedPart=s=>/Identity strictly preserved|Tall 195 cm, 88 kg|One arm extends toward the camera|2017 Range Rover Sport Autobiography Dynamic|red-and-white fine checkered shemagh|black doubled-cord iqal/iu.test(s) || sentences(physics).includes(s) || s===base.section?.actionDescription || s===base.section?.imperfections;
+  const protectedPart=s=>/Identity strictly preserved|Tall 195 cm, 88 kg|One arm extends toward the camera|2017 Range Rover Sport Autobiography Dynamic|red-and-white fine checkered shemagh|black doubled-cord iqal|white ghutra/iu.test(s) || sentences(physics).includes(s) || s===base.section?.actionDescription || s===base.section?.imperfections;
   const drop=[/Background elements share/iu,/Background people, vehicles/iu,/Natural sensor noise/iu,/Slight lens softness/iu,/Captured with the selected physically plausible/iu,/Fine skin pores/iu,/Tires have realistic contact shadow/iu];
   for(const pattern of drop) for(let i=parts.length-1;i>=0&&words(parts.join(" "))>max;i--) if(pattern.test(parts[i])&&!protectedPart(parts[i])) parts.splice(i,1);
   for(let i=parts.length-1;i>=0&&words(parts.join(" "))>max;i--) if(!protectedPart(parts[i])) parts.splice(i,1);
@@ -66,7 +73,8 @@ function keepBudget(prompt, base, physics){
 export function buildCanonicalV3UserOutput(rawInput = {}, sceneData = undefined){
   const base=buildPhase48CanonicalV3UserOutput(rawInput,sceneData);
   const physics=describeNightPhysics(base.canonical,rawInput,base.section?.id);
-  const prompt=keepBudget(insertAfterLighting(base.prompt,physics),base,physics);
+  const withHeadwear=ensureAuthorityHeadwear(base.prompt,base.canonical);
+  const prompt=keepBudget(insertAfterLighting(withHeadwear,physics),base,physics);
   return Object.freeze({...base,phase49:Object.freeze({nightPhysics:physics,flash:isFlash(rawInput,base.section?.id),determinism:"10/10"}),prompt});
 }
 
