@@ -122,3 +122,5 @@ jobs:
         run: node tests/canonical-v3-natural-prompt-language-phase46.mjs
       - name: Run Phase 47 WikiPrompt philosophy merge
         run: node tests/canonical-v3-wikiprompt-phase47.mjs
+      - name: Run Phase 48 context-aware environment life
+        run: node tests/canonical-v3-environment-life-phase48.mjs
