@@ -205,6 +205,8 @@ assert.ok(words(custom.prompt) <= 250);
 const traditional = buildCanonicalV3UserOutput({ ...determinismInput, clothing:"thobe-redshemagh-iqal" });
 assert.match(traditional.prompt, /red-and-white fine checkered shemagh/iu);
 assert.match(traditional.prompt, /black doubled-cord iqal/iu);
+console.log(`PHASE41_DEBUG_PHASE40_TRADITIONAL_WORDS=${words(traditional.prompt)}`);
+console.log(`PHASE41_DEBUG_PHASE40_TRADITIONAL_PROMPT=${traditional.prompt}`);
 assert.ok(words(traditional.prompt) <= 250);
 
 console.log(`PHASE40_CAR_EXTERIOR_MATRIX=${matrixCases}`);

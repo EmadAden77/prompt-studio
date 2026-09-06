@@ -56,7 +56,10 @@ assert.equal(exteriorOutput.canonical.scene.facts.carExteriorLighting, "interior
 assert.match(exteriorOutput.prompt, /Fuji White/iu);
 assert.match(exteriorOutput.prompt, /small grocery/iu);
 assert.match(exteriorOutput.prompt, /open driver door/iu);
-assert.ok(exteriorOutput.prompt.trim().split(/\s+/u).filter(Boolean).length <= 250);
+const exteriorWordCount = exteriorOutput.prompt.trim().split(/\s+/u).filter(Boolean).length;
+console.log(`PHASE41_DEBUG_EXTERIOR_WORDS=${exteriorWordCount}`);
+console.log(`PHASE41_DEBUG_EXTERIOR_PROMPT=${exteriorOutput.prompt}`);
+assert.ok(exteriorWordCount <= 250);
 
 const carOutput = buildCanonicalV3UserOutput({
   studioSection:"car",
