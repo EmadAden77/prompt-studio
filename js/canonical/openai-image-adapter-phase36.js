@@ -161,6 +161,8 @@ function protectedSentence(sentence, canonical) {
     || sentence.includes(IDENTITY_STRICT_LOCK)
     || /The primary subject preserves the supplied identity reference/iu.test(sentence)
     || /2017 Range Rover Sport Autobiography Dynamic/iu.test(sentence)
+    || /LHD vehicle-relative:/iu.test(sentence)
+    || /In the frame, the driver's door and side window/iu.test(sentence)
     || (headwear && sentence.includes(headwear))
     || (garment && !/^unspecified garment$/iu.test(garment) && sentence.includes(garment))
     || (carExteriorScene && sentence.includes(carExteriorScene))
