@@ -3,7 +3,7 @@ import { buildCanonicalV3UserOutput, describeNightPhysics } from "../js/canonica
 import { SELFIE_ARM_LOCK, IDENTITY_STRICT_LOCK } from "../js/canonical/openai-image-adapter-phase36.js";
 
 const wc=v=>String(v||"").trim().split(/\s+/u).filter(Boolean).length;
-const base=extra=>({hasReference:true,expression:"neutral",clothing:"thobe-redshemagh-iqal",selfieAngle:"auto",selfiePose:"auto",...extra});
+const base=extra=>({hasReference:true,expression:"neutral",clothing:"casual-tee-black-jeans-blue",selfieAngle:"auto",selfiePose:"auto",...extra});
 const nightCases=[
   base({studioSection:"street",scene:"street",time:"night",lighting:"sodium"}),
   base({studioSection:"solo",scene:"street",time:"night",lighting:"cool-led"}),
@@ -23,9 +23,16 @@ for(const raw of nightCases){
   assert.doesNotMatch(out.prompt,/perfectly sharp[^.]*studio-lit face|studio-lit face[^.]*perfectly sharp/iu);
   assert.ok(out.prompt.includes(IDENTITY_STRICT_LOCK),`${raw.studioSection}: identity protected`);
   if(raw.studioSection!=="car") assert.ok(out.prompt.includes(SELFIE_ARM_LOCK),`${raw.studioSection}: selfie protected`);
-  assert.match(out.prompt,/red-and-white fine checkered shemagh/iu,`${raw.studioSection}: shemagh protected`);
   assert.ok(wc(out.prompt)<=(raw.studioSection==="carExterior"?280:250),`${raw.studioSection}: budget ${wc(out.prompt)}`);
 }
+
+const traditional=buildCanonicalV3UserOutput(base({studioSection:"carExterior",scene:"carExterior",time:"night",carExteriorLocation:"villa",carExteriorPose:"door-lean",clothing:"thobe-redshemagh-iqal"}));
+assert.match(traditional.prompt,/red-and-white fine checkered shemagh/iu,"traditional carExterior: shemagh protected");
+assert.match(traditional.prompt,/black doubled-cord iqal/iu,"traditional carExterior: iqal protected");
+assert.ok(traditional.prompt.includes(IDENTITY_STRICT_LOCK));
+assert.ok(traditional.prompt.includes(SELFIE_ARM_LOCK));
+assert.ok(wc(traditional.prompt)<=280,`traditional carExterior budget ${wc(traditional.prompt)}`);
+
 const sodium=buildCanonicalV3UserOutput(base({studioSection:"street",scene:"street",time:"night",lighting:"sodium",selfiePose:"walking"}));
 assert.match(sodium.prompt,/warm sodium streetlamp/iu); assert.match(sodium.prompt,/warm yellow-orange cast/iu); assert.match(sodium.prompt,/slight blur to the moving hand or loose hair strands/iu);
 const flash=buildCanonicalV3UserOutput(base({studioSection:"carExterior",scene:"carExterior",time:"night",lighting:"flash",carExteriorLocation:"parking",carExteriorPose:"door-lean"}));
