@@ -15,7 +15,7 @@ export const SECTION = deepFreeze({
     composition:["natural subject distribution","scene picker"],
     interaction:["distinct group identities"],
     exclusions:[],
-    routing:{ intentType:"group", sceneMode:"selectable", defaultScene:"street" },
+    routing:{ intentType:"group", sceneMode:"fallback", defaultScene:"street" },
     ui:{ scenarioMode:"group", scene:"street", groupMode:"group", captureMode:"normal", showScenePicker:true }
   }
 });
