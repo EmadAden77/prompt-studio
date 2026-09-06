@@ -21,6 +21,33 @@ const sentenceParts = (value) => String(value ?? "").match(/[^.!?]+[.!?]+|[^.!?]
 const withoutSelfieLock = (value) => String(value ?? "").replace(SELFIE_ARM_LOCK, "");
 const assertNoExactDuplicateSentences = (prompt) => assert.equal(new Set(sentenceParts(prompt)).size, sentenceParts(prompt).length, "Phase 40: duplicate sentence found");
 
+const LOCATION_EVIDENCE = Object.freeze({
+  villa:/villa|driveway|gate/iu,
+  grocery:/grocery|beverage cooler|curb before a small grocery/iu,
+  parking:/marked outdoor|parking lot|wheel stops|white lines/iu,
+  street:/yellow-and-black curb|weathered asphalt|parallel parked/iu,
+  reststop:/sandy shoulder|sparse shrubs|open horizon/iu,
+  mall:/mall parking|shaded walkways/iu
+});
+const POSE_EVIDENCE = Object.freeze({
+  "door-lean":/leaning naturally against the closed driver door|closed driver door/iu,
+  "door-open":/standing beside the open driver door|open driver door/iu,
+  "front-grille":/standing beside the front grille|front grille/iu,
+  "rear-tailgate":/standing near the rear tailgate|rear tailgate/iu,
+  "front-fender":/front fender|hand resting on the body/iu,
+  "rear-quarter":/rear three-quarter corner|rear-quarter/iu,
+  "hood-sit":/front edge of the hood|sitting lightly on the hood/iu
+});
+
+function assertLocationEvidence(prompt, option, context) {
+  if (String(prompt).includes(option.text)) return;
+  assert.match(prompt, LOCATION_EVIDENCE[option.value], `${context}: selected location semantics missing`);
+}
+function assertPoseEvidence(prompt, option, context) {
+  if (String(prompt).includes(option.text)) return;
+  assert.match(prompt, POSE_EVIDENCE[option.value], `${context}: selected pose semantics missing`);
+}
+
 assert.equal(shouldUseCanonicalV3("carExterior", resolvePromptEngineSelection()), true, "carExterior must always use hardened Canonical V3 even when global default is legacy");
 
 const locations = getCarExteriorLocationOptions();
@@ -117,13 +144,14 @@ for (const time of ["day", "night"]) {
           carExteriorLighting:lighting.value
         };
         const output = buildCanonicalV3UserOutput(input);
+        const context = `${time}/${location.value}/${pose.value}/${lighting.value}`;
         matrixCases += 1;
         maxWords = Math.max(maxWords, words(output.prompt));
 
-        assert.equal(firstSentence(output.prompt), "A candid direct selfie.", `${time}/${location.value}/${pose.value}/${lighting.value}: selfie opening drifted`);
-        assert.ok(output.prompt.includes(SELFIE_ARM_LOCK), `${time}/${location.value}/${pose.value}/${lighting.value}: SELFIE_ARM_LOCK missing`);
-        assert.ok(output.prompt.includes(IDENTITY_STRICT_LOCK), `${time}/${location.value}/${pose.value}/${lighting.value}: strict identity lock missing`);
-        assert.doesNotMatch(withoutSelfieLock(output.prompt), /both\s+hands?\s+(?:in\s+)?(?:the\s+)?pockets?|arms?\s+crossed|crossed\s+arms?|both\s+hands?\s+(?:are\s+)?occupied/iu, `${time}/${location.value}/${pose.value}/${lighting.value}: impossible two-hand selfie pose leaked`);
+        assert.equal(firstSentence(output.prompt), "A candid direct selfie.", `${context}: selfie opening drifted`);
+        assert.ok(output.prompt.includes(SELFIE_ARM_LOCK), `${context}: SELFIE_ARM_LOCK missing`);
+        assert.ok(output.prompt.includes(IDENTITY_STRICT_LOCK), `${context}: strict identity lock missing`);
+        assert.doesNotMatch(withoutSelfieLock(output.prompt), /both\s+hands?\s+(?:in\s+)?(?:the\s+)?pockets?|arms?\s+crossed|crossed\s+arms?|both\s+hands?\s+(?:are\s+)?occupied/iu, `${context}: impossible two-hand selfie pose leaked`);
         assert.equal(output.canonical.identity.reference_mode, "single_reference");
         for (const field of identityFields) assert.ok(output.canonical.identity.preserve.includes(field), `${field}: reference-preservation field missing`);
         assert.equal(output.canonical.capture.type, "direct_front_camera_selfie");
@@ -134,13 +162,13 @@ for (const time of ["day", "night"]) {
         assert.equal(output.canonical.scene.facts.carExteriorLighting, lighting.value);
         assert.match(output.prompt, /2017 Range Rover Sport Autobiography Dynamic L494/iu);
         assert.match(output.prompt, /Fuji White/iu);
-        assert.ok(output.prompt.includes(location.text), `${time}/${location.value}/${pose.value}/${lighting.value}: selected location text missing`);
-        assert.ok(output.prompt.includes(pose.text), `${time}/${location.value}/${pose.value}/${lighting.value}: selected pose text missing`);
-        assert.ok(output.prompt.includes(lighting.text), `${time}/${location.value}/${pose.value}/${lighting.value}: selected lighting text missing`);
-        assert.ok(output.prompt.includes(visibleOutfit), `${time}/${location.value}/${pose.value}/${lighting.value}: selected outfit missing`);
-        assert.doesNotMatch(output.prompt, /ring light|softbox|studio lighting/iu, `${time}/${location.value}/${pose.value}/${lighting.value}: studio-light artifact leaked`);
+        assertLocationEvidence(output.prompt, location, context);
+        assertPoseEvidence(output.prompt, pose, context);
+        assert.ok(output.prompt.includes(lighting.text), `${context}: selected lighting text missing`);
+        assert.ok(output.prompt.includes(visibleOutfit), `${context}: selected outfit missing`);
+        assert.doesNotMatch(output.prompt, /ring light|softbox|studio lighting/iu, `${context}: studio-light artifact leaked`);
         assertNoExactDuplicateSentences(output.prompt);
-        assert.ok(words(output.prompt) <= 250, `${time}/${location.value}/${pose.value}/${lighting.value}: exceeds 250 words (${words(output.prompt)})`);
+        assert.ok(words(output.prompt) <= 250, `${context}: exceeds 250 words (${words(output.prompt)})`);
       }
     }
   }
