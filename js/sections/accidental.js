@@ -16,6 +16,16 @@ export const SECTION = deepFreeze({
     interaction:[],
     exclusions:["posed selfie"],
     routing:{ intentType:"accidental", sceneMode:"fallback", defaultScene:"street" },
+    wiring:{
+      enabled:true,
+      clothing:true,
+      lighting:true,
+      pose:true,
+      expression:true,
+      body:true,
+      selfieArmLock:true,
+      accidentalFields:["accidentalTrigger","accidentalPhonePosition","accidentalMotion","accidentalTilt","accidentalFocus","accidentalExposure","accidentalIntensity"]
+    },
     ui:{ scenarioMode:"custom", scene:"custom", groupMode:"single", captureMode:"accidental", customFallback:"an ordinary lived-in indoor room or everyday place", showScenePicker:false }
   }
 });
