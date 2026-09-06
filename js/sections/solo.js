@@ -8,7 +8,7 @@ export const SECTION = deepFreeze({
   scenes:["street","bedroom","gym","majlis","kashta","barbershop","grocery","rooftop","streetFootball","gasStation"],
   clothingSource:"authority",
   poses:["selfie","standing","seated","walking"],
-  lighting:["personal","scene"],
+  lighting:["personal","scene","flash"],
   realismLayers:["micro","imperfections"],
   rules:{
     hard:["exactly one person","selfie capture"],
