@@ -7,19 +7,19 @@ const sentences=v=>String(v||"").match(/[^.!?]+[.!?]+|[^.!?]+$/gu)?.map(s=>s.rep
 const VIEW_RULES=Object.freeze({
   side:Object.freeze({
     features:Object.freeze(["roofline","window line","door geometry","side vent","wheel arch","circular wheel"]),
-    sentence:"Vehicle fidelity: keep the real L494 side silhouette readable, with coherent roofline, window line, door geometry, side-vent placement, wheel arch and circular wheel proportions; show enough of these cues to identify the model, never a generic SUV."
+    sentence:"Vehicle fidelity: keep real L494 roofline, window line, door/vent placement, wheel arches and circular wheels readable in selfie perspective; show these model cues, never a generic SUV."
   }),
   "front-quarter":Object.freeze({
     features:Object.freeze(["grille","headlights","hood-fender geometry","front wheel arch","circular wheel"]),
-    sentence:"Vehicle fidelity: keep the real L494 front-quarter identity readable through coherent grille, headlight, hood-fender, front wheel-arch and circular wheel proportions; show enough of these cues to identify the model, never a generic SUV."
+    sentence:"Vehicle fidelity: keep real L494 grille/headlight, hood-fender, front wheel-arch and circular wheel proportions readable in selfie perspective; show these model cues, never a generic SUV."
   }),
   "rear-quarter":Object.freeze({
     features:Object.freeze(["tailgate","rear lamps","rear quarter mass","rear wheel arch","circular wheel"]),
-    sentence:"Vehicle fidelity: keep the real L494 rear-quarter identity readable through coherent tailgate, rear-lamp, rear body-mass, rear wheel-arch and circular wheel proportions; show enough of these cues to identify the model, never a generic SUV."
+    sentence:"Vehicle fidelity: keep real L494 tailgate/lamp, rear body-mass, rear wheel-arch and circular wheel proportions readable in selfie perspective; show these model cues, never a generic SUV."
   }),
   "door-open":Object.freeze({
     features:Object.freeze(["roofline","window line","door geometry","Ivory cabin alignment","wheel arch"]),
-    sentence:"Vehicle fidelity: keep the real L494 side and open-door geometry readable, with coherent roofline, window line, door thickness, wheel arch and natural alignment to the Ivory cabin; never a generic SUV or invented door shape."
+    sentence:"Vehicle fidelity: keep real L494 roofline, window/door geometry, wheel arch and Ivory-cabin alignment readable with the door open; preserve these model cues, never a generic SUV."
   })
 });
 
