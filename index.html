@@ -33,11 +33,13 @@
             <button class="studio-section-card" type="button" data-studio-section="solo"><strong>🤳 السيلفي الفردي</strong><small>شخص واحد، وضعيات وزوايا وملابس وإضاءة خاصة بالسيلفي الفردي</small></button>
             <button class="studio-section-card" type="button" data-studio-section="group"><strong>👥 السيلفي الجماعي</strong><small>عدد الأشخاص وصاحب الهاتف وتوزيع المجموعة والتفاعل</small></button>
             <button class="studio-section-card" type="button" data-studio-section="car"><strong>🚙 التصوير داخل السيارة</strong><small>مقاعد السيارة والمقصورة ووضعيات وإضاءة السيارة فقط</small></button>
+            <button class="studio-section-card" type="button" data-studio-section="carExterior"><strong>🚘 سيلفي بجانب السيارة</strong><small>بجانب الرنج روفر 2017: مواقع الوقوف والوضعيات والإضاءة</small></button>
             <button class="studio-section-card" type="button" data-studio-section="bedroom"><strong>🏠 التصوير في غرفة النوم</strong><small>السرير والاستلقاء والأريكة وملابس وإضاءة الغرفة فقط</small></button>
             <button class="studio-section-card" type="button" data-studio-section="gym"><strong>🏋️ التصوير في الجيم</strong><small>وضعيات وملابس وإضاءة الجيم فقط</small></button>
             <button class="studio-section-card" type="button" data-studio-section="street"><strong>🌆 التصوير الخارجي والشارع</strong><small>الوقوف والمشي والمواقف والإضاءة الخارجية فقط</small></button>
             <button class="studio-section-card" type="button" data-studio-section="accidental"><strong>📱 اللقطة العفوية بالخطأ</strong><small>حركة الهاتف والتركيز والتعريض العرضي داخل مشهد يومي</small></button>
             <button class="studio-section-card" type="button" data-studio-section="custom"><strong>✍️ مشهد مخصص</strong><small>قسم مستقل لمكان يكتبه المستخدم</small></button>
+            <button class="studio-section-card" type="button" data-studio-section="mirror"><strong>🪞 سيلفي المرآة</strong><small>سيلفي مرآة بفيزياء انعكاس صحيحة ونص مقروء للمشاهد</small></button>
           </div>
         </section>
 
@@ -154,7 +156,7 @@
           <div class="section-heading"><div><span class="section-number">06</span><h2 id="advanced-realism-title">Advanced Realism</h2></div><p>معرفة المكان والحجب والإكسسوارات والأشياء والعيوب الصغيرة والتقييم تعمل بدون المساس بأقفال الهوية.</p></div>
           <div class="selfie-guidance" role="note">Prompt Optimizer وOcclusion Engine وEnvironment Microphysics تعمل تلقائياً. الـOptimizer يحذف التكرار الحرفي الآمن فقط، ولا يختصر أقفال الهوية والكاميرا والوضعية والإضاءة.</div>
           <div class="form-grid">
-            <label class="field field-span-2" id="scene-profile-field" for="scene-profile" hidden><span>Scene Profile للمشهد المخصص</span><select id="scene-profile" name="sceneProfile"></select><small>تلقائي أو محل نظارات أو بقالة أو صيدلية أو كوفي أو مطعم أو عيادة أو مكتب أو مول أو محطة وقود. وصفك المكتوب يبقى المرجع الأعلى.</small></label>
+            <label class="field field-span-2" id="scene-profile-field" hidden><span>Scene Profile للمشهد المخصص</span><select id="scene-profile" name="sceneProfile"></select><small>تلقائي أو محل نظارات أو بقالة أو صيدلية أو كوفي أو مطعم أو عيادة أو مكتب أو مول أو محطة وقود. وصفك المكتوب يبقى المرجع الأعلى.</small></label>
             <label class="field" for="accessory-profile"><span>إكسسوار</span><select id="accessory-profile" name="accessoryProfile"></select><small>النظارة والساعة والخاتم والقبعة والسماعات لها مقياس وتلامس وظلال واقعية.</small></label>
             <label class="field" for="object-profile"><span>Object Profile</span><select id="object-profile" name="objectProfile"></select><small>يحدد وزن وقبضة ودعم الجسم الذي تتفاعل معه.</small></label>
             <label class="field field-span-2" for="accessory-detail"><span>تفصيل الإكسسوار</span><input id="accessory-detail" name="accessoryDetail" type="text" placeholder="اختياري: إطار أسود رفيع، ساعة بسيطة، خاتم فضي..." /><small>يُطبّق فقط إذا بقي متوافقاً مع الوجه واليد والإضاءة.</small></label>
