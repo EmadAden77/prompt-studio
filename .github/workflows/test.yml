@@ -124,3 +124,5 @@ jobs:
         run: node tests/canonical-v3-wikiprompt-phase47.mjs
       - name: Run Phase 48 context-aware environment life
         run: node tests/canonical-v3-environment-life-phase48.mjs
+      - name: Run Phase 49 night physics engine
+        run: node tests/canonical-v3-night-physics-phase49.mjs
