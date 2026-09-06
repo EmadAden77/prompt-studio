@@ -307,7 +307,7 @@ function enforcePhase41SectionWiring(prompt, canonical, routedInput, section) {
     const groupGarments = (canonical?.subjects?.additional || []).map((person) => String(person?.clothing?.garment || "").trim()).filter(Boolean);
     required.push(...groupGarments, distribution, "people are present in the group composition", "Phone holder:", "group distribution:");
   }
-  if (Array.isArray(wiring.accidentalFields) && section.id === "accidental") { const details = wiring.accidentalFields.map((field) => [field,String(routedInput?.[field] || "").trim()]).filter(([,value]) => value); if (details.length) { const clause = `Accidental details: ${details.map(([,value]) => value).join("; ")}.`; if (!details.every(([,value]) => source.includes(value))) source = `${source} ${clause}`.trim(); required.push(...details.map(([,value]) => value),"Accidental details:"); } }
+  if (Array.isArray(wiring.accidentalFields) && section.id === "accidental") { const details = wiring.accidentalFields.map((field) => [field,String(routedInput?.[field] || "").trim()]).filter(([,value]) => value); if (details.length) { const clause = `Accidental: ${details.map(([,value]) => value).join("; ")}.`; if (!details.every(([,value]) => source.includes(value))) source = `${source} ${clause}`.trim(); required.push(...details.map(([,value]) => value),"Accidental:"); } }
   if (wiring.lighting && lighting) { source = replacePhase41Lighting(source, lighting, routedInput?.time); required.push(lighting); }
   source = phase41Deduplicate(source);
   source = compactPhase41Budget(source, canonical, routedInput, section, required, 250);
