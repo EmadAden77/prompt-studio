@@ -6,7 +6,7 @@ import { applySectionCaptureRouting, buildCanonicalV3UserOutput } from "../js/ca
 import { buildOpenAIImagePrompt, IDENTITY_STRICT_LOCK, SELFIE_ARM_LOCK } from "../js/canonical/openai-image-adapter-phase36.js";
 
 const SECTION_IDS = Object.freeze(["solo","group","car","carExterior","bedroom","gym","street","accidental","custom","mirror"]);
-const REQUIRED_KEYS = Object.freeze(["id","label","description","captureType","scenes","clothingSource","poses","lighting","realismLayers","actionDescription","imperfections","rules"]);
+const REQUIRED_KEYS = Object.freeze(["id","label","description","captureType","scenes","clothingSource","poses","lighting","realismLayers","rules","actionDescription","imperfections"]);
 const words = (value) => String(value ?? "").trim().split(/\s+/u).filter(Boolean).length;
 function assertDeepFrozen(value, path = "section") { if (!value || typeof value !== "object") return; assert.equal(Object.isFrozen(value), true, `${path} must be frozen`); for (const [key, child] of Object.entries(value)) assertDeepFrozen(child, `${path}.${key}`); }
 assert.deepEqual(Object.keys(SECTION_REGISTRY), SECTION_IDS, "SECTION_REGISTRY must contain exactly the 10 canonical section ids in stable order");
