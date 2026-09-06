@@ -17,6 +17,7 @@ export const SECTION = deepFreeze({
     exclusions:[],
     routing:{ intentType:"group", sceneMode:"fallback", defaultScene:"street" },
     wiring:{ enabled:true, clothing:true, lighting:true, pose:true, expression:true, body:true, selfieArmLock:true, groupFields:true, groupMaxPeople:6 },
+    selfieGeometry:{ angles:["eye","high","low","three-quarter"], poses:["staggered","tight-group","distributed-group"] },
     ui:{ scenarioMode:"group", scene:"street", groupMode:"group", captureMode:"normal", showScenePicker:true }
   }
 });
