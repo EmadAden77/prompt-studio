@@ -4,7 +4,7 @@ import { buildOpenAIImagePrompt, describeHeadwear } from "./openai-image-adapter
 import { applyGroupPhase13, enrichGroupPromptPhase13 } from "./group-phase13.js";
 import { SCENES } from "../data.js";
 import { resolveClothingText } from "../clothing-authority.js";
-import { describeCompactCarExteriorSelection, resolveCarExteriorSelection } from "../car-exterior-authority.js";
+import { describeMissingCarExteriorSelectionEvidence, resolveCarExteriorSelection } from "../car-exterior-authority.js";
 
 export const CAR_EXTERIOR_PROMPT_WORD_BUDGET = 280;
 const PHASE34_ROUTING_WORD_BUDGET = 250;
@@ -181,29 +181,18 @@ function compactPhase40CarExteriorBudget(prompt, maxWords = 250) {
 function enforcePhase40FinalCarExteriorSelection(prompt, routedInput) {
   if (String(routedInput?.studioSection || "") !== "carExterior") return prompt;
   const selection = resolveCarExteriorSelection(routedInput);
-  const required = describeCompactCarExteriorSelection(routedInput);
-  const cabinEvidence = selection.pose === "door-open"
-    ? " Open door reveals Ivory perforated leather, dark wood veneer and black-and-Ivory wheel."
-    : "";
   const source = String(prompt || "");
-  let next = source;
+  const missingSelection = describeMissingCarExteriorSelectionEvidence(source, routedInput);
+  const missingCabin = selection.pose === "door-open" && !/Ivory perforated leather/iu.test(source)
+    ? "Open door reveals Ivory perforated leather, dark wood veneer and black-and-Ivory wheel."
+    : "";
+  const addition = [missingSelection, missingCabin].filter(Boolean).join(" ");
+  if (!addition) return compactPhase40CarExteriorBudget(source);
 
-  if (!source.includes(required)) {
-    // Replace the entire existing grounding sentence, including any duplicated
-    // location/pose prose around the contact-shadow cue. Re-add the only unique
-    // trailing fact that matters for door-open captures: visible cabin evidence.
-    const groundingSentence = /[^.!?]*(?:tires grounded by realistic contact shadow|tire contact shadow|Tires have realistic contact shadow|Tires cast realistic contact shadows)[^.!?]*[.!?]/iu;
-    if (groundingSentence.test(source)) {
-      next = source.replace(groundingSentence, `${required}${cabinEvidence}`).replace(/\s{2,}/gu, " ").trim();
-    } else {
-      const lightingIndex = Math.max(source.lastIndexOf("Lighting follows "), source.lastIndexOf("Lighting uses "));
-      const addition = `${required}${cabinEvidence}`;
-      next = lightingIndex < 0
-        ? `${source} ${addition}`.replace(/\s{2,}/gu, " ").trim()
-        : `${source.slice(0, lightingIndex)}${addition} ${source.slice(lightingIndex)}`.replace(/\s{2,}/gu, " ").trim();
-    }
-  }
-
+  const lightingIndex = Math.max(source.lastIndexOf("Lighting follows "), source.lastIndexOf("Lighting uses "));
+  const next = lightingIndex < 0
+    ? `${source} ${addition}`.replace(/\s{2,}/gu, " ").trim()
+    : `${source.slice(0, lightingIndex)}${addition} ${source.slice(lightingIndex)}`.replace(/\s{2,}/gu, " ").trim();
   return compactPhase40CarExteriorBudget(next);
 }
 
