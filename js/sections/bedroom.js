@@ -15,7 +15,7 @@ export const SECTION = deepFreeze({
     composition:["bed sofa or lying pose"],
     interaction:[],
     exclusions:["studio staging"],
-    routing:{ intentType:"selfie", sceneMode:"fixed", defaultScene:"bedroom" },
+    routing:{ intentType:"selfie", sceneMode:"fallback", defaultScene:"bedroom" },
     ui:{ scenarioMode:"bedroom", scene:"bedroom", groupMode:"single", captureMode:"normal", showScenePicker:false }
   }
 });
