@@ -116,7 +116,7 @@ function carSelectionSatisfied(requiredText,out){
       && /dark wood/iu.test(out)
       && /panoramic roof/iu.test(out);
   }
-  if(/^Tall 195 cm, 88 kg lean-athletic build/iu.test(requiredText)) return /Tall 195 cm, 88 kg lean-athletic build/iu.test(out);
+  if(/^Tall 195 cm, 88 kg lean-athletic build/iu.test(requiredText)) return normalize(out).includes("tall 195 cm, 88 kg lean athletic build");
   if(/^(?:Pose:\s*)?(?:standing beside|leaning against|standing outside|front grille|rear tailgate)/iu.test(requiredText)) return /Pose: seated naturally in the driver seat|driver (?:close|low|seat)|roof-context/iu.test(out);
   if(/^Lighting follows the selected real-world/iu.test(requiredText)) return /Lighting: selected real daylight\/practical source|Lighting: car interior light is the dominant night source/iu.test(out);
   if(/^Night physics: the dominant visible source is the car interior light/iu.test(requiredText)) return /car interior light is the dominant night source.*source-matched cast/iu.test(out);
@@ -131,8 +131,8 @@ function selectionSatisfied(requiredText,out,sectionId){
   return false;
 }
 
-function compactWithinBudget(prompt,base,protectedEvidence=[]){
-  const sectionId=base?.section?.id||"";
+function compactWithinBudget(prompt,base,protectedEvidence=[],sectionIdOverride=""){
+  const sectionId=sectionIdOverride||base?.section?.id||"";
   const max=sectionId==="carExterior"?280:250;
   let parts=sentences(prompt);
   const required=requiredSelectionTexts(base);
@@ -212,7 +212,7 @@ export function buildCanonicalV3UserOutput(rawInput={},sceneData=undefined){
   prompt=customAuthority.prompt;
   const carAuthority=applyCarInteriorAuthority(prompt,normalized);
   prompt=carAuthority.prompt;
-  prompt=compactWithinBudget(prompt,base,[...missing,...customAuthority.protectedEvidence,...carAuthority.protectedEvidence]);
+  prompt=compactWithinBudget(prompt,base,[...missing,...customAuthority.protectedEvidence,...carAuthority.protectedEvidence],contract.section);
   const contradictions=findContradictions(normalized,prompt);
   if(contradictions.length) throw new Error(`Phase 54 section contradiction: ${contradictions.join(", ")}`);
   return Object.freeze({
