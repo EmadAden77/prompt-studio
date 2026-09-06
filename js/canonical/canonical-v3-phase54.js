@@ -146,9 +146,18 @@ function carSelectionSatisfied(requiredText,out){
   return false;
 }
 
+function customSelectionSatisfied(requiredText,out){
+  if(out.includes(requiredText)) return true;
+  if(/^Night physics:/iu.test(requiredText)) return /Night capture: selected practical light stays physically dominant/iu.test(out);
+  if(/^Raised phone ISO|^Low-light phone exposure/iu.test(requiredText)) return /mild phone grain and shadow noise remain visible/iu.test(out);
+  if(/^Exposure keeps|^Night processing/iu.test(requiredText)) return /exposure stays clearly nocturnal/iu.test(out);
+  return false;
+}
+
 function selectionSatisfied(requiredText,out,sectionId){
   if(out.includes(requiredText)) return true;
   if(sectionId==="car"||/Car-interior lock:/iu.test(out)) return carSelectionSatisfied(requiredText,out);
+  if(sectionId==="custom"||/^ChatGPT Images:.*smartphone selfie/iu.test(out)) return customSelectionSatisfied(requiredText,out);
   return false;
 }
 
@@ -253,7 +262,7 @@ export function buildCanonicalV3UserOutput(rawInput={},sceneData=undefined){
       customSceneAuthority:custom,
       carInteriorAuthority:car,
       physicalRealismEnforced:car,
-      semanticSelectionSupersession:car,
+      semanticSelectionSupersession:car||custom,
       determinism:"10/10"
     }),
     prompt
