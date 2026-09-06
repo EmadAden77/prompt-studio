@@ -6,6 +6,8 @@ export * from "./openai-image-adapter.js";
 export const SELFIE_ARM_LOCK = "One arm extends toward the camera holding the phone; the other hand stays free or relaxed — never both hands in pockets or both hands occupied.";
 export const IDENTITY_STRICT_LOCK = "Identity strictly preserved from the reference image: face and head shape, facial proportions, feature spacing, eyes, eyebrows, nose, lips, jaw/chin, ears, skin tone, hairline, beard/moustache pattern, reference-linked eyewear, apparent age and natural asymmetry remain unchanged; no beautification, face slimming/lengthening, symmetry correction or de-aging regardless of angle, distance, clothing or lighting.";
 export const PROTECTED_LIGHTING_PREFIX = "Lighting follows the selected real-world";
+export const POSITIVE_SKIN_SENTENCE = "Fine pores, faint tonal variation between facial regions, realistic beard detail, no waxy smoothing.";
+export const POSITIVE_CAR_GLASS_SENTENCE = "Transparent glass with natural reflections and a faint Ivory-cabin view where lighting allows.";
 
 const DIRECT_SELFIE_TYPES = new Set(["direct_front_camera_selfie", "subject_held_driver_selfie", "mirror_selfie"]);
 
@@ -121,6 +123,24 @@ function isNight(canonical) {
   if (canonical?.scene?.id === "carExterior" && source !== "daylight") return true;
   const evidence = [canonical?.lighting?.description, canonical?.lighting?.id, canonical?.scene?.time].map(text).join(" ");
   return source !== "daylight" && (/\bnight\b|streetlight|practical|mixed|dim|porch/iu.test(evidence) || source === "practical" || source === "mixed");
+}
+
+export function describeNaturalNightLighting(canonical, raw = {}, sectionId = "") {
+  const id = text(sectionId || canonical?.scene?.id);
+  const location = text(raw?.carExteriorLocation || canonical?.scene?.facts?.carExteriorLocation).toLowerCase();
+  if (id === "carExterior" && location === "villa") {
+    return "Warm villa porch light mixes with cooler ambient night light, with the DRL as a secondary source only.";
+  }
+  if (id === "carExterior" && location === "parking") {
+    return "Real parking-lot practical lighting is the dominant source, with the DRL secondary.";
+  }
+  if (id === "street") {
+    return "Mixed sodium streetlights and cool LED storefront spill shape the scene, with DRL secondary.";
+  }
+  const detail = sentenceText(canonical?.lighting?.description);
+  return detail
+    ? `Available practical night lighting comes from ${detail}.`
+    : "Available practical night lighting defines the scene with natural falloff.";
 }
 
 function selectedCarExteriorLightingSentence(canonical) {
