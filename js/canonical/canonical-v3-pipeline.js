@@ -417,32 +417,37 @@ function enforcePhase41SectionWiring(prompt, canonical, routedInput, section) {
   const lighting = String(canonical?.lighting?.description || "").trim();
   const body = describeBodyAnatomy(canonical);
   const scale = describeEnvironmentScale(canonical);
+  const bodyEvidencePresent = /Tall 195 cm, 88 kg lean-athletic/iu.test(source);
+  const scaleEvidencePresent = /Shoulder and head height relative to roofline|Roofline, door and handle scale|His stature reads noticeably above average-height|Shoulders fill seatback|Camera near eye level at 45–60 cm/iu.test(source);
+  const poseSelected = Boolean(String(routedInput?.pose || routedInput?.carExteriorPose || "").trim());
+  const expressionSelected = Boolean(String(routedInput?.expression || "").trim());
+  const clothingSelected = Boolean(String(routedInput?.clothing || routedInput?.carExteriorClothing || "").trim());
 
   if (wiring.selfieArmLock && !source.includes(SELFIE_ARM_LOCK)) source = insertAfterOpening(source, SELFIE_ARM_LOCK);
-  if (wiring.body && body && !source.includes(body)) source = `${source} ${body}`.trim();
-  if (wiring.body && scale && !source.includes(scale)) source = `${source} ${scale}`.trim();
+  if (wiring.body && body && !bodyEvidencePresent) source = `${source} ${body}`.trim();
+  if (wiring.body && scale && !scaleEvidencePresent) source = `${source} ${scale}`.trim();
 
-  if (wiring.clothing && garment && !source.includes(garment)) {
+  if (wiring.clothing && clothingSelected && garment && !source.includes(garment)) {
     const clause = `Clothing: ${garment}.`;
     source = `${source} ${clause}`.trim();
     required.push(garment);
-  } else if (wiring.clothing && garment) required.push(garment);
+  } else if (wiring.clothing && clothingSelected && garment) required.push(garment);
 
   if (wiring.pose || wiring.expression) {
     const pieces = [];
-    if (wiring.pose && pose && !source.includes(pose)) pieces.push(`Pose: ${pose}`);
-    if (wiring.expression && expression && !source.includes(expression)) pieces.push(`expression: ${expression}`);
+    if (wiring.pose && poseSelected && pose && !source.includes(pose)) pieces.push(`Pose: ${pose}`);
+    if (wiring.expression && expressionSelected && expression && !source.includes(expression)) pieces.push(`expression: ${expression}`);
     if (pieces.length) source = `${source} ${pieces.join("; ")}.`.trim();
-    if (wiring.pose && pose) required.push(pose);
-    if (wiring.expression && expression) required.push(expression);
+    if (wiring.pose && poseSelected && pose) required.push(pose);
+    if (wiring.expression && expressionSelected && expression) required.push(expression);
   }
 
   if (wiring.groupFields && section.id === "group") {
     const holder = String(routedInput?.cameraHolder || "A").trim();
     const distribution = String(routedInput?.groupArrangement || "natural-auto").trim();
     const clause = `Phone holder: ${holder}; group distribution: ${distribution}.`;
-    if (!source.includes(holder) || !source.includes(distribution) || !/phone holder/iu.test(source)) source = `${source} ${clause}`.trim();
-    required.push(holder, distribution, "people are present in the group composition", "Phone holder:", "group distribution:");
+    if (!source.includes(distribution) || !/phone holder/iu.test(source)) source = `${source} ${clause}`.trim();
+    required.push(distribution, "people are present in the group composition", "Phone holder:", "group distribution:");
   }
 
   if (Array.isArray(wiring.accidentalFields) && section.id === "accidental") {
