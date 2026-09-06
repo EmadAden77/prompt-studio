@@ -6,12 +6,13 @@ const text=value=>String(value??"").trim();
 const words=value=>text(value).split(/\s+/u).filter(Boolean).length;
 const sentences=value=>String(value||"").match(/[^.!?]+[.!?]+|[^.!?]+$/gu)?.map(part=>part.replace(/\s+/gu," ").trim()).filter(Boolean)||[];
 const normalize=value=>text(value).toLowerCase().replace(/[\s._-]+/gu," ");
-const CHATGPT_CUSTOM_DIRECTIVE="ChatGPT Images: create one physically plausible smartphone selfie; use the attached reference for identity only and preserve explicit user selections.";
+const CHATGPT_CUSTOM_DIRECTIVE="ChatGPT Images: create exactly one candid, physically plausible smartphone selfie; use the reference for identity only and preserve explicit selections.";
 const CHATGPT_CAR_DIRECTIVE="ChatGPT Images: create one physically plausible front-camera selfie inside this parked vehicle; preserve reference identity and explicit selections.";
 const CAR_INTERIOR_GEOMETRY_LOCK="Car-interior lock: parked LHD, driver seat only; door/window physically left, console right, steering wheel ahead of torso; never mirror or swap cabin geometry.";
 const CAR_INTERIOR_FIDELITY_LOCK="Cabin fidelity: 2017 Range Rover Sport Autobiography Dynamic L494; Ivory perforated leather, dark wood, black-and-Ivory wheel, transparent panoramic roof and Ivory headliner; show only angle-visible details with natural reflections.";
 const CAR_CAPTURE_PHYSICS_LOCK="Capture physics: reachable one-arm phone hold; other hand free; no driving, passenger-seat relocation, exterior pose, studio/ring light, impossible or simultaneous conflicting actions.";
 const CAR_BODY_SCALE_LOCK="Tall 195 cm, 88 kg lean-athletic build; cabin scale remains believable for his stature.";
+const CUSTOM_NIGHT_PHYSICS_LOCK="Night capture: selected practical light stays physically dominant; mild phone grain and shadow noise remain visible; exposure stays clearly nocturnal.";
 
 function requiredSelectionTexts(base){
   return Object.values(base?.phase50?.selectionManifest||{}).map(entry=>text(entry?.resolved||entry?.requested)).filter(Boolean);
@@ -20,6 +21,22 @@ function requiredSelectionTexts(base){
 function evidenceValue(evidence=""){
   const index=evidence.indexOf(":");
   return index>=0?text(evidence.slice(index+1)):text(evidence);
+}
+
+const EVIDENCE_LABELS=Object.freeze({
+  "Hair styling":"hair","Skin state":"skin","Fabric":"fabric","Fabric weight":"weight","Iron state":"iron","Wear state":"wear","Clothing fit":"fit",
+  "Composition":"frame","Selfie angle":"angle","Bedroom window":"window","Place state":"place","People density":"people","Subject moment":"moment",
+  "Hand interaction":"hand","Scene profile":"profile","Accessory":"accessory","Accessory detail":"accessory","Object profile":"object","Background density":"background",
+  "Context note":"context","Group type":"group","Group vibe":"vibe","Street mood":"street","Street hour":"hour","Post-processing":"post",
+  "City":"city","Identity note":"identity","Custom clothing":"clothing"
+});
+
+function compactEvidenceItem(item=""){
+  const index=item.indexOf(":");
+  if(index<0) return text(item);
+  const label=text(item.slice(0,index));
+  const value=text(item.slice(index+1));
+  return `${EVIDENCE_LABELS[label]||label.toLowerCase().replace(/\s+/gu,"-")}=${value}`;
 }
 
 function missingFieldEvidence(prompt,fieldEvidence=[]){
@@ -32,7 +49,8 @@ function missingFieldEvidence(prompt,fieldEvidence=[]){
 
 function insertControlEvidence(prompt,evidence=[]){
   if(!evidence.length) return prompt;
-  const sentence=`Use these selected details exactly: ${evidence.join("; ")}.`;
+  const compact=evidence.map(compactEvidenceItem);
+  const sentence=`Selected controls: ${compact.join("; ")}.`;
   const parts=sentences(prompt);
   const clothingIndex=parts.findIndex(part=>/^Subject wearing\b/iu.test(part));
   const expressionIndex=parts.findIndex(part=>/closed-mouth expression|natural relaxed smile|natural open laugh/iu.test(part));
@@ -51,18 +69,21 @@ function applyCustomSceneAuthority(prompt,raw){
   const scene=text(raw.customScene);
   const details=text(raw.customSceneDetails);
   let parts=sentences(prompt).filter(part=>!/^ChatGPT Images:/iu.test(part));
+  parts=parts.filter(part=>!/^Night physics:|^Raised phone ISO|^Low-light phone exposure|^Exposure keeps|^Night processing|^Shadow integrity/iu.test(part));
   if(scene){
     parts=parts.map(part=>part.replace(/an ordinary physically plausible user-defined location/giu,scene));
     parts=parts.filter(part=>!/^(?:Scene|Location):\s*an ordinary physically plausible user-defined location\.?$/iu.test(part));
   }
   const sceneSentence=scene?`The scene is exactly: ${scene}.`:"";
-  const detailSentence=details?`Required scene details, only where physically visible in the selfie framing: ${details}.`:"";
+  const detailSentence=details?`Required visible scene details: ${details}.`:"";
   if(scene&&!normalize(parts.join(" ")).includes(normalize(scene))) parts.splice(Math.min(4,parts.length),0,sceneSentence);
   if(details&&!normalize(parts.join(" ")).includes(normalize(details))) parts.splice(Math.min(5,parts.length),0,detailSentence);
+  const nightLock=text(raw.time)==="night"?CUSTOM_NIGHT_PHYSICS_LOCK:"";
+  if(nightLock&&!parts.some(part=>part===nightLock)) parts.push(nightLock);
   parts.unshift(CHATGPT_CUSTOM_DIRECTIVE);
   return Object.freeze({
     prompt:parts.join(" ").trim(),
-    protectedEvidence:Object.freeze([CHATGPT_CUSTOM_DIRECTIVE,sceneSentence,detailSentence].filter(Boolean))
+    protectedEvidence:Object.freeze([CHATGPT_CUSTOM_DIRECTIVE,sceneSentence,detailSentence,nightLock].filter(Boolean))
   });
 }
 
@@ -139,7 +160,7 @@ function compactWithinBudget(prompt,base,protectedEvidence=[],sectionIdOverride=
   const protectedPart=part=>
     required.some(value=>value&&part.includes(value))
     || protectedEvidence.some(value=>value&&part.includes(value))
-    || /ChatGPT Images:|Car-interior lock:|Cabin fidelity:|Capture physics:|A candid direct selfie|A candid group selfie|An accidental front-camera capture|One arm extends toward the camera|Identity strictly preserved|Tall 195 cm, 88 kg|2017 Range Rover Sport Autobiography Dynamic L494|^Vehicle fidelity:|mirror_rules:|^Use these selected details exactly:|Night physics:|Raised phone ISO|Exposure keeps|Direct phone flash/iu.test(part);
+    || /ChatGPT Images:|Car-interior lock:|Cabin fidelity:|Capture physics:|A candid direct selfie|A candid group selfie|An accidental front-camera capture|One arm extends toward the camera|Identity strictly preserved|Tall 195 cm, 88 kg|2017 Range Rover Sport Autobiography Dynamic L494|^Vehicle fidelity:|mirror_rules:|^Selected controls:|^Use these selected details exactly:|Night physics:|Raised phone ISO|Exposure keeps|Direct phone flash/iu.test(part);
   const removable=[
     /Fine skin pores|Fine skin texture|Authentic skin texture|Natural hair flyaways|loose hair strands|small lived-in irregularities|subtle sweat sheen/iu,
     /Background .*same|background people|Street life|parking area|gym has restrained|Natural sensor noise|Slight lens softness/iu,
@@ -212,7 +233,7 @@ export function buildCanonicalV3UserOutput(rawInput={},sceneData=undefined){
   prompt=customAuthority.prompt;
   const carAuthority=applyCarInteriorAuthority(prompt,normalized);
   prompt=carAuthority.prompt;
-  prompt=compactWithinBudget(prompt,base,[...missing,...customAuthority.protectedEvidence,...carAuthority.protectedEvidence],contract.section);
+  prompt=compactWithinBudget(prompt,base,[...customAuthority.protectedEvidence,...carAuthority.protectedEvidence],contract.section);
   const contradictions=findContradictions(normalized,prompt);
   if(contradictions.length) throw new Error(`Phase 54 section contradiction: ${contradictions.join(", ")}`);
   return Object.freeze({
