@@ -25,27 +25,36 @@ function syncCommonFields(){
   const section=getSection(id)||getSection("solo");
   const ui=section?.rules?.ui||{};
   const carExterior=ui.dedicatedControls==="carExterior";
+  const carInterior=ui.dedicatedControls==="carInterior";
 
-  // Common controls remain usable in every section. Only a dedicated
-  // section-specific replacement may hide its conflicting generic control.
-  setNodeState("#post-processing-panel",{hidden:false,disabled:false});
-  setNodeState('[aria-labelledby="realism-core-title"]',{hidden:false,disabled:false});
-  setNodeState('[aria-labelledby="advanced-realism-title"]',{hidden:false,disabled:false});
-  setNodeState(".context-secondary-panel",{hidden:false,disabled:false});
-  setControlState("#hair",{hidden:false,disabled:false});
-  setControlState("#skin",{hidden:false,disabled:false});
+  // Car interior is deliberately narrow: fixed cabin/seat authority plus
+  // driver pose and car lighting. Generic context/detail controls are hidden
+  // so stale city, crowd, fabric-state or background selections cannot leak.
+  setNodeState("#post-processing-panel",{hidden:carInterior,disabled:carInterior});
+  setNodeState('[aria-labelledby="realism-core-title"]',{hidden:carInterior,disabled:carInterior});
+  setNodeState('[aria-labelledby="advanced-realism-title"]',{hidden:carInterior,disabled:carInterior});
+  setNodeState(".context-secondary-panel",{hidden:carInterior,disabled:carInterior});
+  setControlState("#hair",{hidden:carInterior,disabled:carInterior});
+  setControlState("#skin",{hidden:carInterior,disabled:carInterior});
+
+  // Core user authorities remain available: outfit, expression and time.
   setControlState("#clothing",{hidden:false,disabled:false});
-  for(const selector of ["#fabric","#fabric-weight","#iron-state","#wear-state","#clothing-fit","#clothing-custom","#expression","#composition","#selfie-angle","#time"]){
-    setControlState(selector,{hidden:false,disabled:false});
+  setControlState("#clothing-custom",{hidden:false,disabled:false});
+  setControlState("#expression",{hidden:false,disabled:false});
+  setControlState("#time",{hidden:false,disabled:false});
+
+  for(const selector of ["#fabric","#fabric-weight","#iron-state","#wear-state","#clothing-fit","#composition","#selfie-angle"]){
+    setControlState(selector,{hidden:carInterior,disabled:carInterior});
   }
 
   // carExterior owns pose and lighting through its dedicated controls.
+  // carInterior intentionally keeps the generic pose/lighting selectors active.
   setControlState("#pose",{hidden:carExterior,disabled:carExterior});
-  setControlState("#pose-family",{hidden:carExterior,disabled:carExterior});
+  setControlState("#pose-family",{hidden:carExterior||carInterior,disabled:carExterior||carInterior});
   setControlState("#lighting",{hidden:carExterior,disabled:carExterior});
   setNodeState("#car-exterior-fields",{hidden:!carExterior,disabled:!carExterior});
 
-  const showScene=Boolean(ui.showScenePicker);
+  const showScene=Boolean(ui.showScenePicker)&&!carInterior;
   setNodeState("#scene-field",{hidden:!showScene,disabled:!showScene});
 
   const custom=id==="custom";
