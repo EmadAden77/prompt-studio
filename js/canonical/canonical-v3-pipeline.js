@@ -77,8 +77,6 @@ export function applySectionCaptureRouting(rawInput = {}) {
 }
 
 function resolveClothingDetails(raw, clean) {
-  // The unified visible #clothing control is authoritative. The old hidden
-  // carExteriorClothing key is fallback-only for historical payloads.
   const selectedClothing = raw.clothing || (raw.studioSection === "carExterior" ? raw.carExteriorClothing : "");
   const garment = resolveClothingText(selectedClothing, raw);
   const fabricValue = raw.fabric || clean.fabric;
@@ -141,29 +139,44 @@ function compactPhase40CarExteriorBudget(prompt, maxWords = 250) {
   let compacted = String(prompt || "").replace(/\s{2,}/gu, " ").trim();
   if (wordCount(compacted) <= maxWords) return compacted;
 
-  // Preserve the selfie camera facts while removing prose that says the same thing twice.
-  compacted = compacted.replace(
-    /Camera near eye level at 45–60 cm, no steep downward angle; relaxed upright posture, spine extension, enough upper torso to communicate the tall athletic frame\./iu,
-    "Camera near eye level at 45–60 cm, no steep downward angle; relaxed posture preserves tall-frame perspective."
-  );
-  if (wordCount(compacted) <= maxWords) return compacted;
+  const compactors = [
+    [
+      /Camera near eye level at 45–60 cm, no steep downward angle; relaxed upright posture, spine extension, enough upper torso to communicate the tall athletic frame\./iu,
+      "Camera near eye level at 45–60 cm, no steep downward angle; relaxed posture preserves tall-frame perspective."
+    ],
+    [
+      /The capture uses a physically possible camera position, a physically possible camera operator, and one coherent capture event\./iu,
+      "One physically possible front-camera capture event."
+    ],
+    [
+      /Shoulder and head height relative to roofline, door frame, and handle reflect a genuine 195 cm adult\./iu,
+      "Roofline, door and handle scale reads as a genuine 195 cm adult."
+    ],
+    [/Captured with the selected physically plausible front-camera geometry\./iu, "Plausible front-camera geometry."],
+    [/Slight lens softness is visible toward the frame edges\.\s*/iu, ""],
+    [/Subtle tone variation between forehead and cheeks\.\s*/iu, ""],
+    [/Natural hair flyaways and loose strands\.\s*/iu, ""],
+    [/Natural fabric wrinkles and folds\.\s*/iu, ""],
+    [/Subtle skin texture with natural pores\.\s*/iu, ""]
+  ];
 
-  // The strict identity lock already forbids face slimming/lengthening explicitly.
-  if (/Identity strictly preserved from the reference image:/iu.test(compacted)) {
-    compacted = compacted.replace(/No facial alteration\/lengthening\.\s*/iu, "");
+  for (const [pattern, replacement] of compactors) {
+    compacted = compacted.replace(pattern, replacement).replace(/\s{2,}/gu, " ").trim();
+    if (wordCount(compacted) <= maxWords) return compacted;
   }
-  if (wordCount(compacted) <= maxWords) return compacted;
 
+  if (/Identity strictly preserved from the reference image:/iu.test(compacted)) {
+    compacted = compacted.replace(/No facial alteration\/lengthening\.\s*/iu, "").replace(/\s{2,}/gu, " ").trim();
+    if (wordCount(compacted) <= maxWords) return compacted;
+  }
+
+  // Last-resort semantic compression of body geometry. Every anatomical fact the
+  // car selfie needs remains present, but duplicate explanatory wording is removed.
   compacted = compacted.replace(
-    /Shoulder and head height relative to roofline, door frame, and handle reflect a genuine 195 cm adult\./iu,
-    "Roofline, door and handle scale reads as a genuine 195 cm adult."
-  );
-  if (wordCount(compacted) <= maxWords) return compacted;
+    /Tall 195 cm, 88 kg lean-athletic build: medium-to-moderately-broad shoulders visibly wider than the waist, moderately developed chest, subtle deltoid roundness, long proportional limbs with filled-not-thin arms, proportionate adult male neck, and head anatomically scaled to tall frame\./iu,
+    "Tall 195 cm, 88 kg lean-athletic build: shoulders wider than waist, moderately developed chest and deltoids, long proportional limbs, filled arms, adult male neck, and head scaled to the tall frame."
+  ).replace(/\s{2,}/gu, " ").trim();
 
-  compacted = compacted.replace(/Captured with the selected physically plausible front-camera geometry\./iu, "Plausible front-camera geometry.");
-  if (wordCount(compacted) <= maxWords) return compacted;
-
-  compacted = compacted.replace(/Subtle tone variation between forehead and cheeks\.\s*/iu, "").replace(/\s{2,}/gu, " ").trim();
   return compacted;
 }
 
