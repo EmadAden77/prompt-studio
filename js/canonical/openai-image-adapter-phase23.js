@@ -32,6 +32,9 @@ const POSES = Object.freeze({
   "hood-sit": "sitting lightly on the front edge of the hood with natural body weight"
 });
 
+const CONTACT_SHADOW_SENTENCE = "The tires sit with realistic contact shadow on the ground.";
+const GLASS_DETAIL_SENTENCE = "Transparent glass carries natural surroundings reflections while retaining a faint view into the Ivory cabin, and the panoramic roof reflects the sky.";
+
 function text(value) { return typeof value === "string" ? value.trim() : ""; }
 function words(value) { return text(value).split(/\s+/u).filter(Boolean).length; }
 function sentence(value) { const v = text(value); return !v ? "" : /[.!?]$/u.test(v) ? v : `${v}.`; }
@@ -73,7 +76,7 @@ export function describeCarExteriorRealism(canonical) {
   const phrases = [
     "Fuji White paint carries fine dust on lower panels and wheel arches with environment reflections stretched across the doors.",
     "Alloy wheels show light brake dust and the tires sit with realistic contact shadow on the ground.",
-    "Transparent glass carries natural surroundings reflections while retaining a faint view into the Ivory cabin, and the panoramic roof reflects the sky."
+    GLASS_DETAIL_SENTENCE
   ];
   if (isNight(canonical)) phrases.push("An elongated light-pole reflection runs along the hood and roof.");
   if (isNight(canonical) && isDamp(canonical)) phrases.push("Damp ground patches reflect the overhead light near the tires.");
@@ -109,16 +112,16 @@ function compactLightingSentence(prompt) {
 function requiredExteriorSentences(canonical) {
   const required = [
     FROZEN_EXTERIOR_SPEC,
-    locationPoseSentence(canonical),
-    "Alloy wheels show light brake dust and the tires sit with realistic contact shadow on the ground.",
-    "Transparent glass carries natural surroundings reflections while retaining a faint view into the Ivory cabin, and the panoramic roof reflects the sky."
+    locationPoseSentence(canonical)
   ];
   const interior = interiorSentence(canonical);
-  if (interior) required.splice(2, 0, interior);
+  if (interior) required.push(interior);
+  required.push(CONTACT_SHADOW_SENTENCE);
   return required;
 }
 function optionalExteriorSentences(canonical) {
   const optional = [
+    GLASS_DETAIL_SENTENCE,
     "Fuji White paint carries fine dust on lower panels and wheel arches with environment reflections stretched across the doors."
   ];
   if (isNight(canonical)) optional.push("An elongated light-pole reflection runs along the hood and roof.");
@@ -162,14 +165,12 @@ function insertWithinCap(prompt, canonical, maxWords = 250) {
 
   let requiredText = fitSentences(base, canonical, required, maxWords);
   if (requiredText.split(/(?<=[.!?])\s+/u).length < required.length) {
-    const compactRequired = [
-      FROZEN_EXTERIOR_SPEC,
-      locationPoseSentence(canonical),
-      "The tires sit with realistic contact shadow on the ground.",
-      "Transparent glass carries natural reflections and a faint view into the Ivory cabin."
-    ];
+    // Keep identity/car/location/pose/interior/contact grounding first. The exterior
+    // spec already carries a glass-reflection sentence, so the longer glass detail is optional.
+    const compactRequired = [FROZEN_EXTERIOR_SPEC, locationPoseSentence(canonical)];
     const interior = interiorSentence(canonical);
-    if (interior) compactRequired.splice(2, 0, interior);
+    if (interior) compactRequired.push(interior);
+    compactRequired.push(CONTACT_SHADOW_SENTENCE);
     requiredText = fitSentences(base, canonical, compactRequired, maxWords);
   }
 
