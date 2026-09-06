@@ -26,6 +26,8 @@ assert.ok(thobeRuns.every((item) => item.prompt === thobePrompt));
 assert.ok(thobePrompt.includes(HEADWEAR_LOCK));
 assert.match(thobePrompt, /red-and-white fine checkered shemagh/iu);
 assert.match(thobePrompt, /black doubled-cord iqal/iu);
+console.log(`PHASE41_DEBUG_PHASE33_WORDS=${words(thobePrompt)}`);
+console.log(`PHASE41_DEBUG_PHASE33_PROMPT=${thobePrompt}`);
 assert.ok(words(thobePrompt) <= 250);
 
 const outfit = buildCanonicalV3UserOutput({ ...base, clothing:"casual-tee-black-jeans-blue" });
