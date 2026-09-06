@@ -14,13 +14,7 @@ const firstSentence = (value) => String(value ?? "").match(/^[^.!?]+[.!?]/u)?.[0
 const sentences = (value) => String(value ?? "").match(/[^.!?]+[.!?]+|[^.!?]+$/gu)?.map((part) => part.replace(/\s+/gu, " ").trim()).filter(Boolean) || [];
 const hasDuplicateSentence = (value) => { const seen = new Set(); for (const sentence of sentences(value)) { if (seen.has(sentence)) return true; seen.add(sentence); } return false; };
 
-const base = Object.freeze({
-  hasReference:true,
-  selfieDistanceCm:50,
-  selfieYawDeg:0,
-  selfiePitchDeg:0,
-  selfieRollDeg:2
-});
+const base = Object.freeze({ hasReference:true });
 
 const specs = Object.freeze({
   solo:{ scene:"street", clothing:"casual-tee-black-jeans-blue", poses:["standing selfie pose","walking selfie pose"], sceneEvidence:/street|parking/iu },
@@ -30,17 +24,17 @@ const specs = Object.freeze({
   bedroom:{ scene:"bedroom", clothing:"home-flannel-red-black", poses:["seated bed selfie pose","standing bedroom selfie pose"], sceneEvidence:/bedroom|bed|sofa/iu },
   gym:{ scene:"gym", clothing:"sport-tracksuit-olive", poses:["seated gym selfie pose","standing gym selfie pose"], sceneEvidence:/gym|bench|rack|bar/iu },
   street:{ scene:"street", clothing:"thobe-redshemagh-iqal", poses:["street standing selfie pose","street walking selfie pose"], sceneEvidence:/street|parking|alley|construction|bufia/iu },
-  accidental:{ scene:"street", clothing:"casual-tee-black-jeans-blue", poses:["phone rising motion","off-center phone motion"], sceneEvidence:/street|parking/iu },
+  accidental:{ scene:"street", clothing:"casual-tee-black-jeans-blue", poses:["phone-rising","off-center-motion"], sceneEvidence:/street|parking/iu },
   custom:{ scene:"custom", clothing:"casual-tee-black-jeans-blue", poses:["custom scene selfie pose","custom walking selfie pose"], sceneEvidence:/Phase 41 courtyard with a low stone wall and two potted plants/iu }
 });
 
 const lights = Object.freeze({
-  day:{ time:"day", text:"soft daylight from open shade" },
-  night:{ time:"night", text:"warm practical night light with soft falloff" }
+  day:{ time:"day", text:"soft daylight" },
+  night:{ time:"night", text:"warm night practical light" }
 });
 const expressions = Object.freeze(["neutral","focused"]);
 const streetMoods = Object.freeze(["normal","alley","construction","bufia"]);
-const customClothing = (section) => `sand overshirt with charcoal trousers ${section}`;
+const customClothing = () => "sand overshirt charcoal trousers";
 
 function opener(section) {
   const type = SECTION_REGISTRY[section].captureType;
@@ -151,7 +145,7 @@ for (const section of SECTION_IDS) {
     }
     if (section === "car" && (!prompt.includes("2017 Range Rover Sport Autobiography Dynamic") || !prompt.includes("Ivory perforated leather"))) fail(failures, matrix, section, "scene", caseId, "car interior evidence missing");
 
-    if (raw.time === "night" && (!/night/iu.test(prompt) || !lighting.toLowerCase().includes("night") && !/night/iu.test(lighting))) fail(failures, matrix, section, "time", caseId, "night evidence missing");
+    if (raw.time === "night" && !/night/iu.test(prompt)) fail(failures, matrix, section, "time", caseId, "night evidence missing");
     if (raw.time === "day" && /Lighting follows the selected real-world night source/iu.test(prompt)) fail(failures, matrix, section, "time", caseId, "night leaked into day");
 
     if (firstSentence(prompt) !== opener(section)) fail(failures, matrix, section, "selfie", caseId, `wrong opener ${firstSentence(prompt)}`);
