@@ -5,7 +5,7 @@ export const SECTION = deepFreeze({
   label:"👥 السيلفي الجماعي",
   description:"قسم مستقل لعدد الأشخاص وصاحب الهاتف وتوزيع المجموعة، مع اختيار المشهد",
   captureType:"group_selfie",
-  scenes:["bedroom","gym","street"],
+  scenes:["street","bedroom","gym"],
   clothingSource:"authority",
   poses:["phone-holder","distributed-group"],
   lighting:["group-natural","scene"],
@@ -16,7 +16,7 @@ export const SECTION = deepFreeze({
     interaction:["distinct group identities"],
     exclusions:[],
     routing:{ intentType:"group", sceneMode:"selectable", defaultScene:"street" },
-    ui:{ scenarioMode:"group", scene:"bedroom", groupMode:"group", captureMode:"normal", showScenePicker:true }
+    ui:{ scenarioMode:"group", scene:"street", groupMode:"group", captureMode:"normal", showScenePicker:true }
   }
 });
 
