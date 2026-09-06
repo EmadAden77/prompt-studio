@@ -21,7 +21,7 @@ assert.ok(wc(parking.prompt)<=280,`parking budget ${wc(parking.prompt)}`);
 const villa = buildCanonicalV3UserOutput(base({ studioSection:"carExterior", scene:"carExterior", time:"night", carExteriorLocation:"villa", carExteriorPose:"door-lean" }));
 assert.match(villa.prompt,/residential background stays quiet at night/iu);
 assert.match(villa.prompt,/empty space preserved/iu);
-assert.doesNotMatch(villa.prompt,/crowd gathering around the subject/iu); // semantic rule is expressed as no crowd, not a generated crowd instruction
+assert.match(villa.prompt,/no crowd gathering around the subject/iu);
 
 const grocery = buildCanonicalV3UserOutput(base({ studioSection:"carExterior", scene:"carExterior", time:"night", carExteriorLocation:"grocery", carExteriorPose:"front-grille" }));
 assert.equal(grocery.phase48.environmentLife.activityLevel,"moderate");
