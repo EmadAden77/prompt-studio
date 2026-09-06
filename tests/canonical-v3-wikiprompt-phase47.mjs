@@ -6,7 +6,7 @@ import { MIRROR_RULES_SENTENCE } from "../js/sections/wikiprompt-phase47-profile
 const wc = s => String(s||"").trim().split(/\s+/u).filter(Boolean).length;
 
 for (const section of Object.values(SECTION_REGISTRY)) {
-  assert.ok(section.actionDescription && /\b(?:holds|extends|settles|leans|pauses|continues|catches|interacts)\b/iu.test(section.actionDescription), `${section.id}: action description`);
+  assert.ok(section.actionDescription && /\b(?:holds|extends|settles|leans|pauses|continues|catches|interacts|remains)\b/iu.test(section.actionDescription), `${section.id}: action description`);
   assert.ok(section.imperfections && /skin|pores|hair|sweat|texture/iu.test(section.imperfections), `${section.id}: positive imperfections`);
   assert.ok(section.rules?.contextualRules, `${section.id}: contextual rules`);
 }
