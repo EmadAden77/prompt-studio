@@ -23,6 +23,27 @@ const COMPACT_POSE_TEXT = Object.freeze({
   "hood-sit":"sitting at front edge of the hood"
 });
 
+const LOCATION_EVIDENCE = Object.freeze({
+  villa:/(?:villa driveway|driveway before a Saudi villa|Saudi villa|villa[^.]{0,50}(?:gate|driveway))/iu,
+  grocery:/(?:grocery curb|curb before a small grocery|small grocery|grocery with)/iu,
+  parking:/(?:marked parking lot|marked outdoor parking|outdoor lot with white lines|concrete wheel stops)/iu,
+  street:/(?:yellow-and-black street curb|parallel parked along a yellow-and-black curb|weathered asphalt)/iu,
+  reststop:/(?:sandy shoulder|rest-stop shoulder|open horizon)/iu,
+  mall:/(?:mall parking|outdoor mall parking|shaded walkways)/iu
+});
+
+const POSE_EVIDENCE = Object.freeze({
+  "door-lean":/(?:leaning naturally against the closed driver door|leaning on closed driver door)/iu,
+  "door-open":/(?:standing beside the open driver door|beside the open driver door|at open driver door)/iu,
+  "front-grille":/(?:standing beside the front grille|beside the front grille|at front grille)/iu,
+  "rear-tailgate":/(?:standing near the rear tailgate|near the rear tailgate)/iu,
+  "front-fender":/(?:front fender|hand resting on the body|free hand on body)/iu,
+  "rear-quarter":/(?:rear three-quarter corner|rear-quarter)/iu,
+  "hood-sit":/(?:front edge of the hood|sitting at front edge of the hood|sitting lightly on the hood)/iu
+});
+
+const CONTACT_EVIDENCE = /(?:(?:tire|tires)[^.]{0,35}contact shadow|contact shadow[^.]{0,35}(?:tire|tires))/iu;
+
 function text(value) { return typeof value === "string" ? value.trim() : ""; }
 function optionByValue(options, value) { return options.find((item) => item.value === value) || null; }
 
@@ -76,6 +97,16 @@ export function describeCompactCarExteriorSelection(raw = {}) {
   const location = COMPACT_LOCATION_TEXT[selection.location] || selection.locationText;
   const pose = COMPACT_POSE_TEXT[selection.pose] || selection.poseText;
   return `${location}; subject ${pose}; tire contact shadow.`;
+}
+
+export function describeMissingCarExteriorSelectionEvidence(prompt, raw = {}) {
+  const selection = resolveCarExteriorSelection(raw);
+  const source = String(prompt || "");
+  const clauses = [];
+  if (!LOCATION_EVIDENCE[selection.location]?.test(source)) clauses.push(COMPACT_LOCATION_TEXT[selection.location] || selection.locationText);
+  if (!POSE_EVIDENCE[selection.pose]?.test(source)) clauses.push(`subject ${COMPACT_POSE_TEXT[selection.pose] || selection.poseText}`);
+  if (!CONTACT_EVIDENCE.test(source)) clauses.push("tire contact shadow");
+  return clauses.length ? `${clauses.join("; ")}.` : "";
 }
 
 export function isCarExteriorSelfiePoseAllowed(value) {
