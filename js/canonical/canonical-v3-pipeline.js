@@ -139,6 +139,21 @@ function compactPhase40CarExteriorBudget(prompt, maxWords = 250) {
   let compacted = String(prompt || "").replace(/\s{2,}/gu, " ").trim();
   if (wordCount(compacted) <= maxWords) return compacted;
 
+  // Location prose can be verbose. Compact it before touching identity, selfie-arm,
+  // clothing/headwear, vehicle, cabin or selected-lighting evidence.
+  const sceneCompactors = [
+    [/A parked Range Rover exterior selfie, parked on a driveway before a Saudi villa with beige stone cladding, high wall, metal gate, and a palm tree\./iu, "A parked Range Rover exterior selfie on a Saudi villa driveway with beige stone, gate and palm tree."],
+    [/A parked Range Rover exterior selfie, at the curb before a small grocery with shelves and a glowing beverage cooler behind glass\./iu, "A parked Range Rover exterior selfie at a small grocery curb."],
+    [/A parked Range Rover exterior selfie, in a marked outdoor lot with white lines, concrete wheel stops, and a few other parked cars\./iu, "A parked Range Rover exterior selfie in a marked outdoor parking lot."],
+    [/A parked Range Rover exterior selfie, parallel parked along a yellow-and-black curb on weathered asphalt\./iu, "A parked Range Rover exterior selfie along a yellow-and-black street curb."],
+    [/A parked Range Rover exterior selfie, on a sandy shoulder with sparse shrubs and an open horizon\./iu, "A parked Range Rover exterior selfie on a sandy rest-stop shoulder."],
+    [/A parked Range Rover exterior selfie, in outdoor mall parking with shaded walkways\./iu, "A parked Range Rover exterior selfie in outdoor mall parking."]
+  ];
+  for (const [pattern, replacement] of sceneCompactors) {
+    compacted = compacted.replace(pattern, replacement).replace(/\s{2,}/gu, " ").trim();
+    if (wordCount(compacted) <= maxWords) return compacted;
+  }
+
   const compactors = [
     [
       /Camera near eye level at 45–60 cm, no steep downward angle; relaxed upright posture, spine extension, enough upper torso to communicate the tall athletic frame\./iu,
