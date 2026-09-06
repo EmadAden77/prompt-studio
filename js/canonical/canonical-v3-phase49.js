@@ -47,8 +47,15 @@ export function describeNightPhysics(canonical, raw = {}, sectionId = "") {
 
 function ensureAuthorityHeadwear(prompt, canonical){
   const headwear=text(describeHeadwear(canonical));
-  if(!headwear || !/shemagh|ghutra|iqal/iu.test(headwear) || String(prompt).includes(headwear)) return prompt;
-  return dedupe(`${prompt} ${headwear}`);
+  if(!headwear || !/shemagh|ghutra|iqal/iu.test(headwear)) return prompt;
+  if(/red-and-white fine checkered shemagh/iu.test(prompt) && /black doubled-cord iqal/iu.test(prompt)) return prompt;
+  if(/red-and-white fine checkered shemagh/iu.test(headwear) && /black doubled-cord iqal/iu.test(headwear)) {
+    return dedupe(`${prompt} A red-and-white fine checkered shemagh with black doubled-cord iqal remains clearly visible.`);
+  }
+  if(/white ghutra/iu.test(headwear) && /iqal/iu.test(headwear)) {
+    return dedupe(`${prompt} A white ghutra with black iqal remains clearly visible.`);
+  }
+  return prompt;
 }
 
 function insertAfterLighting(prompt, physics){
