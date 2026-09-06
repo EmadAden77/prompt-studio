@@ -126,3 +126,5 @@ jobs:
         run: node tests/canonical-v3-environment-life-phase48.mjs
       - name: Run Phase 49 night physics engine
         run: node tests/canonical-v3-night-physics-phase49.mjs
+      - name: Run Phase 50 user selection authority
+        run: node tests/canonical-v3-user-selection-authority-phase50.mjs
