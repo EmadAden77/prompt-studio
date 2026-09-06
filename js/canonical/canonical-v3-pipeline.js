@@ -201,7 +201,7 @@ function replacePhase41Lighting(prompt, description, time) {
 function normalizePhase41CarExteriorAuthority(prompt, routedInput) {
   const selection = resolveCarExteriorSelection(routedInput);
   const cabin = selection.pose === "door-open" ? "; open driver door reveals Ivory perforated leather, dark wood veneer and black-and-Ivory wheel" : "";
-  const authority = `Car exterior location: ${selection.locationText}; subject ${selection.poseText}; tires grounded by realistic contact shadow${cabin}.`;
+  const authority = `Location: ${selection.locationText}; subject ${selection.poseText}; tires grounded by realistic contact shadow${cabin}.`;
   const kept = phase41SentenceParts(prompt).filter((sentence) => {
     if (/2017 Range Rover Sport Autobiography Dynamic/iu.test(sentence)) return true;
     if (/^A parked Range Rover exterior selfie/iu.test(sentence)) return false;
@@ -227,7 +227,7 @@ function compactPhase41CarExteriorProtectedText(prompt, canonical) {
 
 function phase41SceneProtected(sentence, canonical, routedInput, section) {
   const id = section?.id;
-  if (id === "carExterior" && /2017 Range Rover Sport Autobiography Dynamic|Car exterior location:|Fuji White/iu.test(sentence)) return true;
+  if (id === "carExterior" && /2017 Range Rover Sport Autobiography Dynamic|Location:|Fuji White/iu.test(sentence)) return true;
   if (id === "car" && /Inside stationary 2017 Range Rover Sport Autobiography Dynamic|Ivory perforated leather|LHD vehicle-relative|driver's door and side window/iu.test(sentence)) return true;
   if (id === "bedroom" && /bedroom/iu.test(sentence)) return true;
   if (id === "gym" && /gym environment/iu.test(sentence)) return true;
