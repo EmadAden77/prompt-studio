@@ -15,7 +15,7 @@ export const SECTION = deepFreeze({
     composition:["standing or walking"],
     interaction:[],
     exclusions:["studio lighting"],
-    routing:{ intentType:"selfie", sceneMode:"fixed", defaultScene:"street" },
+    routing:{ intentType:"selfie", sceneMode:"fallback", defaultScene:"street" },
     ui:{ scenarioMode:"street", scene:"street", groupMode:"single", captureMode:"normal", showScenePicker:false }
   }
 });
