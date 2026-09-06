@@ -5,7 +5,7 @@ export const SECTION = deepFreeze({
   label:"🤳 السيلفي الفردي",
   description:"شخص واحد، وضعيات وزوايا وملابس وإضاءة خاصة بالسيلفي الفردي",
   captureType:"direct_front_camera_selfie",
-  scenes:["bedroom","gym","street","majlis","kashta","barbershop","grocery","rooftop","streetFootball","gasStation"],
+  scenes:["street","bedroom","gym","majlis","kashta","barbershop","grocery","rooftop","streetFootball","gasStation"],
   clothingSource:"authority",
   poses:["selfie","standing","seated","walking"],
   lighting:["personal","scene"],
