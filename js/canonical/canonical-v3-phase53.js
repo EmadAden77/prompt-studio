@@ -57,7 +57,7 @@ export function reviewCarExteriorPrompt(rawInput={},base={},prompt=""){
   const issues=[];
   if(!/2017 Range Rover Sport Autobiography Dynamic L494/iu.test(prompt)) issues.push("vehicle-identity");
   if(!/never a generic SUV/iu.test(prompt)) issues.push("generic-suv-rejection");
-  if(!/^Vehicle fidelity:/imu.test(prompt)) issues.push("vehicle-fidelity-block");
+  if(!sentences(prompt).some(part=>/^Vehicle fidelity:/iu.test(part))) issues.push("vehicle-fidelity-block");
   if(words(prompt)>280) issues.push("budget");
   for(const entry of Object.values(base?.phase50?.selectionManifest||{})){
     const required=text(entry?.resolved||entry?.requested);
