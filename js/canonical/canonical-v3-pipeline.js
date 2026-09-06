@@ -236,8 +236,8 @@ function compactPhase41CarExteriorProtectedText(prompt, canonical) {
     .replace(/Tall 195 cm, 88 kg lean-athletic; broad-shouldered; proportional-limbed\./iu, naturalBodyCompact())
     .replace(/\bNo facial alteration\/lengthening\.\s*/iu, "")
     .replace(/Subject:\s*([^,]+),\s*([^,]+),\s*wearing ([^.]+)\./iu, "$1; $2; $3.")
-    .replace(/\bstanding beside the open driver door;\s*neutral;\s*(white thobe with red-and-white shemagh and black iqal)\./iu, "neutral; white thobe.")
-    .replace(/\bleaning naturally against the closed driver door;\s*neutral;\s*(crisp white thobe with a red-and-white checkered shemagh and black iqal, youthful style with one end casually thrown over the shoulder)\./iu, "neutral; crisp white thobe.")
+    .replace(/\bstanding beside the open driver door;\s*neutral;\s*(white thobe with red-and-white shemagh and black iqal)\./iu, "neutral; white thobe with black iqal.")
+    .replace(/\bleaning naturally against the closed driver door;\s*neutral;\s*(crisp white thobe with a red-and-white checkered shemagh and black iqal, youthful style with one end casually thrown over the shoulder)\./iu, "neutral; crisp white thobe with black iqal.")
     .replace(/\s{2,}/gu, " ")
     .trim();
 }
