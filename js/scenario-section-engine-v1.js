@@ -32,13 +32,22 @@ export function getScenarioSceneOptions(scenarioMode = "bedroom") {
     .map(([value, scene]) => ({ value, label:scene.label }));
 }
 
+function scenarioModeForStudio(section,scene){
+  if(section?.id==="group") return "group";
+  if(section?.id==="custom") return "custom";
+  if(section?.id==="car") return "car";
+  if(section?.id==="carExterior") return "street";
+  if(section?.id==="mirror") return "bedroom";
+  return scenarioForScene(scene);
+}
+
 function normalizeStudioOwnedScenario(raw={}) {
   const section=getSection(raw.studioSection);
   if(!section) return null;
   const normalizedLegacy=String(raw.scene||"")==="my_bedroom_text"?"bedroom":String(raw.scene||"");
   const configured=section.scenes.includes(String(section.rules?.ui?.scene||""))?String(section.rules.ui.scene):"";
   const scene=section.scenes.includes(normalizedLegacy)?normalizedLegacy:(configured||section.scenes[0]||normalizedLegacy||"street");
-  const scenarioMode=section.rules?.ui?.scenarioMode||scenarioForScene(scene);
+  const scenarioMode=scenarioModeForStudio(section,scene);
   const state={...raw,scenarioMode,scene};
   if(scene!=="bedroom") state.bedroomWindow="";
   if(scene!=="custom") {
