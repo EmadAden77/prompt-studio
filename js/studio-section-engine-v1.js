@@ -19,9 +19,10 @@ export function normalizeStudioSectionState(raw = {}) {
   const studioSection = activeSection.id;
   const ui = activeSection.rules?.ui || {};
   const requestedScene = normalizeLegacyScene(raw.scene);
-  const sectionScene = ui.showScenePicker && activeSection.scenes.includes(requestedScene)
+  const configuredScene = activeSection.scenes.includes(normalizeLegacyScene(ui.scene)) ? normalizeLegacyScene(ui.scene) : "";
+  const sectionScene = activeSection.scenes.includes(requestedScene)
     ? requestedScene
-    : (ui.scene || activeSection.scenes[0] || requestedScene || "street");
+    : (configuredScene || activeSection.scenes[0] || requestedScene || "street");
   const state = {
     ...raw,
     studioSection,
@@ -30,7 +31,12 @@ export function normalizeStudioSectionState(raw = {}) {
     groupMode:ui.groupMode || "single",
     captureMode:ui.captureMode || "normal"
   };
-  if (ui.customFallback && !String(state.customScene || "").trim()) state.customScene = ui.customFallback;
+  if (ui.customFallback && sectionScene === "custom" && !String(state.customScene || "").trim()) state.customScene = ui.customFallback;
+  if (sectionScene !== "custom") {
+    state.customScene = "";
+    state.customSceneDetails = "";
+    state.sceneProfile = "auto";
+  }
   if (state.groupMode !== "group") {
     state.groupCount = "3";
     state.cameraHolder = "A";
