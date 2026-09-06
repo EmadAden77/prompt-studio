@@ -17,6 +17,7 @@ import { SECTION_REGISTRY, getSection } from "../sections/index.js";
 export const CAR_EXTERIOR_PROMPT_WORD_BUDGET = 280;
 const PHASE34_ROUTING_WORD_BUDGET = 250;
 const PHASE34_REDUNDANT_GLASS_SENTENCE = "Transparent glass carries natural reflections and a faint view into the Ivory cabin.";
+const PHASE42_CAR_EXTERIOR_SPEC = "2017 Range Rover Sport Autobiography Dynamic L494, Fuji White, gloss black grille and vent surrounds, 22-inch dark alloys, quad rectangular exhaust tips, LED DRLs, panoramic glass roof, transparent glass with natural reflections and a faint Ivory-cabin view, never opaque black; Autobiography Dynamic badging and Saudi plate, never legible.";
 const LEGACY_SECTION_ALIASES = Object.freeze({ selfie:"solo", studio:"solo" });
 const DAILY_SCENE_KEYS = new Set(["majlis", "kashta", "barbershop", "grocery", "rooftop", "streetFootball", "gasStation"]);
 const REAL_SECTION_SCENES = new Set([
@@ -52,6 +53,8 @@ function wordCount(value) { return String(value || "").trim().split(/\s+/u).filt
 function normalizeScene(value) { return String(value || "") === "my_bedroom_text" ? "bedroom" : String(value || ""); }
 function activeSectionById(id) { const key = String(id || "").trim(); return getSection(key) || getSection(LEGACY_SECTION_ALIASES[key]); }
 function hasAuthority(section, authority) { return section?.rules?.routing?.authority === authority; }
+function naturalBodyCompact() { return "Tall 195 cm, 88 kg lean-athletic; broad-shouldered with proportional limbs."; }
+function sentenceCase(value) { const text = String(value || "").trim(); return text ? `${text.charAt(0).toUpperCase()}${text.slice(1)}` : text; }
 
 function selfieSafePose(value, captureType) {
   const pose = String(value || "").trim();
@@ -200,14 +203,16 @@ function replacePhase41Lighting(prompt, description, time) {
 
 function normalizePhase41CarExteriorAuthority(prompt, routedInput) {
   const selection = resolveCarExteriorSelection(routedInput);
-  const cabin = selection.pose === "door-open" ? "; open door reveals Ivory perforated leather, dark wood and black-and-Ivory wheel" : "";
-  const authority = `Location: ${selection.locationText}; subject ${selection.poseText}; tire contact shadow${cabin}.`;
+  const cabin = selection.pose === "door-open" ? " Open door reveals Ivory perforated leather, dark wood and black and Ivory wheel." : "";
+  const authority = `${sentenceCase(selection.locationText)}, subject ${selection.poseText}. Tires have realistic contact shadow.${cabin}`;
   const kept = phase41SentenceParts(prompt).filter((sentence) => {
     if (/2017 Range Rover Sport Autobiography Dynamic/iu.test(sentence)) return true;
     if (/^A parked Range Rover exterior selfie/iu.test(sentence)) return false;
     if (/^The vehicle is /iu.test(sentence)) return false;
     if (/^Open driver door reveals/iu.test(sentence)) return false;
-    if (/^(?:Beside a Saudi villa|Villa driveway|At a small grocery|In a marked outdoor parking lot|The vehicle is on a sandy|A parked Range Rover exterior selfie)/iu.test(sentence)) return false;
+    if (/^Open door reveals/iu.test(sentence)) return false;
+    if (/^tire contact shadow\.?$/iu.test(sentence)) return false;
+    if (/^(?:Beside a Saudi villa|Villa driveway|At a small grocery|In a marked outdoor parking lot|The vehicle is on a sandy|Marked parking lot|A parked Range Rover exterior selfie)/iu.test(sentence)) return false;
     return true;
   });
   kept.push(authority);
@@ -217,9 +222,10 @@ function normalizePhase41CarExteriorAuthority(prompt, routedInput) {
 function compactPhase41CarExteriorProtectedText(prompt, canonical) {
   if (canonical?.scene?.id !== "carExterior") return String(prompt || "");
   return String(prompt || "")
-    .replace(/2017 Range Rover Sport Autobiography Dynamic L494, Fuji White, gloss black grille and vent surrounds, 22-inch dark alloys, quad rectangular exhaust tips, LED DRLs, panoramic glass roof, transparent glass with natural reflections and a faint Ivory-cabin view, never opaque black; Autobiography Dynamic badging and Saudi plate, never legible\./iu, "2017 Range Rover Sport Autobiography Dynamic L494, Fuji White; gloss-black-grille/vents; 22-inch-dark-alloys; quad-exhausts; LED-DRLs; panoramic-glass; transparent-reflective-glass/faint-Ivory-cabin; Dynamic-badge; illegible-Saudi-plate.")
-    .replace(/Tall 195 cm, 88 kg lean-athletic build: medium-to-moderately-broad shoulders visibly wider than the waist, moderately developed chest, subtle deltoid roundness, long proportional limbs with filled-not-thin arms, proportionate adult male neck, and head anatomically scaled to tall frame\./iu, "Tall 195 cm, 88 kg lean-athletic; broad-shouldered; proportional-limbed.")
-    .replace(/Tall 195 cm, 88 kg lean-athletic build: shoulders wider than waist, developed chest\/deltoids, long proportional limbs, filled arms, adult male neck, head scaled to the tall frame\./iu, "Tall 195 cm, 88 kg lean-athletic; broad-shouldered; proportional-limbed.")
+    .replace(/2017 Range Rover Sport Autobiography Dynamic L494, Fuji White; gloss-black-grille\/vents; 22-inch-dark-alloys; quad-exhausts; LED-DRLs; panoramic-glass; transparent-reflective-glass\/faint-Ivory-cabin; Dynamic-badge; illegible-Saudi-plate\./iu, PHASE42_CAR_EXTERIOR_SPEC)
+    .replace(/Tall 195 cm, 88 kg lean-athletic build: medium-to-moderately-broad shoulders visibly wider than the waist, moderately developed chest, subtle deltoid roundness, long proportional limbs with filled-not-thin arms, proportionate adult male neck, and head anatomically scaled to tall frame\./iu, naturalBodyCompact())
+    .replace(/Tall 195 cm, 88 kg lean-athletic build: shoulders wider than waist, developed chest\/deltoids, long proportional limbs, filled arms, adult male neck, head scaled to the tall frame\./iu, naturalBodyCompact())
+    .replace(/Tall 195 cm, 88 kg lean-athletic; broad-shouldered; proportional-limbed\./iu, naturalBodyCompact())
     .replace(/Subject:\s*([^,]+),\s*([^,]+),\s*wearing ([^.]+)\./iu, "$1; $2; $3.")
     .replace(/\s{2,}/gu, " ")
     .trim();
@@ -227,7 +233,7 @@ function compactPhase41CarExteriorProtectedText(prompt, canonical) {
 
 function phase41SceneProtected(sentence, canonical, routedInput, section) {
   const id = section?.id;
-  if (id === "carExterior" && /2017 Range Rover Sport Autobiography Dynamic|Location:|Fuji White/iu.test(sentence)) return true;
+  if (id === "carExterior" && /2017 Range Rover Sport Autobiography Dynamic|Fuji White|Tires have realistic contact shadow|Saudi villa|small grocery|marked outdoor lot|yellow-and-black|sandy shoulder|mall parking|open door reveals Ivory/iu.test(sentence)) return true;
   if (id === "car" && /Inside stationary 2017 Range Rover Sport Autobiography Dynamic|Ivory perforated leather|LHD vehicle-relative|driver's door and side window/iu.test(sentence)) return true;
   if (id === "bedroom" && /bedroom/iu.test(sentence)) return true;
   if (id === "gym" && /gym environment/iu.test(sentence)) return true;
@@ -279,7 +285,7 @@ function enforcePhase41SectionWiring(prompt, canonical, routedInput, section) {
   }
   if (wiring.selfieArmLock && !source.includes(SELFIE_ARM_LOCK)) source = insertAfterOpening(source, SELFIE_ARM_LOCK);
   if (wiring.body && !bodyEvidencePresent) {
-    const fallbackBody = section.id === "carExterior" ? "Tall 195 cm, 88 kg lean-athletic; broad-shouldered; proportional-limbed." : body;
+    const fallbackBody = section.id === "carExterior" ? naturalBodyCompact() : body;
     if (fallbackBody) source = `${source} ${fallbackBody}`.trim();
   }
   if (wiring.body && !scaleEvidencePresent) {
