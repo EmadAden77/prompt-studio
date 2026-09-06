@@ -231,12 +231,13 @@ function compactPhase41CarExteriorProtectedText(prompt, canonical) {
   if (canonical?.scene?.id !== "carExterior") return String(prompt || "");
   return String(prompt || "")
     .replace(/2017 Range Rover Sport Autobiography Dynamic L494, Fuji White; gloss-black-grille\/vents; 22-inch-dark-alloys; quad-exhausts; LED-DRLs; panoramic-glass; transparent-reflective-glass\/faint-Ivory-cabin; Dynamic-badge; illegible-Saudi-plate\./iu, PHASE42_CAR_EXTERIOR_SPEC)
+    .replace(/a red-and-white fine checkered shemagh with one end casually thrown over the shoulder and the other hanging at the chest, held by a black doubled-cord iqal seated firmly on the crown, relaxed youthful drape, the shemagh lies flat under the iqal, not a turban\./iu, "a red-and-white fine checkered shemagh, one end casually thrown over the shoulder and the other hanging at the chest, held by a black doubled-cord iqal; flat under the iqal, not a turban.")
     .replace(/Tall 195 cm, 88 kg lean-athletic build: medium-to-moderately-broad shoulders visibly wider than the waist, moderately developed chest, subtle deltoid roundness, long proportional limbs with filled-not-thin arms, proportionate adult male neck, and head anatomically scaled to tall frame\./iu, naturalBodyCompact())
     .replace(/Tall 195 cm, 88 kg lean-athletic build: shoulders wider than waist, developed chest\/deltoids, long proportional limbs, filled arms, adult male neck, head scaled to the tall frame\./iu, naturalBodyCompact())
     .replace(/Tall 195 cm, 88 kg lean-athletic; broad-shouldered; proportional-limbed\./iu, naturalBodyCompact())
     .replace(/\bNo facial alteration\/lengthening\.\s*/iu, "")
-    .replace(/\bstanding beside the open driver door;\s*neutral;\s*(white thobe with red-and-white shemagh and black iqal)\./iu, "neutral; $1.")
     .replace(/Subject:\s*([^,]+),\s*([^,]+),\s*wearing ([^.]+)\./iu, "$1; $2; $3.")
+    .replace(/\bstanding beside the open driver door;\s*neutral;\s*(white thobe with red-and-white shemagh and black iqal)\./iu, "neutral; $1.")
     .replace(/\s{2,}/gu, " ")
     .trim();
 }
