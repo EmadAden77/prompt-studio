@@ -109,16 +109,16 @@ function compactLightingSentence(prompt) {
 function requiredExteriorSentences(canonical) {
   const required = [
     FROZEN_EXTERIOR_SPEC,
+    locationPoseSentence(canonical),
     "Alloy wheels show light brake dust and the tires sit with realistic contact shadow on the ground.",
     "Transparent glass carries natural surroundings reflections while retaining a faint view into the Ivory cabin, and the panoramic roof reflects the sky."
   ];
   const interior = interiorSentence(canonical);
-  if (interior) required.splice(1, 0, interior);
+  if (interior) required.splice(2, 0, interior);
   return required;
 }
 function optionalExteriorSentences(canonical) {
   const optional = [
-    locationPoseSentence(canonical),
     "Fuji White paint carries fine dust on lower panels and wheel arches with environment reflections stretched across the doors."
   ];
   if (isNight(canonical)) optional.push("An elongated light-pole reflection runs along the hood and roof.");
@@ -164,11 +164,12 @@ function insertWithinCap(prompt, canonical, maxWords = 250) {
   if (requiredText.split(/(?<=[.!?])\s+/u).length < required.length) {
     const compactRequired = [
       FROZEN_EXTERIOR_SPEC,
+      locationPoseSentence(canonical),
       "The tires sit with realistic contact shadow on the ground.",
       "Transparent glass carries natural reflections and a faint view into the Ivory cabin."
     ];
     const interior = interiorSentence(canonical);
-    if (interior) compactRequired.splice(1, 0, interior);
+    if (interior) compactRequired.splice(2, 0, interior);
     requiredText = fitSentences(base, canonical, compactRequired, maxWords);
   }
 
