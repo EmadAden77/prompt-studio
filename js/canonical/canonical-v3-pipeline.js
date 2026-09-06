@@ -137,21 +137,55 @@ function enforcePhase34CarExteriorHeadwearBudget(prompt, canonical) {
   return String(prompt).replace(PHASE34_REDUNDANT_GLASS_SENTENCE, "").replace(/\s{2,}/gu, " ").trim();
 }
 
+function compactPhase40CarExteriorBudget(prompt, maxWords = 250) {
+  let compacted = String(prompt || "").replace(/\s{2,}/gu, " ").trim();
+  if (wordCount(compacted) <= maxWords) return compacted;
+
+  // Preserve the selfie camera facts while removing prose that says the same thing twice.
+  compacted = compacted.replace(
+    /Camera near eye level at 45–60 cm, no steep downward angle; relaxed upright posture, spine extension, enough upper torso to communicate the tall athletic frame\./iu,
+    "Camera near eye level at 45–60 cm, no steep downward angle; relaxed posture preserves tall-frame perspective."
+  );
+  if (wordCount(compacted) <= maxWords) return compacted;
+
+  // The strict identity lock already forbids face slimming/lengthening explicitly.
+  if (/Identity strictly preserved from the reference image:/iu.test(compacted)) {
+    compacted = compacted.replace(/No facial alteration\/lengthening\.\s*/iu, "");
+  }
+  if (wordCount(compacted) <= maxWords) return compacted;
+
+  compacted = compacted.replace(
+    /Shoulder and head height relative to roofline, door frame, and handle reflect a genuine 195 cm adult\./iu,
+    "Roofline, door and handle scale reads as a genuine 195 cm adult."
+  );
+  if (wordCount(compacted) <= maxWords) return compacted;
+
+  compacted = compacted.replace(/Captured with the selected physically plausible front-camera geometry\./iu, "Plausible front-camera geometry.");
+  if (wordCount(compacted) <= maxWords) return compacted;
+
+  compacted = compacted.replace(/Subtle tone variation between forehead and cheeks\.\s*/iu, "").replace(/\s{2,}/gu, " ").trim();
+  return compacted;
+}
+
 function enforcePhase40FinalCarExteriorSelection(prompt, routedInput) {
   if (String(routedInput?.studioSection || "") !== "carExterior") return prompt;
   const required = describeCompactCarExteriorSelection(routedInput);
   const source = String(prompt || "");
-  if (source.includes(required)) return source;
+  let next = source;
 
-  const groundingSentence = /[^.!?]*(?:tires grounded by realistic contact shadow|Tires have realistic contact shadow|Tires cast realistic contact shadows)\./iu;
-  if (groundingSentence.test(source)) {
-    return source.replace(groundingSentence, required).replace(/\s{2,}/gu, " ").trim();
+  if (!source.includes(required)) {
+    const groundingSentence = /[^.!?]*(?:tires grounded by realistic contact shadow|Tires have realistic contact shadow|Tires cast realistic contact shadows)\./iu;
+    if (groundingSentence.test(source)) {
+      next = source.replace(groundingSentence, required).replace(/\s{2,}/gu, " ").trim();
+    } else {
+      const lightingIndex = Math.max(source.lastIndexOf("Lighting follows "), source.lastIndexOf("Lighting uses "));
+      next = lightingIndex < 0
+        ? `${source} ${required}`.replace(/\s{2,}/gu, " ").trim()
+        : `${source.slice(0, lightingIndex)}${required} ${source.slice(lightingIndex)}`.replace(/\s{2,}/gu, " ").trim();
+    }
   }
 
-  const lightingIndex = Math.max(source.lastIndexOf("Lighting follows "), source.lastIndexOf("Lighting uses "));
-  return lightingIndex < 0
-    ? `${source} ${required}`.replace(/\s{2,}/gu, " ").trim()
-    : `${source.slice(0, lightingIndex)}${required} ${source.slice(lightingIndex)}`.replace(/\s{2,}/gu, " ").trim();
+  return compactPhase40CarExteriorBudget(next);
 }
 
 export function buildCanonicalV3UserOutput(rawInput = {}, sceneData = undefined) {
