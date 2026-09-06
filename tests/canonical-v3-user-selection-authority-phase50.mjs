@@ -44,9 +44,9 @@ assert.doesNotMatch(day.prompt,/Night physics:|Raised phone ISO|night remains vi
 assert.ok(words(day.prompt)<=250);
 
 const engineGate=fs.readFileSync(new URL("../js/canonical/engine-gate.js",import.meta.url),"utf8");
-assert.match(engineGate,/from\s+["']\.\/canonical-v3-phase50\.js["']/u,"live engine gate must use Phase 50");
+assert.match(engineGate,/from\s+["']\.\/canonical-v3-phase51\.js["']/u,"live engine gate must use Phase 51 while Phase 50 remains the selection-authority behavior contract");
 
 console.log(`PHASE50_SCREENSHOT_WORDS=${words(out.prompt)}`);
 console.log(`PHASE50_SCREENSHOT_SAMPLE=${out.prompt}`);
 console.log("PHASE50_DETERMINISM=10/10");
-console.log("Phase 50 user selection authority: PASS");
+console.log("Phase 50 user selection authority: PASS under Phase 51 live gate");
