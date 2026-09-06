@@ -2,8 +2,8 @@ import { deepFreeze } from "./_freeze.js";
 
 export const SECTION = deepFreeze({
   id:"carExterior",
-  label:"Car Exterior",
-  description:"Selfie beside the locked 2017 Range Rover",
+  label:"🚘 سيلفي بجانب السيارة",
+  description:"بجانب الرنج روفر 2017: مواقع الوقوف والوضعيات والإضاءة",
   captureType:"direct_front_camera_selfie",
   scenes:["carExterior"],
   clothingSource:"authority",
@@ -14,7 +14,9 @@ export const SECTION = deepFreeze({
     hard:["2017 Range Rover Sport Autobiography Dynamic L494","Fuji White","exterior only"],
     composition:["location and pose authority"],
     interaction:["beside vehicle"],
-    exclusions:["driving"]
+    exclusions:["driving"],
+    routing:{ intentType:"selfie", sceneMode:"fixed", defaultScene:"carExterior", authority:"carExterior" },
+    ui:{ scenarioMode:"custom", scene:"custom", groupMode:"single", captureMode:"normal", customFallback:"a parked 2017 Range Rover exterior selfie setting", showScenePicker:false, dedicatedControls:"carExterior" }
   }
 });
 
