@@ -91,4 +91,6 @@ export function buildCanonicalV3UserOutput(rawInput = {}, sceneData = undefined)
   return Object.freeze({...base,phase49:Object.freeze({nightPhysics:physics,flash:isFlash(rawInput,base.section?.id),determinism:"10/10"}),prompt});
 }
 
+if (typeof document !== "undefined") void import("../phase49-night-lighting-ui.js");
+
 export default buildCanonicalV3UserOutput;
