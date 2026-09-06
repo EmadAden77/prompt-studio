@@ -73,7 +73,7 @@ function isCarLegacyRedundancy(part){
 function compactCarLighting(raw){
   return text(raw.time)==="day"
     ? "Lighting: selected real daylight/practical source, consistent cabin shadows and ordinary phone exposure."
-    : "Lighting: selected night practical source, consistent cabin shadows, modest phone noise and clearly nocturnal exposure.";
+    : "Lighting: car interior light is the dominant night source with a source-matched cast; raised ISO adds subtle grain and shadow noise; exposure keeps a natural face/background tradeoff and remains clearly nocturnal.";
 }
 
 function applyCarInteriorAuthority(prompt,raw){
@@ -118,7 +118,10 @@ function carSelectionSatisfied(requiredText,out){
   }
   if(/^Tall 195 cm, 88 kg lean-athletic build/iu.test(requiredText)) return /Tall 195 cm, 88 kg lean-athletic build/iu.test(out);
   if(/^(?:Pose:\s*)?(?:standing beside|leaning against|standing outside|front grille|rear tailgate)/iu.test(requiredText)) return /Pose: seated naturally in the driver seat|driver (?:close|low|seat)|roof-context/iu.test(out);
-  if(/^Lighting follows the selected real-world/iu.test(requiredText)) return /Lighting: selected (?:night practical|real daylight\/practical) source/iu.test(out);
+  if(/^Lighting follows the selected real-world/iu.test(requiredText)) return /Lighting: selected real daylight\/practical source|Lighting: car interior light is the dominant night source/iu.test(out);
+  if(/^Night physics: the dominant visible source is the car interior light/iu.test(requiredText)) return /car interior light is the dominant night source.*source-matched cast/iu.test(out);
+  if(/^Raised phone ISO introduces/iu.test(requiredText)) return /raised ISO adds subtle grain and shadow noise/iu.test(out);
+  if(/^Exposure keeps/iu.test(requiredText)) return /exposure keeps a natural face\/background tradeoff.*clearly nocturnal/iu.test(out);
   return false;
 }
 
@@ -172,7 +175,7 @@ function findContradictions(raw,prompt){
     if(!/Cabin fidelity:.*2017 Range Rover Sport Autobiography Dynamic L494/iu.test(prompt)) issues.push("car-cabin-fidelity-missing");
     if(!/Capture physics:.*no driving/iu.test(prompt)) issues.push("car-capture-physics-missing");
     if(!/Pose:.*driver|driver (?:close|low|seat)|roof-context|seated naturally in the driver seat/iu.test(prompt)) issues.push("car-driver-pose-missing");
-    if(!/Lighting: selected (?:night practical|real daylight\/practical) source/iu.test(prompt)) issues.push("car-lighting-physics-missing");
+    if(!/Lighting: selected real daylight\/practical source|Lighting: car interior light is the dominant night source/iu.test(prompt)) issues.push("car-lighting-physics-missing");
   }
   if(section==="carExterior"&&/stationary driver's seat|center console right|steering wheel.*chest/iu.test(prompt)) issues.push("car-interior-leak");
   if(section==="gym"&&/bedside lamp|bedroom curtains|driver seat/iu.test(prompt)) issues.push("gym-context-leak");
