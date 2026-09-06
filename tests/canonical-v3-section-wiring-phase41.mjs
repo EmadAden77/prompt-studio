@@ -24,7 +24,7 @@ const specs = Object.freeze({
   bedroom:{ scene:"bedroom", clothing:"home-flannel-red-black", poses:["seated bed selfie pose","standing bedroom selfie pose"], sceneEvidence:/bedroom|bed|sofa/iu },
   gym:{ scene:"gym", clothing:"sport-tracksuit-olive", poses:["seated gym selfie pose","standing gym selfie pose"], sceneEvidence:/gym|bench|rack|bar/iu },
   street:{ scene:"street", clothing:"thobe-redshemagh-iqal", poses:["street standing selfie pose","street walking selfie pose"], sceneEvidence:/street|parking|alley|construction|bufia/iu },
-  accidental:{ scene:"street", clothing:"casual-tee-black-jeans-blue", poses:["phone-rising","off-center-motion"], sceneEvidence:/street|parking/iu },
+  accidental:{ scene:"street", clothing:"casual-shirt-brown-jeans-blue", poses:["phone-rising","off-center-motion"], sceneEvidence:/street|parking/iu },
   custom:{ scene:"custom", clothing:"casual-tee-black-jeans-blue", poses:["custom scene selfie pose","custom walking selfie pose"], sceneEvidence:/Phase 41 courtyard with a low stone wall and two potted plants/iu }
 });
 
