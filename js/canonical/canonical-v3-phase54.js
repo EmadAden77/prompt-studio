@@ -117,4 +117,7 @@ export function buildCanonicalV3UserOutput(rawInput={},sceneData=undefined){
 }
 
 export { buildWikiPromptSectionContract, normalizePhase54Aliases } from "./wikiprompt-realistic-selfie-phase54.js";
+
+if(typeof document!=="undefined") void import("../phase54-section-field-ui.js");
+
 export default buildCanonicalV3UserOutput;
