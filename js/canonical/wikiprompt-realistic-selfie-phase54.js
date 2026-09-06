@@ -36,7 +36,7 @@ const meaningful=(key,value)=>{
 const SECTION_GUIDANCE=Object.freeze({
   solo:"Keep the moment activity-led and candid; supporting details must match the selected place rather than inventing a staged setup.",
   group:"Keep one clear phone-holder and a shared candid group moment; people remain distinct and naturally distributed instead of posing identically.",
-  car:"Keep the subject naturally seated in the stationary driver position; cabin light, accessories and hand placement must remain consistent with the selected interior scene.",
+  car:"Keep the subject naturally seated in the stationary driver position; only the selected cabin, seat, driver pose and physically motivated car lighting may shape the interior scene. Generic city, street, crowd, background-density, hair, skin, fabric-state or unrelated environment controls must not be injected into the car-interior prompt.",
   carExterior:"Keep the vehicle as contextual support to the selfie; preserve the selected L494 geometry and pose without turning the frame into a product display.",
   bedroom:"Keep the room lived-in rather than staged; furniture contact, clothing and small imperfections must match the subject's actual action.",
   gym:"Keep the scene workout-consistent; athletic context, subtle exertion cues and accessories must fit the activity while explicit user clothing remains authoritative.",
@@ -89,6 +89,8 @@ export function normalizePhase54Aliases(rawInput={}){
 
 export function buildWikiPromptFieldEvidence(rawInput={}){
   const raw=normalizePhase54Aliases(rawInput);
+  const section=text(raw.studioSection||raw.scene);
+  if(section==="car") return Object.freeze([]);
   const evidence=[];
   for(const [key,label] of FIELD_DEFS){
     const value=raw[key];
@@ -106,7 +108,7 @@ export function buildWikiPromptSectionContract(rawInput={},base={}){
   const id=text(base?.section?.id||raw.studioSection)||"solo";
   const section=getSection(id)||getSection("solo");
   const guidance=SECTION_GUIDANCE[id]||SECTION_GUIDANCE.custom;
-  const evidence=buildWikiPromptFieldEvidence(raw);
+  const evidence=id==="car"?Object.freeze([]):buildWikiPromptFieldEvidence(raw);
   return Object.freeze({
     active:true,
     section:id,
