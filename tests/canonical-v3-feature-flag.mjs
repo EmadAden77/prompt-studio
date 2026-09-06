@@ -33,7 +33,8 @@ for (const [section, intent] of [
 for (const section of ["custom", ""]) assert.equal(isCanonicalV3Section(section), false, `${section || "empty"} must remain on legacy fallback`);
 assert.equal(shouldUseCanonicalV3("gym", resolvePromptEngineSelection()), true, "gym auto-enables Canonical V3");
 assert.equal(shouldUseCanonicalV3("street", resolvePromptEngineSelection()), true, "street auto-enables Canonical V3");
-assert.equal(shouldUseCanonicalV3("car", resolvePromptEngineSelection()), false, "legacy is the default");
+assert.equal(shouldUseCanonicalV3("carExterior", resolvePromptEngineSelection()), true, "carExterior must always use the hardened Canonical V3 selfie path");
+assert.equal(shouldUseCanonicalV3("car", resolvePromptEngineSelection()), false, "interior car legacy selection behavior remains unchanged");
 
 assert.equal(STUDIO_SECTION_OPTIONS.some((item) => item.value === "carExterior" && /سيلفي بجانب السيارة/u.test(item.label)), true);
 assert.deepEqual(VISIBLE_SCENE_KEYS, ["bedroom","gym","street","rangeRover","majlis","kashta","barbershop","grocery","rooftop","streetFootball","gasStation"]);
@@ -45,12 +46,13 @@ const exteriorOutput = buildCanonicalV3UserOutput({
   carExteriorLocation:"grocery",
   carExteriorPose:"door-open",
   carExteriorLighting:"interior-spill",
-  carExteriorClothing:"white-thobe",
+  clothing:"thobe-white",
   time:"night"
 });
 assert.equal(exteriorOutput.canonical.scene.id, "carExterior");
 assert.equal(exteriorOutput.canonical.scene.facts.carExteriorLocation, "grocery");
 assert.equal(exteriorOutput.canonical.scene.facts.carExteriorPose, "door-open");
+assert.notEqual(exteriorOutput.canonical.scene.facts.carExteriorLighting, "interior-spill", "interior spill is incompatible away from the open-door villa context chosen by the dedicated authority");
 assert.match(exteriorOutput.prompt, /Fuji White/iu);
 assert.match(exteriorOutput.prompt, /small grocery/iu);
 assert.match(exteriorOutput.prompt, /open driver door/iu);
@@ -116,4 +118,4 @@ const indexSource = fs.readFileSync(new URL("../index.html", import.meta.url), "
 assert.match(indexSource, /js\/canonical\/engine-gate\.js\?v=20260903-phase6/u, "live page must load the Phase 6 gate");
 assert.equal(/<script type="module" src="js\/physics-app-v7\.js\?v=20260903-json-clean2"><\/script>/u.test(indexSource), false, "index must not bypass the gate");
 
-console.log("✓ canonical-v3 feature flag, Phase 22 UI routing, and 2017 Range Rover spec contract passed");
+console.log("✓ canonical-v3 feature flag, Phase 40 carExterior hardening, Phase 22 UI routing, and 2017 Range Rover spec contract passed");
