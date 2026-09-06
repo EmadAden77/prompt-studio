@@ -31,14 +31,14 @@ export function normalizeStudioSectionState(raw = {}) {
     captureMode:ui.captureMode || "normal"
   };
   if (ui.customFallback && !String(state.customScene || "").trim()) state.customScene = ui.customFallback;
-  if (studioSection !== "group") {
+  if (state.groupMode !== "group") {
     state.groupCount = "3";
     state.cameraHolder = "A";
     state.groupArrangement = "natural-auto";
     state.groupInteraction = "casual";
     state.groupAutoFix = "on";
   }
-  if (studioSection !== "accidental") {
+  if (state.captureMode !== "accidental") {
     state.accidentalTrigger = "pocket";
     state.accidentalPhonePosition = "rising";
     state.accidentalMotion = "subtle";
