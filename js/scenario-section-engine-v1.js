@@ -1,4 +1,5 @@
 import { SCENES, sceneFamily } from "./wiki-selfie-data-v1.js";
+import { getSection } from "./sections/index.js";
 
 export const SCENARIO_DEFAULTS = Object.freeze({ scenarioMode:"bedroom" });
 export const SCENARIO_OPTIONS = Object.freeze([
@@ -31,7 +32,26 @@ export function getScenarioSceneOptions(scenarioMode = "bedroom") {
     .map(([value, scene]) => ({ value, label:scene.label }));
 }
 
+function normalizeStudioOwnedScenario(raw={}) {
+  const section=getSection(raw.studioSection);
+  if(!section) return null;
+  const normalizedLegacy=String(raw.scene||"")==="my_bedroom_text"?"bedroom":String(raw.scene||"");
+  const configured=section.scenes.includes(String(section.rules?.ui?.scene||""))?String(section.rules.ui.scene):"";
+  const scene=section.scenes.includes(normalizedLegacy)?normalizedLegacy:(configured||section.scenes[0]||normalizedLegacy||"street");
+  const scenarioMode=section.rules?.ui?.scenarioMode||scenarioForScene(scene);
+  const state={...raw,scenarioMode,scene};
+  if(scene!=="bedroom") state.bedroomWindow="";
+  if(scene!=="custom") {
+    state.customScene="";
+    state.customSceneDetails="";
+    state.sceneProfile="auto";
+  }
+  return state;
+}
+
 export function normalizeScenarioState(raw = {}) {
+  const studioOwned=normalizeStudioOwnedScenario(raw);
+  if(studioOwned) return studioOwned;
   const scenarioMode = SCENARIO_OPTIONS.some((item) => item.value === raw.scenarioMode) ? raw.scenarioMode : scenarioForScene(raw.scene);
   const allowedScenes = getScenarioSceneOptions(scenarioMode).map((item) => item.value);
   const scene = allowedScenes.includes(raw.scene) ? raw.scene : DEFAULT_SCENES[scenarioMode];
@@ -45,7 +65,7 @@ export function normalizeScenarioState(raw = {}) {
 
 export function buildScenarioLock(raw = {}) {
   const state = normalizeScenarioState(raw);
-  const active = FAMILY_LABELS[state.scenarioMode];
+  const active = FAMILY_LABELS[state.scenarioMode] || getSection(state.studioSection)?.label || state.studioSection || "المشهد";
   const disabled = SCENARIO_OPTIONS.filter((item) => item.value !== state.scenarioMode).map((item) => FAMILY_LABELS[item.value]);
   return {
     state,
