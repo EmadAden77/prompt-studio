@@ -120,3 +120,5 @@ jobs:
         run: node tests/canonical-v3-auto-selfie-geometry-phase45.mjs
       - name: Run Phase 46 natural prompt language
         run: node tests/canonical-v3-natural-prompt-language-phase46.mjs
+      - name: Run Phase 47 WikiPrompt philosophy merge
+        run: node tests/canonical-v3-wikiprompt-phase47.mjs
