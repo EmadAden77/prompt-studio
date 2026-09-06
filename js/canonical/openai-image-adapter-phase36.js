@@ -63,7 +63,22 @@ export function removeExactDuplicateSentences(prompt) {
 function applyAuthorityClothing(prompt, canonical) {
   const garment = text(canonical?.subjects?.primary?.clothing?.garment);
   if (!garment) return prompt;
-  return String(prompt || "").replace(/\bwearing selected [^.]+(?=\.)/giu, `wearing ${garment}`);
+  const source = String(prompt || "");
+  if (source.includes(garment)) return source;
+
+  let next = source.replace(/\bwearing selected [^.]+(?=\.)/giu, `wearing ${garment}`);
+  if (next !== source) return next;
+
+  next = source.replace(/\bSubject wearing [^.]+(?=\.)/iu, `Subject wearing ${garment}`);
+  if (next !== source) return next;
+
+  next = source.replace(/\bSubject:\s*([^.]*?),\s*wearing [^.]+(?=\.)/iu, `Subject: $1, wearing ${garment}`);
+  if (next !== source) return next;
+
+  next = source.replace(/\bThe primary subject has ([^.]*?),\s*wearing [^.]+(?=\.)/iu, `The primary subject has $1, wearing ${garment}`);
+  if (next !== source) return next;
+
+  return `${source} Subject wearing ${garment}.`.replace(/\s{2,}/gu, " ").trim();
 }
 
 function applySelfiePoseGuard(prompt, canonical) {
