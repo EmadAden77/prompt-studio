@@ -1,7 +1,6 @@
-import {
-  SCENES
-} from "./data.js";
+import { SCENES } from "./data.js";
 import { STUDIO_SECTION_OPTIONS } from "./studio-section-engine-v1.js";
+import { getSection } from "./sections/index.js";
 import {
   CLOTHING_CATALOG as UNIFIED_CLOTHING_CATALOG,
   CLOTHING_TOP_OPTIONS,
@@ -12,17 +11,12 @@ import {
   getCarExteriorLocationOptions,
   getCarExteriorPoseOptions
 } from "./car-exterior-authority.js";
-// CAR_EXTERIOR_CLOTHING_CATALOG is now a compatibility alias only; the live UI uses the clothing authority for every section.
 
 export const VISIBLE_SCENE_KEYS = Object.freeze([
   "bedroom", "gym", "street", "rangeRover", "majlis", "kashta",
   "barbershop", "grocery", "rooftop", "streetFootball", "gasStation"
 ]);
 
-const SECTION_GARMENT_SCENE = Object.freeze({
-  solo:"street", street:"street", bedroom:"bedroom", gym:"gym", car:"rangeRover",
-  carExterior:"carExterior", accidental:"street", custom:"street", group:"street"
-});
 const DETAIL_FIELD_IDS = Object.freeze(["fabric", "fabric-weight", "iron-state", "wear-state", "clothing-fit"]);
 const SCENE_LABELS = Object.freeze({
   bedroom:"غرفة نوم واقعية", gym:"نادٍ سعودي حديث", street:"شارع أو موقف سعودي", rangeRover:"رنج روفر 2017",
@@ -32,8 +26,16 @@ const SCENE_LABELS = Object.freeze({
 
 let rememberedClothingValue = "";
 
+function sectionConfig(section = activeSection()) { return getSection(section); }
+function sectionSceneKeys(section = activeSection()) {
+  const keys = (sectionConfig(section)?.scenes || []).filter((key) => VISIBLE_SCENE_KEYS.includes(key));
+  return keys.length ? keys : VISIBLE_SCENE_KEYS;
+}
+
 export function garmentSceneForSection(section = "", selectedScene = "") {
-  return selectedScene || SECTION_GARMENT_SCENE[section] || "street";
+  const config = getSection(section);
+  if (selectedScene && config?.scenes?.includes(selectedScene)) return selectedScene;
+  return config?.scenes?.find((scene) => scene !== "custom") || selectedScene || "street";
 }
 
 export function garmentOptionsForSection() { return getUnifiedClothingOptions(); }
@@ -188,7 +190,7 @@ function setControlFieldState(control, hidden) {
 }
 
 function syncCarExteriorVisibility() {
-  const active = activeSection() === "carExterior";
+  const active = sectionConfig()?.rules?.ui?.dedicatedControls === "carExterior";
   const fields = document.querySelector("#car-exterior-fields");
   if (fields) fields.hidden = !active;
   for (const select of [
@@ -201,31 +203,21 @@ function syncCarExteriorVisibility() {
 
   setControlFieldState(document.querySelector("#pose"), active);
   setControlFieldState(document.querySelector("#pose-family"), active);
-
-  // carExterior has dedicated location/pose/lighting authority. Hide and disable
-  // legacy/custom controls so FormData cannot leak stale values into Canonical V3.
   setControlFieldState(document.querySelector("#lighting"), active);
   if (active) {
     setFieldState("#custom-scene-field", true);
     setFieldState("#custom-scene-details-field", true);
     setFieldState("#scene-profile-field", true);
   } else {
-    // Their hidden/visible state belongs to the legacy section router. Only release
-    // the disabled state here; do not force a custom-only field visible elsewhere.
     setFieldDisabled("#custom-scene-field", false);
     setFieldDisabled("#custom-scene-details-field", false);
     setFieldDisabled("#scene-profile-field", false);
   }
 
-  // Manual legacy realism/context panels are not authorities in the hardened
-  // carExterior path. Automatic realism layers still run inside the adapter.
   setFieldState("#post-processing-panel", active);
   setFieldState('[aria-labelledby="realism-core-title"]', active);
   setFieldState('[aria-labelledby="advanced-realism-title"]', active);
   setFieldState(".context-secondary-panel", active);
-
-  // Reference identity is authoritative for hair/skin in carExterior. Do not expose
-  // styling knobs that can imply face/identity drift; expression remains active.
   setControlFieldState(document.querySelector("#hair"), active);
   setControlFieldState(document.querySelector("#skin"), active);
 
@@ -239,9 +231,10 @@ function syncCarExteriorVisibility() {
 function repopulateSceneSelect(preferred = "") {
   const scene = document.querySelector("#scene");
   if (!scene) return;
-  const selected = VISIBLE_SCENE_KEYS.includes(preferred) ? preferred : (VISIBLE_SCENE_KEYS.includes(scene.value) ? scene.value : "bedroom");
+  const keys = sectionSceneKeys();
+  const selected = keys.includes(preferred) ? preferred : (keys.includes(scene.value) ? scene.value : (keys[0] || "street"));
   scene.replaceChildren();
-  for (const key of VISIBLE_SCENE_KEYS) {
+  for (const key of keys) {
     const node = document.createElement("option");
     node.value = key;
     node.textContent = SCENES[key]?.label || SCENE_LABELS[key] || key;
@@ -251,16 +244,16 @@ function repopulateSceneSelect(preferred = "") {
 }
 
 function exposeSceneSelectForDailyScenes() {
-  const section = activeSection();
+  const config = sectionConfig();
   const field = document.querySelector("#scene-field");
   if (!field) return;
-  if (["solo", "group"].includes(section)) {
-    repopulateSceneSelect(field.dataset.phase22Selected || selectedScene() || "bedroom");
+  if (config?.rules?.ui?.showScenePicker) {
+    repopulateSceneSelect(field.dataset.phase22Selected || selectedScene() || config.scenes[0] || "street");
     field.hidden = false;
     const title = field.querySelector(":scope > span");
     const help = field.querySelector(":scope > small");
     if (title) title.textContent = "المشهد";
-    if (help) help.textContent = "جميع المشاهد اليومية الجديدة متاحة من نفس القائمة.";
+    if (help) help.textContent = "المشاهد المتاحة تأتي من وحدة قسم التصوير النشطة.";
   }
 }
 
@@ -314,7 +307,7 @@ export function installPhase22UI() {
   document.addEventListener("change", (event) => {
     if (event.target?.id === "scene") {
       const field = document.querySelector("#scene-field");
-      if (field && VISIBLE_SCENE_KEYS.includes(event.target.value)) field.dataset.phase22Selected = event.target.value;
+      if (field && sectionSceneKeys().includes(event.target.value)) field.dataset.phase22Selected = event.target.value;
       setTimeout(() => {
         repopulateSceneSelect(field?.dataset.phase22Selected || event.target.value);
         syncGarmentSelect();
