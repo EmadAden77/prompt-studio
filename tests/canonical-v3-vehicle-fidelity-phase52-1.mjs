@@ -38,9 +38,11 @@ assert.doesNotMatch(street.prompt,/Vehicle fidelity:/iu);
 assert.ok(words(street.prompt)<=250);
 
 const engineGate=fs.readFileSync(new URL("../js/canonical/engine-gate.js",import.meta.url),"utf8");
-assert.match(engineGate,/from\s+["']\.\/canonical-v3-phase52-1\.js["']/u,"live engine gate must use Phase 52.1");
+assert.match(engineGate,/from\s+["']\.\/canonical-v3-phase52-1\.js["']/u,"historical Phase 52.1 gate contract must remain importable");
 
 console.log("PHASE52_1_VIEWS=side,front-quarter,rear-quarter,door-open");
 console.log(`PHASE52_1_SIDE_WORDS=${words(buildCanonicalV3UserOutput(base({carExteriorPose:"door-lean"})).prompt)}`);
 console.log("PHASE52_1_DETERMINISM=10/10");
 console.log("Phase 52.1 vehicle fidelity contract: PASS");
+
+await import("./canonical-v3-car-exterior-reviewer-phase53.mjs");
