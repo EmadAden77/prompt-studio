@@ -114,3 +114,5 @@ jobs:
         run: node tests/canonical-v3-section-modules-phase40.mjs
       - name: Run Phase 41 full section field-wiring audit
         run: node tests/canonical-v3-section-wiring-phase41.mjs
+      - name: Run Phase 42 prompt text cleanup
+        run: node tests/canonical-v3-text-cleanup-phase42.mjs
