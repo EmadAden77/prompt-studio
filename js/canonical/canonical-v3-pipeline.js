@@ -2,8 +2,9 @@ import { buildCanonicalV3 } from "../canonical-v3-engine.js";
 import { resolveCanonicalConflicts } from "./conflict-resolver.js";
 import { buildOpenAIImagePrompt, describeHeadwear } from "./openai-image-adapter-phase36.js";
 import { applyGroupPhase13, enrichGroupPromptPhase13 } from "./group-phase13.js";
-import { SCENES, LIGHTING_OPTIONS, CAR_EXTERIOR_LOCATIONS, CAR_EXTERIOR_POSES } from "../data.js";
+import { SCENES } from "../data.js";
 import { resolveClothingText } from "../clothing-authority.js";
+import { resolveCarExteriorSelection } from "../car-exterior-authority.js";
 
 export const CAR_EXTERIOR_PROMPT_WORD_BUDGET = 280;
 const PHASE34_ROUTING_WORD_BUDGET = 250;
@@ -41,7 +42,6 @@ const IRON_TEXT = Object.freeze({
   unpressed:"unpressed"
 });
 
-function optionText(options, value) { return options?.find?.((item) => item.value === value)?.text || ""; }
 function humanize(value) { return String(value || "").trim().replace(/[_-]+/gu, " ").replace(/\s+/gu, " "); }
 function wordCount(value) { return String(value || "").trim().split(/\s+/u).filter(Boolean).length; }
 
@@ -67,15 +67,20 @@ export function applySectionCaptureRouting(rawInput = {}) {
   if (REAL_SECTION_SCENES.has(String(raw.scene || ""))) raw.customScene = "";
   raw.pose = selfieSafePose(raw.pose, route.captureType);
   if (section === "carExterior") {
-    const requestedCarPose = String(raw.carExteriorPose || "").trim();
-    const safeCarPose = selfieSafePose(requestedCarPose, route.captureType);
-    raw.carExteriorPose = safeCarPose !== requestedCarPose ? "front-grille" : (requestedCarPose || "door-lean");
+    const selection = resolveCarExteriorSelection(raw);
+    raw.time = selection.time;
+    raw.carExteriorLocation = selection.location;
+    raw.carExteriorPose = selection.pose;
+    raw.carExteriorLighting = selection.lighting;
   }
   return raw;
 }
 
 function resolveClothingDetails(raw, clean) {
-  const garment = resolveClothingText(raw.carExteriorClothing || raw.clothing, raw);
+  // The unified visible #clothing control is authoritative. The old hidden
+  // carExteriorClothing key is fallback-only for historical payloads.
+  const selectedClothing = raw.clothing || (raw.studioSection === "carExterior" ? raw.carExteriorClothing : "");
+  const garment = resolveClothingText(selectedClothing, raw);
   const fabricValue = raw.fabric || clean.fabric;
   const weightValue = raw.fabricWeight || clean.fabricWeight;
   const wearValue = raw.wearState || clean.wearState;
@@ -104,23 +109,23 @@ function phase23Input(rawInput, cleanInput) {
     pose:raw.pose || clean.pose
   };
   if (raw.studioSection === "carExterior") {
-    const location = String(raw.carExteriorLocation || "villa");
-    const pose = String(raw.carExteriorPose || "door-lean");
-    const time = String(raw.time || "night") === "day" ? "day" : "night";
-    const lightingId = String(raw.carExteriorLighting || LIGHTING_OPTIONS.carExterior?.[time]?.[0]?.value || "");
-    const locationText = optionText(CAR_EXTERIOR_LOCATIONS, location) || optionText(CAR_EXTERIOR_LOCATIONS, "villa");
-    const poseText = optionText(CAR_EXTERIOR_POSES, pose) || pose;
+    const selection = resolveCarExteriorSelection(raw);
     return {
       ...clean,
       studioSection:"carExterior",
       intentType:"selfie",
       captureType:"direct_front_camera_selfie",
       scene:"carExterior",
-      customScene:`A parked Range Rover exterior selfie, ${locationText}, with the subject ${poseText}`,
-      pose:poseText,
-      lighting:optionText(LIGHTING_OPTIONS.carExterior?.[time], lightingId) || clean.lighting,
-      time,
-      sceneFacts:{ ...(clean.sceneFacts && typeof clean.sceneFacts === "object" ? clean.sceneFacts : {}), carExteriorLocation:location, carExteriorPose:pose }
+      customScene:`A parked Range Rover exterior selfie, ${selection.locationText}, with the subject ${selection.poseText}`,
+      pose:selection.poseText,
+      lighting:selection.lightingText || clean.lighting,
+      time:selection.time,
+      sceneFacts:{
+        ...(clean.sceneFacts && typeof clean.sceneFacts === "object" ? clean.sceneFacts : {}),
+        carExteriorLocation:selection.location,
+        carExteriorPose:selection.pose,
+        carExteriorLighting:selection.lighting
+      }
     };
   }
   if (DAILY_SCENE_KEYS.has(clean.scene) && SCENES[clean.scene]?.environment) return { ...clean, customScene:SCENES[clean.scene].environment };
