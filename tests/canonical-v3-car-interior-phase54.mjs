@@ -6,19 +6,27 @@ const words=value=>String(value||"").trim().split(/\s+/u).filter(Boolean).length
 
 const carSection=getSection("car");
 assert.equal(carSection.rules.wiring.enabled,true);
+for(const key of ["clothing","customClothing","lighting","pose","expression","body","selfieArmLock","time","realismCore"]){
+  assert.equal(carSection.rules.wiring[key],true,`car core option ${key} must remain active`);
+}
 for(const key of [
-  "clothing","customClothing","fabric","fabricWeight","ironState","wearState","clothingFit",
-  "lighting","pose","expression","body","selfieArmLock","selfieAngle","composition","hair","skin","time",
-  "realismCore","advancedRealism","accessoryProfile","accessoryDetail","objectProfile","environmentNote","postProcessing"
-]) assert.equal(carSection.rules.wiring[key],true,`car option ${key} must be active`);
+  "fabric","fabricWeight","ironState","wearState","clothingFit","selfieAngle","composition","hair","skin",
+  "advancedRealism","accessoryProfile","accessoryDetail","objectProfile","environmentNote","postProcessing"
+]){
+  assert.equal(carSection.rules.wiring[key],false,`unrelated car option ${key} must be isolated`);
+}
 assert.equal(carSection.rules.ui.promptTarget,"chatgpt-images");
 assert.equal(carSection.rules.ui.enforceRealism,true);
 assert.equal(carSection.rules.ui.preventCrossSectionLeakage,true);
+assert.equal(carSection.rules.ui.dedicatedControls,"carInterior");
+assert.equal(carSection.rules.ui.activateCommonControls,false);
 assert.ok(carSection.rules.hard.includes("stationary vehicle"));
 assert.ok(carSection.rules.hard.includes("subject seated in driver seat"));
 assert.ok(carSection.rules.exclusions.includes("passenger-seat relocation"));
 assert.ok(carSection.rules.exclusions.includes("mirrored LHD cabin"));
 assert.ok(carSection.rules.exclusions.includes("driving motion"));
+assert.ok(carSection.rules.exclusions.includes("city landmark staging"));
+assert.ok(carSection.rules.exclusions.includes("busy street or crowd staging"));
 
 const raw={
   hasReference:true,
@@ -43,6 +51,8 @@ assert.equal(out.phase54.promptTarget,"chatgpt-images");
 assert.equal(out.phase54.carInteriorAuthority,true);
 assert.equal(out.phase54.physicalRealismEnforced,true);
 assert.equal(out.phase54.contradictions.length,0);
+assert.equal(out.phase54.fieldEvidence.length,0,"car interior must not receive generic WikiPrompt field evidence");
+assert.equal(out.phase54.injectedFieldEvidence.length,0,"car interior must not inject generic Selected controls");
 assert.match(out.prompt,/^ChatGPT Images: create one physically plausible front-camera selfie inside this parked vehicle/iu);
 assert.match(out.prompt,/Car-interior lock: parked LHD, driver seat only/iu);
 assert.match(out.prompt,/door\/window physically left/iu);
@@ -62,14 +72,43 @@ assert.match(out.prompt,/Lighting: car interior light is the dominant night sour
 assert.match(out.prompt,/source-matched cast/iu);
 assert.match(out.prompt,/raised ISO adds subtle grain and shadow noise/iu);
 assert.match(out.prompt,/exposure keeps a natural face\/background tradeoff and remains clearly nocturnal/iu);
-assert.match(out.prompt,/plain steel wristwatch/iu);
-assert.match(out.prompt,/ordinary parked-car surroundings visible softly through the side glass/iu);
-assert.match(out.prompt,/three-quarter/iu);
+assert.doesNotMatch(out.prompt,/Selected controls:/iu);
+assert.doesNotMatch(out.prompt,/plain steel wristwatch/iu,"unrelated accessory detail must not be injected into car interior");
+assert.doesNotMatch(out.prompt,/ordinary parked-car surroundings visible softly through the side glass/iu,"generic environment note must not be injected into car interior");
+assert.doesNotMatch(out.prompt,/three-quarter/iu,"generic selfie-angle evidence must not override car interior authority");
 assert.doesNotMatch(out.prompt,/(?:standing|leaning)\s+(?:beside|against)\s+the\s+(?:closed|open)\s+driver\s+door/iu);
 assert.doesNotMatch(out.prompt,/front grille|rear tailgate|tire contact shadow/iu);
 assert.doesNotMatch(out.prompt,/In the frame, the driver's door and side window appear/iu,"ambiguous image-left/right legacy mapping must be removed");
 assert.doesNotMatch(out.prompt,/Pose:\s*.*(?:standing|walking|lying|bed|sofa|gym|outside)/iu);
 assert.ok(words(out.prompt)<=250,`car interior ChatGPT prompt budget exceeded (${words(out.prompt)})`);
+
+// Regression from the real ChatGPT Images failure: these stale generic controls
+// previously produced city landmarks, busy traffic and a cotton-jersey/formal-shirt
+// contradiction in an interior-only prompt.
+const screenshotCase=buildCanonicalV3UserOutput({
+  hasReference:true,
+  studioSection:"car",
+  scene:"rangeRover",
+  time:"night",
+  clothing:"formal-shirt-gray-trouser-black",
+  expression:"neutral",
+  pose:"driver-close",
+  lighting:"car-night",
+  city:"dammam",
+  hair:"hand-neat",
+  fabric:"cotton-jersey",
+  ironState:"normal-pressed",
+  wearState:"fresh",
+  messiness:"busy"
+});
+assert.equal(screenshotCase.phase54.fieldEvidence.length,0);
+assert.equal(screenshotCase.phase54.injectedFieldEvidence.length,0);
+assert.doesNotMatch(screenshotCase.prompt,/Selected controls:|city=dammam|hair=hand-neat|fabric=cotton-jersey|iron=normal-pressed|wear=fresh|background=busy/iu);
+assert.doesNotMatch(screenshotCase.prompt,/Dammam|busy traffic|busy street|crowd/iu);
+assert.match(screenshotCase.prompt,/Subject wearing light gray formal shirt with black suit trousers/iu);
+assert.match(screenshotCase.prompt,/Pose: driver-close|driver-close/iu);
+assert.match(screenshotCase.prompt,/The capture is unmistakably at night/iu);
+assert.ok(words(screenshotCase.prompt)<=250,`screenshot regression prompt exceeded budget (${words(screenshotCase.prompt)})`);
 
 const staleExterior=buildCanonicalV3UserOutput({
   hasReference:true,studioSection:"car",scene:"rangeRover",time:"night",clothing:"casual-tee-black-jeans-blue",
@@ -83,7 +122,8 @@ const ten=Array.from({length:10},()=>buildCanonicalV3UserOutput(raw).prompt);
 assert.ok(ten.every(prompt=>prompt===ten[0]),"car interior Phase 54 must remain deterministic 10/10");
 
 console.log(`PHASE54_CAR_WORDS=${words(out.prompt)}`);
-console.log("PHASE54_CAR_OPTIONS=active");
+console.log(`PHASE54_CAR_SCREENSHOT_WORDS=${words(screenshotCase.prompt)}`);
+console.log("PHASE54_CAR_GENERIC_EVIDENCE=blocked");
 console.log("PHASE54_CAR_PROMPT_TARGET=chatgpt-images");
 console.log("PHASE54_CAR_LHD=vehicle-relative-physical");
 console.log("PHASE54_CAR_REALISM=physical");
