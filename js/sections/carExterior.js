@@ -17,6 +17,7 @@ export const SECTION = deepFreeze({
     exclusions:["driving"],
     routing:{ intentType:"selfie", sceneMode:"fixed", defaultScene:"carExterior", authority:"carExterior" },
     wiring:{ enabled:true, authority:"carExterior", clothing:false, lighting:true, pose:true, expression:true, body:true, selfieArmLock:true },
+    selfieGeometry:{ angles:["eye","high","low","three-quarter"], poses:["door-lean","door-open","front-grille","rear-tailgate","front-fender","rear-quarter","hood-sit"] },
     ui:{ scenarioMode:"custom", scene:"custom", groupMode:"single", captureMode:"normal", customFallback:"a parked 2017 Range Rover exterior selfie setting", showScenePicker:false, dedicatedControls:"carExterior" }
   }
 });
