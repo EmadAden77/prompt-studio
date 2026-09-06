@@ -61,12 +61,12 @@ const shared = Object.freeze({
 const inputs = Object.freeze({
   solo:{ ...shared, studioSection:"solo", scene:"street", clothing:"casual-tee-black-jeans-blue" },
   group:{ ...shared, studioSection:"group", scene:"street", clothing:"casual-tee-black-jeans-blue", groupCount:"3" },
-  car:{ ...shared, studioSection:"car", scene:"street", clothing:"casual-tee-black-jeans-blue" },
-  carExterior:{ ...shared, studioSection:"carExterior", scene:"street", clothing:"casual-tee-black-jeans-blue", carExteriorLocation:"villa", carExteriorPose:"door-lean", carExteriorLighting:"streetlight-reflection" },
-  bedroom:{ ...shared, studioSection:"bedroom", scene:"street", clothing:"home-flannel-red-black" },
-  gym:{ ...shared, studioSection:"gym", scene:"street", clothing:"sport-tracksuit-olive" },
-  street:{ ...shared, studioSection:"street", scene:"bedroom", clothing:"thobe-redshemagh-iqal" },
-  accidental:{ ...shared, studioSection:"accidental", scene:"street", clothing:"casual-tee-black-jeans-blue" },
+  car:{ ...shared, studioSection:"car", scene:"custom", clothing:"casual-tee-black-jeans-blue" },
+  carExterior:{ ...shared, studioSection:"carExterior", scene:"custom", clothing:"casual-tee-black-jeans-blue", carExteriorLocation:"villa", carExteriorPose:"door-lean", carExteriorLighting:"streetlight-reflection" },
+  bedroom:{ ...shared, studioSection:"bedroom", scene:"custom", clothing:"home-flannel-red-black" },
+  gym:{ ...shared, studioSection:"gym", scene:"custom", clothing:"sport-tracksuit-olive" },
+  street:{ ...shared, studioSection:"street", scene:"custom", clothing:"thobe-redshemagh-iqal" },
+  accidental:{ ...shared, studioSection:"accidental", scene:"custom", clothing:"casual-tee-black-jeans-blue" },
   custom:{ ...shared, studioSection:"custom", scene:"custom", customScene:"an ordinary user-defined outdoor scene", clothing:"casual-tee-black-jeans-blue" }
 });
 
@@ -79,7 +79,9 @@ for (const id of SECTION_IDS) {
   assert.deepEqual(routed.sectionPoses, section.poses, `${id}: poses must come from section module`);
   assert.deepEqual(routed.sectionLighting, section.lighting, `${id}: lighting must come from section module`);
   assert.deepEqual(routed.sectionRealismLayers, section.realismLayers, `${id}: realismLayers must come from section module`);
-  if (section.rules.routing.sceneMode === "fixed") assert.equal(routed.scene, section.rules.routing.defaultScene, `${id}: fixed scene rule not applied`);
+  if (["fixed","fallback"].includes(section.rules.routing.sceneMode)) {
+    assert.equal(routed.scene, section.rules.routing.defaultScene, `${id}: module default scene rule not applied`);
+  }
 
   const runs = Array.from({ length:10 }, () => buildCanonicalV3UserOutput(inputs[id]));
   const first = runs[0];
@@ -106,8 +108,11 @@ for (const id of SECTION_IDS) {
 assert.match(samples.car, /Range Rover/iu, "car: interior vehicle evidence missing");
 assert.match(samples.carExterior, /2017 Range Rover Sport Autobiography Dynamic/iu, "carExterior: vehicle spec lock missing");
 assert.match(samples.carExterior, /Fuji White/iu, "carExterior: Fuji White lock missing");
+assert.match(samples.bedroom, /bedroom/iu, "bedroom: section scene evidence missing");
 assert.match(samples.gym, /gym/iu, "gym: section scene evidence missing");
 assert.match(samples.street, /street|parking/iu, "street: outdoor scene evidence missing");
+assert.match(samples.accidental, /accidental front-camera capture/iu, "accidental: capture evidence missing");
+assert.match(samples.custom, /user-defined outdoor scene/iu, "custom: user-written scene must be preserved");
 
 const soloBefore = buildCanonicalV3UserOutput(inputs.solo).prompt;
 assert.throws(() => { SECTION_REGISTRY.gym.poses.push("illegal mutation"); }, TypeError, "deep freeze must reject section mutation");
