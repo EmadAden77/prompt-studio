@@ -34,7 +34,8 @@ for (const [studioSection, route] of Object.entries(SECTION_CAPTURE_ROUTING)) {
   const input = { ...base, studioSection };
   if (studioSection === "carExterior") {
     Object.assign(input, {
-      carExteriorClothing:"thobe-redshemagh-iqal",
+      clothing:"thobe-redshemagh-iqal",
+      carExteriorClothing:"home-sleep-white-gray",
       carExteriorLocation:"reststop",
       carExteriorPose:"both hands in pockets",
       carExteriorLighting:"streetlight-reflection"
@@ -60,16 +61,17 @@ const carInput = {
   scene:"custom",
   customScene:"a user-defined scene",
   pose:"both hands in pockets",
+  clothing:"thobe-redshemagh-iqal",
   carExteriorPose:"front-grille",
   carExteriorLocation:"reststop",
   carExteriorLighting:"streetlight-reflection",
-  carExteriorClothing:"thobe-redshemagh-iqal"
+  carExteriorClothing:"home-sleep-white-gray"
 };
 const carOutputs = Array.from({ length:10 }, () => buildCanonicalV3UserOutput(carInput));
 const car = carOutputs[0];
 assert.equal(firstSentence(car.prompt), "A candid direct selfie.");
 assert.equal(car.canonical.scene.id, "carExterior");
-assert.equal(car.resolution.cleanInput.scene, "carExterior", "Phase 36: carExterior routing must remain canonical even when Phase 37 budget drops environment detail");
+assert.equal(car.resolution.cleanInput.scene, "carExterior", "Phase 36: carExterior routing must remain canonical even when the final budget drops optional environment detail");
 assert.match(car.prompt, /2017 Range Rover Sport Autobiography Dynamic/iu);
 assert.match(car.prompt, /Fuji White/iu);
 assert.match(car.prompt, /white thobe/iu);
@@ -88,4 +90,4 @@ console.log(`PHASE36_SECTIONS=${Object.keys(SECTION_CAPTURE_ROUTING).length}`);
 console.log(`PHASE36_CAR_EXTERIOR_WORDS=${words(car.prompt)}`);
 console.log("PHASE36_DETERMINISM=10/10");
 console.log(`PHASE36_CAR_EXTERIOR_PROMPT=${car.prompt}`);
-console.log("✓ Phase 36 selfie lock and full section routing de-conflict passed under Phase 37 budget priority");
+console.log("✓ Phase 36 selfie lock and full section routing de-conflict passed under Phase 40 carExterior authority");

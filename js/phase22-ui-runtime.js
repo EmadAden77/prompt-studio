@@ -1,8 +1,5 @@
 import {
-  SCENES,
-  LIGHTING_OPTIONS,
-  CAR_EXTERIOR_LOCATIONS,
-  CAR_EXTERIOR_POSES
+  SCENES
 } from "./data.js";
 import { STUDIO_SECTION_OPTIONS } from "./studio-section-engine-v1.js";
 import {
@@ -10,6 +7,11 @@ import {
   CLOTHING_TOP_OPTIONS,
   getClothingOptions as getUnifiedClothingOptions
 } from "./clothing-authority.js";
+import {
+  getCarExteriorLightingOptions,
+  getCarExteriorLocationOptions,
+  getCarExteriorPoseOptions
+} from "./car-exterior-authority.js";
 // CAR_EXTERIOR_CLOTHING_CATALOG is now a compatibility alias only; the live UI uses the clothing authority for every section.
 
 export const VISIBLE_SCENE_KEYS = Object.freeze([
@@ -85,7 +87,9 @@ function makeSelect(id, name, title, options) {
 
 function carLightingOptions() {
   const time = document.querySelector("#time")?.value === "day" ? "day" : "night";
-  return LIGHTING_OPTIONS.carExterior?.[time] ?? [];
+  const location = document.querySelector("#car-exterior-location")?.value || "villa";
+  const pose = document.querySelector("#car-exterior-pose")?.value || "door-lean";
+  return getCarExteriorLightingOptions({ time, location, pose });
 }
 
 function ensureCustomClothingField(select) {
@@ -130,20 +134,23 @@ function mountCarExteriorControls() {
   title.textContent = "إعدادات سيلفي بجانب السيارة";
   const inner = document.createElement("div");
   inner.className = "form-grid";
-  const location = makeSelect("car-exterior-location", "carExteriorLocation", "موقع الوقوف", CAR_EXTERIOR_LOCATIONS);
-  const pose = makeSelect("car-exterior-pose", "carExteriorPose", "الوضعية بجانب السيارة", CAR_EXTERIOR_POSES);
+  const location = makeSelect("car-exterior-location", "carExteriorLocation", "موقع الوقوف", getCarExteriorLocationOptions());
+  const pose = makeSelect("car-exterior-pose", "carExteriorPose", "الوضعية بجانب السيارة", getCarExteriorPoseOptions());
   const lighting = makeSelect("car-exterior-lighting", "carExteriorLighting", "الإضاءة", carLightingOptions());
   inner.append(location.field, pose.field, lighting.field);
   wrap.append(title, inner);
   grid.prepend(wrap);
+
   const refreshLighting = () => {
     const previous = lighting.select.value;
-    lighting.select.replaceChildren();
     const options = carLightingOptions();
+    lighting.select.replaceChildren();
     appendOptions(lighting.select, options);
-    if (options.some((item) => item.value === previous)) lighting.select.value = previous;
+    lighting.select.value = options.some((item) => item.value === previous) ? previous : (options[0]?.value || "");
   };
   document.querySelector("#time")?.addEventListener("change", refreshLighting);
+  location.select.addEventListener("change", refreshLighting);
+  pose.select.addEventListener("change", refreshLighting);
 }
 
 function decorateSectionCards() {
@@ -156,14 +163,72 @@ function decorateSectionCards() {
 function activeSection() { return document.querySelector("#studio-section")?.value || ""; }
 function selectedScene() { return document.querySelector("#scene")?.value || ""; }
 
+function controlsInside(node) {
+  if (!node) return [];
+  if (node.matches?.("input,select,textarea")) return [node];
+  return [...(node.querySelectorAll?.("input,select,textarea") || [])];
+}
+
+function setFieldState(selector, hidden, disabled = hidden) {
+  const node = document.querySelector(selector);
+  if (!node) return;
+  node.hidden = hidden;
+  for (const control of controlsInside(node)) control.disabled = disabled;
+}
+
+function setFieldDisabled(selector, disabled) {
+  const node = document.querySelector(selector);
+  for (const control of controlsInside(node)) control.disabled = disabled;
+}
+
+function setControlFieldState(control, hidden) {
+  const field = control?.closest("label");
+  if (field) field.hidden = hidden;
+  if (control) control.disabled = hidden;
+}
+
 function syncCarExteriorVisibility() {
   const active = activeSection() === "carExterior";
   const fields = document.querySelector("#car-exterior-fields");
   if (fields) fields.hidden = !active;
-  const standardPose = document.querySelector("#pose")?.closest("label");
-  const standardPoseFamily = document.querySelector("#pose-family")?.closest("label");
-  if (standardPose) standardPose.hidden = active;
-  if (standardPoseFamily) standardPoseFamily.hidden = active;
+  for (const select of [
+    document.querySelector("#car-exterior-location"),
+    document.querySelector("#car-exterior-pose"),
+    document.querySelector("#car-exterior-lighting")
+  ]) {
+    if (select) select.disabled = !active;
+  }
+
+  setControlFieldState(document.querySelector("#pose"), active);
+  setControlFieldState(document.querySelector("#pose-family"), active);
+
+  // carExterior has dedicated location/pose/lighting authority. Hide and disable
+  // legacy/custom controls so FormData cannot leak stale values into Canonical V3.
+  setControlFieldState(document.querySelector("#lighting"), active);
+  if (active) {
+    setFieldState("#custom-scene-field", true);
+    setFieldState("#custom-scene-details-field", true);
+    setFieldState("#scene-profile-field", true);
+  } else {
+    // Their hidden/visible state belongs to the legacy section router. Only release
+    // the disabled state here; do not force a custom-only field visible elsewhere.
+    setFieldDisabled("#custom-scene-field", false);
+    setFieldDisabled("#custom-scene-details-field", false);
+    setFieldDisabled("#scene-profile-field", false);
+  }
+
+  // Manual legacy realism/context panels are not authorities in the hardened
+  // carExterior path. Automatic realism layers still run inside the adapter.
+  setFieldState("#post-processing-panel", active);
+  setFieldState('[aria-labelledby="realism-core-title"]', active);
+  setFieldState('[aria-labelledby="advanced-realism-title"]', active);
+  setFieldState(".context-secondary-panel", active);
+
+  // Reference identity is authoritative for hair/skin in carExterior. Do not expose
+  // styling knobs that can imply face/identity drift; expression remains active.
+  setControlFieldState(document.querySelector("#hair"), active);
+  setControlFieldState(document.querySelector("#skin"), active);
+
   const clothing = document.querySelector("#clothing");
   const clothingField = clothing?.closest("label");
   if (clothingField) clothingField.hidden = false;
@@ -226,6 +291,7 @@ function syncAll() {
   syncGarmentSelect();
   keepClothingDetailsVisible();
   syncCustomClothingVisibility();
+  syncCarExteriorVisibility();
 }
 
 export function installPhase22UI() {
@@ -238,6 +304,7 @@ export function installPhase22UI() {
       syncGarmentSelect();
       keepClothingDetailsVisible();
       syncCustomClothingVisibility();
+      syncCarExteriorVisibility();
     });
   }, true);
   document.addEventListener("click", (event) => {
@@ -252,13 +319,15 @@ export function installPhase22UI() {
         repopulateSceneSelect(field?.dataset.phase22Selected || event.target.value);
         syncGarmentSelect();
         keepClothingDetailsVisible();
+        syncCarExteriorVisibility();
       }, 0);
     }
-    if (["time", "studio-section", "clothing"].includes(event.target?.id)) setTimeout(syncAll, 0);
+    if (["time", "studio-section", "clothing", "car-exterior-location", "car-exterior-pose", "car-exterior-lighting"].includes(event.target?.id)) setTimeout(syncAll, 0);
     else setTimeout(() => {
       syncGarmentSelect();
       keepClothingDetailsVisible();
       syncCustomClothingVisibility();
+      syncCarExteriorVisibility();
     }, 0);
   });
 }

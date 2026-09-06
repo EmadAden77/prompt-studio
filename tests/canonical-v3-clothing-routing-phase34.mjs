@@ -38,16 +38,16 @@ function stable(raw) {
 
 const thobe = stable({
   ...base,
-  clothing:"home-sleep-white-gray",
-  carExteriorClothing:"thobe-redshemagh-iqal"
+  clothing:"thobe-redshemagh-iqal",
+  carExteriorClothing:"home-sleep-white-gray"
 });
 const thobePrompt = thobe.prompt;
-assert.match(thobe.canonical.subjects.primary.clothing.garment, /crisp white thobe/iu, "resolved thobe must reach canonical garment text");
+assert.match(thobe.canonical.subjects.primary.clothing.garment, /crisp white thobe/iu, "resolved visible thobe must reach canonical garment text");
 assert.equal(describeHeadwear(thobe.canonical), HEADWEAR_LOCK, "HEADWEAR_LOCK must read resolved garment text");
 assert.match(thobePrompt, /white thobe/iu, "white thobe missing from carExterior prompt");
 assert.match(thobePrompt, /red-and-white fine checkered shemagh/iu, "fine checkered shemagh lock missing from carExterior prompt");
 assert.match(thobePrompt, /black doubled-cord iqal/iu, "black doubled-cord iqal lock missing from carExterior prompt");
-assert.doesNotMatch(thobePrompt, /sleep/iu, "hidden sleep-set default leaked into carExterior prompt");
+assert.doesNotMatch(thobePrompt, /sleep/iu, "stale hidden sleep-set value leaked over the visible clothing selection");
 assert.ok(words(thobePrompt) <= 250, `Phase 34 thobe prompt exceeds 250 words (${words(thobePrompt)})`);
 
 const outfit = stable({ ...base, clothing:"casual-tee-black-jeans-blue" });
@@ -70,4 +70,4 @@ console.log(`PHASE34_OUTFIT_WORDS=${words(outfit.prompt)}`);
 console.log(`PHASE34_CUSTOM_WORDS=${words(custom.prompt)}`);
 console.log("PHASE34_DETERMINISM=10/10");
 console.log(`PHASE34_THOBE_SAMPLE=${thobePrompt}`);
-console.log("✓ Phase 34 clothing routing authority contracts passed under Phase 39 clothing authority");
+console.log("✓ Phase 34 clothing routing authority contracts passed under Phase 40 visible-selection authority");

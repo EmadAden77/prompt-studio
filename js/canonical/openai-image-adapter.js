@@ -131,6 +131,60 @@ function insertHeadwearWithinCap(prompt, canonical, headwear, maxWords = 250) {
   return candidate;
 }
 
+function isOpenDoorCarExterior(canonical) {
+  return canonical?.scene?.id === "carExterior" && text(canonical?.scene?.facts?.carExteriorPose) === "door-open";
+}
+
+function insertBeforeLighting(prompt, addition) {
+  const lightingIndex = Math.max(prompt.lastIndexOf("Lighting uses "), prompt.lastIndexOf("Lighting follows "));
+  return lightingIndex < 0
+    ? `${prompt} ${addition}`.replace(/\s{2,}/gu, " ").trim()
+    : `${prompt.slice(0, lightingIndex)}${addition} ${prompt.slice(lightingIndex)}`.replace(/\s{2,}/gu, " ").trim();
+}
+
+function ensureOpenDoorCabinEvidence(prompt, canonical, maxWords = 250) {
+  if (!isOpenDoorCarExterior(canonical)) return prompt;
+  const night = text(canonical?.lighting?.source_type).toLowerCase() !== "daylight";
+  const required = night
+    ? "Open driver door reveals Ivory perforated leather, dark wood veneer and the black-and-Ivory wheel, with interior light spilling at night."
+    : "Open driver door reveals Ivory perforated leather, dark wood veneer and the black-and-Ivory wheel.";
+  const source = String(prompt || "");
+  const hasCabin = /Ivory perforated leather/iu.test(source) && /dark wood veneer/iu.test(source) && /black-and-Ivory wheel/iu.test(source);
+  const hasNightLight = !night || /interior light spilling at night/iu.test(source);
+  if (hasCabin && hasNightLight) return source;
+
+  let base = source
+    .replace(/At night, transparent glass carries streetlight reflections and a dim cabin view; never opaque black\.\s*/iu, "")
+    .replace(/Transparent windshield and side glass carry natural reflections and a faint view of the Ivory cabin; never opaque black\.\s*/iu, "")
+    .replace(/Transparent glass carries natural surroundings reflections while retaining a faint view into the Ivory cabin, and the panoramic roof reflects the sky\.\s*/iu, "")
+    .replace(/\s{2,}/gu, " ")
+    .trim();
+  let candidate = insertBeforeLighting(base, required);
+  if (words(candidate) <= maxWords) return candidate;
+
+  for (const pattern of [
+    /Subtle tone variation between forehead and cheeks\.\s*/iu,
+    /Faint natural pore detail across the cheeks\.\s*/iu,
+    /Natural sensor noise is visible in shadow areas\.\s*/iu,
+    /Localized highlights transition gradually into adjacent shadows\.\s*/iu,
+    /Gentle directional contrast creates gradual shadow falloff across the scene\.\s*/iu,
+    /The capture uses[^.]*\.\s*/iu,
+    /Captured with the selected physically plausible front-camera geometry\.\s*/iu
+  ]) {
+    base = base.replace(pattern, "").replace(/\s{2,}/gu, " ").trim();
+    candidate = insertBeforeLighting(base, required);
+    if (words(candidate) <= maxWords) return candidate;
+  }
+
+  base = compactIdentity(base);
+  candidate = insertBeforeLighting(base, required);
+  if (words(candidate) <= maxWords) return candidate;
+
+  base = compactCamera(base);
+  candidate = insertBeforeLighting(base, required);
+  return words(candidate) <= maxWords ? candidate : source;
+}
+
 export function buildOpenAIImagePrompt(canonical, options = {}) {
   const prompt = phase24BuildOpenAIImagePrompt(canonical, options);
   const headwear = describeHeadwear(canonical);
@@ -143,7 +197,9 @@ export function buildOpenAIImagePrompt(canonical, options = {}) {
   const withRequiredCarExterior = ensureCarExterior(withRequiredGymCue, canonical);
   const withGlassRealism = insertGlassRealism(withRequiredCarExterior, canonical);
   const withLightingLast = moveLightingLast(withGlassRealism);
-  return retainMicroRealism(enforcePhase26WordBudget(withLightingLast, canonical), canonical);
+  const budgeted = enforcePhase26WordBudget(withLightingLast, canonical);
+  const withOpenDoorCabin = ensureOpenDoorCabinEvidence(budgeted, canonical);
+  return retainMicroRealism(withOpenDoorCabin, canonical);
 }
 
 const AUTO_STREET_MOODS = Object.freeze(new Set(["auto", "dawn", "rush", "normal", "school", "prayer", "cafe", "latenight", "alley", "construction", "bufia"]));

@@ -134,6 +134,10 @@ const auditCases = [
 for (const raw of auditCases) {
   const outputs = Array.from({ length:10 }, () => buildCanonicalV3UserOutput(raw).prompt);
   assert.equal(outputs.every((value) => value === outputs[0]), true, `${raw.scene}: determinism failed`);
+  if (raw.scene === "carExterior") {
+    console.log(`PHASE31_CAR_EXTERIOR_WORDS=${words(outputs[0])}`);
+    console.log(`PHASE31_CAR_EXTERIOR_PROMPT=${outputs[0]}`);
+  }
   assert.ok(words(outputs[0]) <= 250, `${raw.scene}: prompt exceeds 250 words (${words(outputs[0])})`);
   if (raw.scene === "carExterior") assert.doesNotMatch(outputs[0], /tinted rear glass/iu);
 }

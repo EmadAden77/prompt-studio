@@ -2,8 +2,9 @@ import { buildCanonicalV3 } from "../canonical-v3-engine.js";
 import { resolveCanonicalConflicts } from "./conflict-resolver.js";
 import { buildOpenAIImagePrompt, describeHeadwear } from "./openai-image-adapter-phase36.js";
 import { applyGroupPhase13, enrichGroupPromptPhase13 } from "./group-phase13.js";
-import { SCENES, LIGHTING_OPTIONS, CAR_EXTERIOR_LOCATIONS, CAR_EXTERIOR_POSES } from "../data.js";
+import { SCENES } from "../data.js";
 import { resolveClothingText } from "../clothing-authority.js";
+import { describeMissingCarExteriorSelectionEvidence, resolveCarExteriorSelection } from "../car-exterior-authority.js";
 
 export const CAR_EXTERIOR_PROMPT_WORD_BUDGET = 280;
 const PHASE34_ROUTING_WORD_BUDGET = 250;
@@ -41,7 +42,6 @@ const IRON_TEXT = Object.freeze({
   unpressed:"unpressed"
 });
 
-function optionText(options, value) { return options?.find?.((item) => item.value === value)?.text || ""; }
 function humanize(value) { return String(value || "").trim().replace(/[_-]+/gu, " ").replace(/\s+/gu, " "); }
 function wordCount(value) { return String(value || "").trim().split(/\s+/u).filter(Boolean).length; }
 
@@ -67,15 +67,18 @@ export function applySectionCaptureRouting(rawInput = {}) {
   if (REAL_SECTION_SCENES.has(String(raw.scene || ""))) raw.customScene = "";
   raw.pose = selfieSafePose(raw.pose, route.captureType);
   if (section === "carExterior") {
-    const requestedCarPose = String(raw.carExteriorPose || "").trim();
-    const safeCarPose = selfieSafePose(requestedCarPose, route.captureType);
-    raw.carExteriorPose = safeCarPose !== requestedCarPose ? "front-grille" : (requestedCarPose || "door-lean");
+    const selection = resolveCarExteriorSelection(raw);
+    raw.time = selection.time;
+    raw.carExteriorLocation = selection.location;
+    raw.carExteriorPose = selection.pose;
+    raw.carExteriorLighting = selection.lighting;
   }
   return raw;
 }
 
 function resolveClothingDetails(raw, clean) {
-  const garment = resolveClothingText(raw.carExteriorClothing || raw.clothing, raw);
+  const selectedClothing = raw.clothing || (raw.studioSection === "carExterior" ? raw.carExteriorClothing : "");
+  const garment = resolveClothingText(selectedClothing, raw);
   const fabricValue = raw.fabric || clean.fabric;
   const weightValue = raw.fabricWeight || clean.fabricWeight;
   const wearValue = raw.wearState || clean.wearState;
@@ -104,23 +107,23 @@ function phase23Input(rawInput, cleanInput) {
     pose:raw.pose || clean.pose
   };
   if (raw.studioSection === "carExterior") {
-    const location = String(raw.carExteriorLocation || "villa");
-    const pose = String(raw.carExteriorPose || "door-lean");
-    const time = String(raw.time || "night") === "day" ? "day" : "night";
-    const lightingId = String(raw.carExteriorLighting || LIGHTING_OPTIONS.carExterior?.[time]?.[0]?.value || "");
-    const locationText = optionText(CAR_EXTERIOR_LOCATIONS, location) || optionText(CAR_EXTERIOR_LOCATIONS, "villa");
-    const poseText = optionText(CAR_EXTERIOR_POSES, pose) || pose;
+    const selection = resolveCarExteriorSelection(raw);
     return {
       ...clean,
       studioSection:"carExterior",
       intentType:"selfie",
       captureType:"direct_front_camera_selfie",
       scene:"carExterior",
-      customScene:`A parked Range Rover exterior selfie, ${locationText}, with the subject ${poseText}`,
-      pose:poseText,
-      lighting:optionText(LIGHTING_OPTIONS.carExterior?.[time], lightingId) || clean.lighting,
-      time,
-      sceneFacts:{ ...(clean.sceneFacts && typeof clean.sceneFacts === "object" ? clean.sceneFacts : {}), carExteriorLocation:location, carExteriorPose:pose }
+      customScene:`A parked Range Rover exterior selfie, ${selection.locationText}, with the subject ${selection.poseText}`,
+      pose:selection.poseText,
+      lighting:selection.lightingText || clean.lighting,
+      time:selection.time,
+      sceneFacts:{
+        ...(clean.sceneFacts && typeof clean.sceneFacts === "object" ? clean.sceneFacts : {}),
+        carExteriorLocation:selection.location,
+        carExteriorPose:selection.pose,
+        carExteriorLighting:selection.lighting
+      }
     };
   }
   if (DAILY_SCENE_KEYS.has(clean.scene) && SCENES[clean.scene]?.environment) return { ...clean, customScene:SCENES[clean.scene].environment };
@@ -132,6 +135,87 @@ function enforcePhase34CarExteriorHeadwearBudget(prompt, canonical) {
   return String(prompt).replace(PHASE34_REDUNDANT_GLASS_SENTENCE, "").replace(/\s{2,}/gu, " ").trim();
 }
 
+function compactPhase40CarExteriorBudget(prompt, maxWords = 250) {
+  let compacted = String(prompt || "").replace(/\s{2,}/gu, " ").trim();
+  if (wordCount(compacted) <= maxWords) return compacted;
+
+  const sceneCompactors = [
+    [/A parked Range Rover exterior selfie, parked on a driveway before a Saudi villa with beige stone cladding, high wall, metal gate, and a palm tree\./iu, "A parked Range Rover exterior selfie on a Saudi villa driveway with beige stone, gate and palm tree."],
+    [/A parked Range Rover exterior selfie, at the curb before a small grocery with shelves and a glowing beverage cooler behind glass\./iu, "A parked Range Rover exterior selfie at a small grocery curb."],
+    [/A parked Range Rover exterior selfie, in a marked outdoor lot with white lines, concrete wheel stops, and a few other parked cars\./iu, "A parked Range Rover exterior selfie in a marked outdoor parking lot."],
+    [/A parked Range Rover exterior selfie, parallel parked along a yellow-and-black curb on weathered asphalt\./iu, "A parked Range Rover exterior selfie along a yellow-and-black street curb."],
+    [/A parked Range Rover exterior selfie, on a sandy shoulder with sparse shrubs and an open horizon\./iu, "A parked Range Rover exterior selfie on a sandy rest-stop shoulder."],
+    [/A parked Range Rover exterior selfie, in outdoor mall parking with shaded walkways\./iu, "A parked Range Rover exterior selfie in outdoor mall parking."]
+  ];
+  for (const [pattern, replacement] of sceneCompactors) {
+    compacted = compacted.replace(pattern, replacement).replace(/\s{2,}/gu, " ").trim();
+    if (wordCount(compacted) <= maxWords) return compacted;
+  }
+
+  const compactors = [
+    // The following detailed HEADWEAR_LOCK already carries the shemagh/iqal style,
+    // so under pressure keep the garment sentence to the unique thobe fact instead
+    // of repeating the same headwear semantics twice.
+    [
+      /Subject:\s*([^.]*?),\s*wearing crisp white thobe with a red-and-white checkered shemagh and black iqal, youthful style with one end casually thrown over the shoulder\./iu,
+      "Subject: $1, wearing crisp white thobe."
+    ],
+    [
+      /Camera near eye level at 45–60 cm, no steep downward angle; relaxed upright posture, spine extension, enough upper torso to communicate the tall athletic frame\./iu,
+      "Camera near eye level at 45–60 cm, no steep downward angle; relaxed posture preserves tall-frame perspective."
+    ],
+    [
+      /The capture uses a physically possible camera position, a physically possible camera operator, and one coherent capture event\./iu,
+      "One physically possible front-camera capture event."
+    ],
+    [
+      /Shoulder and head height relative to roofline, door frame, and handle reflect a genuine 195 cm adult\./iu,
+      "Roofline, door and handle scale reads as a genuine 195 cm adult."
+    ],
+    [/Captured with the selected physically plausible front-camera geometry\./iu, "Plausible front-camera geometry."],
+    [/Slight lens softness is visible toward the frame edges\.\s*/iu, ""],
+    [/Subtle tone variation between forehead and cheeks\.\s*/iu, ""],
+    [/Natural hair flyaways and loose strands\.\s*/iu, ""],
+    [/Natural fabric wrinkles and folds\.\s*/iu, ""],
+    [/Subtle skin texture with natural pores\.\s*/iu, ""]
+  ];
+
+  for (const [pattern, replacement] of compactors) {
+    compacted = compacted.replace(pattern, replacement).replace(/\s{2,}/gu, " ").trim();
+    if (wordCount(compacted) <= maxWords) return compacted;
+  }
+
+  if (/Identity strictly preserved from the reference image:/iu.test(compacted)) {
+    compacted = compacted.replace(/No facial alteration\/lengthening\.\s*/iu, "").replace(/\s{2,}/gu, " ").trim();
+    if (wordCount(compacted) <= maxWords) return compacted;
+  }
+
+  compacted = compacted.replace(
+    /Tall 195 cm, 88 kg lean-athletic build: medium-to-moderately-broad shoulders visibly wider than the waist, moderately developed chest, subtle deltoid roundness, long proportional limbs with filled-not-thin arms, proportionate adult male neck, and head anatomically scaled to tall frame\./iu,
+    "Tall 195 cm, 88 kg lean-athletic build: shoulders wider than waist, moderately developed chest and deltoids, long proportional limbs, filled arms, adult male neck, and head scaled to the tall frame."
+  ).replace(/\s{2,}/gu, " ").trim();
+
+  return compacted;
+}
+
+function enforcePhase40FinalCarExteriorSelection(prompt, routedInput) {
+  if (String(routedInput?.studioSection || "") !== "carExterior") return prompt;
+  const selection = resolveCarExteriorSelection(routedInput);
+  const source = String(prompt || "");
+  const missingSelection = describeMissingCarExteriorSelectionEvidence(source, routedInput);
+  const missingCabin = selection.pose === "door-open" && !/Ivory perforated leather/iu.test(source)
+    ? "Open door reveals Ivory perforated leather, dark wood veneer and black-and-Ivory wheel."
+    : "";
+  const addition = [missingSelection, missingCabin].filter(Boolean).join(" ");
+  if (!addition) return compactPhase40CarExteriorBudget(source);
+
+  const lightingIndex = Math.max(source.lastIndexOf("Lighting follows "), source.lastIndexOf("Lighting uses "));
+  const next = lightingIndex < 0
+    ? `${source} ${addition}`.replace(/\s{2,}/gu, " ").trim()
+    : `${source.slice(0, lightingIndex)}${addition} ${source.slice(lightingIndex)}`.replace(/\s{2,}/gu, " ").trim();
+  return compactPhase40CarExteriorBudget(next);
+}
+
 export function buildCanonicalV3UserOutput(rawInput = {}, sceneData = undefined) {
   const routedInput = applySectionCaptureRouting(rawInput);
   const resolution = resolveCanonicalConflicts(routedInput, sceneData);
@@ -139,7 +223,8 @@ export function buildCanonicalV3UserOutput(rawInput = {}, sceneData = undefined)
   const baseCanonical = buildCanonicalV3(cleanInput);
   const canonical = applyGroupPhase13(baseCanonical, cleanInput);
   const basePrompt = enforcePhase34CarExteriorHeadwearBudget(buildOpenAIImagePrompt(canonical), canonical);
-  const prompt = enrichGroupPromptPhase13(canonical, cleanInput, basePrompt);
+  const enrichedPrompt = enrichGroupPromptPhase13(canonical, cleanInput, basePrompt);
+  const prompt = enforcePhase40FinalCarExteriorSelection(enrichedPrompt, routedInput);
   return Object.freeze({ resolution, canonical, prompt });
 }
 
