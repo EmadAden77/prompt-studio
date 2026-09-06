@@ -116,7 +116,7 @@ function carSelectionSatisfied(requiredText,out){
       && /dark wood/iu.test(out)
       && /panoramic roof/iu.test(out);
   }
-  if(/^Tall 195 cm, 88 kg lean-athletic build/iu.test(requiredText)) return normalize(out).includes("tall 195 cm, 88 kg lean athletic build");
+  if(/^Tall 195 cm, 88 kg lean-athletic build/iu.test(requiredText)) return /195\s*cm/iu.test(out)&&/88\s*kg/iu.test(out)&&/lean[- ]athletic/iu.test(out);
   if(/^(?:Pose:\s*)?(?:standing beside|leaning against|standing outside|front grille|rear tailgate)/iu.test(requiredText)) return /Pose: seated naturally in the driver seat|driver (?:close|low|seat)|roof-context/iu.test(out);
   if(/^Lighting follows the selected real-world/iu.test(requiredText)) return /Lighting: selected real daylight\/practical source|Lighting: car interior light is the dominant night source/iu.test(out);
   if(/^Night physics: the dominant visible source is the car interior light/iu.test(requiredText)) return /car interior light is the dominant night source.*source-matched cast/iu.test(out);
@@ -151,13 +151,13 @@ function compactWithinBudget(prompt,base,protectedEvidence=[],sectionIdOverride=
       if(pattern.test(parts[index])&&!protectedPart(parts[index])) parts.splice(index,1);
     }
   }
-  if(words(parts.join(" "))>max) parts=compactHardCore(parts);
+  if(sectionId==="car"&&words(parts.join(" "))>max) parts=compactHardCore(parts);
   for(let index=parts.length-1;index>=0&&words(parts.join(" "))>max;index--){
     if(!protectedPart(parts[index])) parts.splice(index,1);
   }
   const out=parts.join(" ").trim();
-  if(words(out)>max) throw new Error(`Phase 54 field/WikiPrompt budget overflow: ${words(out)} words (max ${max})`);
-  for(const requiredText of required) if(!selectionSatisfied(requiredText,out,sectionId)) throw new Error(`Phase 54 protected selection lost: ${requiredText}`);
+  if(words(out)>max) throw new Error(`Phase 54 field/WikiPrompt budget overflow [${sectionId||"unknown"}]: ${words(out)} words (max ${max})`);
+  for(const requiredText of required) if(!selectionSatisfied(requiredText,out,sectionId)) throw new Error(`Phase 54 protected selection lost [${sectionId||"unknown"}]: ${requiredText}`);
   return out;
 }
 
