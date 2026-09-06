@@ -2,8 +2,8 @@ import { deepFreeze } from "./_freeze.js";
 
 export const SECTION = deepFreeze({
   id:"gym",
-  label:"Gym",
-  description:"Natural gym selfie and fitness context",
+  label:"🏋️ التصوير في الجيم",
+  description:"وضعيات وملابس وإضاءة الجيم فقط",
   captureType:"direct_front_camera_selfie",
   scenes:["gym"],
   clothingSource:"gym",
@@ -14,7 +14,9 @@ export const SECTION = deepFreeze({
     hard:["gym context"],
     composition:["fitness-appropriate pose"],
     interaction:[],
-    exclusions:["luxury accessories"]
+    exclusions:["luxury accessories"],
+    routing:{ intentType:"selfie", sceneMode:"fixed", defaultScene:"gym" },
+    ui:{ scenarioMode:"gym", scene:"gym", groupMode:"single", captureMode:"normal", showScenePicker:false }
   }
 });
 
