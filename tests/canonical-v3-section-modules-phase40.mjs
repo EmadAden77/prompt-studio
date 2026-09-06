@@ -1,0 +1,120 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import { SECTION_REGISTRY, getSection } from "../js/sections/index.js";
+import { STUDIO_SECTION_OPTIONS } from "../js/studio-section-engine-v1.js";
+import { applySectionCaptureRouting, buildCanonicalV3UserOutput } from "../js/canonical/canonical-v3-pipeline.js";
+import { buildOpenAIImagePrompt, IDENTITY_STRICT_LOCK, SELFIE_ARM_LOCK } from "../js/canonical/openai-image-adapter-phase36.js";
+
+const SECTION_IDS = Object.freeze(["solo","group","car","carExterior","bedroom","gym","street","accidental","custom"]);
+const REQUIRED_KEYS = Object.freeze(["id","label","description","captureType","scenes","clothingSource","poses","lighting","realismLayers","rules"]);
+const words = (value) => String(value ?? "").trim().split(/\s+/u).filter(Boolean).length;
+
+function assertDeepFrozen(value, path = "section") {
+  if (!value || typeof value !== "object") return;
+  assert.equal(Object.isFrozen(value), true, `${path} must be frozen`);
+  for (const [key, child] of Object.entries(value)) assertDeepFrozen(child, `${path}.${key}`);
+}
+
+assert.deepEqual(Object.keys(SECTION_REGISTRY), SECTION_IDS, "SECTION_REGISTRY must contain exactly the 9 canonical section ids in stable order");
+assert.deepEqual(STUDIO_SECTION_OPTIONS.map((item) => item.value), SECTION_IDS, "UI section options must be derived from the registry");
+
+for (const id of SECTION_IDS) {
+  const section = getSection(id);
+  assert.ok(section, `${id}: registry lookup failed`);
+  assert.deepEqual(Object.keys(section), REQUIRED_KEYS, `${id}: SECTION top-level contract drifted`);
+  assert.equal(section.id, id, `${id}: id mismatch`);
+  assert.ok(section.captureType, `${id}: captureType missing`);
+  assert.ok(section.scenes.length >= 1, `${id}: scenes missing`);
+  assert.ok(section.poses.length >= 1, `${id}: poses missing`);
+  assert.ok(section.lighting.length >= 1, `${id}: lighting missing`);
+  assert.ok(section.realismLayers.length >= 1, `${id}: realismLayers missing`);
+  assertDeepFrozen(section, id);
+
+  const source = fs.readFileSync(new URL(`../js/sections/${id}.js`, import.meta.url), "utf8");
+  const localImports = [...source.matchAll(/from\s+["']\.\/([^"']+\.js)["']/gu)].map((match) => match[1]);
+  assert.ok(localImports.every((path) => path === "_freeze.js"), `${id}: cross-section import detected: ${localImports.join(", ")}`);
+}
+
+const pipelineSource = fs.readFileSync(new URL("../js/canonical/canonical-v3-pipeline.js", import.meta.url), "utf8");
+const studioSource = fs.readFileSync(new URL("../js/studio-section-engine-v1.js", import.meta.url), "utf8");
+const phase22Source = fs.readFileSync(new URL("../js/phase22-ui-runtime.js", import.meta.url), "utf8");
+assert.match(pipelineSource, /sections\/index\.js/u, "pipeline must read SECTION_REGISTRY");
+assert.doesNotMatch(pipelineSource, /SECTION_CAPTURE_ROUTING\s*=\s*Object\.freeze\(\s*\{/u, "pipeline must not own a hardcoded section routing table");
+assert.match(studioSource, /SECTION_REGISTRY/u, "studio UI engine must read SECTION_REGISTRY");
+assert.doesNotMatch(studioSource, /const\s+CONFIG\s*=\s*Object\.freeze/u, "studio UI engine must not own a duplicate section config table");
+assert.match(phase22Source, /getSection/u, "Phase 22 UI runtime must read active section metadata");
+assert.doesNotMatch(phase22Source, /SECTION_GARMENT_SCENE/u, "Phase 22 UI must not keep a duplicate garment-scene map");
+
+const shared = Object.freeze({
+  time:"night",
+  hasReference:true,
+  expression:"neutral",
+  pose:"relaxed standing pose",
+  lighting:"ordinary practical light",
+  fabric:"cotton",
+  fabricWeight:"light",
+  ironState:"lightly-unpressed",
+  wearState:"normal-day",
+  clothingFit:"regular"
+});
+
+const inputs = Object.freeze({
+  solo:{ ...shared, studioSection:"solo", scene:"street", clothing:"casual-tee-black-jeans-blue" },
+  group:{ ...shared, studioSection:"group", scene:"street", clothing:"casual-tee-black-jeans-blue", groupCount:"3" },
+  car:{ ...shared, studioSection:"car", scene:"street", clothing:"casual-tee-black-jeans-blue" },
+  carExterior:{ ...shared, studioSection:"carExterior", scene:"street", clothing:"casual-tee-black-jeans-blue", carExteriorLocation:"villa", carExteriorPose:"door-lean", carExteriorLighting:"streetlight-reflection" },
+  bedroom:{ ...shared, studioSection:"bedroom", scene:"street", clothing:"home-flannel-red-black" },
+  gym:{ ...shared, studioSection:"gym", scene:"street", clothing:"sport-tracksuit-olive" },
+  street:{ ...shared, studioSection:"street", scene:"bedroom", clothing:"thobe-redshemagh-iqal" },
+  accidental:{ ...shared, studioSection:"accidental", scene:"street", clothing:"casual-tee-black-jeans-blue" },
+  custom:{ ...shared, studioSection:"custom", scene:"custom", customScene:"an ordinary user-defined outdoor scene", clothing:"casual-tee-black-jeans-blue" }
+});
+
+const samples = {};
+for (const id of SECTION_IDS) {
+  const section = getSection(id);
+  const routed = applySectionCaptureRouting(inputs[id]);
+  assert.equal(routed.captureType, section.captureType, `${id}: captureType must come from section module`);
+  assert.equal(routed.sectionClothingSource, section.clothingSource, `${id}: clothingSource must come from section module`);
+  assert.deepEqual(routed.sectionPoses, section.poses, `${id}: poses must come from section module`);
+  assert.deepEqual(routed.sectionLighting, section.lighting, `${id}: lighting must come from section module`);
+  assert.deepEqual(routed.sectionRealismLayers, section.realismLayers, `${id}: realismLayers must come from section module`);
+  if (section.rules.routing.sceneMode === "fixed") assert.equal(routed.scene, section.rules.routing.defaultScene, `${id}: fixed scene rule not applied`);
+
+  const runs = Array.from({ length:10 }, () => buildCanonicalV3UserOutput(inputs[id]));
+  const first = runs[0];
+  samples[id] = first.prompt;
+  assert.equal(first.section, section, `${id}: resolved section object missing from pipeline output`);
+  assert.ok(first.prompt.trim(), `${id}: empty prompt`);
+  assert.ok(runs.every((item) => item.prompt === first.prompt), `${id}: determinism must be 10/10`);
+  assert.ok(words(first.prompt) <= 250, `${id}: prompt exceeds 250 words (${words(first.prompt)})`);
+  assert.ok(first.prompt.includes(IDENTITY_STRICT_LOCK), `${id}: global identity lock missing`);
+  assert.match(first.prompt, /195 cm/u, `${id}: global body height missing`);
+  assert.match(first.prompt, /88 kg/u, `${id}: global body weight missing`);
+  assert.match(first.prompt, /lean-athletic/iu, `${id}: global body profile missing`);
+  assert.match(first.prompt, /long proportional limbs with filled-not-thin arms|physically possible/iu, `${id}: global anatomy evidence missing`);
+  assert.equal(first.canonical?.hard_constraints?.anatomy?.physically_possible, true, `${id}: canonical anatomy hard constraint missing`);
+  assert.equal(first.canonical?.hard_constraints?.identity?.preserve_reference_identity, true, `${id}: canonical identity hard constraint missing`);
+
+  if (/selfie/iu.test(section.captureType)) assert.ok(first.prompt.includes(SELFIE_ARM_LOCK), `${id}: selfie arm lock missing`);
+
+  const hardBefore = JSON.stringify(first.canonical.hard_constraints);
+  void buildOpenAIImagePrompt(first.canonical);
+  assert.equal(JSON.stringify(first.canonical.hard_constraints), hardBefore, `${id}: adapter mutated hard constraints`);
+}
+
+assert.match(samples.car, /Range Rover/iu, "car: interior vehicle evidence missing");
+assert.match(samples.carExterior, /2017 Range Rover Sport Autobiography Dynamic/iu, "carExterior: vehicle spec lock missing");
+assert.match(samples.carExterior, /Fuji White/iu, "carExterior: Fuji White lock missing");
+assert.match(samples.gym, /gym/iu, "gym: section scene evidence missing");
+assert.match(samples.street, /street|parking/iu, "street: outdoor scene evidence missing");
+
+const soloBefore = buildCanonicalV3UserOutput(inputs.solo).prompt;
+assert.throws(() => { SECTION_REGISTRY.gym.poses.push("illegal mutation"); }, TypeError, "deep freeze must reject section mutation");
+const soloAfter = buildCanonicalV3UserOutput(inputs.solo).prompt;
+assert.equal(soloAfter, soloBefore, "mutation attempt in gym must not affect solo output");
+
+for (const id of SECTION_IDS) console.log(`PHASE40_${id.toUpperCase()}_SAMPLE=${samples[id]}`);
+console.log(`PHASE40_SECTION_IDS=${SECTION_IDS.join(",")}`);
+console.log("PHASE40_DETERMINISM=10/10");
+console.log("✓ Phase 40 section module architecture passed");
