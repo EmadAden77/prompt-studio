@@ -215,7 +215,7 @@ function normalizePhase41CarExteriorAuthority(prompt, routedInput) {
 }
 
 function compactPhase41CarExteriorProtectedText(prompt, canonical) {
-  if (canonical?.scene?.id !== "carExterior" || !describeHeadwear(canonical)) return String(prompt || "");
+  if (canonical?.scene?.id !== "carExterior") return String(prompt || "");
   return String(prompt || "")
     .replace(/2017 Range Rover Sport Autobiography Dynamic L494, Fuji White, gloss black grille and vent surrounds, 22-inch dark alloys, quad rectangular exhaust tips, LED DRLs, panoramic glass roof, transparent glass with natural reflections and a faint Ivory-cabin view, never opaque black; Autobiography Dynamic badging and Saudi plate, never legible\./iu, "2017 Range Rover Sport Autobiography Dynamic L494, Fuji White; gloss-black-grille/vents; 22-inch-dark-alloys; quad-exhausts; LED-DRLs; panoramic-glass; transparent-reflective-glass/faint-Ivory-cabin; Dynamic-badge; illegible-Saudi-plate.")
     .replace(/Tall 195 cm, 88 kg lean-athletic build: medium-to-moderately-broad shoulders visibly wider than the waist, moderately developed chest, subtle deltoid roundness, long proportional limbs with filled-not-thin arms, proportionate adult male neck, and head anatomically scaled to tall frame\./iu, "Tall 195 cm, 88 kg lean-athletic; broad-shouldered; proportional-limbed.")
