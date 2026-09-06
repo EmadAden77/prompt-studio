@@ -214,6 +214,16 @@ function normalizePhase41CarExteriorAuthority(prompt, routedInput) {
   return phase41Deduplicate(kept.join(" "));
 }
 
+function compactPhase41CarExteriorProtectedText(prompt, canonical) {
+  if (canonical?.scene?.id !== "carExterior" || !describeHeadwear(canonical)) return String(prompt || "");
+  return String(prompt || "")
+    .replace(/2017 Range Rover Sport Autobiography Dynamic L494, Fuji White, gloss black grille and vent surrounds, 22-inch dark alloys, quad rectangular exhaust tips, LED DRLs, panoramic glass roof, transparent glass with natural reflections and a faint Ivory-cabin view, never opaque black; Autobiography Dynamic badging and Saudi plate, never legible\./iu, "2017 Range Rover Sport Autobiography Dynamic L494, Fuji White; gloss-black-grille/vents; 22-inch-dark-alloys; quad-exhausts; LED-DRLs; panoramic-glass; transparent-reflective-glass/faint-Ivory-cabin; Dynamic-badge; illegible-Saudi-plate.")
+    .replace(/Tall 195 cm, 88 kg lean-athletic build: shoulders wider than waist, developed chest\/deltoids, long proportional limbs, filled arms, adult male neck, head scaled to the tall frame\./iu, "Tall 195 cm, 88 kg lean-athletic; broad-shouldered; proportional-limbed.")
+    .replace(/Subject:\s*([^,]+),\s*([^,]+),\s*wearing (white thobe with red-and-white shemagh and black iqal)\./iu, "$1; $2; $3.")
+    .replace(/\s{2,}/gu, " ")
+    .trim();
+}
+
 function phase41SceneProtected(sentence, canonical, routedInput, section) {
   const id = section?.id;
   if (id === "carExterior" && /2017 Range Rover Sport Autobiography Dynamic|Car exterior location:|Fuji White/iu.test(sentence)) return true;
@@ -233,7 +243,8 @@ function phase41SceneProtected(sentence, canonical, routedInput, section) {
 }
 
 function compactPhase41Budget(prompt, canonical, routedInput, section, required = [], maxWords = 250) {
-  let sentences = phase41SentenceParts(phase41Deduplicate(prompt));
+  const compactable = section?.id === "carExterior" ? compactPhase41CarExteriorProtectedText(prompt, canonical) : prompt;
+  let sentences = phase41SentenceParts(phase41Deduplicate(compactable));
   const headwear = describeHeadwear(canonical);
   const body = describeBodyAnatomy(canonical);
   const scale = describeEnvironmentScale(canonical);
