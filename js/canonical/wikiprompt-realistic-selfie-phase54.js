@@ -21,9 +21,16 @@ export const WIKIPROMPT_REALISTIC_SELFIE_RULES = Object.freeze({
 
 const text=value=>String(value??"").trim();
 const clean=value=>text(value).replace(/\s+/gu," ");
-const meaningful=value=>{
+const NEUTRAL_VALUES=new Set([
+  "","auto","none","default","off","normal","natural-auto","natural","neutral","close","eye",
+  "light","lightly-unpressed","home-used","relaxed","riyadh","minimal"
+]);
+const meaningful=(key,value)=>{
   const v=clean(value);
-  return v && !/^(?:auto|none|default|off|normal|natural-auto)$/iu.test(v);
+  if(!v) return false;
+  if(NEUTRAL_VALUES.has(v.toLowerCase())) return false;
+  if(key==="streetHour"&&!Number.isFinite(Number(v))) return false;
+  return true;
 };
 
 const SECTION_GUIDANCE=Object.freeze({
@@ -81,10 +88,10 @@ export function buildWikiPromptFieldEvidence(rawInput={}){
   for(const [key,label] of FIELD_DEFS){
     const value=raw[key];
     if(Array.isArray(value)) continue;
-    if(meaningful(value)) evidence.push(`${label}: ${clean(value)}`);
+    if(meaningful(key,value)) evidence.push(`${label}: ${clean(value)}`);
   }
   const effects=Array.isArray(raw.postProcessing)?raw.postProcessing:[raw.postProcessing].filter(Boolean);
-  const selectedEffects=effects.map(clean).filter(meaningful);
+  const selectedEffects=effects.map(clean).filter(value=>meaningful("postProcessing",value));
   if(selectedEffects.length) evidence.push(`Post-processing: ${selectedEffects.join(" + ")}`);
   return Object.freeze(evidence);
 }
