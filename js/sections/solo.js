@@ -15,7 +15,7 @@ export const SECTION = deepFreeze({
     composition:["selfie poses and angles"],
     interaction:[],
     exclusions:[],
-    routing:{ intentType:"selfie", sceneMode:"selectable", defaultScene:"street" },
+    routing:{ intentType:"selfie", sceneMode:"fallback", defaultScene:"street" },
     ui:{ scenarioMode:"custom", scene:"custom", groupMode:"single", captureMode:"normal", customFallback:"an ordinary everyday location used only as minimal supporting context", showScenePicker:true }
   }
 });
