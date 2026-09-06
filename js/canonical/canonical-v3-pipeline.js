@@ -57,7 +57,7 @@ function naturalBodyCompact() { return "Tall 195 cm, 88 kg lean-athletic; broad-
 function sentenceCase(value) { const text = String(value || "").trim(); return text ? `${text.charAt(0).toUpperCase()}${text.slice(1)}` : text; }
 function compactCarExteriorLocation(value) {
   return String(value || "")
-    .replace(/parked on a driveway before a Saudi villa with beige stone cladding, high wall, metal gate, and a palm tree/iu, "parked before a Saudi villa with beige stone, gate and palm")
+    .replace(/parked on a driveway before a Saudi villa with beige stone cladding, high wall, metal gate, and a palm tree/iu, "at a Saudi villa with beige stone")
     .replace(/in a marked outdoor lot with white lines, concrete wheel stops, and a few other parked cars/iu, "in a marked outdoor lot with white lines, wheel stops and parked cars")
     .replace(/at the curb before a small grocery with shelves and a glowing beverage cooler behind glass/iu, "at a small grocery curb with shelves and a glowing beverage cooler")
     .replace(/parallel parked along a yellow-and-black curb on weathered asphalt/iu, "parallel parked along a yellow-and-black curb");
@@ -211,7 +211,7 @@ function replacePhase41Lighting(prompt, description, time) {
 function normalizePhase41CarExteriorAuthority(prompt, routedInput) {
   const selection = resolveCarExteriorSelection(routedInput);
   const location = sentenceCase(compactCarExteriorLocation(selection.locationText));
-  const cabin = selection.pose === "door-open" ? " Open door reveals Ivory perforated leather, dark wood and black and Ivory wheel." : "";
+  const cabin = selection.pose === "door-open" ? " Open door reveals Ivory perforated leather and dark wood." : "";
   const authority = `${location}, subject ${selection.poseText}. Tires have realistic contact shadow.${cabin}`;
   const kept = phase41SentenceParts(prompt).filter((sentence) => {
     if (/2017 Range Rover Sport Autobiography Dynamic/iu.test(sentence)) return true;
@@ -231,13 +231,13 @@ function compactPhase41CarExteriorProtectedText(prompt, canonical) {
   if (canonical?.scene?.id !== "carExterior") return String(prompt || "");
   return String(prompt || "")
     .replace(/2017 Range Rover Sport Autobiography Dynamic L494, Fuji White; gloss-black-grille\/vents; 22-inch-dark-alloys; quad-exhausts; LED-DRLs; panoramic-glass; transparent-reflective-glass\/faint-Ivory-cabin; Dynamic-badge; illegible-Saudi-plate\./iu, PHASE42_CAR_EXTERIOR_SPEC)
-    .replace(/a red-and-white fine checkered shemagh with one end casually thrown over the shoulder and the other hanging at the chest, held by a black doubled-cord iqal seated firmly on the crown, relaxed youthful drape, the shemagh lies flat under the iqal, not a turban\./iu, "a red-and-white fine checkered shemagh, one end casually thrown over the shoulder and the other hanging at the chest, held by a black doubled-cord iqal; flat under the iqal, not a turban.")
     .replace(/Tall 195 cm, 88 kg lean-athletic build: medium-to-moderately-broad shoulders visibly wider than the waist, moderately developed chest, subtle deltoid roundness, long proportional limbs with filled-not-thin arms, proportionate adult male neck, and head anatomically scaled to tall frame\./iu, naturalBodyCompact())
     .replace(/Tall 195 cm, 88 kg lean-athletic build: shoulders wider than waist, developed chest\/deltoids, long proportional limbs, filled arms, adult male neck, head scaled to the tall frame\./iu, naturalBodyCompact())
     .replace(/Tall 195 cm, 88 kg lean-athletic; broad-shouldered; proportional-limbed\./iu, naturalBodyCompact())
     .replace(/\bNo facial alteration\/lengthening\.\s*/iu, "")
     .replace(/Subject:\s*([^,]+),\s*([^,]+),\s*wearing ([^.]+)\./iu, "$1; $2; $3.")
-    .replace(/\bstanding beside the open driver door;\s*neutral;\s*(white thobe with red-and-white shemagh and black iqal)\./iu, "neutral; $1.")
+    .replace(/\bstanding beside the open driver door;\s*neutral;\s*(white thobe with red-and-white shemagh and black iqal)\./iu, "neutral; white thobe.")
+    .replace(/\bleaning naturally against the closed driver door;\s*neutral;\s*(crisp white thobe with a red-and-white checkered shemagh and black iqal, youthful style with one end casually thrown over the shoulder)\./iu, "neutral; crisp white thobe.")
     .replace(/\s{2,}/gu, " ")
     .trim();
 }
