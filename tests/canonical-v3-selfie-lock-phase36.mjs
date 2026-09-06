@@ -11,36 +11,20 @@ const expectedOpening = Object.freeze({
   direct_front_camera_selfie:"A candid direct selfie.",
   subject_held_driver_selfie:"A candid direct selfie.",
   group_selfie:"A candid group selfie.",
-  accidental_front_camera_capture:"An accidental front-camera capture."
+  accidental_front_camera_capture:"An accidental front-camera capture.",
+  mirror_selfie:"A candid direct selfie."
 });
 
 const base = {
-  scene:"custom",
-  customScene:"a user-defined scene",
-  time:"night",
-  hasReference:true,
-  expression:"neutral",
-  pose:"both hands in pockets",
-  clothing:"casual-tee-black-jeans-blue",
-  fabric:"cotton",
-  fabricWeight:"light",
-  ironState:"lightly-unpressed",
-  wearState:"normal-day",
-  clothingFit:"regular",
-  lighting:"ordinary practical light"
+  scene:"custom", customScene:"a user-defined scene", time:"night", hasReference:true,
+  expression:"neutral", pose:"both hands in pockets", clothing:"casual-tee-black-jeans-blue",
+  fabric:"cotton", fabricWeight:"light", ironState:"lightly-unpressed", wearState:"normal-day",
+  clothingFit:"regular", lighting:"ordinary practical light"
 };
 
 for (const [studioSection, route] of Object.entries(SECTION_CAPTURE_ROUTING)) {
   const input = { ...base, studioSection };
-  if (studioSection === "carExterior") {
-    Object.assign(input, {
-      clothing:"thobe-redshemagh-iqal",
-      carExteriorClothing:"home-sleep-white-gray",
-      carExteriorLocation:"reststop",
-      carExteriorPose:"both hands in pockets",
-      carExteriorLighting:"streetlight-reflection"
-    });
-  }
+  if (studioSection === "carExterior") Object.assign(input, { clothing:"thobe-redshemagh-iqal", carExteriorClothing:"home-sleep-white-gray", carExteriorLocation:"reststop", carExteriorPose:"both hands in pockets", carExteriorLighting:"streetlight-reflection" });
   const outputs = Array.from({ length:10 }, () => buildCanonicalV3UserOutput(input));
   const first = outputs[0];
   assert.ok(first.prompt.trim(), `Phase 36: ${studioSection} prompt must be non-empty`);
@@ -49,33 +33,19 @@ for (const [studioSection, route] of Object.entries(SECTION_CAPTURE_ROUTING)) {
   assert.ok(outputs.every((item) => item.prompt === first.prompt), `Phase 36: ${studioSection} determinism must be 10/10`);
   if (INTENTIONAL_SELFIE_TYPES.has(route.captureType)) {
     assert.doesNotMatch(withoutSelfieLock(first.prompt), /both hands in pockets/iu, `Phase 36: ${studioSection} leaked impossible selfie pose outside the lock`);
-    assert.match(first.prompt, new RegExp(SELFIE_ARM_LOCK.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "u"), `Phase 36: ${studioSection} selfie arm lock missing`);
+    assert.ok(first.prompt.includes(SELFIE_ARM_LOCK), `Phase 36: ${studioSection} selfie arm lock missing`);
   }
   assert.ok(words(first.prompt) <= 250, `Phase 36: ${studioSection} exceeds 250 words (${words(first.prompt)})`);
-  if (studioSection === "custom") {
-    assert.match(first.prompt, /a user-defined scene/iu, "Phase 36: custom section must preserve the user-written place");
-  } else {
-    assert.doesNotMatch(first.prompt, /a user-defined scene/iu, `Phase 36: ${studioSection} leaked custom scene`);
-  }
+  if (studioSection === "custom") assert.match(first.prompt, /a user-defined scene/iu, "Phase 36: custom section must preserve the user-written place");
+  else assert.doesNotMatch(first.prompt, /a user-defined scene/iu, `Phase 36: ${studioSection} leaked custom scene`);
 }
 
-const carInput = {
-  ...base,
-  studioSection:"carExterior",
-  scene:"custom",
-  customScene:"a user-defined scene",
-  pose:"both hands in pockets",
-  clothing:"thobe-redshemagh-iqal",
-  carExteriorPose:"front-grille",
-  carExteriorLocation:"reststop",
-  carExteriorLighting:"streetlight-reflection",
-  carExteriorClothing:"home-sleep-white-gray"
-};
+const carInput = { ...base, studioSection:"carExterior", scene:"custom", customScene:"a user-defined scene", pose:"both hands in pockets", clothing:"thobe-redshemagh-iqal", carExteriorPose:"front-grille", carExteriorLocation:"reststop", carExteriorLighting:"streetlight-reflection", carExteriorClothing:"home-sleep-white-gray" };
 const carOutputs = Array.from({ length:10 }, () => buildCanonicalV3UserOutput(carInput));
 const car = carOutputs[0];
 assert.equal(firstSentence(car.prompt), "A candid direct selfie.");
 assert.equal(car.canonical.scene.id, "carExterior");
-assert.equal(car.resolution.cleanInput.scene, "carExterior", "Phase 36: carExterior routing must remain canonical even when the final budget drops optional environment detail");
+assert.equal(car.resolution.cleanInput.scene, "carExterior");
 assert.match(car.prompt, /2017 Range Rover Sport Autobiography Dynamic/iu);
 assert.match(car.prompt, /Fuji White/iu);
 assert.match(car.prompt, /white thobe/iu);
@@ -83,15 +53,12 @@ assert.match(car.prompt, /red-and-white fine checkered shemagh/iu);
 assert.match(car.prompt, /black doubled-cord iqal/iu);
 assert.match(car.prompt, /One arm extends toward the camera holding the phone/iu);
 assert.doesNotMatch(withoutSelfieLock(car.prompt), /a user-defined scene|both hands in pockets|sleep/iu);
-assert.ok(words(car.prompt) <= 250, `Phase 36: carExterior exceeds 250 words (${words(car.prompt)})`);
-assert.ok(carOutputs.every((item) => item.prompt === car.prompt), "Phase 36: carExterior determinism must be 10/10");
-
-const canonicalBefore = JSON.stringify(car.canonical.hard_constraints);
+assert.ok(words(car.prompt) <= 250);
+assert.ok(carOutputs.every((item) => item.prompt === car.prompt));
+const before = JSON.stringify(car.canonical.hard_constraints);
 void buildOpenAIImagePrompt(car.canonical);
-assert.equal(JSON.stringify(car.canonical.hard_constraints), canonicalBefore, "Phase 36: adapter must not mutate hard constraints");
-
+assert.equal(JSON.stringify(car.canonical.hard_constraints), before);
 console.log(`PHASE36_SECTIONS=${Object.keys(SECTION_CAPTURE_ROUTING).length}`);
 console.log(`PHASE36_CAR_EXTERIOR_WORDS=${words(car.prompt)}`);
 console.log("PHASE36_DETERMINISM=10/10");
-console.log(`PHASE36_CAR_EXTERIOR_PROMPT=${car.prompt}`);
-console.log("✓ Phase 36 selfie lock and full section routing de-conflict passed under Phase 40 section registry authority");
+console.log("✓ Phase 36 selfie lock and full section routing de-conflict passed under Phase 47 mirror specialization");
