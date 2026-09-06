@@ -80,10 +80,11 @@ assert.match(clothing.custom_modifier, /plain cuffs/iu);
 assert.match(output.prompt, /white thobe/iu);
 assert.match(output.prompt, /red-and-white/iu);
 assert.match(output.prompt, /black iqal/iu);
+console.log(`PHASE23_CAR_EXTERIOR_WORDS=${wordCount(output.prompt)}`);
+console.log(`PHASE23_CAR_EXTERIOR_PROMPT=${output.prompt}`);
 assert.ok(wordCount(output.prompt) <= 250, `carExterior prompt exceeds 250 words (${wordCount(output.prompt)})`);
 const repeated = Array.from({ length: 10 }, () => buildOpenAIImagePrompt(output.canonical));
 assert.equal(repeated.every((value) => value === repeated[0]), true, "Phase 23 determinism failed");
 assert.equal(JSON.stringify(output.canonical.hard_constraints), hardBefore, "hard constraints changed during adapter runs");
 
-console.log(`PHASE23_CAR_EXTERIOR_WORDS=${wordCount(output.prompt)}`);
 console.log("✓ Phase 23 clothing panel contracts passed under Phase 39 unified authority UI");
