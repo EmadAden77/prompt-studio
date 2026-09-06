@@ -17,7 +17,7 @@ import { SECTION_REGISTRY, getSection } from "../sections/index.js";
 export const CAR_EXTERIOR_PROMPT_WORD_BUDGET = 280;
 const PHASE34_ROUTING_WORD_BUDGET = 250;
 const PHASE34_REDUNDANT_GLASS_SENTENCE = "Transparent glass carries natural reflections and a faint view into the Ivory cabin.";
-const PHASE42_CAR_EXTERIOR_SPEC = "2017 Range Rover Sport Autobiography Dynamic L494, Fuji White, gloss black grille and vents, 22-inch dark alloys, quad rectangular exhaust tips, LED DRLs, panoramic glass roof, transparent glass with natural reflections and faint Ivory-cabin view, never opaque black; Dynamic badging and Saudi plate, never legible.";
+const PHASE42_CAR_EXTERIOR_SPEC = "2017 Range Rover Sport Autobiography Dynamic L494, Fuji White, gloss black grille and vents, 22-inch alloys, quad exhaust tips, LED DRLs, panoramic glass roof, transparent glass with faint Ivory-cabin view, never opaque black; Dynamic badge, illegible Saudi plate.";
 const LEGACY_SECTION_ALIASES = Object.freeze({ selfie:"solo", studio:"solo" });
 const DAILY_SCENE_KEYS = new Set(["majlis", "kashta", "barbershop", "grocery", "rooftop", "streetFootball", "gasStation"]);
 const REAL_SECTION_SCENES = new Set([
