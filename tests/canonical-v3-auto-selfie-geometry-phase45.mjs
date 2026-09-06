@@ -21,7 +21,8 @@ const rows = [
 
 for (const section of Object.values(SECTION_REGISTRY)) {
   assert.ok(section.rules?.selfieGeometry, `${section.id}: selfieGeometry declaration missing`);
-  assert.deepEqual(section.rules.selfieGeometry.angles, ["eye","high","low","three-quarter"], `${section.id}: allowed angle contract drifted`);
+  const expectedAngles = section.id === "mirror" ? ["eye","three-quarter"] : ["eye","high","low","three-quarter"];
+  assert.deepEqual(section.rules.selfieGeometry.angles, expectedAngles, `${section.id}: allowed angle contract drifted`);
   assert.ok(section.rules.selfieGeometry.poses.length >= 2, `${section.id}: section-specific pose list missing`);
 }
 
@@ -94,4 +95,4 @@ console.log(`PHASE45_MANUAL_GEOMETRY=${JSON.stringify(manualOutput.geometry)}`);
 console.log(`PHASE45_MANUAL_OVERRIDE=${manualOutput.prompt}`);
 console.log(`PHASE45_TRADITIONAL_WORDS=${words(traditionalOutput.prompt)}`);
 console.log("PHASE45_DETERMINISM=10/10");
-console.log("✓ Phase 45 smart auto selfie geometry passed");
+console.log("✓ Phase 45 smart auto selfie geometry passed with Phase 47 mirror specialization");
