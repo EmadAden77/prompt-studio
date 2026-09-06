@@ -2,8 +2,8 @@ import { deepFreeze } from "./_freeze.js";
 
 export const SECTION = deepFreeze({
   id:"bedroom",
-  label:"Bedroom",
-  description:"Lived-in bedroom selfie and home poses",
+  label:"🏠 التصوير في غرفة النوم",
+  description:"السرير والاستلقاء والأريكة وملابس وإضاءة الغرفة فقط",
   captureType:"direct_front_camera_selfie",
   scenes:["bedroom"],
   clothingSource:"home",
@@ -14,7 +14,9 @@ export const SECTION = deepFreeze({
     hard:["bedroom context"],
     composition:["bed sofa or lying pose"],
     interaction:[],
-    exclusions:["studio staging"]
+    exclusions:["studio staging"],
+    routing:{ intentType:"selfie", sceneMode:"fixed", defaultScene:"bedroom" },
+    ui:{ scenarioMode:"bedroom", scene:"bedroom", groupMode:"single", captureMode:"normal", showScenePicker:false }
   }
 });
 
