@@ -279,7 +279,7 @@ function enforcePhase41SectionWiring(prompt, canonical, routedInput, section) {
   }
   if (wiring.selfieArmLock && !source.includes(SELFIE_ARM_LOCK)) source = insertAfterOpening(source, SELFIE_ARM_LOCK);
   if (wiring.body && !bodyEvidencePresent) {
-    const fallbackBody = section.id === "carExterior" ? "Tall 195 cm, 88 kg lean-athletic build: shoulders wider than waist, developed chest/deltoids, long proportional limbs, filled arms, adult male neck, head scaled to the tall frame." : body;
+    const fallbackBody = section.id === "carExterior" ? "Tall 195 cm, 88 kg lean-athletic; broad-shouldered; proportional-limbed." : body;
     if (fallbackBody) source = `${source} ${fallbackBody}`.trim();
   }
   if (wiring.body && !scaleEvidencePresent) {
