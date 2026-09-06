@@ -1,6 +1,6 @@
 import { wikiPromptService } from "../services/wikiPromptService.js";
 import { STREET_MOODS } from "../data.js";
-import { buildCanonicalV3UserOutput } from "./canonical-v3-phase51.js";
+import { buildCanonicalV3UserOutput } from "./canonical-v3-phase52.js";
 import {
   CANONICAL_V3_ENGINE,
   ENGINE_STORAGE_KEY,
