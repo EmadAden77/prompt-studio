@@ -17,6 +17,7 @@ export const SECTION = deepFreeze({
     exclusions:["luxury accessories"],
     routing:{ intentType:"selfie", sceneMode:"fallback", defaultScene:"gym" },
     wiring:{ enabled:true, clothing:true, lighting:true, pose:true, expression:true, body:true, selfieArmLock:true },
+    selfieGeometry:{ angles:["eye","high","low","three-quarter"], poses:["standing-relaxed","seated-rest-elbows"] },
     ui:{ scenarioMode:"gym", scene:"gym", groupMode:"single", captureMode:"normal", showScenePicker:false }
   }
 });

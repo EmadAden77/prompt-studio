@@ -1,6 +1,6 @@
 import { wikiPromptService } from "../services/wikiPromptService.js";
 import { STREET_MOODS } from "../data.js";
-import { buildCanonicalV3UserOutput } from "./canonical-v3-pipeline.js";
+import { buildCanonicalV3UserOutput } from "./canonical-v3-phase45.js";
 import {
   CANONICAL_V3_ENGINE,
   ENGINE_STORAGE_KEY,
@@ -301,6 +301,7 @@ await import("../physics-app-v7.js?v=20260903-json-clean2");
 legacyAppReady = true;
 mountGroupControls();
 mountStreetMoodControls();
+await import("../phase45-selfie-geometry-ui.js?v=20260906-phase45");
 
 globalThis.__PROMPT_STUDIO_ENGINE__ = Object.freeze({
   engine: engineSelection.engine,

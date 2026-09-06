@@ -17,6 +17,7 @@ export const SECTION = deepFreeze({
     exclusions:["exterior scene"],
     routing:{ intentType:"car", sceneMode:"fixed", defaultScene:"rangeRover" },
     wiring:{ enabled:true, clothing:true, lighting:true, pose:true, expression:true, body:true, selfieArmLock:true },
+    selfieGeometry:{ angles:["eye","high","low","three-quarter"], poses:["driver-close","driver-low","roof-context"] },
     ui:{ scenarioMode:"car", scene:"rangeRover", groupMode:"single", captureMode:"normal", showScenePicker:false }
   }
 });

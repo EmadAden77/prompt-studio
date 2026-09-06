@@ -26,6 +26,7 @@ export const SECTION = deepFreeze({
       selfieArmLock:true,
       accidentalFields:["accidentalTrigger","accidentalPhonePosition","accidentalMotion","accidentalTilt","accidentalFocus","accidentalExposure","accidentalIntensity"]
     },
+    selfieGeometry:{ angles:["eye","high","low","three-quarter"], poses:["low-off-axis","phone-rising"] },
     ui:{ scenarioMode:"custom", scene:"custom", groupMode:"single", captureMode:"accidental", customFallback:"an ordinary lived-in indoor room or everyday place", showScenePicker:false }
   }
 });
