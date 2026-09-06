@@ -166,6 +166,7 @@ function protectedSentence(sentence, canonical) {
     || (headwear && sentence.includes(headwear))
     || (garment && !/^unspecified garment$/iu.test(garment) && sentence.includes(garment))
     || (canonical?.scene?.id === "carExterior" && /A parked Range Rover exterior selfie/iu.test(sentence))
+    || (canonical?.scene?.id === "carExterior" && /^The vehicle is /iu.test(sentence))
     || (carExteriorScene && sentence.includes(carExteriorScene))
     || sentence.startsWith(PROTECTED_LIGHTING_PREFIX)
     || /^Lighting (?:uses|follows)\b/iu.test(sentence)
