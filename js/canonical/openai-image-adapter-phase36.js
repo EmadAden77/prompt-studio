@@ -4,7 +4,7 @@ import { CAR_EXTERIOR_SPEC } from "../data.js";
 export * from "./openai-image-adapter.js";
 
 export const SELFIE_ARM_LOCK = "One arm extends toward the camera holding the phone; the other hand stays free or relaxed — never both hands in pockets or both hands occupied.";
-export const IDENTITY_STRICT_LOCK = "Identity strictly preserved from the reference image — facial structure, feature spacing, jaw width, nose shape, eye size, lip shape, ear shape, skin tone, hairline, beard pattern and natural asymmetry remain unchanged regardless of angle, distance, clothing or lighting.";
+export const IDENTITY_STRICT_LOCK = "Identity strictly preserved from the reference image: facial and head shape, facial proportions, feature spacing, eyes, eyebrows, nose, lips, jaw and chin, ears, skin tone, hairline, beard and moustache pattern, reference-linked eyewear, apparent age and natural asymmetry remain unchanged; no beautification, face slimming or lengthening, symmetry correction or de-aging regardless of angle, distance, clothing or lighting.";
 export const PROTECTED_LIGHTING_PREFIX = "Lighting follows the selected real-world";
 
 const DIRECT_SELFIE_TYPES = new Set(["direct_front_camera_selfie", "subject_held_driver_selfie", "mirror_selfie"]);
@@ -12,6 +12,7 @@ const DIRECT_SELFIE_TYPES = new Set(["direct_front_camera_selfie", "subject_held
 function text(value) { return typeof value === "string" ? value.trim() : ""; }
 function words(value) { return text(value).split(/\s+/u).filter(Boolean).length; }
 function escapeRegExp(value) { return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+function sentenceText(value) { return text(value).replace(/[.!?]+$/u, ""); }
 
 export function captureOpeningSentence(canonical) {
   const type = text(canonical?.capture?.type);
@@ -122,7 +123,25 @@ function isNight(canonical) {
   return source !== "daylight" && (/\bnight\b|streetlight|practical|mixed|dim|porch/iu.test(evidence) || source === "practical" || source === "mixed");
 }
 
+function selectedCarExteriorLightingSentence(canonical) {
+  if (canonical?.scene?.id !== "carExterior") return "";
+  const description = sentenceText(canonical?.lighting?.description);
+  const period = isNight(canonical) ? "night" : "day";
+  return description
+    ? `Lighting follows the selected real-world ${period} source: ${description}.`
+    : `Lighting follows the selected real-world ${period} source.`;
+}
+
 function ensureLightingSentence(prompt, canonical) {
+  const carExteriorLighting = selectedCarExteriorLightingSentence(canonical);
+  if (carExteriorLighting) {
+    if (String(prompt || "").includes(carExteriorLighting)) return String(prompt || "");
+    if (/\bLighting (?:uses|follows)[^.]*\./iu.test(String(prompt || ""))) {
+      return String(prompt || "").replace(/\bLighting (?:uses|follows)[^.]*\./iu, carExteriorLighting);
+    }
+    return `${prompt} ${carExteriorLighting}`.replace(/\s{2,}/gu, " ").trim();
+  }
+
   if (!isNight(canonical)) return prompt;
   const protectedLighting = "Lighting follows the selected real-world night source.";
   if (String(prompt || "").includes(protectedLighting)) return String(prompt || "");
@@ -136,6 +155,7 @@ function protectedSentence(sentence, canonical) {
   const opening = captureOpeningSentence(canonical);
   const headwear = describeHeadwear(canonical);
   const garment = text(canonical?.subjects?.primary?.clothing?.garment);
+  const carExteriorScene = canonical?.scene?.id === "carExterior" ? text(canonical?.scene?.description) : "";
   return Boolean(
     (opening && sentence === opening)
     || sentence.includes(IDENTITY_STRICT_LOCK)
@@ -143,6 +163,7 @@ function protectedSentence(sentence, canonical) {
     || /2017 Range Rover Sport Autobiography Dynamic/iu.test(sentence)
     || (headwear && sentence.includes(headwear))
     || (garment && !/^unspecified garment$/iu.test(garment) && sentence.includes(garment))
+    || (carExteriorScene && sentence.includes(carExteriorScene))
     || sentence.startsWith(PROTECTED_LIGHTING_PREFIX)
     || /^Lighting (?:uses|follows)\b/iu.test(sentence)
     || sentence.includes(SELFIE_ARM_LOCK)
