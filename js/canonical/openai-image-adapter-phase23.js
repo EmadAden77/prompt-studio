@@ -32,7 +32,6 @@ const POSES = Object.freeze({
   "hood-sit": "sitting lightly on the front edge of the hood with natural body weight"
 });
 
-const CONTACT_SHADOW_SENTENCE = "The tires sit with realistic contact shadow on the ground.";
 const GLASS_DETAIL_SENTENCE = "Transparent glass carries natural surroundings reflections while retaining a faint view into the Ivory cabin, and the panoramic roof reflects the sky.";
 
 function text(value) { return typeof value === "string" ? value.trim() : ""; }
@@ -57,7 +56,7 @@ function locationPoseSentence(canonical) {
   const location = LOCATIONS[text(facts(canonical).carExteriorLocation)] || LOCATIONS.villa;
   const poseId = text(facts(canonical).carExteriorPose) || "door-lean";
   const pose = POSES[poseId] || POSES["door-lean"];
-  return `The vehicle is ${location}, with the subject ${pose}.`;
+  return `The vehicle is ${location}, with the subject ${pose}; tires grounded by realistic contact shadow.`;
 }
 
 function interiorSentence(canonical) {
@@ -110,13 +109,9 @@ function compactLightingSentence(prompt) {
   return prompt.replace(/Lighting uses [^.]+\./iu, "Lighting follows the selected real-world day or night source.");
 }
 function requiredExteriorSentences(canonical) {
-  const required = [
-    FROZEN_EXTERIOR_SPEC,
-    locationPoseSentence(canonical)
-  ];
+  const required = [FROZEN_EXTERIOR_SPEC, locationPoseSentence(canonical)];
   const interior = interiorSentence(canonical);
   if (interior) required.push(interior);
-  required.push(CONTACT_SHADOW_SENTENCE);
   return required;
 }
 function optionalExteriorSentences(canonical) {
@@ -165,13 +160,7 @@ function insertWithinCap(prompt, canonical, maxWords = 250) {
 
   let requiredText = fitSentences(base, canonical, required, maxWords);
   if (requiredText.split(/(?<=[.!?])\s+/u).length < required.length) {
-    // Keep identity/car/location/pose/interior/contact grounding first. The exterior
-    // spec already carries a glass-reflection sentence, so the longer glass detail is optional.
-    const compactRequired = [FROZEN_EXTERIOR_SPEC, locationPoseSentence(canonical)];
-    const interior = interiorSentence(canonical);
-    if (interior) compactRequired.push(interior);
-    compactRequired.push(CONTACT_SHADOW_SENTENCE);
-    requiredText = fitSentences(base, canonical, compactRequired, maxWords);
+    requiredText = fitSentences(base, canonical, required, maxWords);
   }
 
   let finalText = requiredText;
