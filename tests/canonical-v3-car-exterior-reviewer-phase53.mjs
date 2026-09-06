@@ -56,3 +56,4 @@ console.log("PHASE53_DETERMINISM=10/10");
 console.log("Phase 53 vehicle rewrite rollback: PASS");
 
 await import("./canonical-v3-section-integrity-phase54.mjs");
+await import("./canonical-v3-car-interior-phase54.mjs");
