@@ -19,11 +19,22 @@ function dedupe(value) {
   }).join(" ").replace(/\s{2,}/gu, " ").trim();
 }
 
+function displayGarmentText(garment) {
+  const source = text(garment);
+  if (/\bthobe\b/iu.test(source) && /shemagh|ghutra|iqal|agal/iu.test(source)) {
+    return source.match(/^.*?\bthobe\b/iu)?.[0] || source;
+  }
+  return source;
+}
+
 function replaceClothingSentence(prompt, raw, canonical) {
   const garment = text(canonical?.subjects?.primary?.clothing?.garment);
   if (!garment || /^unspecified garment$/iu.test(garment)) return String(prompt || "");
-  const fabricNote = resolveNaturalClothingFabricNote(raw, garment);
-  const coherent = `Subject wearing ${garment}${fabricNote ? ` with ${fabricNote}` : ""} and natural standing folds.`;
+  const displayGarment = displayGarmentText(garment);
+  const fabricNote = resolveNaturalClothingFabricNote(raw, garment) || (/\bthobe\b/iu.test(displayGarment) ? "cotton" : "");
+  const alreadyNamesFabric = fabricNote && displayGarment.toLowerCase().includes(fabricNote.toLowerCase());
+  const fabricClause = fabricNote && !alreadyNamesFabric ? ` with ${fabricNote} fabric` : "";
+  const coherent = `Subject wearing ${displayGarment}${fabricClause} and natural standing folds.`;
   const parts = sentences(prompt);
   let index = parts.findIndex((sentence) => sentence.includes(garment) && /\bwearing\b|\bClothing:/iu.test(sentence));
   if (index < 0) index = parts.findIndex((sentence) => /\bSubject wearing\b|\bClothing:/iu.test(sentence));
@@ -132,6 +143,7 @@ function compactBodyIfNeeded(prompt, maxWords) {
 function keepBudget(prompt, section, geometry, canonical, maxWords) {
   let parts = sentences(dedupe(compactBodyIfNeeded(prompt, maxWords)));
   const garment = text(canonical?.subjects?.primary?.clothing?.garment);
+  const displayGarment = displayGarmentText(garment);
   const protect = (sentence) => Boolean(
     /^A candid |^An accidental /u.test(sentence)
     || /Identity strictly preserved from the reference image:/iu.test(sentence)
@@ -143,7 +155,7 @@ function keepBudget(prompt, section, geometry, canonical, maxWords) {
     || /2017 Range Rover Sport Autobiography Dynamic/iu.test(sentence)
     || /transparent.*natural reflections/iu.test(sentence)
     || /shemagh|ghutra|iqal|agal|bisht/iu.test(sentence)
-    || (garment && sentence.includes(garment))
+    || (displayGarment && sentence.includes(displayGarment))
     || /^Warm villa porch light|^Real parking-lot practical lighting|^Mixed sodium streetlights|^Available practical night lighting/iu.test(sentence)
     || (section?.id === "carExterior" && /Saudi villa|marked outdoor lot|small grocery|yellow-and-black|sandy shoulder|mall parking|Tires have realistic contact shadow|Open door reveals/iu.test(sentence))
   );
