@@ -44,7 +44,10 @@ export function canonicalIntentForSection(section) {
 
 export function shouldUseCanonicalV3(section, selection) {
   const normalized = normalize(section);
-  if (["gym", "street"].includes(normalized)) return true;
+  // carExterior is safety/realism hardened and must never fall back to the legacy
+  // renderer: its one-arm selfie lock, identity lock, car authority and de-conflict
+  // budget all live in Canonical V3.
+  if (["gym", "street", "carexterior"].includes(normalized)) return true;
   return selection?.engine === CANONICAL_V3_ENGINE && isCanonicalV3Section(section);
 }
 
