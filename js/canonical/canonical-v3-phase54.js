@@ -6,7 +6,7 @@ const text=value=>String(value??"").trim();
 const words=value=>text(value).split(/\s+/u).filter(Boolean).length;
 const sentences=value=>String(value||"").match(/[^.!?]+[.!?]+|[^.!?]+$/gu)?.map(part=>part.replace(/\s+/gu," ").trim()).filter(Boolean)||[];
 const normalize=value=>text(value).toLowerCase().replace(/[\s._-]+/gu," ");
-const CHATGPT_CUSTOM_DIRECTIVE="ChatGPT Images: create exactly one candid, physically plausible smartphone selfie from these instructions; treat the attached reference image as identity-only and preserve every explicit user selection.";
+const CHATGPT_CUSTOM_DIRECTIVE="ChatGPT Images: create one physically plausible smartphone selfie; use the attached reference for identity only and preserve explicit user selections.";
 const CHATGPT_CAR_DIRECTIVE="ChatGPT Images: create one physically plausible front-camera selfie inside this parked vehicle; preserve reference identity and explicit selections.";
 const CAR_INTERIOR_GEOMETRY_LOCK="Car-interior lock: parked LHD, driver seat only; door/window physically left, console right, steering wheel ahead of torso; never mirror or swap cabin geometry.";
 const CAR_INTERIOR_FIDELITY_LOCK="Cabin fidelity: 2017 Range Rover Sport Autobiography Dynamic L494; Ivory perforated leather, dark wood, black-and-Ivory wheel, transparent panoramic roof and Ivory headliner; show only angle-visible details with natural reflections.";
