@@ -56,18 +56,15 @@ function locationPoseSentence(canonical) {
   const location = LOCATIONS[text(facts(canonical).carExteriorLocation)] || LOCATIONS.villa;
   const poseId = text(facts(canonical).carExteriorPose) || "door-lean";
   const pose = POSES[poseId] || POSES["door-lean"];
-  return `The vehicle is ${location}, with the subject ${pose}; tires grounded by realistic contact shadow.`;
-}
-
-function interiorSentence(canonical) {
-  const poseId = text(facts(canonical).carExteriorPose) || "door-lean";
-  if (poseId !== "door-open") return "";
-  return `The open door reveals Ivory perforated leather, dark wood veneer, and the black-and-Ivory wheel${isNight(canonical) ? ", with the interior light spilling at night" : ""}.`;
+  const openDoorEvidence = poseId === "door-open"
+    ? `; open door reveals Ivory perforated leather, dark wood veneer, and the black-and-Ivory wheel${isNight(canonical) ? " with natural interior light spill" : ""}`
+    : "";
+  return `The vehicle is ${location}, with the subject ${pose}; tires grounded by realistic contact shadow${openDoorEvidence}.`;
 }
 
 export function describeCarExterior(canonical) {
   if (canonical?.scene?.id !== "carExterior") return "";
-  return [FROZEN_EXTERIOR_SPEC, locationPoseSentence(canonical), interiorSentence(canonical)].filter(Boolean).join(" ");
+  return [FROZEN_EXTERIOR_SPEC, locationPoseSentence(canonical)].join(" ");
 }
 
 export function describeCarExteriorRealism(canonical) {
@@ -109,10 +106,7 @@ function compactLightingSentence(prompt) {
   return prompt.replace(/Lighting uses [^.]+\./iu, "Lighting follows the selected real-world day or night source.");
 }
 function requiredExteriorSentences(canonical) {
-  const required = [FROZEN_EXTERIOR_SPEC, locationPoseSentence(canonical)];
-  const interior = interiorSentence(canonical);
-  if (interior) required.push(interior);
-  return required;
+  return [FROZEN_EXTERIOR_SPEC, locationPoseSentence(canonical)];
 }
 function optionalExteriorSentences(canonical) {
   const optional = [
@@ -158,12 +152,9 @@ function insertWithinCap(prompt, canonical, maxWords = 250) {
   candidate = insertAfterScene(base, canonical, full);
   if (words(candidate) <= maxWords) return candidate;
 
-  let requiredText = fitSentences(base, canonical, required, maxWords);
-  if (requiredText.split(/(?<=[.!?])\s+/u).length < required.length) {
-    requiredText = fitSentences(base, canonical, required, maxWords);
-  }
+  let finalText = fitSentences(base, canonical, required, maxWords);
+  if (finalText.split(/(?<=[.!?])\s+/u).length < required.length) finalText = fitSentences(base, canonical, required, maxWords);
 
-  let finalText = requiredText;
   for (const part of optional) {
     const next = finalText ? `${finalText} ${part}` : part;
     if (words(insertAfterScene(base, canonical, next)) <= maxWords) finalText = next;
