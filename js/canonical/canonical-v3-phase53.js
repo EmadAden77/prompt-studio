@@ -1,4 +1,4 @@
-import { buildCanonicalV3UserOutput as buildPhase54CanonicalV3UserOutput } from "./canonical-v3-phase54.js";
+import { buildCanonicalV3UserOutput as buildPhase55CanonicalV3UserOutput } from "./canonical-v3-phase55.js";
 
 const text=v=>String(v??"").trim();
 const words=v=>text(v).split(/\s+/u).filter(Boolean).length;
@@ -28,7 +28,7 @@ export function reviewCarExteriorPrompt(rawInput={},base={},prompt=""){
 }
 
 export function buildCanonicalV3UserOutput(rawInput={},sceneData=undefined){
-  return buildPhase54CanonicalV3UserOutput(rawInput,sceneData);
+  return buildPhase55CanonicalV3UserOutput(rawInput,sceneData);
 }
 
 export default buildCanonicalV3UserOutput;
