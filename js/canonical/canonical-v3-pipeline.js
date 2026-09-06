@@ -92,6 +92,7 @@ export function applySectionCaptureRouting(rawInput = {}) {
   const defaultScene = routing.defaultScene || section.scenes[0] || "street";
   if (routing.sceneMode === "fixed") raw.scene = defaultScene;
   else if (routing.sceneMode === "preserve-custom") raw.scene = currentScene || defaultScene;
+  else if (routing.sceneMode === "fallback") raw.scene = REAL_SECTION_SCENES.has(currentScene) ? currentScene : defaultScene;
   else raw.scene = section.scenes.includes(currentScene) ? currentScene : defaultScene;
 
   if (routing.sceneMode !== "preserve-custom" && REAL_SECTION_SCENES.has(String(raw.scene || ""))) raw.customScene = "";
