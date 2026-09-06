@@ -106,3 +106,5 @@ jobs:
         run: node tests/canonical-v3-english-outfits-phase38.mjs
       - name: Run Phase 39 unified UI clothing authority tests
         run: node tests/canonical-v3-ui-clothing-authority-phase39.mjs
+      - name: Run Phase 39 master unification pass
+        run: node tests/canonical-v3-master-phase39.mjs

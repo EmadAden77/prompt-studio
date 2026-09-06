@@ -4,6 +4,8 @@ import { CAR_EXTERIOR_SPEC } from "../data.js";
 export * from "./openai-image-adapter.js";
 
 export const SELFIE_ARM_LOCK = "One arm extends toward the camera holding the phone; the other hand stays free or relaxed — never both hands in pockets or both hands occupied.";
+export const IDENTITY_STRICT_LOCK = "Identity strictly preserved from the reference image — facial structure, feature spacing, jaw width, nose shape, eye size, lip shape, ear shape, skin tone, hairline, beard pattern and natural asymmetry remain unchanged regardless of angle, distance, clothing or lighting.";
+export const PROTECTED_LIGHTING_PREFIX = "Lighting follows the selected real-world";
 
 const DIRECT_SELFIE_TYPES = new Set(["direct_front_camera_selfie", "subject_held_driver_selfie", "mirror_selfie"]);
 
@@ -39,7 +41,7 @@ function stripExistingOperatorSentence(prompt) {
 }
 
 function isIntentionalSelfie(canonical) {
-  return ["direct_front_camera_selfie", "subject_held_driver_selfie", "group_selfie", "mirror_selfie"].includes(text(canonical?.capture?.type));
+  return /selfie|driver_selfie|mirror_selfie/iu.test(text(canonical?.capture?.type));
 }
 
 function sentenceParts(prompt) {
@@ -60,8 +62,40 @@ export function removeExactDuplicateSentences(prompt) {
 
 function applyAuthorityClothing(prompt, canonical) {
   const garment = text(canonical?.subjects?.primary?.clothing?.garment);
-  if (!garment) return prompt;
-  return String(prompt || "").replace(/\bwearing selected [^.]+(?=\.)/giu, `wearing ${garment}`);
+  if (!garment || /^unspecified garment$/iu.test(garment)) return prompt;
+  const source = String(prompt || "");
+  if (source.includes(garment)) return source;
+
+  let next = source.replace(/\bwearing selected [^.]+(?=\.)/giu, `wearing ${garment}`);
+  if (next !== source) return next;
+
+  next = source.replace(/\bSubject wearing [^.]+(?=\.)/iu, `Subject wearing ${garment}`);
+  if (next !== source) return next;
+
+  next = source.replace(/\bSubject:\s*([^.]*?),\s*wearing [^.]+(?=\.)/iu, `Subject: $1, wearing ${garment}`);
+  if (next !== source) return next;
+
+  next = source.replace(/\bThe primary subject has ([^.]*?),\s*wearing [^.]+(?=\.)/iu, `The primary subject has $1, wearing ${garment}`);
+  if (next !== source) return next;
+
+  return `${source} Subject wearing ${garment}.`.replace(/\s{2,}/gu, " ").trim();
+}
+
+function applySelfiePoseGuard(prompt, canonical) {
+  if (!isIntentionalSelfie(canonical)) return prompt;
+  return String(prompt || "")
+    .replace(/both\s+hands?\s+(?:in\s+)?(?:the\s+)?pockets?/giu, "one hand relaxed at his side")
+    .replace(/arms?\s+crossed|crossed\s+arms?/giu, "one hand relaxed at his side")
+    .replace(/both\s+hands?\s+(?:are\s+)?occupied/giu, "one hand relaxed at his side")
+    .replace(/\s{2,}/gu, " ")
+    .trim();
+}
+
+function applyStrictIdentity(prompt) {
+  if (String(prompt || "").includes(IDENTITY_STRICT_LOCK)) return String(prompt || "");
+  const legacyIdentity = /The primary subject preserves the supplied identity reference[^.]*\./iu;
+  if (legacyIdentity.test(String(prompt || ""))) return String(prompt || "").replace(legacyIdentity, IDENTITY_STRICT_LOCK);
+  return `${IDENTITY_STRICT_LOCK} ${prompt}`.replace(/\s{2,}/gu, " ").trim();
 }
 
 function deconflictRepeatedPose(prompt, canonical) {
@@ -89,9 +123,13 @@ function isNight(canonical) {
 }
 
 function ensureLightingSentence(prompt, canonical) {
-  if (/\bLighting (?:uses|follows)[^.]*\./iu.test(prompt)) return prompt;
   if (!isNight(canonical)) return prompt;
-  return `${prompt} Lighting follows the selected real-world night source.`.replace(/\s{2,}/gu, " ").trim();
+  const protectedLighting = "Lighting follows the selected real-world night source.";
+  if (String(prompt || "").includes(protectedLighting)) return String(prompt || "");
+  if (/\bLighting (?:uses|follows)[^.]*\./iu.test(String(prompt || ""))) {
+    return String(prompt || "").replace(/\bLighting (?:uses|follows)[^.]*\./iu, protectedLighting);
+  }
+  return `${prompt} ${protectedLighting}`.replace(/\s{2,}/gu, " ").trim();
 }
 
 function protectedSentence(sentence, canonical) {
@@ -100,11 +138,14 @@ function protectedSentence(sentence, canonical) {
   const garment = text(canonical?.subjects?.primary?.clothing?.garment);
   return Boolean(
     (opening && sentence === opening)
+    || sentence.includes(IDENTITY_STRICT_LOCK)
     || /The primary subject preserves the supplied identity reference/iu.test(sentence)
     || /2017 Range Rover Sport Autobiography Dynamic/iu.test(sentence)
     || (headwear && sentence.includes(headwear))
-    || (garment && sentence.includes(garment))
+    || (garment && !/^unspecified garment$/iu.test(garment) && sentence.includes(garment))
+    || sentence.startsWith(PROTECTED_LIGHTING_PREFIX)
     || /^Lighting (?:uses|follows)\b/iu.test(sentence)
+    || sentence.includes(SELFIE_ARM_LOCK)
   );
 }
 
@@ -157,7 +198,7 @@ function keepWithinBudget(prompt, canonical, maxWords = 250) {
   }
   if (words(sentences.join(" ")) > maxWords) {
     for (let index = sentences.length - 1; index >= 0 && words(sentences.join(" ")) > maxWords; index -= 1) {
-      if (!protectedSentence(sentences[index], canonical) && !sentences[index].includes(SELFIE_ARM_LOCK)) sentences.splice(index, 1);
+      if (!protectedSentence(sentences[index], canonical)) sentences.splice(index, 1);
     }
   }
   return sentences.join(" ").replace(/\s{2,}/gu, " ").trim();
@@ -169,6 +210,8 @@ export function buildOpenAIImagePrompt(canonical, options = {}) {
   prompt = stripExistingCaptureOpeners(prompt);
   if (isIntentionalSelfie(canonical)) prompt = stripExistingOperatorSentence(prompt);
   prompt = applyAuthorityClothing(prompt, canonical);
+  prompt = applySelfiePoseGuard(prompt, canonical);
+  prompt = applyStrictIdentity(prompt);
   prompt = deconflictRepeatedPose(prompt, canonical);
   if (opening) {
     const prefix = isIntentionalSelfie(canonical) ? `${opening} ${SELFIE_ARM_LOCK}` : opening;
