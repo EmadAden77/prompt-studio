@@ -8,7 +8,7 @@ export const SECTION = deepFreeze({
   scenes:["carExterior"],
   clothingSource:"authority",
   poses:["exterior-authority"],
-  lighting:["exterior-authority"],
+  lighting:["exterior-authority","flash"],
   realismLayers:["car-spec-lock","glass","contact-shadow"],
   rules:{
     hard:["2017 Range Rover Sport Autobiography Dynamic L494","Fuji White","exterior only"],
