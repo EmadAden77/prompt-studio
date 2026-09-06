@@ -152,7 +152,7 @@ function compactPhase40CarExteriorBudget(prompt, maxWords = 250) {
   ];
   for (const [pattern, replacement] of compactors) { compacted = compacted.replace(pattern, replacement).replace(/\s{2,}/gu, " ").trim(); if (wordCount(compacted) <= maxWords) return compacted; }
   if (/Identity strictly preserved from the reference image:/iu.test(compacted)) { compacted = compacted.replace(/No facial alteration\/lengthening\.\s*/iu, "").replace(/\s{2,}/gu, " ").trim(); if (wordCount(compacted) <= maxWords) return compacted; }
-  return compacted.replace(/Tall 195 cm, 88 kg lean-athletic build: medium-to-moderately-broad shoulders visibly wider than the waist, moderately developed chest, subtle deltoid roundness, long proportional limbs with filled-not-thin arms, proportionate adult male neck, and head anatomically scaled to tall frame\./iu, "Tall 195 cm, 88 kg lean-athletic build: shoulders wider than waist, moderately developed chest and deltoids, long proportional limbs, filled arms, adult male neck, and head scaled to the tall frame.").replace(/\s{2,}/gu, " ").trim();
+  return compacted.replace(/Tall 195 cm, 88 kg lean-athletic build: medium-to-moderately-broad shoulders visibly wider than the waist, moderately developed chest, subtle deltoid roundness, long proportional limbs with filled-not-thin arms, proportionate adult male neck, and head anatomically scaled to tall frame\./iu, "Tall 195 cm, 88 kg lean-athletic build: shoulders wider than waist, moderately developed chest/deltoids, long proportional limbs, filled arms, adult male neck, and head scaled to the tall frame.").replace(/\s{2,}/gu, " ").trim();
 }
 
 function enforcePhase40FinalCarExteriorSelection(prompt, routedInput) {
@@ -264,7 +264,7 @@ function enforcePhase41SectionWiring(prompt, canonical, routedInput, section) {
   if (section.id === "carExterior") source = normalizePhase41CarExteriorAuthority(source, routedInput);
   if (wiring.selfieArmLock && !source.includes(SELFIE_ARM_LOCK)) source = insertAfterOpening(source, SELFIE_ARM_LOCK);
   if (wiring.body && !bodyEvidencePresent) {
-    const fallbackBody = section.id === "carExterior" ? "Tall 195 cm, 88 kg lean-athletic build: shoulders wider than waist, developed chest and deltoids, long proportional limbs with filled arms, adult male neck, and head scaled to the tall frame." : body;
+    const fallbackBody = section.id === "carExterior" ? "Tall 195 cm, 88 kg lean-athletic build: shoulders wider than waist, developed chest/deltoids, long proportional limbs, filled arms, adult male neck, head scaled to the tall frame." : body;
     if (fallbackBody) source = `${source} ${fallbackBody}`.trim();
   }
   if (wiring.body && !scaleEvidencePresent) {
