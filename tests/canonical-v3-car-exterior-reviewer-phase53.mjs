@@ -6,10 +6,10 @@ const words=v=>String(v||"").trim().split(/\s+/u).filter(Boolean).length;
 const base=(extra={})=>({hasReference:true,studioSection:"carExterior",scene:"carExterior",time:"night",clothing:"formal-shirt-white-beige",expression:"neutral",carExteriorLocation:"parking",selfieAngle:"auto",...extra});
 
 const cases=[
-  {pose:"door-lean",view:"side",must:/roofline.*window line.*door geometry.*side-vent.*wheel arch.*circular wheel/iu},
-  {pose:"front-fender",view:"front-quarter",must:/grille.*headlight.*hood-fender.*front wheel-arch.*circular wheel/iu},
-  {pose:"rear-quarter",view:"rear-quarter",must:/tailgate.*rear-lamp.*rear body-mass.*rear wheel-arch.*circular wheel/iu},
-  {pose:"door-open",view:"door-open",must:/open-door geometry.*roofline.*window line.*door thickness.*wheel arch.*Ivory cabin/iu}
+  {pose:"door-lean",view:"side",must:/L494 roofline.*window line.*door\/vent placement.*wheel arches.*circular wheels/iu},
+  {pose:"front-fender",view:"front-quarter",must:/L494 grille\/headlight.*hood-fender.*front wheel-arch.*circular wheel/iu},
+  {pose:"rear-quarter",view:"rear-quarter",must:/L494 tailgate\/lamp.*rear body-mass.*rear wheel-arch.*circular wheel/iu},
+  {pose:"door-open",view:"door-open",must:/L494 roofline.*window\/door geometry.*wheel arch.*Ivory-cabin alignment/iu}
 ];
 
 for(const item of cases){
