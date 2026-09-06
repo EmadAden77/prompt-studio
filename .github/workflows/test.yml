@@ -130,3 +130,5 @@ jobs:
         run: node tests/canonical-v3-user-selection-authority-phase50.mjs
       - name: Run Phase 51 visual quality evaluation engine
         run: node tests/canonical-v3-visual-quality-phase51.mjs
+      - name: Run Phase 52 prompt compactness and visual priority
+        run: node tests/canonical-v3-prompt-compactness-phase52.mjs
