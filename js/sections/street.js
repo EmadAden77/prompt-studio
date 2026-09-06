@@ -8,7 +8,7 @@ export const SECTION = deepFreeze({
   scenes:["street"],
   clothingSource:"authority",
   poses:["standing","walking"],
-  lighting:["outdoor"],
+  lighting:["outdoor","flash"],
   realismLayers:["saudi-street","saudi-realism","micro"],
   rules:{
     hard:["outdoor street context"],
