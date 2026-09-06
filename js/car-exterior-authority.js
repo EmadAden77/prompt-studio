@@ -6,21 +6,21 @@ const FORBIDDEN_SELFIE_POSES = new Set(["key-fob"]);
 
 const COMPACT_LOCATION_TEXT = Object.freeze({
   villa:"Villa driveway",
-  grocery:"small grocery curb",
-  parking:"marked outdoor parking lot",
+  grocery:"Grocery curb",
+  parking:"Marked parking lot",
   street:"yellow-and-black street curb",
-  reststop:"sandy rest-stop shoulder",
-  mall:"outdoor mall parking"
+  reststop:"sandy shoulder",
+  mall:"mall parking"
 });
 
 const COMPACT_POSE_TEXT = Object.freeze({
-  "door-lean":"leaning on the closed driver door",
-  "door-open":"beside the open driver door",
-  "front-grille":"beside the front grille",
-  "rear-tailgate":"near the rear tailgate",
-  "front-fender":"at the front fender with the free hand on the body",
-  "rear-quarter":"at the rear three-quarter corner",
-  "hood-sit":"sitting on the front hood edge"
+  "door-lean":"leaning on closed driver door",
+  "door-open":"at open driver door",
+  "front-grille":"at front grille",
+  "rear-tailgate":"near rear tailgate",
+  "front-fender":"at front fender, free hand on body",
+  "rear-quarter":"at rear three-quarter corner",
+  "hood-sit":"sitting at front edge of the hood"
 });
 
 function text(value) { return typeof value === "string" ? value.trim() : ""; }
@@ -75,7 +75,7 @@ export function describeCompactCarExteriorSelection(raw = {}) {
   const selection = resolveCarExteriorSelection(raw);
   const location = COMPACT_LOCATION_TEXT[selection.location] || selection.locationText;
   const pose = COMPACT_POSE_TEXT[selection.pose] || selection.poseText;
-  return `${location}; subject ${pose}; tires grounded by realistic contact shadow.`;
+  return `${location}; subject ${pose}; tire contact shadow.`;
 }
 
 export function isCarExteriorSelfiePoseAllowed(value) {
