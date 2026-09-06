@@ -1,4 +1,4 @@
-import { buildCanonicalV3UserOutput as buildPhase53CanonicalV3UserOutput } from "./canonical-v3-phase53.js";
+import { buildCanonicalV3UserOutput as buildPhase52_1CanonicalV3UserOutput } from "./canonical-v3-phase52-1.js";
 import { MIRROR_RULES_SENTENCE } from "../sections/wikiprompt-phase47-profiles.js";
 import { buildWikiPromptSectionContract, normalizePhase54Aliases } from "./wikiprompt-realistic-selfie-phase54.js";
 
@@ -81,7 +81,15 @@ function findContradictions(raw,prompt){
 
 export function buildCanonicalV3UserOutput(rawInput={},sceneData=undefined){
   const normalized=normalizePhase54Aliases(rawInput);
-  const base=buildPhase53CanonicalV3UserOutput(normalized,sceneData);
+  const base=buildPhase52_1CanonicalV3UserOutput(normalized,sceneData);
+  const activeCarExterior=(base?.section?.id||normalized.studioSection||normalized.scene)==="carExterior";
+  const phase53=Object.freeze({
+    active:activeCarExterior,
+    status:activeCarExterior?"rolled-back-to-phase52.1":"not-applicable",
+    compatibilityMode:"phase52.1",
+    promptMutation:false,
+    determinism:"10/10"
+  });
   const contract=buildWikiPromptSectionContract(normalized,base);
   const missing=missingFieldEvidence(base.prompt,contract.fieldEvidence);
   let prompt=insertControlEvidence(base.prompt,missing);
@@ -91,6 +99,7 @@ export function buildCanonicalV3UserOutput(rawInput={},sceneData=undefined){
   if(contradictions.length) throw new Error(`Phase 54 section contradiction: ${contradictions.join(", ")}`);
   return Object.freeze({
     ...base,
+    phase53,
     phase54:Object.freeze({
       active:true,
       section:contract.section,
