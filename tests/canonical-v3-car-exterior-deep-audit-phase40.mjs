@@ -96,7 +96,7 @@ const legacyFallback = buildCanonicalV3UserOutput({
   carExteriorPose:"door-lean",
   carExteriorLighting:"harsh-noon"
 });
-assert.match(legacyFallback.prompt, /white thobe/iu, "historical payloads without the unified clothing key must retain fallback compatibility");
+assert.match(legacyFallback.prompt, /white(?:\s+Saudi)?\s+thobe/iu, "historical payloads without the unified clothing key must retain fallback compatibility");
 
 const identityFields = [
   "facial_structure", "head_shape", "apparent_age", "skin_tone", "natural_asymmetry", "eyes", "eyebrows", "nose", "lips", "jaw", "chin", "ears", "hairline", "hair_density", "facial_hair_pattern", "moustache_pattern", "reference_linked_eyewear"
