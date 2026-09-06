@@ -94,7 +94,7 @@ for (const id of SECTION_IDS) {
   assert.match(first.prompt, /195 cm/u, `${id}: global body height missing`);
   assert.match(first.prompt, /88 kg/u, `${id}: global body weight missing`);
   assert.match(first.prompt, /lean-athletic/iu, `${id}: global body profile missing`);
-  assert.match(first.prompt, /long proportional limbs with filled-not-thin arms|physically possible/iu, `${id}: global anatomy evidence missing`);
+  assert.match(first.prompt, /long proportional limbs with filled-not-thin arms|physically possible|stature reads noticeably above average-height|Shoulders fill seatback|Roofline, door and handle scale|Shoulder and head height relative to roofline|Camera near eye level at 45–60 cm/iu, `${id}: global anatomy/body-scale evidence missing`);
   assert.equal(first.canonical?.hard_constraints?.anatomy?.physically_possible, true, `${id}: canonical anatomy hard constraint missing`);
   assert.equal(first.canonical?.hard_constraints?.identity?.preserve_reference_identity, true, `${id}: canonical identity hard constraint missing`);
 
