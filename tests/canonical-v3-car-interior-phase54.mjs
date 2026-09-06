@@ -58,7 +58,10 @@ assert.match(out.prompt,/show only angle-visible details with natural reflection
 assert.match(out.prompt,/Capture physics: reachable one-arm phone hold/iu);
 assert.match(out.prompt,/no driving/iu);
 assert.match(out.prompt,/Tall 195 cm, 88 kg lean-athletic build/iu);
-assert.match(out.prompt,/Lighting: selected night practical source/iu);
+assert.match(out.prompt,/Lighting: car interior light is the dominant night source/iu);
+assert.match(out.prompt,/source-matched cast/iu);
+assert.match(out.prompt,/raised ISO adds subtle grain and shadow noise/iu);
+assert.match(out.prompt,/exposure keeps a natural face\/background tradeoff and remains clearly nocturnal/iu);
 assert.match(out.prompt,/plain steel wristwatch/iu);
 assert.match(out.prompt,/ordinary parked-car surroundings visible softly through the side glass/iu);
 assert.match(out.prompt,/three-quarter/iu);
