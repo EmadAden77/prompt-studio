@@ -15,6 +15,7 @@ import { describeMissingCarExteriorSelectionEvidence, resolveCarExteriorSelectio
 import { SECTION_REGISTRY, getSection } from "../sections/index.js";
 
 export const CAR_EXTERIOR_PROMPT_WORD_BUDGET = 280;
+export const NATURAL_HEIGHT_SCALE_SENTENCE = "His height reads naturally through believable proportions relative to the vehicle door and roofline, without exaggeration.";
 const PHASE34_ROUTING_WORD_BUDGET = 250;
 const PHASE34_REDUNDANT_GLASS_SENTENCE = "Transparent glass carries natural reflections and a faint view into the Ivory cabin.";
 const PHASE42_CAR_EXTERIOR_SPEC = "2017 Range Rover Sport Autobiography Dynamic L494, Fuji White, gloss black grille and vents, 22-inch alloys, quad exhausts, LED DRLs, panoramic glass roof, transparent glass with faint Ivory-cabin view, never opaque black; Dynamic badge, illegible Saudi plate.";
@@ -47,8 +48,19 @@ export const SECTION_CAPTURE_ROUTING = Object.freeze(Object.fromEntries(
 const WEAR_TEXT = Object.freeze({ fresh:"fresh wear", "normal-day":"ordinary daily wear", "hours-worn":"several hours worn", "washed-soft":"washed-soft daily wear", "home-used":"home-used wear", "post-workout":"post-workout wear" });
 const FIT_TEXT = Object.freeze({ slim:"slim fit", regular:"regular fit", relaxed:"relaxed fit", oversized:"oversized fit" });
 const IRON_TEXT = Object.freeze({ "fresh-pressed":"freshly pressed", "normal-pressed":"normally pressed", "lightly-unpressed":"lightly unpressed", unpressed:"unpressed" });
+const FABRIC_NAMES = Object.freeze(["poplin","jersey","cotton","linen","viscose","polyester","technical poly","wool","denim","flannel"]);
 
 function humanize(value) { return String(value || "").trim().replace(/[_-]+/gu, " ").replace(/\s+/gu, " "); }
+export function resolveNaturalClothingFabricNote(rawInput = {}, garment = "") {
+  const raw = rawInput && typeof rawInput === "object" ? rawInput : {};
+  const outfit = String(garment || "").toLowerCase();
+  const outfitFabric = FABRIC_NAMES.find((name) => outfit.includes(name));
+  if (outfitFabric) return outfitFabric;
+  const requested = humanize(raw.fabric || "").toLowerCase();
+  if (!requested) return "";
+  const requestedFabric = FABRIC_NAMES.find((name) => requested.includes(name));
+  return requestedFabric || requested;
+}
 function wordCount(value) { return String(value || "").trim().split(/\s+/u).filter(Boolean).length; }
 function normalizeScene(value) { return String(value || "") === "my_bedroom_text" ? "bedroom" : String(value || ""); }
 function activeSectionById(id) { const key = String(id || "").trim(); return getSection(key) || getSection(LEGACY_SECTION_ALIASES[key]); }

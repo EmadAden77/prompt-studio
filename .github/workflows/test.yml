@@ -118,3 +118,5 @@ jobs:
         run: node tests/canonical-v3-text-cleanup-phase42.mjs
       - name: Run Phase 45 smart auto selfie geometry
         run: node tests/canonical-v3-auto-selfie-geometry-phase45.mjs
+      - name: Run Phase 46 natural prompt language
+        run: node tests/canonical-v3-natural-prompt-language-phase46.mjs
