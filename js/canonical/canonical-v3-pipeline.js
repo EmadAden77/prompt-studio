@@ -58,7 +58,7 @@ function sentenceCase(value) { const text = String(value || "").trim(); return t
 function compactCarExteriorLocation(value) {
   return String(value || "")
     .replace(/parked on a driveway before a Saudi villa with beige stone cladding, high wall, metal gate, and a palm tree/iu, "at a Saudi villa with beige stone")
-    .replace(/in a marked outdoor lot with white lines, concrete wheel stops, and a few other parked cars/iu, "in a marked outdoor lot with white lines, wheel stops and parked cars")
+    .replace(/in a marked outdoor lot with white lines, concrete wheel stops, and a few other parked cars/iu, "in a marked outdoor lot")
     .replace(/at the curb before a small grocery with shelves and a glowing beverage cooler behind glass/iu, "at a small grocery curb with shelves and a glowing beverage cooler")
     .replace(/parallel parked along a yellow-and-black curb on weathered asphalt/iu, "parallel parked along a yellow-and-black curb");
 }
