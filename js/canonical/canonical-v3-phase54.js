@@ -6,6 +6,7 @@ const text=value=>String(value??"").trim();
 const words=value=>text(value).split(/\s+/u).filter(Boolean).length;
 const sentences=value=>String(value||"").match(/[^.!?]+[.!?]+|[^.!?]+$/gu)?.map(part=>part.replace(/\s+/gu," ").trim()).filter(Boolean)||[];
 const normalize=value=>text(value).toLowerCase().replace(/[\s._-]+/gu," ");
+const CHATGPT_CUSTOM_DIRECTIVE="ChatGPT Images: create exactly one candid, physically plausible smartphone selfie from these instructions; treat the attached reference image as identity-only and preserve every explicit user selection.";
 
 function requiredSelectionTexts(base){
   return Object.values(base?.phase50?.selectionManifest||{}).map(entry=>text(entry?.resolved||entry?.requested)).filter(Boolean);
@@ -26,7 +27,7 @@ function missingFieldEvidence(prompt,fieldEvidence=[]){
 
 function insertControlEvidence(prompt,evidence=[]){
   if(!evidence.length) return prompt;
-  const sentence=`Selected user controls: ${evidence.join("; ")}.`;
+  const sentence=`Use these selected details exactly: ${evidence.join("; ")}.`;
   const parts=sentences(prompt);
   const clothingIndex=parts.findIndex(part=>/^Subject wearing\b/iu.test(part));
   const expressionIndex=parts.findIndex(part=>/closed-mouth expression|natural relaxed smile|natural open laugh/iu.test(part));
@@ -40,6 +41,26 @@ function ensureMirrorRule(prompt,section){
   return `${prompt} ${MIRROR_RULES_SENTENCE}`.trim();
 }
 
+function applyCustomSceneAuthority(prompt,raw){
+  if(text(raw.studioSection)!=="custom") return Object.freeze({prompt,protectedEvidence:Object.freeze([])});
+  const scene=text(raw.customScene);
+  const details=text(raw.customSceneDetails);
+  let parts=sentences(prompt).filter(part=>!/^ChatGPT Images:/iu.test(part));
+  if(scene){
+    parts=parts.map(part=>part.replace(/an ordinary physically plausible user-defined location/giu,scene));
+    parts=parts.filter(part=>!/^(?:Scene|Location):\s*an ordinary physically plausible user-defined location\.?$/iu.test(part));
+  }
+  const sceneSentence=scene?`The scene is exactly: ${scene}.`:"";
+  const detailSentence=details?`Required scene details, only where physically visible in the selfie framing: ${details}.`:"";
+  if(scene&&!normalize(parts.join(" ")).includes(normalize(scene))) parts.splice(Math.min(4,parts.length),0,sceneSentence);
+  if(details&&!normalize(parts.join(" ")).includes(normalize(details))) parts.splice(Math.min(5,parts.length),0,detailSentence);
+  parts.unshift(CHATGPT_CUSTOM_DIRECTIVE);
+  return Object.freeze({
+    prompt:parts.join(" ").trim(),
+    protectedEvidence:Object.freeze([CHATGPT_CUSTOM_DIRECTIVE,sceneSentence,detailSentence].filter(Boolean))
+  });
+}
+
 function compactWithinBudget(prompt,base,protectedEvidence=[]){
   const max=base?.section?.id==="carExterior"?280:250;
   let parts=sentences(prompt);
@@ -47,7 +68,7 @@ function compactWithinBudget(prompt,base,protectedEvidence=[]){
   const protectedPart=part=>
     required.some(value=>value&&part.includes(value))
     || protectedEvidence.some(value=>value&&part.includes(value))
-    || /A candid direct selfie|A candid group selfie|An accidental front-camera capture|One arm extends toward the camera|Identity strictly preserved|Tall 195 cm, 88 kg|2017 Range Rover Sport Autobiography Dynamic L494|^Vehicle fidelity:|mirror_rules:|^Selected user controls:|Night physics:|Raised phone ISO|Exposure keeps|Direct phone flash/iu.test(part);
+    || /ChatGPT Images:|A candid direct selfie|A candid group selfie|An accidental front-camera capture|One arm extends toward the camera|Identity strictly preserved|Tall 195 cm, 88 kg|2017 Range Rover Sport Autobiography Dynamic L494|^Vehicle fidelity:|mirror_rules:|^Use these selected details exactly:|Night physics:|Raised phone ISO|Exposure keeps|Direct phone flash/iu.test(part);
   const removable=[
     /Fine skin pores|Fine skin texture|Authentic skin texture|Natural hair flyaways|loose hair strands|small lived-in irregularities|subtle sweat sheen/iu,
     /Background .*same|background people|Street life|parking area|gym has restrained|Natural sensor noise|Slight lens softness/iu,
@@ -76,6 +97,11 @@ function findContradictions(raw,prompt){
   if(section==="carExterior"&&/stationary driver's seat|center console right|steering wheel.*chest/iu.test(prompt)) issues.push("car-interior-leak");
   if(section==="gym"&&/bedside lamp|bedroom curtains|driver seat/iu.test(prompt)) issues.push("gym-context-leak");
   if(section==="bedroom"&&/gym rack|driver seat|front grille/iu.test(prompt)) issues.push("bedroom-context-leak");
+  if(section==="custom"){
+    if(!/^ChatGPT Images:/iu.test(prompt)) issues.push("chatgpt-target-missing");
+    if(text(raw.customScene)&&!normalize(prompt).includes(normalize(raw.customScene))) issues.push("custom-scene-lost");
+    if(text(raw.customSceneDetails)&&!normalize(prompt).includes(normalize(raw.customSceneDetails))) issues.push("custom-scene-details-lost");
+  }
   return Object.freeze(issues);
 }
 
@@ -91,10 +117,16 @@ export function buildCanonicalV3UserOutput(rawInput={},sceneData=undefined){
     determinism:"10/10"
   });
   const contract=buildWikiPromptSectionContract(normalized,base);
-  const missing=missingFieldEvidence(base.prompt,contract.fieldEvidence);
+  const custom=contract.section==="custom";
+  const evidenceForGenericInjection=custom
+    ? contract.fieldEvidence.filter(item=>!/^Custom scene(?: details)?:/iu.test(item))
+    : contract.fieldEvidence;
+  const missing=missingFieldEvidence(base.prompt,evidenceForGenericInjection);
   let prompt=insertControlEvidence(base.prompt,missing);
   prompt=ensureMirrorRule(prompt,contract.section);
-  prompt=compactWithinBudget(prompt,base,missing);
+  const customAuthority=applyCustomSceneAuthority(prompt,normalized);
+  prompt=customAuthority.prompt;
+  prompt=compactWithinBudget(prompt,base,[...missing,...customAuthority.protectedEvidence]);
   const contradictions=findContradictions(normalized,prompt);
   if(contradictions.length) throw new Error(`Phase 54 section contradiction: ${contradictions.join(", ")}`);
   return Object.freeze({
@@ -110,6 +142,8 @@ export function buildCanonicalV3UserOutput(rawInput={},sceneData=undefined){
       contradictions,
       allCommonFieldsRouted:true,
       inactiveSectionLeakageForbidden:true,
+      promptTarget:custom?"chatgpt-images":"canonical-v3",
+      customSceneAuthority:custom,
       determinism:"10/10"
     }),
     prompt
