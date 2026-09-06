@@ -26,8 +26,8 @@ function syncCommonFields(){
   const ui=section?.rules?.ui||{};
   const carExterior=ui.dedicatedControls==="carExterior";
 
-  // Common user controls stay interactive in every section. Section-specific
-  // alternatives may replace only the conflicting generic control itself.
+  // Common controls remain usable in every section. Only a dedicated
+  // section-specific replacement may hide its conflicting generic control.
   setNodeState("#post-processing-panel",{hidden:false,disabled:false});
   setNodeState('[aria-labelledby="realism-core-title"]',{hidden:false,disabled:false});
   setNodeState('[aria-labelledby="advanced-realism-title"]',{hidden:false,disabled:false});
@@ -39,7 +39,7 @@ function syncCommonFields(){
     setControlState(selector,{hidden:false,disabled:false});
   }
 
-  // Dedicated carExterior controls replace generic pose/lighting only.
+  // carExterior owns pose and lighting through its dedicated controls.
   setControlState("#pose",{hidden:carExterior,disabled:carExterior});
   setControlState("#pose-family",{hidden:carExterior,disabled:carExterior});
   setControlState("#lighting",{hidden:carExterior,disabled:carExterior});
@@ -72,15 +72,26 @@ function syncCommonFields(){
   }
 }
 
+function scheduleLateSync(){
+  queueMicrotask(syncCommonFields);
+  setTimeout(()=>setTimeout(syncCommonFields,0),0);
+}
+
 export function installPhase54SectionFieldUI(){
   if(typeof document==="undefined") return;
-  const sync=()=>queueMicrotask(syncCommonFields);
-  sync();
-  document.addEventListener("change",sync,true);
+  scheduleLateSync();
+  document.addEventListener("change",scheduleLateSync,true);
+  document.addEventListener("input",scheduleLateSync,true);
   document.addEventListener("click",event=>{
-    if(event.target?.closest?.("#studio-section-grid .studio-section-card")) setTimeout(syncCommonFields,0);
+    if(event.target?.closest?.("#studio-section-grid .studio-section-card")) scheduleLateSync();
   },true);
-  window.addEventListener("popstate",()=>setTimeout(syncCommonFields,0));
+  window.addEventListener("popstate",scheduleLateSync);
+
+  const form=qs("#prompt-form");
+  if(form&&typeof MutationObserver!=="undefined"){
+    const observer=new MutationObserver(()=>scheduleLateSync());
+    observer.observe(form,{childList:true,subtree:true});
+  }
 }
 
 if(typeof document!=="undefined") installPhase54SectionFieldUI();
