@@ -52,11 +52,11 @@ const ten=Array.from({length:10},()=>buildCanonicalV3UserOutput(raw).prompt);
 assert.ok(ten.every(v=>v===ten[0]),"Phase 52 determinism must be 10/10");
 
 const engineGate=fs.readFileSync(new URL("../js/canonical/engine-gate.js",import.meta.url),"utf8");
-assert.match(engineGate,/from\s+["']\.\/canonical-v3-phase52\.js["']/u,"live engine gate must use Phase 52");
+assert.match(engineGate,/from\s+["']\.\/canonical-v3-phase52-1\.js["']/u,"live engine gate must use Phase 52.1 while Phase 52 remains the compactness behavior contract");
 
 console.log(`PHASE52_BEFORE_WORDS=${words(p51.prompt)}`);
 console.log(`PHASE52_AFTER_WORDS=${words(out.prompt)}`);
 console.log(`PHASE52_REMOVED_SENTENCES=${out.phase52.removedSentenceCount}`);
 console.log(`PHASE52_SAMPLE=${out.prompt}`);
 console.log("PHASE52_DETERMINISM=10/10");
-console.log("Phase 52 prompt compactness and visual priority: PASS");
+console.log("Phase 52 prompt compactness and visual priority: PASS under Phase 52.1 live gate");
