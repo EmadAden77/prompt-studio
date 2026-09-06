@@ -62,7 +62,7 @@ export function removeExactDuplicateSentences(prompt) {
 
 function applyAuthorityClothing(prompt, canonical) {
   const garment = text(canonical?.subjects?.primary?.clothing?.garment);
-  if (!garment) return prompt;
+  if (!garment || /^unspecified garment$/iu.test(garment)) return prompt;
   const source = String(prompt || "");
   if (source.includes(garment)) return source;
 
@@ -142,7 +142,7 @@ function protectedSentence(sentence, canonical) {
     || /The primary subject preserves the supplied identity reference/iu.test(sentence)
     || /2017 Range Rover Sport Autobiography Dynamic/iu.test(sentence)
     || (headwear && sentence.includes(headwear))
-    || (garment && sentence.includes(garment))
+    || (garment && !/^unspecified garment$/iu.test(garment) && sentence.includes(garment))
     || sentence.startsWith(PROTECTED_LIGHTING_PREFIX)
     || /^Lighting (?:uses|follows)\b/iu.test(sentence)
     || sentence.includes(SELFIE_ARM_LOCK)
