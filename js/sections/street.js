@@ -2,8 +2,8 @@ import { deepFreeze } from "./_freeze.js";
 
 export const SECTION = deepFreeze({
   id:"street",
-  label:"Street",
-  description:"Saudi street standing and walking selfie",
+  label:"🌆 التصوير الخارجي والشارع",
+  description:"الوقوف والمشي والمواقف والإضاءة الخارجية فقط",
   captureType:"direct_front_camera_selfie",
   scenes:["street"],
   clothingSource:"authority",
@@ -14,7 +14,9 @@ export const SECTION = deepFreeze({
     hard:["outdoor street context"],
     composition:["standing or walking"],
     interaction:[],
-    exclusions:["studio lighting"]
+    exclusions:["studio lighting"],
+    routing:{ intentType:"selfie", sceneMode:"fixed", defaultScene:"street" },
+    ui:{ scenarioMode:"street", scene:"street", groupMode:"single", captureMode:"normal", showScenePicker:false }
   }
 });
 
