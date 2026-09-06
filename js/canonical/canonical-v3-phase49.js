@@ -5,7 +5,13 @@ function text(v){ return String(v ?? "").trim(); }
 function words(v){ return text(v).split(/\s+/u).filter(Boolean).length; }
 function sentences(v){ return String(v || "").match(/[^.!?]+[.!?]+|[^.!?]+$/gu)?.map(s=>s.replace(/\s+/gu," ").trim()).filter(Boolean)||[]; }
 function dedupe(v){ const seen=new Set(); return sentences(v).filter(s=>{const k=s.toLowerCase(); if(seen.has(k)) return false; seen.add(k); return true;}).join(" ").trim(); }
-function isNight(raw, canonical){ const t=text(raw?.time || canonical?.scene?.time).toLowerCase(); const e=`${t} ${text(canonical?.lighting?.source_type)} ${text(canonical?.lighting?.description)}`.toLowerCase(); return t==="night" || /night|streetlight|sodium|neon|practical|porch|dark/iu.test(e); }
+function isNight(raw, canonical){
+  const explicit=text(raw?.time).toLowerCase();
+  if(explicit){ if(explicit==="night") return true; if(/day|morning|afternoon|sunset|dawn|noon/iu.test(explicit)) return false; }
+  const t=text(canonical?.scene?.time).toLowerCase();
+  const e=`${t} ${text(canonical?.lighting?.source_type)} ${text(canonical?.lighting?.description)}`.toLowerCase();
+  return t==="night" || /night|streetlight|sodium|neon|porch|dark/iu.test(e);
+}
 function isFlash(raw, sectionId){ return ["solo","street","carExterior"].includes(sectionId) && /^(?:flash|phone-flash|direct-flash)$/iu.test(text(raw?.nightLighting || raw?.lighting || raw?.lightingMode || raw?.nightLightingMode)); }
 function moving(raw, canonical){ return /walk|walking|motion|moving|phone-rising|accidental/iu.test(`${text(raw?.selfiePose)} ${text(raw?.carExteriorPose)} ${text(canonical?.subjects?.primary?.pose)} ${text(canonical?.capture?.type)}`); }
 function visibleSource(raw, canonical, sectionId, flash){
