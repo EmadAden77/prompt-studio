@@ -1,6 +1,13 @@
 import { buildCanonicalV3 } from "../canonical-v3-engine.js";
 import { resolveCanonicalConflicts } from "./conflict-resolver.js";
-import { buildOpenAIImagePrompt, describeHeadwear } from "./openai-image-adapter-phase36.js";
+import {
+  buildOpenAIImagePrompt,
+  describeHeadwear,
+  describeBodyAnatomy,
+  describeEnvironmentScale,
+  SELFIE_ARM_LOCK,
+  IDENTITY_STRICT_LOCK
+} from "./openai-image-adapter-phase36.js";
 import { applyGroupPhase13, enrichGroupPromptPhase13 } from "./group-phase13.js";
 import { SCENES } from "../data.js";
 import { resolveClothingText } from "../clothing-authority.js";
@@ -251,16 +258,226 @@ function enforcePhase40FinalCarExteriorSelection(prompt, routedInput) {
   return compactPhase40CarExteriorBudget(next);
 }
 
+function deepFreezePhase41(value) {
+  if (!value || typeof value !== "object" || Object.isFrozen(value)) return value;
+  Object.freeze(value);
+  for (const child of Object.values(value)) deepFreezePhase41(child);
+  return value;
+}
+
+function applyPhase41CanonicalSectionWiring(canonical, routedInput, section) {
+  const wiring = section?.rules?.wiring;
+  const maxPeople = Number(wiring?.groupMaxPeople || 0);
+  if (!maxPeople || section?.id !== "group") return canonical;
+
+  const requested = Math.max(2, Math.min(maxPeople, Math.trunc(Number(routedInput?.groupCount) || canonical?.subjects?.count || 3)));
+  if (requested === canonical?.subjects?.count) return canonical;
+
+  const next = structuredClone(canonical);
+  next.subjects.count = requested;
+  next.subjects.additional = Array.isArray(next.subjects.additional) ? next.subjects.additional.slice(0, Math.max(0, requested - 1)) : [];
+  const template = next.subjects.additional[next.subjects.additional.length - 1] || { ...next.subjects.primary, reference_id:null };
+  while (next.subjects.additional.length < requested - 1) {
+    const person = structuredClone(template);
+    person.reference_id = null;
+    next.subjects.additional.push(person);
+  }
+  return deepFreezePhase41(next);
+}
+
+function phase41SentenceParts(prompt) {
+  return String(prompt || "").match(/[^.!?]+[.!?]+|[^.!?]+$/gu)?.map((sentence) => sentence.replace(/\s+/gu, " ").trim()).filter(Boolean) || [];
+}
+
+function phase41Deduplicate(prompt) {
+  const seen = new Set();
+  const kept = [];
+  for (const sentence of phase41SentenceParts(prompt)) {
+    if (seen.has(sentence)) continue;
+    seen.add(sentence);
+    kept.push(sentence);
+  }
+  return kept.join(" ").replace(/\s{2,}/gu, " ").trim();
+}
+
+function insertAfterOpening(prompt, addition) {
+  if (!addition) return String(prompt || "");
+  const source = String(prompt || "").trim();
+  const end = source.search(/[.!?]/u);
+  return end < 0
+    ? `${addition} ${source}`.trim()
+    : `${source.slice(0, end + 1)} ${addition} ${source.slice(end + 1)}`.replace(/\s{2,}/gu, " ").trim();
+}
+
+function replacePhase41Lighting(prompt, description, time) {
+  const detail = String(description || "").trim();
+  if (!detail) return String(prompt || "");
+  const period = String(time || "").trim().toLowerCase() === "day" ? "day" : "night";
+  const required = `Lighting follows the selected real-world ${period} source: ${detail.replace(/[.!?]+$/u, "")}.`;
+  let source = String(prompt || "")
+    .replace(/\bLighting (?:uses|follows)[^.]*\.\s*/giu, "")
+    .replace(/\s{2,}/gu, " ")
+    .trim();
+  source = `${source} ${required}`.replace(/\s{2,}/gu, " ").trim();
+  return source;
+}
+
+function phase41SceneProtected(sentence, canonical, routedInput, section) {
+  const id = section?.id;
+  if (id === "carExterior" && /2017 Range Rover Sport Autobiography Dynamic|Fuji White|Villa driveway|Grocery curb|marked outdoor parking|yellow-and-black|sandy|mall parking|tire contact shadow|Ivory perforated leather/iu.test(sentence)) return true;
+  if (id === "car" && /Inside stationary 2017 Range Rover Sport Autobiography Dynamic|Ivory perforated leather|LHD vehicle-relative|driver's door and side window/iu.test(sentence)) return true;
+  if (id === "bedroom" && /bedroom/iu.test(sentence)) return true;
+  if (id === "gym" && /gym environment/iu.test(sentence)) return true;
+  if (id === "street") {
+    const mood = String(routedInput?.streetMood || "").toLowerCase();
+    if (mood === "alley" && /service alley|air-conditioning units/iu.test(sentence)) return true;
+    if (mood === "construction" && /street construction|paving blocks/iu.test(sentence)) return true;
+    if (mood === "bufia" && /bufia/iu.test(sentence)) return true;
+    if ((!mood || mood === "normal") && /street|parking/iu.test(sentence)) return true;
+  }
+  if (id === "custom" && canonical?.scene?.description && sentence.includes(canonical.scene.description)) return true;
+  if ((id === "solo" || id === "group" || id === "accidental") && /street|parking/iu.test(sentence)) return true;
+  return false;
+}
+
+function compactPhase41Budget(prompt, canonical, routedInput, section, required = [], maxWords = 250) {
+  let sentences = phase41SentenceParts(phase41Deduplicate(prompt));
+  const headwear = describeHeadwear(canonical);
+  const body = describeBodyAnatomy(canonical);
+  const scale = describeEnvironmentScale(canonical);
+  const requiredText = required.filter(Boolean).map((value) => String(value));
+  const protectedSentence = (sentence) => Boolean(
+    /^A candid |^An accidental /u.test(sentence)
+    || sentence.includes(SELFIE_ARM_LOCK)
+    || sentence.includes(IDENTITY_STRICT_LOCK)
+    || (body && sentence.includes(body))
+    || (scale && sentence.includes(scale))
+    || /Tall 195 cm, 88 kg lean-athletic/iu.test(sentence)
+    || /195 cm adult|stature reads noticeably above average-height|Shoulders fill seatback|Roofline, door and handle scale/iu.test(sentence)
+    || /2017 Range Rover Sport Autobiography Dynamic/iu.test(sentence)
+    || /LHD vehicle-relative|driver's door and side window/iu.test(sentence)
+    || (headwear && sentence.includes(headwear))
+    || requiredText.some((value) => sentence.includes(value))
+    || phase41SceneProtected(sentence, canonical, routedInput, section)
+    || /Each person is a clearly distinct individual/iu.test(sentence)
+    || /^Lighting follows the selected real-world/iu.test(sentence)
+  );
+
+  const optionalPatterns = [
+    /Visual preferences:/iu,
+    /Scene details:/iu,
+    /Subtle tone variation/iu,
+    /Faint natural pore detail/iu,
+    /Subtle skin texture/iu,
+    /Natural hair flyaways/iu,
+    /Natural fabric wrinkles/iu,
+    /Natural body proportions consistent/iu,
+    /Natural sensor noise/iu,
+    /Slight lens softness/iu,
+    /Authentic white balance/iu,
+    /Localized highlights transition/iu,
+    /Gentle directional contrast/iu,
+    /A single soft catchlight/iu,
+    /Subtle natural eye reflection/iu,
+    /Captured with /iu,
+    /The capture uses a physically possible camera position/iu,
+    /soft-focus background characters/iu,
+    /mixed lighting from yellow sodium lamps/iu,
+    /Blurred ambient streetlight glow/iu,
+    /Out-of-focus warm storefront light/iu,
+    /Localized sweat sheen|A damp shirt patch|Flushed skin|Chalk dust/iu,
+    /Chrome bars|Bench upholstery|Weight plates|Rubber flooring/iu,
+    /A water bottle|His phone and gym bag|One side of the bar/iu,
+    /A blurred figure|A distant figure/iu
+  ];
+
+  for (const pattern of optionalPatterns) {
+    if (wordCount(sentences.join(" ")) <= maxWords) break;
+    for (let index = sentences.length - 1; index >= 0 && wordCount(sentences.join(" ")) > maxWords; index -= 1) {
+      if (pattern.test(sentences[index]) && !protectedSentence(sentences[index])) sentences.splice(index, 1);
+    }
+  }
+
+  for (let index = sentences.length - 1; index >= 0 && wordCount(sentences.join(" ")) > maxWords; index -= 1) {
+    if (!protectedSentence(sentences[index])) sentences.splice(index, 1);
+  }
+
+  return sentences.join(" ").replace(/\s{2,}/gu, " ").trim();
+}
+
+function enforcePhase41SectionWiring(prompt, canonical, routedInput, section) {
+  const wiring = section?.rules?.wiring;
+  if (!wiring?.enabled) return prompt;
+
+  let source = String(prompt || "").trim();
+  const required = [];
+  const garment = String(canonical?.subjects?.primary?.clothing?.garment || "").trim();
+  const pose = String(canonical?.subjects?.primary?.pose || "").trim();
+  const expression = String(canonical?.subjects?.primary?.expression || "").trim();
+  const lighting = String(canonical?.lighting?.description || "").trim();
+  const body = describeBodyAnatomy(canonical);
+  const scale = describeEnvironmentScale(canonical);
+
+  if (wiring.selfieArmLock && !source.includes(SELFIE_ARM_LOCK)) source = insertAfterOpening(source, SELFIE_ARM_LOCK);
+  if (wiring.body && body && !source.includes(body)) source = `${source} ${body}`.trim();
+  if (wiring.body && scale && !source.includes(scale)) source = `${source} ${scale}`.trim();
+
+  if (wiring.clothing && garment && !source.includes(garment)) {
+    const clause = `Clothing: ${garment}.`;
+    source = `${source} ${clause}`.trim();
+    required.push(garment);
+  } else if (wiring.clothing && garment) required.push(garment);
+
+  if (wiring.pose || wiring.expression) {
+    const pieces = [];
+    if (wiring.pose && pose && !source.includes(pose)) pieces.push(`Pose: ${pose}`);
+    if (wiring.expression && expression && !source.includes(expression)) pieces.push(`expression: ${expression}`);
+    if (pieces.length) source = `${source} ${pieces.join("; ")}.`.trim();
+    if (wiring.pose && pose) required.push(pose);
+    if (wiring.expression && expression) required.push(expression);
+  }
+
+  if (wiring.groupFields && section.id === "group") {
+    const holder = String(routedInput?.cameraHolder || "A").trim();
+    const distribution = String(routedInput?.groupArrangement || "natural-auto").trim();
+    const clause = `Phone holder: ${holder}; group distribution: ${distribution}.`;
+    if (!source.includes(holder) || !source.includes(distribution) || !/phone holder/iu.test(source)) source = `${source} ${clause}`.trim();
+    required.push(holder, distribution, "people are present in the group composition", "Phone holder:", "group distribution:");
+  }
+
+  if (Array.isArray(wiring.accidentalFields) && section.id === "accidental") {
+    const details = wiring.accidentalFields
+      .map((field) => [field, String(routedInput?.[field] || "").trim()])
+      .filter(([, value]) => value);
+    if (details.length) {
+      const clause = `Accidental details: ${details.map(([field, value]) => `${field} ${value}`).join("; ")}.`;
+      if (!details.every(([, value]) => source.includes(value))) source = `${source} ${clause}`.trim();
+      required.push(...details.map(([, value]) => value), "Accidental details:");
+    }
+  }
+
+  if (wiring.lighting && lighting) {
+    source = replacePhase41Lighting(source, lighting, routedInput?.time);
+    required.push(lighting);
+  }
+
+  source = phase41Deduplicate(source);
+  source = compactPhase41Budget(source, canonical, routedInput, section, required, 250);
+  return phase41Deduplicate(source);
+}
+
 export function buildCanonicalV3UserOutput(rawInput = {}, sceneData = undefined) {
   const routedInput = applySectionCaptureRouting(rawInput);
   const section = activeSectionById(routedInput.studioSection);
   const resolution = resolveCanonicalConflicts(routedInput, sceneData);
   const cleanInput = phase23Input(routedInput, resolution.cleanInput);
   const baseCanonical = buildCanonicalV3(cleanInput);
-  const canonical = applyGroupPhase13(baseCanonical, cleanInput);
+  const routedCanonical = applyPhase41CanonicalSectionWiring(baseCanonical, routedInput, section);
+  const canonical = applyGroupPhase13(routedCanonical, cleanInput);
   const basePrompt = enforcePhase34CarExteriorHeadwearBudget(buildOpenAIImagePrompt(canonical), canonical);
   const enrichedPrompt = enrichGroupPromptPhase13(canonical, cleanInput, basePrompt);
-  const prompt = enforcePhase40FinalCarExteriorSelection(enrichedPrompt, routedInput);
+  const phase40Prompt = enforcePhase40FinalCarExteriorSelection(enrichedPrompt, routedInput);
+  const prompt = enforcePhase41SectionWiring(phase40Prompt, canonical, routedInput, section);
   return Object.freeze({ resolution, section, canonical, prompt });
 }
 
