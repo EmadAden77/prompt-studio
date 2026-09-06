@@ -52,7 +52,7 @@ const exteriorOutput = buildCanonicalV3UserOutput({
 assert.equal(exteriorOutput.canonical.scene.id, "carExterior");
 assert.equal(exteriorOutput.canonical.scene.facts.carExteriorLocation, "grocery");
 assert.equal(exteriorOutput.canonical.scene.facts.carExteriorPose, "door-open");
-assert.notEqual(exteriorOutput.canonical.scene.facts.carExteriorLighting, "interior-spill", "interior spill is incompatible away from the open-door villa context chosen by the dedicated authority");
+assert.equal(exteriorOutput.canonical.scene.facts.carExteriorLighting, "interior-spill", "interior spill remains valid anywhere when the driver door is open");
 assert.match(exteriorOutput.prompt, /Fuji White/iu);
 assert.match(exteriorOutput.prompt, /small grocery/iu);
 assert.match(exteriorOutput.prompt, /open driver door/iu);
