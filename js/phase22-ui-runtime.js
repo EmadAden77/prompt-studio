@@ -163,13 +163,22 @@ function decorateSectionCards() {
 function activeSection() { return document.querySelector("#studio-section")?.value || ""; }
 function selectedScene() { return document.querySelector("#scene")?.value || ""; }
 
+function controlsInside(node) {
+  if (!node) return [];
+  if (node.matches?.("input,select,textarea")) return [node];
+  return [...(node.querySelectorAll?.("input,select,textarea") || [])];
+}
+
 function setFieldState(selector, hidden, disabled = hidden) {
   const node = document.querySelector(selector);
   if (!node) return;
   node.hidden = hidden;
-  for (const control of node.matches?.("input,select,textarea") ? [node] : node.querySelectorAll?.("input,select,textarea") || []) {
-    control.disabled = disabled;
-  }
+  for (const control of controlsInside(node)) control.disabled = disabled;
+}
+
+function setFieldDisabled(selector, disabled) {
+  const node = document.querySelector(selector);
+  for (const control of controlsInside(node)) control.disabled = disabled;
 }
 
 function setControlFieldState(control, hidden) {
@@ -196,9 +205,17 @@ function syncCarExteriorVisibility() {
   // carExterior has dedicated location/pose/lighting authority. Hide and disable
   // legacy/custom controls so FormData cannot leak stale values into Canonical V3.
   setControlFieldState(document.querySelector("#lighting"), active);
-  setFieldState("#custom-scene-field", active);
-  setFieldState("#custom-scene-details-field", active);
-  setFieldState("#scene-profile-field", active);
+  if (active) {
+    setFieldState("#custom-scene-field", true);
+    setFieldState("#custom-scene-details-field", true);
+    setFieldState("#scene-profile-field", true);
+  } else {
+    // Their hidden/visible state belongs to the legacy section router. Only release
+    // the disabled state here; do not force a custom-only field visible elsewhere.
+    setFieldDisabled("#custom-scene-field", false);
+    setFieldDisabled("#custom-scene-details-field", false);
+    setFieldDisabled("#scene-profile-field", false);
+  }
 
   // Manual legacy realism/context panels are not authorities in the hardened
   // carExterior path. Automatic realism layers still run inside the adapter.
