@@ -200,8 +200,8 @@ function replacePhase41Lighting(prompt, description, time) {
 
 function normalizePhase41CarExteriorAuthority(prompt, routedInput) {
   const selection = resolveCarExteriorSelection(routedInput);
-  const cabin = selection.pose === "door-open" ? "; open driver door reveals Ivory perforated leather, dark wood veneer and black-and-Ivory wheel" : "";
-  const authority = `Location: ${selection.locationText}; subject ${selection.poseText}; tires grounded by realistic contact shadow${cabin}.`;
+  const cabin = selection.pose === "door-open" ? "; open door reveals Ivory perforated leather, dark wood and black-and-Ivory wheel" : "";
+  const authority = `Location: ${selection.locationText}; subject ${selection.poseText}; tire contact shadow${cabin}.`;
   const kept = phase41SentenceParts(prompt).filter((sentence) => {
     if (/2017 Range Rover Sport Autobiography Dynamic/iu.test(sentence)) return true;
     if (/^A parked Range Rover exterior selfie/iu.test(sentence)) return false;
@@ -285,6 +285,9 @@ function enforcePhase41SectionWiring(prompt, canonical, routedInput, section) {
   if (wiring.body && !scaleEvidencePresent) {
     const fallbackScale = section.id === "carExterior" ? "Roofline, door and handle scale reads as a genuine 195 cm adult." : scale;
     if (fallbackScale) source = `${source} ${fallbackScale}`.trim();
+  }
+  if (section.id === "carExterior" && wiring.clothing && clothingSelected && garment && !source.includes(garment)) {
+    source = phase41SentenceParts(source).filter((sentence) => !(pose && expression && sentence.includes(pose) && sentence.includes(expression) && /crisp white thobe/iu.test(sentence) && !sentence.includes(garment))).join(" ");
   }
   if (wiring.clothing && clothingSelected && garment && !source.includes(garment)) { source = `${source} Clothing: ${garment}.`.trim(); required.push(garment); }
   else if (wiring.clothing && clothingSelected && garment) required.push(garment);
