@@ -27,26 +27,26 @@ function visibleSource(raw, canonical, sectionId, flash){
   if (/porch|villa/.test(d)) return "villa porch light";
   return "nearby practical streetlamp";
 }
-function castFor(source){ if(/sodium|porch|bedside/.test(source)) return "a warm yellow-orange cast on lit skin and clothing"; if(/cool|led/.test(source)) return "a neutral-cool cast on nearby skin and surfaces"; if(/neon|sign/.test(source)) return "a localized colored reflection on face edge, hair, and shoulder"; if(/flash/.test(source)) return "a neutral direct flash cast on the face with cooler ambient color behind"; return "a source-matched local color cast on nearby skin and clothing"; }
+function castFor(source){ if(/sodium|porch|bedside/.test(source)) return "a warm yellow-orange cast on skin and clothing"; if(/cool|led/.test(source)) return "a neutral-cool cast on nearby skin"; if(/neon|sign/.test(source)) return "a localized colored reflection on face edge, hair, and shoulder"; if(/flash/.test(source)) return "a neutral direct flash cast with cooler ambient color behind"; return "a source-matched local color cast on skin and clothing"; }
 
 export function describeNightPhysics(canonical, raw = {}, sectionId = "") {
   const id=text(sectionId || canonical?.scene?.id || raw?.studioSection);
   if(!isNight(raw,canonical)) return "";
   const flash=isFlash(raw,id); const source=visibleSource(raw,canonical,id,flash); const cast=castFor(source); const motion=moving(raw,canonical);
   const sourceRule=`Night physics: the dominant visible source is the ${source}; it produces ${cast}.`;
-  const sensorRule="Low-light phone exposure uses raised ISO with subtle grain, shadow noise, and mild loss of fine detail while retaining natural skin texture.";
-  const motionRule=motion ? "Natural movement adds slight blur to the moving hand or loose hair strands, with short streaks from passing car lights." : "Stationary areas stay stable while moving cars may leave short light streaks.";
-  const shadowRule="Shadow integrity follows that source; a lit face never floats against an unexplained pitch-black background.";
+  const sensorRule="Low-light phone exposure uses raised ISO with subtle grain, shadow noise, and mild loss of fine detail; skin stays naturally textured.";
+  const motionRule=motion ? "Natural movement adds slight blur to the moving hand or loose hair strands; passing car lights can streak briefly." : "Moving cars may leave short light streaks.";
+  const shadowRule="Shadow integrity follows that source; a lit face never sits against unexplained pitch-blackness.";
   const exposureRule=flash
     ? "Flash mode lights the close face directly, leaves the background distinctly darker, creates harder short shadows, and adds a slight realistic sheen on skin and eyes."
-    : "Exposure favors either a clearer face with darker background or visible background lights with a naturally dimmer face, never both perfectly bright.";
+    : "Exposure favors a clearer face with darker background or visible background lights with a naturally dimmer face, never both perfectly bright.";
   const nightGuard="Computational night processing may lift shadows slightly, but darkness remains visibly nocturnal and never turns the scene into daylight.";
   return [sourceRule,sensorRule,motionRule,shadowRule,exposureRule,nightGuard].join(" ");
 }
 
 function insertAfterLighting(prompt, physics){
   if(!physics) return prompt;
-  const parts=sentences(prompt).filter(s=>!/^Night physics:|^Low-light phone exposure|^Natural movement adds|^Stationary areas stay|^Shadow integrity follows|^Flash mode lights|^Exposure favors|^Computational night processing/iu.test(s));
+  const parts=sentences(prompt).filter(s=>!/^Night physics:|^Low-light phone exposure|^Natural movement adds|^Moving cars may|^Shadow integrity follows|^Flash mode lights|^Exposure favors|^Computational night processing/iu.test(s));
   let index=parts.findLastIndex(s=>/lighting|streetlamp|streetlight|porch light|shopfront|interior light|LED|DRL/iu.test(s));
   if(index<0) index=parts.length-1;
   parts.splice(index+1,0,...sentences(physics));
