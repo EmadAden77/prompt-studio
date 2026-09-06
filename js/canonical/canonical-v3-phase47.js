@@ -40,7 +40,7 @@ function stripStaticPose(prompt, section) {
 function keepPhase47Budget(prompt, section) {
   const max = section?.id === "carExterior" ? 280 : 250;
   let parts = sentences(dedupe(prompt));
-  const protectedPart = s => s.includes(section.actionDescription) || s.includes(section.imperfections) || s.includes(MIRROR_RULES_SENTENCE) || /Identity strictly preserved|Tall 195 cm, 88 kg|45–60 cm|21 mm|Selfie optics|2017 Range Rover Sport Autobiography Dynamic/iu.test(s);
+  const protectedPart = s => s.includes(section.actionDescription) || s.includes(section.imperfections) || s.includes(MIRROR_RULES_SENTENCE) || /Identity strictly preserved|Tall 195 cm, 88 kg|45–60 cm|21 mm|Selfie optics|2017 Range Rover Sport Autobiography Dynamic|Warm villa porch light|Real parking-lot practical lighting|Mixed sodium streetlights|Available practical night lighting|selected real-world night source/iu.test(s);
   const optional = [/Visual preferences:/iu,/Scene details:/iu,/Natural sensor noise/iu,/Slight lens softness/iu,/Authentic white balance/iu,/Subtle natural eye reflection/iu,/Captured with the selected physically plausible/iu];
   for (const p of optional) for(let i=parts.length-1;i>=0&&words(parts.join(" "))>max;i--) if(p.test(parts[i])&&!protectedPart(parts[i])) parts.splice(i,1);
   for(let i=parts.length-1;i>=0&&words(parts.join(" "))>max;i--) if(!protectedPart(parts[i])) parts.splice(i,1);
@@ -52,9 +52,14 @@ function applyPhase47Prompt(base) {
   const profile = section ? { actionDescription:section.actionDescription, imperfections:section.imperfections } : profileForSection("custom");
   let prompt = stripStaticPose(base.prompt, section);
   prompt = insertAfterOpener(prompt, profile.actionDescription);
-  const parts = sentences(prompt);
+  let parts = sentences(prompt);
   const clothingIndex = parts.findIndex(s=>/^Subject wearing\b|\bClothing:/iu.test(s));
   if (!parts.some(s=>s.includes(profile.imperfections))) parts.splice(clothingIndex >= 0 ? clothingIndex + 1 : Math.min(3,parts.length),0,profile.imperfections);
+  if (profile.imperfections) parts = parts.filter(s=>!/^Fine pores, faint tonal variation between facial regions, realistic beard detail, no waxy smoothing\.?$/iu.test(s));
+  if (section?.id === "carExterior") {
+    parts = parts.filter(s=>!/^(?:In|At) .*subject leaning naturally against the closed driver door\.?$/iu.test(s));
+    parts = parts.map(s=>s.replace(/Naturally imperfect framing where the Range Rover is slightly awkwardly cropped in the way a real one-handed selfie captures it\./iu,"Casual asymmetric one-handed framing keeps the subject dominant while retaining enough of the driver side and roofline to establish vehicle scale."));
+  }
   prompt = dedupe(parts.join(" "));
   if (section?.id === "mirror" && !prompt.includes(MIRROR_RULES_SENTENCE)) prompt = `${prompt} ${MIRROR_RULES_SENTENCE}`.trim();
   return keepPhase47Budget(prompt, section);
