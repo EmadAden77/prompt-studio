@@ -8,9 +8,10 @@ const sentences=value=>String(value||"").match(/[^.!?]+[.!?]+|[^.!?]+$/gu)?.map(
 const normalize=value=>text(value).toLowerCase().replace(/[\s._-]+/gu," ");
 const CHATGPT_CUSTOM_DIRECTIVE="ChatGPT Images: create exactly one candid, physically plausible smartphone selfie from these instructions; treat the attached reference image as identity-only and preserve every explicit user selection.";
 const CHATGPT_CAR_DIRECTIVE="ChatGPT Images: create exactly one candid, physically plausible front-camera selfie inside the parked vehicle; preserve the attached reference identity and every explicit user selection.";
-const CAR_INTERIOR_GEOMETRY_LOCK="Car-interior lock: parked stationary LHD cabin; the subject is seated in the driver seat; the driver door and side window remain on his left, the center console remains on his right, and the steering wheel stays directly ahead of his torso; front-camera mirroring must never swap the vehicle's physical left/right geometry.";
-const CAR_INTERIOR_FIDELITY_LOCK="Cabin fidelity: 2017 Range Rover Sport Autobiography Dynamic L494 with Ivory perforated leather, dark polished wood veneer, a black-and-Ivory multifunction steering wheel, transparent panoramic glass roof and Ivory headliner; show only elements naturally visible from the selected selfie angle, with ordinary material wear and physically consistent reflections.";
-const CAR_CAPTURE_PHYSICS_LOCK="Capture physics: one arm holds the phone at reachable selfie distance and the other stays free or relaxed; the vehicle remains parked, with no driving motion, passenger-seat relocation, exterior pose, studio or ring light, impossible hand use, or contradictory simultaneous actions.";
+const CAR_INTERIOR_GEOMETRY_LOCK="Car-interior lock: parked LHD; subject seated in the driver seat; driver door and side window stay physically left, center console right, steering wheel directly ahead of the torso; front-camera mirroring never swaps vehicle geometry.";
+const CAR_INTERIOR_FIDELITY_LOCK="Cabin fidelity: 2017 Range Rover Sport Autobiography Dynamic L494, Ivory perforated leather, dark polished wood, black-and-Ivory multifunction steering wheel, transparent panoramic roof and Ivory headliner; show only angle-visible cabin details with natural reflections.";
+const CAR_CAPTURE_PHYSICS_LOCK="Capture physics: one reachable phone-holding arm, other hand free or relaxed; vehicle parked; no driving, passenger-seat relocation, exterior pose, studio or ring light, impossible hand use, or simultaneous conflicting actions.";
+const CAR_BODY_SCALE_LOCK="Tall 195 cm, 88 kg lean-athletic build; seatback, headliner and steering-wheel scale remain believable for his stature.";
 
 function requiredSelectionTexts(base){
   return Object.values(base?.phase50?.selectionManifest||{}).map(entry=>text(entry?.resolved||entry?.requested)).filter(Boolean);
@@ -65,13 +66,15 @@ function applyCustomSceneAuthority(prompt,raw){
   });
 }
 
+function isCarLegacyRedundancy(part){
+  return /^(?:Tall 195 cm, 88 kg lean-athletic build:|No facial alteration\/lengthening|Shoulders fill seatback|Camera near eye level at 45–60 cm|Phone held at physically reachable selfie distance|Inside stationary 2017 Range Rover Sport Autobiography Dynamic L494|Xiaomi 15 Ultra front camera:|Captured with the selected physically plausible front-camera geometry|LHD vehicle-relative:|In the frame, the driver's door and side window appear|Natural wear appears on frequently touched surfaces|The panoramic glass roof is transparent|Natural sensor noise is visible|Slight lens softness is visible|Realistic dynamic range|Human anatomy is physically plausible)/iu.test(part);
+}
+
 function applyCarInteriorAuthority(prompt,raw){
   if(text(raw.studioSection)!=="car") return Object.freeze({prompt,protectedEvidence:Object.freeze([])});
   let parts=sentences(prompt).filter(part=>!/^ChatGPT Images:/iu.test(part));
   parts=parts.filter(part=>{
-    if(/LHD vehicle-relative:/iu.test(part)) return false;
-    if(/In the frame, the driver's door and side window appear/iu.test(part)) return false;
-    if(/^Inside stationary 2017 Range Rover Sport Autobiography Dynamic L494/iu.test(part)) return false;
+    if(isCarLegacyRedundancy(part)) return false;
     if(/^Pose:\s*.*(?:standing|walking|lying|bed|sofa|gym|outside)/iu.test(part)) return false;
     if(/(?:standing|leaning)\s+(?:beside|against)\s+the\s+(?:closed|open)\s+driver\s+door|front grille|rear tailgate|tire contact shadow/iu.test(part)) return false;
     return true;
@@ -79,7 +82,7 @@ function applyCarInteriorAuthority(prompt,raw){
   const hasDriverPose=parts.some(part=>/Pose:\s*.*driver|driver (?:close|low|seat)|roof-context|seated.*driver/iu.test(part));
   const clothingIndex=parts.findIndex(part=>/^Subject wearing\b/iu.test(part));
   const insertAt=clothingIndex>=0?clothingIndex+1:Math.min(4,parts.length);
-  const locks=[CAR_INTERIOR_GEOMETRY_LOCK,CAR_INTERIOR_FIDELITY_LOCK,CAR_CAPTURE_PHYSICS_LOCK];
+  const locks=[CAR_BODY_SCALE_LOCK,CAR_INTERIOR_GEOMETRY_LOCK,CAR_INTERIOR_FIDELITY_LOCK,CAR_CAPTURE_PHYSICS_LOCK];
   parts.splice(insertAt,0,...locks);
   if(!hasDriverPose) parts.splice(insertAt+locks.length,0,"Pose: seated naturally in the driver seat for the selected selfie framing.");
   parts.unshift(CHATGPT_CAR_DIRECTIVE);
@@ -135,10 +138,10 @@ function findContradictions(raw,prompt){
     if(/(?:standing|leaning)\s+(?:beside|against)\s+the\s+(?:closed|open)\s+driver\s+door|front grille|rear tailgate|tire contact shadow/iu.test(prompt)) issues.push("car-exterior-leak");
     if(/In the frame, the driver's door and side window appear/iu.test(prompt)) issues.push("frame-side-mirroring-ambiguity");
     if(!/^ChatGPT Images:/iu.test(prompt)) issues.push("chatgpt-target-missing");
-    if(!/Car-interior lock:.*parked stationary LHD cabin/iu.test(prompt)) issues.push("car-geometry-lock-missing");
-    if(!/driver door and side window remain on his left/iu.test(prompt)||!/center console remains on his right/iu.test(prompt)||!/steering wheel stays directly ahead/iu.test(prompt)) issues.push("car-lhd-mapping-missing");
+    if(!/Car-interior lock:.*parked LHD/iu.test(prompt)) issues.push("car-geometry-lock-missing");
+    if(!/driver door and side window stay physically left/iu.test(prompt)||!/center console right/iu.test(prompt)||!/steering wheel directly ahead/iu.test(prompt)) issues.push("car-lhd-mapping-missing");
     if(!/Cabin fidelity:.*2017 Range Rover Sport Autobiography Dynamic L494/iu.test(prompt)) issues.push("car-cabin-fidelity-missing");
-    if(!/Capture physics:.*vehicle remains parked/iu.test(prompt)) issues.push("car-capture-physics-missing");
+    if(!/Capture physics:.*vehicle parked/iu.test(prompt)) issues.push("car-capture-physics-missing");
     if(!/Pose:.*driver|driver (?:close|low|seat)|roof-context|seated naturally in the driver seat/iu.test(prompt)) issues.push("car-driver-pose-missing");
   }
   if(section==="carExterior"&&/stationary driver's seat|center console right|steering wheel.*chest/iu.test(prompt)) issues.push("car-interior-leak");
