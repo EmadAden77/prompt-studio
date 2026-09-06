@@ -105,30 +105,44 @@ function setCanonicalOutputLabels(active) {
 function renderCanonicalOutput({ reveal = true } = {}) {
   if (!canonicalActiveForCurrentSection()) return false;
 
-  const rawState = readFormState();
-  const output = buildCanonicalV3UserOutput(rawState, rawState.sceneFacts);
-  const positive = document.querySelector("#positive-prompt");
-  const negative = document.querySelector("#negative-prompt");
-  const visibleOutput = document.querySelector("#json-prompt");
-  const meta = document.querySelector("#result-meta");
-  const qa = document.querySelector("#qa-list");
-  const panel = document.querySelector("#result-panel");
+  try {
+    const rawState = readFormState();
+    const output = buildCanonicalV3UserOutput(rawState, rawState.sceneFacts);
+    const positive = document.querySelector("#positive-prompt");
+    const negative = document.querySelector("#negative-prompt");
+    const visibleOutput = document.querySelector("#json-prompt");
+    const meta = document.querySelector("#result-meta");
+    const qa = document.querySelector("#qa-list");
+    const panel = document.querySelector("#result-panel");
 
-  if (positive) positive.value = output.prompt;
-  if (negative) negative.value = "";
-  if (visibleOutput) visibleOutput.value = output.prompt;
-  if (qa) qa.replaceChildren();
-  setCanonicalOutputLabels(true);
-  if (meta) {
-    meta.textContent = `ENGINE CANONICAL V3 · ${output.canonical.intent.type.toUpperCase()} · OpenAI Image Adapter · ${output.prompt.trim().split(/\s+/u).filter(Boolean).length} words`;
-  }
-  setStatus("Canonical V3 active · resolved canonical state and adapter prompt are ready.");
+    if (positive) positive.value = output.prompt;
+    if (negative) negative.value = "";
+    if (visibleOutput) visibleOutput.value = output.prompt;
+    if (qa) qa.replaceChildren();
+    setCanonicalOutputLabels(true);
+    if (meta) {
+      meta.textContent = `ENGINE CANONICAL V3 · ${output.canonical.intent.type.toUpperCase()} · OpenAI Image Adapter · ${output.prompt.trim().split(/\s+/u).filter(Boolean).length} words`;
+    }
+    setStatus("Canonical V3 active · resolved canonical state and adapter prompt are ready.");
 
-  if (reveal && panel) {
-    panel.hidden = false;
-    panel.scrollIntoView({ behavior:"smooth", block:"start" });
+    if (reveal && panel) {
+      panel.hidden = false;
+      panel.scrollIntoView({ behavior:"smooth", block:"start" });
+    }
+    return true;
+  } catch (error) {
+    console.error("Canonical V3 prompt generation failed", error);
+    const message = error instanceof Error ? error.message : String(error || "Unknown error");
+    setStatus(`تعذر توليد البرومبت: ${message}`);
+    const panel = document.querySelector("#result-panel");
+    const meta = document.querySelector("#result-meta");
+    if (meta) meta.textContent = `CANONICAL V3 ERROR · ${message}`;
+    if (reveal && panel) {
+      panel.hidden = false;
+      panel.scrollIntoView({ behavior:"smooth", block:"start" });
+    }
+    return false;
   }
-  return true;
 }
 
 function scheduleCanonicalRefresh() {
