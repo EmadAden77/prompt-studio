@@ -16,6 +16,7 @@ export const SECTION = deepFreeze({
     interaction:[],
     exclusions:["studio staging"],
     routing:{ intentType:"selfie", sceneMode:"fallback", defaultScene:"bedroom" },
+    wiring:{ enabled:true, clothing:true, lighting:true, pose:true, expression:true, body:true, selfieArmLock:true },
     ui:{ scenarioMode:"bedroom", scene:"bedroom", groupMode:"single", captureMode:"normal", showScenePicker:false }
   }
 });
