@@ -39,17 +39,20 @@ for(const pose of cases){
 const streetRaw={hasReference:true,studioSection:"street",scene:"street",time:"night",clothing:"thobe-redshemagh-iqal",expression:"neutral",selfiePose:"standing-relaxed"};
 const streetPrevious=build52_1(streetRaw);
 const street=buildCanonicalV3UserOutput(streetRaw);
-assert.equal(street.prompt,streetPrevious.prompt,"non-carExterior sections must remain byte-for-byte unchanged");
+assert.equal(street.prompt,streetPrevious.prompt,"non-carExterior sections without extra Phase 54 controls must remain byte-for-byte unchanged");
 assert.equal(street.phase53.active,false);
 assert.equal(street.phase53.status,"not-applicable");
+assert.equal(street.phase54.active,true);
 assert.ok(words(street.prompt)<=250);
 
 const engineGate=fs.readFileSync(new URL("../js/canonical/engine-gate.js",import.meta.url),"utf8");
-assert.match(engineGate,/from\s+["']\.\/canonical-v3-phase53\.js["']/u,"live gate may keep the Phase 53 compatibility wrapper import");
+assert.match(engineGate,/from\s+["']\.\/canonical-v3-phase53\.js["']/u,"live gate keeps the Phase 53 compatibility wrapper, which now delegates to Phase 54");
 assert.match(engineGate,/canonical-v3-phase52-1\.js/iu,"historical Phase 52.1 contract must remain importable");
 
 console.log("PHASE53_COMPATIBILITY_MODE=phase52.1");
 console.log(`PHASE53_SIDE_WORDS=${words(buildCanonicalV3UserOutput(base({carExteriorPose:"door-lean"})).prompt)}`);
-console.log("PHASE53_PROMPT_MUTATION=false");
+console.log("PHASE53_PROMPT_MUTATION=false_without_phase54_extra_controls");
 console.log("PHASE53_DETERMINISM=10/10");
 console.log("Phase 53 vehicle rewrite rollback: PASS");
+
+await import("./canonical-v3-section-integrity-phase54.mjs");
