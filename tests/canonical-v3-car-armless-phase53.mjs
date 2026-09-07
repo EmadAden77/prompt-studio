@@ -43,7 +43,7 @@ for(const pose of poseIds){
   assert.match(out.prompt,/transparent panoramic glass/iu);
   assert.match(out.prompt,/glass never opaque black/iu);
   assert.match(out.prompt,/195 cm, 88 kg lean-athletic; shoulders fill seatback, head near headliner/iu);
-  assert.match(out.prompt,/Other hand: wheel when appropriate, console, lap, or out of frame/iu);
+  assert.match(out.prompt,/Other hand: wheel\/console\/lap, or out of frame/iu);
   assert.match(out.prompt,/Preserve reference identity:/iu);
   assert.doesNotMatch(out.prompt,/one arm extends|holding the phone at arm reach|one hand holds the phone/iu,`${pose}: visible-arm lock leaked`);
   assert.doesNotMatch(out.prompt,/grille|alloys|\bDRL\b|Fuji White exterior/iu,`${pose}: exterior spec leaked`);
