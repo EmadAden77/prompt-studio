@@ -99,9 +99,9 @@ function selectedTime(raw={}){
 function lightingSentence(raw={}){
   const mode=selectedTime(raw);
   const lighting=text(raw.lighting).toLowerCase();
-  if(mode==="day") return "Day lighting: real sun/sky through glass; natural cabin shadows, exterior brightness, reflections and phone dynamic range.";
+  if(mode==="day") return "Day lighting: real sun/sky through glass; natural cabin shadows, exterior brightness, one source-matched eye catchlight and ordinary phone dynamic range.";
   if(lighting.includes("flash")) return "Night lighting: phone flash plus cabin/street lights; hard near shadows, darker distance and coherent reflections.";
-  return "Night lighting: cabin and Saudi street/building/vehicle lights through glass; natural falloff, dark areas, reflections and mild shadow noise.";
+  return "Night lighting: cabin and Saudi street/building/vehicle lights through glass; natural falloff, dark areas, one source-matched eye catchlight and mild shadow noise.";
 }
 
 function armlessLightingSentence(raw={}){
@@ -170,7 +170,7 @@ function phase56Contradictions(raw={}){
 function buildLegacyCarPrompt(raw={}){
   return [
     "ChatGPT Images: create a candid front-camera selfie inside a parked 2017 Range Rover Sport Autobiography Dynamic L494.",
-    "Seated naturally, holding the phone at arm reach with one hand; the other hand stays free.",
+    "Just after settling naturally into the seat, holding the phone at arm reach with one hand; the other hand stays free.",
     "Preserve reference identity: face, skin tone, hairline, facial hair, age/asymmetry; no beautification/de-aging.",
     selectedClothing(raw),selectedExpression(raw),selectedHair(raw),
     "Tall 195 cm, 88 kg lean-athletic; believable seated scale.",
