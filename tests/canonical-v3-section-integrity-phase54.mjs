@@ -27,7 +27,7 @@ for(const [section,extra] of Object.entries(cases)){
   assert.equal(out.phase54.active,true,`${section}: Phase 54 inactive`);
   assert.equal(out.phase54.section,section,`${section}: wrong Phase 54 section`);
   assert.equal(out.phase54.determinism,"10/10",`${section}: determinism metadata missing`);
-  if(section==="car") assert.equal(out.phase54.allCommonFieldsRouted,false,"car: generic common-field routing must stay isolated");
+  if(section==="car") assert.equal(out.phase54.allCommonFieldsRouted,false,"car: raw generic field-evidence routing must stay isolated; Phase55 routes approved controls semantically");
   else assert.equal(out.phase54.allCommonFieldsRouted,true,`${section}: common field routing disabled`);
   assert.equal(out.phase54.inactiveSectionLeakageForbidden,true,`${section}: leakage guard disabled`);
   assert.equal(out.phase54.contradictions.length,0,`${section}: contradiction found: ${out.phase54.contradictions.join(", ")}`);
@@ -109,10 +109,13 @@ assert.equal(normalizeScenarioState({studioSection:"car",scene:"rangeRover",scen
 
 const ui=fs.readFileSync(new URL("../js/phase54-section-field-ui.js",import.meta.url),"utf8");
 const phase54=fs.readFileSync(new URL("../js/canonical/canonical-v3-phase54.js",import.meta.url),"utf8");
-assert.match(ui,/const carInterior=ui\.dedicatedControls===["']carInterior["']/iu,"UI must detect the isolated car-interior section");
-assert.match(ui,/#post-processing-panel[\s\S]{0,100}hidden:carInterior[\s\S]{0,60}disabled:carInterior/iu,"post-processing must stay active generally and be isolated only for car interior");
-assert.match(ui,/#hair[\s\S]{0,100}hidden:carInterior[\s\S]{0,60}disabled:carInterior/iu,"hair must stay active generally and be isolated only for car interior");
-assert.match(ui,/#skin[\s\S]{0,100}hidden:carInterior[\s\S]{0,60}disabled:carInterior/iu,"skin must stay active generally and be isolated only for car interior");
+assert.match(ui,/const carInterior=ui\.dedicatedControls===["']carInterior["']/iu,"UI must detect car-interior section");
+assert.match(ui,/#post-processing-panel[\s\S]{0,100}hidden:carInterior[\s\S]{0,60}disabled:carInterior/iu,"post-processing remains isolated for car interior");
+assert.match(ui,/#hair[\s\S]{0,100}hidden:false[\s\S]{0,60}disabled:false/iu,"hair selection must remain active in car interior");
+assert.match(ui,/#expression[\s\S]{0,100}hidden:false[\s\S]{0,60}disabled:false/iu,"expression must remain active in car interior");
+assert.match(ui,/#clothing[\s\S]{0,100}hidden:false[\s\S]{0,60}disabled:false/iu,"clothing must remain active in car interior");
+assert.match(ui,/realism-core-title[\s\S]{0,120}hidden:false[\s\S]{0,60}disabled:false/iu,"Realism Core must remain active in car interior");
+assert.match(ui,/#skin[\s\S]{0,100}hidden:carInterior[\s\S]{0,60}disabled:carInterior/iu,"skin styling remains isolated for car interior");
 assert.match(ui,/car-exterior-fields[\s\S]{0,80}!carExterior/iu,"carExterior dedicated controls must be section-scoped");
 assert.match(phase54,/phase54-section-field-ui\.js/iu,"Phase 54 UI activation module must load with canonical engine");
 assert.match(phase54,/ChatGPT Images: create exactly one candid/iu,"custom prompt must target ChatGPT Images");
@@ -120,7 +123,8 @@ assert.match(phase54,/ChatGPT Images: create exactly one candid/iu,"custom promp
 console.log("PHASE54_SECTIONS=solo,group,car,carExterior,bedroom,gym,street,accidental,custom,mirror");
 console.log("PHASE54_WIKIPROMPT_SOURCE=connected");
 console.log("PHASE54_GENERAL_COMMON_FIELDS_ROUTED=true");
-console.log("PHASE54_CAR_GENERIC_FIELDS_ROUTED=false");
+console.log("PHASE54_CAR_RAW_EVIDENCE_ROUTED=false");
+console.log("PHASE54_CAR_APPROVED_SUBJECT_CONTROLS=active");
 console.log("PHASE54_CUSTOM_OPTIONS=active");
 console.log("PHASE54_CUSTOM_PROMPT_TARGET=chatgpt-images");
 console.log("PHASE54_CONTRADICTIONS=0");
