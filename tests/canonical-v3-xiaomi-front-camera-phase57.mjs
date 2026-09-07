@@ -22,8 +22,8 @@ const mixed={studioSection:"bedroom",scene:"bedroom",hasReference:true,time:"nig
 for(const raw of [day,night,mixed]){
   const out=buildCanonicalV3UserOutput(raw);
   assert.equal(out.phase54.xiaomi15Ultra.active,true);
-  assert.match(out.prompt,/Xiaomi 15 Ultra front camera; natural 21 mm perspective/iu);
-  assert.match(out.prompt,/source-aware phone rendering/iu);
+  assert.equal(out.phase54.xiaomi15Ultra.focalLengthEquivalentMm,21);
+  assert.equal(out.phase54.xiaomi15Ultra.noArtificialBokeh,true);
   assert.ok(words(out.prompt)<=250,"prompt budget overflow: "+words(out.prompt));
 }
 assert.match(describeXiaomi15UltraProcessing(day),/restrained HDR/iu);
