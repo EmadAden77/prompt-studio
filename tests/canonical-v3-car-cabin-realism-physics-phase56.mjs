@@ -23,30 +23,30 @@ assert.equal(close.phase56.phoneProcessing,true);
 assert.equal(close.phase56.contradictionChecker,true);
 assert.equal(close.phase56.determinism,"10/10");
 assert.match(close.prompt,/near-field phone projection/iu);
-assert.match(close.prompt,/face slightly larger than ears\/shoulders/iu);
+assert.match(close.prompt,/face\/near shoulder enlarged/iu);
 assert.match(close.prompt,/seat\/headrest compress/iu);
-assert.match(close.prompt,/shoulders differ slightly/iu);
+assert.match(close.prompt,/shoulders differ/iu);
 assert.match(close.prompt,/clothing bunches at contact/iu);
-assert.match(close.prompt,/Wood\/glass reflections stay faint and coherent/iu);
-assert.match(close.prompt,/Eye-line may favor screen slightly/iu);
+assert.match(close.prompt,/Wood\/glass reflections stay faint/iu);
+assert.match(close.prompt,/Eye-line may favor screen/iu);
 assert.match(close.prompt,/Nothing floats/iu);
-assert.match(close.prompt,/shadow noise exceeds face noise/iu);
-assert.match(close.prompt,/distant cabin detail softens naturally/iu);
+assert.match(close.prompt,/noisy shadows/iu);
+assert.match(close.prompt,/softer distant detail/iu);
 assert.ok(words(close.prompt)<=250,`close prompt exceeded budget: ${words(close.prompt)}`);
 
 const flash=buildCanonicalV3UserOutput({...base,pose:"driver-close-armless",lighting:"car-night-flash"});
 assert.equal(flash.phase56.flashFalloff,true);
 assert.match(flash.prompt,/phone flash plus dim cabin ambient and restrained dash glow/iu);
-assert.match(flash.prompt,/rear cabin falls darker/iu);
-assert.match(flash.prompt,/short jaw\/neck shadows remain/iu);
-assert.match(flash.prompt,/wood gets one small highlight/iu);
+assert.match(flash.prompt,/rear darker/iu);
+assert.match(flash.prompt,/short jaw\/neck shadows/iu);
+assert.match(flash.prompt,/one wood highlight/iu);
 assert.ok(words(flash.prompt)<=250,`flash prompt exceeded budget: ${words(flash.prompt)}`);
 
 const roof=buildCanonicalV3UserOutput({...base,pose:"driver-roof-armless",roof:"opaque black roof"});
 assert.ok(roof.phase56.autoCorrectedContradictions.includes("panoramic-glass-transparency-restored"));
 assert.match(roof.prompt,/transparent panoramic glass/iu);
 assert.match(roof.prompt,/real night sky and stars/iu);
-assert.match(roof.prompt,/weak cabin reflection/iu);
+assert.match(roof.prompt,/faint cabin reflection/iu);
 assert.doesNotMatch(roof.prompt,/opaque black roof/iu);
 
 const passenger=buildCanonicalV3UserOutput({...base,pose:"passenger-close-armless",requestedElements:"show steering wheel"});
@@ -61,7 +61,7 @@ assert.match(rear.prompt,/tight head-and-shoulders cabin crop/iu);
 
 const flashConflict=buildCanonicalV3UserOutput({...base,pose:"driver-close-armless",lighting:"flash evenly lit cabin"});
 assert.ok(flashConflict.phase56.autoCorrectedContradictions.includes("flash-falloff-restored"));
-assert.match(flashConflict.prompt,/rear cabin falls darker/iu);
+assert.match(flashConflict.prompt,/rear darker/iu);
 
 const day=buildCanonicalV3UserOutput({...base,pose:"driver-close-armless",time:"day",lighting:"car-day"});
 assert.equal(day.phase56.nightSensorModel,false);
