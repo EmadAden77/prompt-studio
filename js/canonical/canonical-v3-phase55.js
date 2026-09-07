@@ -104,7 +104,7 @@ function realismSentence(raw={}){
 function buildCarPrompt(raw={}){
   const parts=[
     "ChatGPT Images: create a candid front-camera selfie inside a parked 2017 Range Rover Sport Autobiography Dynamic L494.",
-    "Driver seated naturally; one hand holds the phone at arm reach, the other stays free.",
+    "Driver seated naturally, holding the phone at arm reach with one hand; the other hand stays free.",
     "Preserve reference identity: face, skin tone, hairline, facial hair, age and asymmetry; no beautification/de-aging.",
     selectedClothing(raw),selectedExpression(raw),selectedHair(raw),
     "Tall 195 cm, 88 kg lean-athletic; believable seated scale.",
@@ -132,7 +132,7 @@ function assertCarPrompt(prompt){
   if(!prompt.includes(LHD_STEERING_ANCHOR)) throw new Error("Phase 55 missing steering-wheel centering");
   if(!prompt.includes(LHD_REAR_SEAT_ANCHOR)) throw new Error("Phase 55 missing rear-seat consistency");
   if(!/Preserve reference identity:/iu.test(prompt)) throw new Error("Phase 55 identity lock missing");
-  if(!/one hand holds the phone at arm reach, the other stays free/iu.test(prompt)) throw new Error("Phase 55 selfie lock missing");
+  if(!/holding the phone at arm reach with one hand; the other hand stays free/iu.test(prompt)) throw new Error("Phase 55 selfie lock missing");
   if(!/Cabin: Ivory perforated leather, dark wood, black-and-Ivory steering wheel, transparent panoramic roof and Ivory headliner/iu.test(prompt)) throw new Error("Phase 55 cabin fidelity changed");
   if(!/Mandatory realism:/iu.test(prompt)) throw new Error("Phase 55 mandatory realism missing");
   if(!/Saudi street life/iu.test(prompt)) throw new Error("Phase 55 Saudi environment life missing");
