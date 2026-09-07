@@ -170,7 +170,7 @@ function phase56Contradictions(raw={}){
 function buildLegacyCarPrompt(raw={}){
   return [
     "ChatGPT Images: create a candid front-camera selfie inside a parked 2017 Range Rover Sport Autobiography Dynamic L494.",
-    "Just after settling naturally into the seat, holding the phone at arm reach with one hand; the other hand stays free.",
+    "Self-held at arm reach; phone and holding arm remain outside the crop, and the free hand rests naturally or stays out of frame.",
     "Preserve reference identity: face, skin tone, hairline, facial hair, age/asymmetry; no beautification/de-aging.",
     selectedClothing(raw),selectedExpression(raw),selectedHair(raw),
     "Tall 195 cm, 88 kg lean-athletic; believable seated scale.",
@@ -235,7 +235,8 @@ function assertCarPrompt(prompt,raw={}){
   if(!prompt.includes(LHD_SELFIE_VIEWER_MAPPING)) throw new Error("Phase 55 missing selfie viewer mapping");
   if(!prompt.includes(LHD_STEERING_ANCHOR)) throw new Error("Phase 55 missing steering-wheel centering");
   if(!prompt.includes(LHD_REAR_SEAT_ANCHOR)) throw new Error("Phase 55 missing rear-seat consistency");
-  if(!/holding the phone at arm reach with one hand; the other hand stays free/iu.test(prompt)) throw new Error("Phase 55 selfie lock missing");
+  if(!/Self-held at arm reach; phone and holding arm remain outside the crop/iu.test(prompt)) throw new Error("Phase 55 close selfie lock missing");
+  if(/visible holding arm|one arm extends|full holding forearm/iu.test(prompt)) throw new Error("Phase 55 visible arm leakage");
   if(!/Cabin: Ivory perforated leather, dark wood, black-and-Ivory steering wheel, transparent panoramic roof and Ivory headliner/iu.test(prompt)) throw new Error("Phase 55 cabin fidelity changed");
   if(!/Saudi street life/iu.test(prompt)) throw new Error("Phase 55 Saudi environment life missing");
   if(words(prompt)>280) throw new Error(`Phase 55 car prompt budget overflow: ${words(prompt)} words`);
