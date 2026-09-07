@@ -50,7 +50,7 @@ function selectedExpression(raw={}){
 
 function selectedHair(raw={}){
   const id=text(raw.hair).toLowerCase();
-  return `Hair: ${HAIR[id]||HAIR.same}; keep reference hairline, density and volume.`;
+  return `Hair: ${HAIR[id]||HAIR.same}; reference density, hairline and volume unchanged.`;
 }
 
 function selectedTime(raw={}){
@@ -65,7 +65,7 @@ function lightingSentence(raw={}){
   const lighting=text(raw.lighting).toLowerCase();
   if(mode==="day") return "Day lighting: real sun/sky through glass; natural cabin shadows, exterior brightness, reflections and phone dynamic range.";
   if(lighting.includes("flash")) return "Night lighting: phone flash plus cabin/street lights; hard near shadows, darker distance and coherent reflections.";
-  return "Night lighting: cabin and Saudi street/building/vehicle lights through glass; real falloff, dark areas, reflections and mild shadow noise.";
+  return "Night lighting: cabin and Saudi street/building/vehicle lights through glass; natural falloff, dark areas, reflections and mild shadow noise.";
 }
 
 function saudiRegion(raw={}){
