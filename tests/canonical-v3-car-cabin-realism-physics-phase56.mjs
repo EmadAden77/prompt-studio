@@ -75,7 +75,8 @@ assert.ok(repeated.every(item=>JSON.stringify(item.phase56)===JSON.stringify(rep
 
 const legacy=buildCanonicalV3UserOutput({...base,pose:"driver-seat"});
 assert.equal(legacy.phase56.active,false,"legacy non-armless car path must remain compatible");
-assert.match(legacy.prompt,/holding the phone at arm reach with one hand/iu);
+assert.match(legacy.prompt,/Self-held at arm reach; phone and holding arm remain outside the crop/iu);
+assert.doesNotMatch(legacy.prompt,/visible holding arm|one arm extends|full holding forearm/iu);
 assert.doesNotMatch(legacy.prompt,/near-field phone projection/iu);
 
 console.log(`PHASE56_CLOSE_WORDS=${words(close.prompt)}`);
