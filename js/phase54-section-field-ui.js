@@ -27,25 +27,35 @@ function syncCommonFields(){
   const carExterior=ui.dedicatedControls==="carExterior";
   const carInterior=ui.dedicatedControls==="carInterior";
 
-  // Car interior is deliberately narrow: fixed cabin/seat authority plus
-  // driver pose and car lighting. Generic context/detail controls are hidden
-  // so stale city, crowd, fabric-state or background selections cannot leak.
+  // Car interior keeps its car-specific scene controls narrow, but global
+  // subject controls and mandatory physical realism remain active.
   setNodeState("#post-processing-panel",{hidden:carInterior,disabled:carInterior});
-  setNodeState('[aria-labelledby="realism-core-title"]',{hidden:carInterior,disabled:carInterior});
+  setNodeState('[aria-labelledby="realism-core-title"]',{hidden:false,disabled:false});
   setNodeState('[aria-labelledby="advanced-realism-title"]',{hidden:carInterior,disabled:carInterior});
-  setNodeState(".context-secondary-panel",{hidden:carInterior,disabled:carInterior});
-  setControlState("#hair",{hidden:carInterior,disabled:carInterior});
-  setControlState("#skin",{hidden:carInterior,disabled:carInterior});
+  setNodeState(".context-secondary-panel",{hidden:false,disabled:false});
 
-  // Core user authorities remain available: outfit, expression and time.
   setControlState("#clothing",{hidden:false,disabled:false});
   setControlState("#clothing-custom",{hidden:false,disabled:false});
   setControlState("#expression",{hidden:false,disabled:false});
+  setControlState("#hair",{hidden:false,disabled:false});
   setControlState("#time",{hidden:false,disabled:false});
+  setControlState("#skin",{hidden:carInterior,disabled:carInterior});
 
   for(const selector of ["#fabric","#fabric-weight","#iron-state","#wear-state","#clothing-fit","#composition","#selfie-angle"]){
     setControlState(selector,{hidden:carInterior,disabled:carInterior});
   }
+
+  // In-car Realism Core exposes only controls that have a real visual route.
+  setControlState("#place-state",{hidden:false,disabled:false});
+  setControlState("#people-density",{hidden:false,disabled:false});
+  setControlState("#subject-moment",{hidden:carInterior,disabled:carInterior});
+  setControlState("#interaction-object",{hidden:carInterior,disabled:carInterior});
+
+  // Saudi context remains available as a through-glass realism cue. A freeform
+  // environment note is disabled in-car because it can contradict cabin authority.
+  setControlState("#city",{hidden:false,disabled:false});
+  setControlState("#messiness",{hidden:false,disabled:false});
+  setControlState("#environment-note",{hidden:carInterior,disabled:carInterior});
 
   // carExterior owns pose and lighting through its dedicated controls.
   // carInterior intentionally keeps the generic pose/lighting selectors active.
