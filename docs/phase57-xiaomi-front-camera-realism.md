@@ -8,7 +8,7 @@ Phase 57 adds one deterministic, reusable front-camera contract to Canonical V3.
 
 - New module: `js/canonical/xiaomi15-ultra-front-camera-phase57.js`.
 - Camera profile: Xiaomi 15 Ultra front camera; 21 mm-equivalent view, about 90° field of view, f/2.0, 32 MP, 1/3.6-inch-class sensor.
-- Direct-selfie prompts now retain the camera sentence and a source-aware processing sentence after compaction.
+- The Canonical output always exposes the camera contract in metadata. Set `xiaomiFrontCameraProfile: true` to add the compact camera clause to direct-selfie prompt text without changing legacy defaults.
 - Daylight: restrained HDR, directional shadows preserved, no flattened face.
 - Mixed lighting: local warm/cool casts remain local; no global shadow lifting.
 - Night: mild luminance/chroma noise, modest dark-color desaturation, source-matched white balance and limited denoising.
