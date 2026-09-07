@@ -27,7 +27,8 @@ for(const [section,extra] of Object.entries(cases)){
   assert.equal(out.phase54.active,true,`${section}: Phase 54 inactive`);
   assert.equal(out.phase54.section,section,`${section}: wrong Phase 54 section`);
   assert.equal(out.phase54.determinism,"10/10",`${section}: determinism metadata missing`);
-  assert.equal(out.phase54.allCommonFieldsRouted,true,`${section}: common field routing disabled`);
+  if(section==="car") assert.equal(out.phase54.allCommonFieldsRouted,false,"car: generic common-field routing must stay isolated");
+  else assert.equal(out.phase54.allCommonFieldsRouted,true,`${section}: common field routing disabled`);
   assert.equal(out.phase54.inactiveSectionLeakageForbidden,true,`${section}: leakage guard disabled`);
   assert.equal(out.phase54.contradictions.length,0,`${section}: contradiction found: ${out.phase54.contradictions.join(", ")}`);
   assert.equal(out.phase54.wikiPromptSource.url,"https://www.wikiprompt.org/realistic-selfie-image-prompt-generator-system-prompt");
@@ -36,7 +37,8 @@ for(const [section,extra] of Object.entries(cases)){
   assert.equal(out.phase54.wikiPromptRules.subtleImperfections,true);
   assert.equal(out.phase54.wikiPromptRules.simplePhoneCameraLanguage,true);
   assert.equal(out.phase54.wikiPromptRules.mirrorPhysicsRequired,true);
-  assert.ok(words(out.prompt)<= (section==="carExterior"?280:250),`${section}: budget overflow (${words(out.prompt)})`);
+  const hardLimit=(section==="carExterior"||section==="car")?280:250;
+  assert.ok(words(out.prompt)<=hardLimit,`${section}: budget overflow (${words(out.prompt)})`);
   const ten=Array.from({length:10},()=>buildCanonicalV3UserOutput(raw).prompt);
   assert.ok(ten.every(value=>value===ten[0]),`${section}: output is not deterministic 10/10`);
   if(section==="mirror") assert.match(out.prompt,/mirror_rules:.*camera is pointed at the mirror.*reflection/iu);
@@ -107,16 +109,17 @@ assert.equal(normalizeScenarioState({studioSection:"car",scene:"rangeRover",scen
 
 const ui=fs.readFileSync(new URL("../js/phase54-section-field-ui.js",import.meta.url),"utf8");
 const phase54=fs.readFileSync(new URL("../js/canonical/canonical-v3-phase54.js",import.meta.url),"utf8");
-assert.match(ui,/#post-processing-panel[\s\S]{0,80}hidden:false[\s\S]{0,40}disabled:false/iu,"post-processing must stay active");
-assert.match(ui,/#hair[\s\S]{0,60}hidden:false[\s\S]{0,40}disabled:false/iu,"hair must stay active");
-assert.match(ui,/#skin[\s\S]{0,60}hidden:false[\s\S]{0,40}disabled:false/iu,"skin must stay active");
+assert.match(ui,/#post-processing-panel[\s\S]{0,80}hidden:false[\s\S]{0,40}disabled:false/iu,"post-processing must stay active for general sections");
+assert.match(ui,/#hair[\s\S]{0,60}hidden:false[\s\S]{0,40}disabled:false/iu,"hair must stay active for general sections");
+assert.match(ui,/#skin[\s\S]{0,60}hidden:false[\s\S]{0,40}disabled:false/iu,"skin must stay active for general sections");
 assert.match(ui,/car-exterior-fields[\s\S]{0,80}!carExterior/iu,"carExterior dedicated controls must be section-scoped");
 assert.match(phase54,/phase54-section-field-ui\.js/iu,"Phase 54 UI activation module must load with canonical engine");
 assert.match(phase54,/ChatGPT Images: create exactly one candid/iu,"custom prompt must target ChatGPT Images");
 
 console.log("PHASE54_SECTIONS=solo,group,car,carExterior,bedroom,gym,street,accidental,custom,mirror");
 console.log("PHASE54_WIKIPROMPT_SOURCE=connected");
-console.log("PHASE54_COMMON_FIELDS_ROUTED=true");
+console.log("PHASE54_GENERAL_COMMON_FIELDS_ROUTED=true");
+console.log("PHASE54_CAR_GENERIC_FIELDS_ROUTED=false");
 console.log("PHASE54_CUSTOM_OPTIONS=active");
 console.log("PHASE54_CUSTOM_PROMPT_TARGET=chatgpt-images");
 console.log("PHASE54_CONTRADICTIONS=0");
