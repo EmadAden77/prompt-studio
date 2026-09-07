@@ -170,10 +170,10 @@ function phase56Contradictions(raw={}){
 function buildLegacyCarPrompt(raw={}){
   return [
     "ChatGPT Images: create a candid front-camera selfie inside a parked 2017 Range Rover Sport Autobiography Dynamic L494.",
-    "Self-held; phone and holding arm stay outside the crop; free hand rests naturally or is out of frame.",
+    "Self-held; phone and holding arm stay outside crop; free hand rests or is out of frame.",
     "Preserve reference identity: face, skin tone, hairline, facial hair, age/asymmetry; no beautification/de-aging.",
     selectedClothing(raw),selectedExpression(raw),selectedHair(raw),
-    "Tall 195 cm, 88 kg lean-athletic; believable seated scale.",
+    "Tall 195 cm, 88 kg lean-athletic.",
     LHD_VEHICLE_RELATIVE_ANCHORS,LHD_SELFIE_VIEWER_MAPPING,LHD_STEERING_ANCHOR,LHD_REAR_SEAT_ANCHOR,
     "Cabin: Ivory perforated leather, dark wood, black-and-Ivory steering wheel, transparent panoramic roof and Ivory headliner; angle-visible only.",
     selectedPose(raw),lightingSentence(raw),backgroundSentence(raw),realismSentence(raw),
