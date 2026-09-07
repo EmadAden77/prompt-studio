@@ -14,7 +14,7 @@ export const LHD_REAR_SEAT_ANCHOR="Rear Ivory seats span behind both front seats
 export const ARMLESS_LOCK=`The phone-holding arm is entirely outside the frame;
 the crop is tight on the face and shoulders inside the cabin so no arm or hand holding the phone is visible, while a subtle raised tension in the near shoulder and the near-field selfie projection still read as a self-held capture from the seat.`;
 export const ARMLESS_FRAMING="Framing: tight head-and-shoulders cabin crop; the extended arm falls completely outside the frame edges; slight natural tilt kept.";
-export const ARMLESS_OPTICS="Optics: near-field phone projection; face slightly larger than ears/shoulders, near shoulder mildly enlarged, edge detail softer; no distant-camera flattening or artificial portrait blur.";
+export const ARMLESS_OPTICS="Optics: near-field phone projection; face and near shoulder slightly enlarged, edges softer; never distant-camera flat or portrait-blurred.";
 export const ARMLESS_LHD_ANCHORS="LHD visual anchors: wheel only before vehicle-LEFT driver seat; dark-wood console driver-right; B-pillar/belt vehicle-left; never mirror cabin.";
 
 export const CAR_CONTACT_PHYSICS="Contact physics: seat/headrest compress under body weight; shoulders rest with slight natural height difference; clothing bunches only where torso, belt or console contact causes it; nothing floats.";
@@ -108,12 +108,12 @@ function armlessLightingSentence(raw={}){
   const lighting=text(raw.lighting).toLowerCase();
   const roof=requestedPoseId(raw)==="driver-roof-armless";
   if(mode==="day") return roof
-    ?"Car-only day: daylight through cabin glass/roof; real sky, restrained phone HDR and natural highlight clipping."
-    :"Car-only day: daylight through cabin glass; natural Ivory/wood contrast, restrained phone HDR and no studio fill.";
-  if(lighting.includes("flash")) return "Car-only night-flash: phone flash favors face/near shoulder; rear cabin falls darker, short jaw/neck shadows remain, wood gets one small highlight, shadow noise survives.";
+    ?"Car-only day: daylight through cabin glass/roof; real sky, restrained phone HDR, natural highlight clipping."
+    :"Car-only day: daylight through cabin glass; natural Ivory/wood contrast, restrained phone HDR, no studio fill.";
+  if(lighting.includes("flash")) return "Car-only night-flash: phone flash plus dim cabin ambient and restrained dash glow; face/near shoulder lead, rear cabin darker, short jaw/neck shadows, one wood highlight, shadow noise.";
   return roof
-    ?"Car-only night: dim ambient and restrained dash glow; roof stays transparent to plausible night sky/stars, with weak cabin reflection and noisier shadows."
-    :"Car-only night: dim ambient and restrained dash glow; shadow noise exceeds face noise, dark colors lose slight saturation, distant cabin detail softens naturally.";
+    ?"Car-only night: dim cabin ambient plus restrained dash glow; transparent panoramic glass shows a physically plausible real night sky and stars, never opaque black; weak cabin reflection, noisier shadows."
+    :"Car-only night: dim cabin ambient plus restrained dash glow; shadow noise exceeds face noise, dark colors slightly desaturate, distant cabin detail softens.";
 }
 
 function saudiRegion(raw={}){
@@ -152,7 +152,7 @@ function realismSentence(raw={}){
 }
 
 function armlessRealismSentence(){
-  return "Physics: seat/headrest compress; shoulders differ slightly; clothing bunches at contact. Wood/glass reflections stay faint and coherent. Eye-line may favor screen slightly. Nothing floats or looks showroom-perfect.";
+  return "Physics: seat/headrest compress; shoulders differ slightly; clothing bunches at contact. Wood/glass reflections stay faint and coherent. Eye-line may favor screen slightly. Nothing floats.";
 }
 
 function phase56Contradictions(raw={}){
