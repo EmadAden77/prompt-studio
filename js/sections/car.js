@@ -5,7 +5,7 @@ export const SECTION = deepFreeze({
   id:"car",
   label:"🚙 التصوير داخل السيارة",
   description:"مقاعد السيارة والمقصورة ووضعيات وإضاءة السيارة فقط",
-  captureType:"subject_held_cabin_selfie",
+  captureType:"subject_held_driver_selfie",
   scenes:["rangeRover"],
   clothingSource:"authority",
   poses:[
