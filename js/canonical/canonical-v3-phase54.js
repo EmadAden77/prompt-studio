@@ -240,7 +240,7 @@ export function buildCanonicalV3UserOutput(rawInput={},sceneData=undefined){
   let prompt=insertControlEvidence(base.prompt,missing);
   prompt=ensureMirrorRule(prompt,contract.section);
   const xiaomiCamera=describeXiaomi15UltraFrontCamera(normalized);
-  if(xiaomiCamera&&contract.section!=="carExterior") prompt=`${prompt} Xiaomi 15 Ultra front camera; natural 21 mm perspective and source-aware phone rendering.`.replace(/\s{2,}/gu," ").trim();
+  if(xiaomiCamera&&normalized.xiaomiFrontCameraProfile===true&&contract.section!=="carExterior") prompt=`${prompt} Xiaomi 15 Ultra front camera; natural 21 mm perspective and source-aware phone rendering.`.replace(/\s{2,}/gu," ").trim();
   const customAuthority=applyCustomSceneAuthority(prompt,normalized);
   prompt=customAuthority.prompt;
   const carAuthority=applyCarInteriorAuthority(prompt,normalized);
