@@ -170,7 +170,7 @@ function compactWithinBudget(prompt,base,protectedEvidence=[],sectionIdOverride=
   const protectedPart=part=>
     required.some(value=>value&&part.includes(value))
     || protectedEvidence.some(value=>value&&part.includes(value))
-    || /ChatGPT Images:|Car-interior lock:|Cabin fidelity:|Capture physics:|A candid direct selfie|A candid group selfie|An accidental front-camera capture|One arm extends toward the camera|Identity strictly preserved|Tall 195 cm, 88 kg|2017 Range Rover Sport Autobiography Dynamic L494|^Vehicle fidelity:|mirror_rules:|^Selected controls:|^Use these selected details exactly:|Night physics:|Raised phone ISO|Exposure keeps|Direct phone flash/iu.test(part);
+    || /ChatGPT Images:|Car-interior lock:|Cabin fidelity:|Capture physics:|A candid direct selfie|A candid group selfie|An accidental front-camera capture|One arm extends toward the camera|Identity strictly preserved|Tall 195 cm, 88 kg|2017 Range Rover Sport Autobiography Dynamic L494|^Vehicle fidelity:|mirror_rules:|^Selected controls:|^Use these selected details exactly:|Night physics:|Raised phone ISO|Exposure keeps|Direct phone flash|^Xiaomi 15 Ultra front camera:|^Phone rendering:/iu.test(part);
   const removable=[
     /Fine skin pores|Fine skin texture|Authentic skin texture|Natural hair flyaways|loose hair strands|small lived-in irregularities|subtle sweat sheen/iu,
     /Background .*same|background people|Street life|parking area|gym has restrained|Natural sensor noise|Slight lens softness/iu,
