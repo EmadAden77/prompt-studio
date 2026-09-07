@@ -35,15 +35,25 @@ export function reviewCarExteriorPrompt(rawInput={},base={},prompt=""){
   });
 }
 
+function preservePhase53Surface(prompt=""){
+  return String(prompt)
+    .replace("Pose: driver-close-armless eye-level; headrest, B-pillar, window edge, wheel top arc.","Pose: driver-close-armless at eye level; driver headrest, B-pillar, window edge, steering-wheel top arc at bottom.")
+    .replace("Pose: driver-low-armless slightly below eye level; headliner, sun visor, panoramic roof.","Pose: driver-low-armless slightly below eye level; Ivory headliner, sun visor, transparent panoramic roof above.")
+    .replace("Pose: driver-side-armless three-quarter; door wood trim and one window edge.","Pose: driver-side-armless three-quarter; dark-wood door trim and one side-window edge visible.")
+    .replace("Pose: driver-roof-armless roof tilt; panoramic glass shows only physically visible sky/stars.","Pose: driver-roof-armless with gentle roof tilt; transparent panoramic glass shows only real sky/stars physically visible through it.")
+    .replace("Pose: passenger-close-armless eye-level; center-console side visible; steering wheel excluded.","Pose: passenger-close-armless at eye level from the front passenger seat; center-console side visible; no steering wheel in frame.")
+    .replace("Pose: rear-seat-armless eye-level; front headrests softly blurred foreground.","Pose: rear-seat-armless at eye level; two front headrests softly blurred in the near foreground.");
+}
+
 export function buildCanonicalV3UserOutput(rawInput={},sceneData=undefined){
   const out=buildPhase55CanonicalV3UserOutput(rawInput,sceneData);
   if(!out?.phase53?.active) return out;
 
   const forbiddenExteriorSpecs=/\s*Interior-only scope: no grille, alloys, DRL, Fuji White exterior specification, exterior camera position, studio light, ring light or staged product view\./iu;
-  const prompt=String(out.prompt||"").replace(
+  const prompt=preservePhase53Surface(String(out.prompt||"").replace(
     forbiddenExteriorSpecs,
     " Interior-only scope: keep the capture inside the cabin; no exterior camera position, studio light, ring light or staged product view."
-  ).trim();
+  )).trim();
 
   return Object.freeze({
     ...out,
