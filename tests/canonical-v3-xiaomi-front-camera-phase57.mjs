@@ -29,7 +29,8 @@ for(const raw of [day,night,mixed]){
 assert.match(describeXiaomi15UltraProcessing(day),/restrained HDR/iu);
 assert.match(describeXiaomi15UltraProcessing(night),/mild luminance\/chroma noise/iu);
 assert.match(describeXiaomi15UltraProcessing(mixed),/mixed practical sources/iu);
-assert.match(describeXiaomi15UltraFrontCamera(day),/natural wide arm-length perspective/iu);\nassert.doesNotMatch(describeXiaomi15UltraFrontCamera(day),/\b(?:MP|f\/|inch)\b/iu,"final prompt language must avoid bare technical specs");
+assert.match(describeXiaomi15UltraFrontCamera(day),/natural wide arm-length perspective/iu);
+assert.doesNotMatch(describeXiaomi15UltraFrontCamera(day),/\b(?:MP|f\/|inch)\b/iu,"final prompt language must avoid bare technical specs");
 
 const car=buildCanonicalV3UserOutput({studioSection:"car",scene:"rangeRover",hasReference:true,time:"night",lighting:"car-night",pose:"driver-close",clothing:"plain black T-shirt",expression:"neutral"});
 assert.equal(car.phase56.xiaomi15Ultra.device,"Xiaomi 15 Ultra front camera");
