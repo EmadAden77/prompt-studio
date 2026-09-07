@@ -12,10 +12,10 @@ export const LHD_STEERING_ANCHOR="Steering wheel: centered only in front of the 
 export const LHD_REAR_SEAT_ANCHOR="Rear Ivory seats span behind both front seats; rear-left is behind the driver.";
 
 const POSES=Object.freeze({
-  "driver-seat":"Pose: upright driver-seat selfie with relaxed shoulders and believable seat contact.",
+  "driver-seat":"Pose: upright driver-seat selfie; relaxed shoulders, believable seat contact.",
   "driver-close":"Pose: close driver-seat selfie; upper torso dominant, wheel arc when natural.",
-  "driver-low":"Pose: driver selfie with phone slightly below eye level at natural arm reach.",
-  "roof-context":"Pose: wider driver selfie naturally including part of the panoramic roof and headliner."
+  "driver-low":"Pose: driver selfie; phone slightly below eye level at arm reach.",
+  "roof-context":"Pose: wider driver selfie; panoramic roof/headliner naturally visible."
 });
 
 const EXPRESSIONS=Object.freeze({
@@ -50,7 +50,7 @@ function selectedExpression(raw={}){
 
 function selectedHair(raw={}){
   const id=text(raw.hair).toLowerCase();
-  return `Hair: ${HAIR[id]||HAIR.same}; reference density, hairline and volume unchanged.`;
+  return `Hair: ${HAIR[id]||HAIR.same}; keep reference hairline, density and volume.`;
 }
 
 function selectedTime(raw={}){
@@ -65,7 +65,7 @@ function lightingSentence(raw={}){
   const lighting=text(raw.lighting).toLowerCase();
   if(mode==="day") return "Day lighting: real sun/sky through glass; natural cabin shadows, exterior brightness, reflections and phone dynamic range.";
   if(lighting.includes("flash")) return "Night lighting: phone flash plus cabin/street lights; hard near shadows, darker distance and coherent reflections.";
-  return "Night lighting: cabin and Saudi street/building/vehicle lights through glass; natural falloff, dark areas, reflections and mild shadow noise.";
+  return "Night lighting: cabin and Saudi street/building/vehicle lights through glass; real falloff, dark areas, reflections and mild shadow noise.";
 }
 
 function saudiRegion(raw={}){
@@ -73,7 +73,7 @@ function saudiRegion(raw={}){
   if(/dammam|khobar|الدمام|الخبر/u.test(city)) return "eastern-coast Saudi";
   if(/jeddah|جدة/u.test(city)) return "western-coast Saudi";
   if(/riyadh|الرياض/u.test(city)) return "inland Saudi";
-  return "ordinary Saudi";
+  return "Saudi";
 }
 
 function peoplePhrase(raw={}){
@@ -88,11 +88,13 @@ function detailWord(raw={}){
   const density=text(raw.messiness).toLowerCase();
   if(density==="busy") return "denser";
   if(density==="minimal") return "restrained";
-  return "ordinary";
+  return "";
 }
 
 function backgroundSentence(raw={}){
-  return `Through visible glass: ${detailWord(raw)} ${saudiRegion(raw)} street life with parked/passing vehicles and ${peoplePhrase(raw)}; no posing, readable city signs or landmarks.`;
+  const detail=detailWord(raw);
+  const prefix=detail?`${detail} `:"";
+  return `Through visible glass: ${prefix}${saudiRegion(raw)} street life with parked/passing vehicles and ${peoplePhrase(raw)}; no posing, readable city signs or landmarks.`;
 }
 
 function realismSentence(raw={}){
@@ -105,7 +107,7 @@ function buildCarPrompt(raw={}){
   const parts=[
     "ChatGPT Images: create a candid front-camera selfie inside a parked 2017 Range Rover Sport Autobiography Dynamic L494.",
     "Seated naturally, holding the phone at arm reach with one hand; the other hand stays free.",
-    "Preserve reference identity: face, skin tone, hairline, facial hair, age, asymmetry; no beautification/de-aging.",
+    "Preserve reference identity: face, skin tone, hairline, facial hair, age/asymmetry; no beautification/de-aging.",
     selectedClothing(raw),selectedExpression(raw),selectedHair(raw),
     "Tall 195 cm, 88 kg lean-athletic; believable seated scale.",
     LHD_VEHICLE_RELATIVE_ANCHORS,LHD_SELFIE_VIEWER_MAPPING,LHD_STEERING_ANCHOR,LHD_REAR_SEAT_ANCHOR,
