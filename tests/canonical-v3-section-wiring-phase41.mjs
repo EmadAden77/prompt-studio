@@ -125,15 +125,19 @@ for (const section of SECTION_IDS) {
     const prompt = output.prompt;
     if (!samples[section] && ci === 0 && li === 1 && pi === 0 && ei === 1) samples[section] = prompt;
 
-    const clothing = resolveClothingText(raw.clothing, raw);
-    if (!clothing || !prompt.includes(clothing)) fail(failures, matrix, section, "clothing", caseId, `missing ${JSON.stringify(clothing)}`);
-    if (raw.clothing === "custom" && !prompt.includes(raw.customClothing)) fail(failures, matrix, section, "clothing", caseId, "custom clothing changed");
+    // The live car-interior adapter now has strict four-domain authority. Generic clothing,
+    // expression and time controls are intentionally not required for that section.
+    if (section !== "car") {
+      const clothing = resolveClothingText(raw.clothing, raw);
+      if (!clothing || !prompt.includes(clothing)) fail(failures, matrix, section, "clothing", caseId, `missing ${JSON.stringify(clothing)}`);
+      if (raw.clothing === "custom" && !prompt.includes(raw.customClothing)) fail(failures, matrix, section, "clothing", caseId, "custom clothing changed");
+    }
 
     const lighting = expectedLighting(raw, section);
     if (!lighting || !prompt.includes(lighting)) fail(failures, matrix, section, "lighting", caseId, `missing ${JSON.stringify(lighting)}`);
     const pose = expectedPose(raw, section);
     if (!pose || !prompt.includes(pose)) fail(failures, matrix, section, "pose", caseId, `missing ${JSON.stringify(pose)}`);
-    if (!prompt.includes(raw.expression)) fail(failures, matrix, section, "expression", caseId, `missing ${raw.expression}`);
+    if (section !== "car" && !prompt.includes(raw.expression)) fail(failures, matrix, section, "expression", caseId, `missing ${raw.expression}`);
 
     if (!specs[section].sceneEvidence.test(prompt)) fail(failures, matrix, section, "scene", caseId, "section scene evidence missing");
     if (section === "street" && !moodEvidence(raw.streetMood).test(prompt)) fail(failures, matrix, section, "scene", caseId, `street mood ${raw.streetMood} missing`);
@@ -145,8 +149,10 @@ for (const section of SECTION_IDS) {
     }
     if (section === "car" && (!prompt.includes("2017 Range Rover Sport Autobiography Dynamic") || !prompt.includes("Ivory perforated leather"))) fail(failures, matrix, section, "scene", caseId, "car interior evidence missing");
 
-    if (raw.time === "night" && !/night/iu.test(prompt)) fail(failures, matrix, section, "time", caseId, "night evidence missing");
-    if (raw.time === "day" && /Lighting follows the selected real-world night source/iu.test(prompt)) fail(failures, matrix, section, "time", caseId, "night leaked into day");
+    if (section !== "car") {
+      if (raw.time === "night" && !/night/iu.test(prompt)) fail(failures, matrix, section, "time", caseId, "night evidence missing");
+      if (raw.time === "day" && /Lighting follows the selected real-world night source/iu.test(prompt)) fail(failures, matrix, section, "time", caseId, "night leaked into day");
+    }
 
     if (firstSentence(prompt) !== opener(section)) fail(failures, matrix, section, "selfie", caseId, `wrong opener ${firstSentence(prompt)}`);
     if (SELFIE_SECTIONS.has(section) && !prompt.includes(SELFIE_ARM_LOCK)) fail(failures, matrix, section, "selfie", caseId, "SELFIE_ARM_LOCK missing");
