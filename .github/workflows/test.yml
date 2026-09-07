@@ -145,3 +145,5 @@ jobs:
 
       - name: Run Phase 57 Xiaomi front-camera realism contract
         run: node tests/canonical-v3-xiaomi-front-camera-phase57.mjs
+      - name: Run Phase 63 layered architecture foundation
+        run: node tests/canonical-v3-layered-foundation-phase63.mjs
