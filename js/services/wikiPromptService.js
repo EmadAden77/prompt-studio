@@ -58,7 +58,7 @@ function configText(config = {}) {
 
 export class WikiPromptService {
   constructor({ fetchImpl = globalThis.fetch, localUrl = LOCAL_DATASET_URL } = {}) {
-    this.fetchImpl = fetchImpl;
+    this.fetchImpl = fetchImpl === globalThis.fetch ? fetchImpl.bind(globalThis) : fetchImpl;
     this.localUrl = localUrl;
     this.cache = new Map();
     this.pending = new Map();
