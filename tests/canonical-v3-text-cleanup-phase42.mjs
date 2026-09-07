@@ -75,7 +75,8 @@ for (const section of SECTION_IDS) {
     record(prompt.includes(resolveClothingText(raw.clothing, raw)), `${caseId}: clothing missing`);
     record(prompt.includes(expectedLighting(raw, section)), `${caseId}: lighting missing`);
     record(prompt.includes(expectedPose(raw, section)), `${caseId}: pose missing`);
-    record(prompt.includes(raw.expression), `${caseId}: expression missing`);
+    // The live car section intentionally ignores generic expression controls under its four-domain authority.
+    if (section !== "car") record(prompt.includes(raw.expression), `${caseId}: expression missing`);
     record(specs[section].sceneEvidence.test(prompt), `${caseId}: scene evidence missing`);
     record(firstSentence(prompt) === opener(section), `${caseId}: opener mismatch`);
     record(prompt.includes(SELFIE_ARM_LOCK), `${caseId}: SELFIE_ARM_LOCK missing`);

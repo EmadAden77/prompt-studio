@@ -20,14 +20,16 @@ export const WIKIPROMPT_REALISTIC_SELFIE_RULES = Object.freeze({
 });
 
 export const WIKIPROMPT_CAR_SELFIE_RULES = Object.freeze({
-  actionFirst:"Begin with one natural seated driver action, not a static catalog pose.",
-  contextConsistency:"Only parked-car seats, cabin materials, driver-seat pose and physically motivated car lighting may shape the scene.",
-  subtleImperfections:"Use restrained phone-photo and lived-in cabin imperfections only; never random clutter or unrelated realism props.",
-  simpleCameraLanguage:"Use front-camera, arm-reach and close/wider selfie language; avoid ISO, focal-length, aperture, yaw/pitch/roll jargon in the final ChatGPT Images prompt.",
-  observableBackground:"Background is cabin-only: seatback, door trim, glass and roof when angle-visible; outside through glass stays soft and anonymous.",
-  naturalPropIntegration:"Only ordinary car-context objects may appear when explicitly selected; never product-display placement.",
-  mirrorRule:"Not applicable to a direct front-camera car selfie; preserve vehicle-relative LHD relationships without assigning image-frame left/right.",
-  forbiddenLeakage:Object.freeze(["named city","landmark","crowd","busy street","car exterior pose","passenger-seat relocation","driving motion","studio light","ring light"])
+  allowedDomains:Object.freeze(["seats","cabin","driver-seat pose","car lighting"]),
+  actionFirst:"Begin with one natural seated driver action from the selected driver-seat pose, not a static catalog pose.",
+  contextConsistency:"Only the fixed parked-car seats and cabin, the selected driver-seat pose, and the selected physically motivated car lighting may shape the car-interior scene.",
+  subtleImperfections:"Use only restrained cabin realism such as believable seat compression, touched-surface wear and natural glass reflections; never inject subject styling, random clutter or unrelated realism props.",
+  simpleCameraLanguage:"Use only simple front-camera and natural arm-reach language needed to make the selfie physically possible; avoid ISO, focal-length, aperture, yaw/pitch/roll jargon in the final ChatGPT Images prompt.",
+  observableBackground:"Background is cabin-only: angle-visible seats, center console, door/B-pillar, steering wheel, rear seats, glass, roof and headliner; outside through glass stays soft and anonymous.",
+  naturalPropIntegration:"Disabled for this section. Props, products, accessories and unrelated objects are outside car-interior authority.",
+  mirrorRule:"Not applicable to a direct front-camera car selfie. Preserve the explicit vehicle-relative LHD anchors and their separate selfie viewer mapping; never infer a mirrored cabin.",
+  selectionAuthority:"Only driver-seat pose and car lighting are selectable scene inputs here; seats and cabin remain fixed vehicle authority, while generic clothing, expression, time, body, hair, skin, fabric, accessory, object, city, crowd, background and post-processing inputs are ignored.",
+  forbiddenLeakage:Object.freeze(["generic clothing","generic expression","generic time","generic body override","hair styling","skin styling","fabric state","accessory","prop","named city","landmark","crowd","busy street","background density","car exterior pose","passenger-seat relocation","driving motion","studio light","ring light","post-processing"])
 });
 
 const text=value=>String(value??"").trim();
@@ -47,7 +49,7 @@ const meaningful=(key,value)=>{
 const SECTION_GUIDANCE=Object.freeze({
   solo:"Keep the moment activity-led and candid; supporting details must match the selected place rather than inventing a staged setup.",
   group:"Keep one clear phone-holder and a shared candid group moment; people remain distinct and naturally distributed instead of posing identically.",
-  car:"Keep the subject naturally seated in the stationary driver position. The car section is strictly seats, cabin, driver-seat poses and car lighting. Do not inject generic city, street, crowd, background-density, hair, skin, fabric-state, accessory, environment or post-processing controls into the car-interior prompt.",
+  car:"Keep the subject naturally seated in the stationary driver position. This section has exactly four scene domains: fixed seats, fixed cabin, selected driver-seat pose and selected car lighting. Apply only action-first behavior, context consistency, cabin-only imperfections, simple phone language, cabin-only observable background and non-mirror LHD physics from the realism methodology. Ignore every generic control outside those four domains.",
   carExterior:"Keep the vehicle as contextual support to the selfie; preserve the selected L494 geometry and pose without turning the frame into a product display.",
   bedroom:"Keep the room lived-in rather than staged; furniture contact, clothing and small imperfections must match the subject's actual action.",
   gym:"Keep the scene workout-consistent; athletic context, subtle exertion cues and accessories must fit the activity while explicit user clothing remains authoritative.",
