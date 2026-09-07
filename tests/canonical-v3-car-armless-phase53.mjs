@@ -17,7 +17,7 @@ const base={
 const section=getSection("car");
 for(const id of poseIds) assert.ok(section.poses.includes(id),`car section missing ${id}`);
 assert.equal(section.rules.selfieGeometry.autoTightCropPose,"driver-close-armless");
-assert.deepEqual(section.rules.selfieGeometry.angles,["eye","slightly-below","three-quarter","roof-tilt"]);
+assert.deepEqual(section.rules.selfieGeometry.armlessAngles,["eye","slightly-below","three-quarter","roof-tilt"]);
 
 assert.equal(CAR_ARMLESS_POSE_OPTIONS.length,6);
 for(const item of CAR_ARMLESS_POSE_OPTIONS){
