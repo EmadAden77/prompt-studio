@@ -53,7 +53,7 @@ assert.doesNotMatch(out.prompt,/driver(?:'s)? (?:seatbelt|belt|B-pillar).*RIGHT 
 assert.doesNotMatch(out.prompt,/passenger seat.*vehicle LEFT/iu);
 assert.doesNotMatch(out.prompt,WRONG_SIDE_STEERING);
 assert.match(out.prompt,/Preserve reference identity:/iu,"identity lock must remain protected");
-assert.match(out.prompt,/holding the phone at arm reach with one hand; the other hand stays free/iu,"subject-held selfie lock must remain protected");
+assert.match(out.prompt,/Self-held; phone and holding arm stay outside crop/iu,"subject-held arm-free selfie lock must remain protected");
 
 const ten=Array.from({length:10},()=>buildCanonicalV3UserOutput(raw).prompt);
 assert.ok(ten.every(prompt=>prompt===ten[0]),"LHD visual anchors must be deterministic 10/10");
