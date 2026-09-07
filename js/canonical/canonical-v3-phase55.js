@@ -15,7 +15,7 @@ export const ARMLESS_LOCK=`The phone-holding arm is entirely outside the frame;
 the crop is tight on the face and shoulders inside the cabin so no arm or hand holding the phone is visible, while a subtle raised tension in the near shoulder and the near-field selfie projection still read as a self-held capture from the seat.`;
 export const ARMLESS_FRAMING="Framing: tight head-and-shoulders cabin crop; the extended arm falls completely outside the frame edges; slight natural tilt kept.";
 export const ARMLESS_OPTICS="Optics: near-field projection makes the face larger than the cabin; mild wide-angle, small natural tilt; never third-person.";
-export const ARMLESS_LHD_ANCHORS="LHD visual anchors: wheel only before the vehicle-LEFT driver seat; dark-wood console on the driver's RIGHT; driver B-pillar/belt on vehicle LEFT; never mirror cabin geometry.";
+export const ARMLESS_LHD_ANCHORS="LHD visual anchors: wheel only before vehicle-LEFT driver seat; dark-wood console driver-right; B-pillar/belt vehicle-left; never mirror cabin.";
 
 const POSES=Object.freeze({
   "driver-seat":"Pose: upright driver-seat selfie; relaxed shoulders, believable seat contact.",
@@ -173,7 +173,7 @@ function buildArmlessCarPrompt(raw={}){
     "Cabin: Ivory perforated leather, dark wood veneer, transparent panoramic glass, Ivory headliner; glass never opaque black.",
     ARMLESS_LOCK,
     ARMLESS_FRAMING,
-    "Other hand: wheel when appropriate, console, lap, or out of frame.",
+    "Other hand: wheel/console/lap, or out of frame.",
     ARMLESS_OPTICS,
     selectedPose(raw),armlessLightingSentence(raw),armlessRealismSentence(raw),
     "Interior only; no exterior camera, studio/ring light, or staged display."
