@@ -1,6 +1,7 @@
 import { buildCanonicalV3UserOutput as buildPhase52_1CanonicalV3UserOutput } from "./canonical-v3-phase52-1.js";
 import { buildCanonicalV3UserOutput as buildPhase54CanonicalV3UserOutput } from "./canonical-v3-phase54.js";
 import { buildWikiPromptSectionContract, normalizePhase54Aliases, WIKIPROMPT_CAR_SELFIE_RULES } from "./wikiprompt-realistic-selfie-phase54.js";
+import { resolveClothingText } from "../clothing-authority.js";
 
 const text=value=>String(value??"").trim();
 const words=value=>text(value).split(/\s+/u).filter(Boolean).length;
@@ -11,10 +12,48 @@ export const LHD_STEERING_ANCHOR="Steering wheel: centered only in front of the 
 export const LHD_REAR_SEAT_ANCHOR="Rear Ivory seats span behind both front seats; rear-left is behind the driver.";
 
 const POSES=Object.freeze({
-  "driver-seat":"Pose: naturally seated upright in the driver seat with relaxed shoulders and believable seat contact.",
-  "driver-close":"Pose: close driver-seat selfie; upper torso dominant, partial steering-wheel arc only when naturally visible.",
-  "driver-low":"Pose: driver-seat selfie with phone slightly below eye level at natural arm reach; torso relaxed.",
-  "roof-context":"Pose: slightly wider driver-seat selfie that naturally includes part of the panoramic roof and headliner."
+  "driver-seat":"Pose: natural upright driver-seat selfie with relaxed shoulders and believable seat contact.",
+  "driver-close":"Pose: close driver-seat selfie; upper torso dominant, wheel arc when natural.",
+  "driver-low":"Pose: driver-seat selfie with phone slightly below eye level at natural arm reach.",
+  "roof-context":"Pose: wider driver-seat selfie naturally including part of the panoramic roof and headliner."
+});
+
+const EXPRESSIONS=Object.freeze({
+  neutral:"neutral",
+  relaxed:"calm and relaxed",
+  serious:"serious",
+  confident:"confident",
+  focused:"focused neutral",
+  "small-smile":"small natural closed-mouth smile",
+  smile:"natural smile",
+  laughing:"natural laugh"
+});
+
+const HAIR=Object.freeze({
+  same:"as reference",
+  messy:"slightly messy",
+  neat:"neat",
+  wet:"damp",
+  natural_tousled:"light natural tousle",
+  loose_swept_back:"naturally swept back",
+  swept_back_soft_part:"swept back with soft part",
+  side_part_right:"soft right side part",
+  side_part_left:"soft left side part",
+  soft_middle_part:"soft middle part",
+  side_sweep_right:"naturally swept right",
+  side_sweep_left:"naturally swept left",
+  light_front_lift:"light natural front lift",
+  loose_forehead_strands:"a few loose forehead strands",
+  forward_relaxed:"relaxed forward",
+  sleep_compressed_right:"slightly compressed on the right",
+  sleep_compressed_left:"slightly compressed on the left",
+  damp_post_shower:"damp post-shower",
+  towel_dried:"casually towel-dried",
+  neat_natural:"neat and natural",
+  morning_messy:"natural morning mess",
+  shemagh_compression:"natural shemagh compression",
+  hand_through_hair:"naturally displaced by the free hand",
+  "hand-neat":"neatly hand-arranged"
 });
 
 function selectedPose(raw={}){
@@ -22,31 +61,89 @@ function selectedPose(raw={}){
   return POSES[requested]||POSES["driver-seat"];
 }
 
-function lightingSentence(raw={}){
+function selectedClothing(raw={}){
+  const resolved=text(resolveClothingText(raw.clothing,raw));
+  return resolved?`Clothing: ${resolved}.`:"";
+}
+
+function selectedExpression(raw={}){
+  const id=text(raw.expression).toLowerCase();
+  return `Expression: ${EXPRESSIONS[id]||"neutral"}.`;
+}
+
+function selectedHair(raw={}){
+  const id=text(raw.hair).toLowerCase();
+  const style=HAIR[id]||HAIR.same;
+  return `Hair: ${style}; reference density, hairline and volume unchanged.`;
+}
+
+function selectedTime(raw={}){
+  const time=text(raw.time).toLowerCase();
   const lighting=text(raw.lighting).toLowerCase();
-  if(lighting.includes("flash")) return "Car lighting: direct phone flash lights the nearby face while the cabin and window background stay naturally darker with short hard shadows.";
-  if(/day|daylight|window|sun|overcast|shade/u.test(lighting)) return "Car lighting: soft real daylight enters through the vehicle glass, shaping the Ivory cabin with natural shadows and no studio fill.";
-  if(/night|cabin|ambient|practical|street|warm|dark/u.test(lighting)) return "Car lighting: cabin practical light is dominant; the nearby face is naturally brighter than the darker window view, with restrained phone-photo grain.";
-  return "Car lighting: use only physically present cabin and window light from the selected car-lighting control, with natural falloff and no studio or ring light.";
+  if(time==="day"||/day|daylight|sun|overcast|shade/u.test(lighting)) return "day";
+  return "night";
+}
+
+function lightingSentence(raw={}){
+  const mode=selectedTime(raw);
+  const lighting=text(raw.lighting).toLowerCase();
+  if(mode==="day") return "Day lighting: sun/sky light enters through glass; natural cabin shadows, realistic exterior brightness, coherent reflections and phone dynamic range.";
+  if(lighting.includes("flash")) return "Night lighting: phone flash lights the nearby face while real cabin/street lights remain; hard near shadows, darker distance and coherent reflections.";
+  return "Night lighting: cabin plus Saudi street/building/vehicle lights through glass; natural falloff, dark areas, coherent reflections and mild shadow noise.";
+}
+
+function saudiRegion(raw={}){
+  const city=text(raw.city||raw.saudiCity).toLowerCase();
+  if(/dammam|khobar|الدمام|الخبر/u.test(city)) return "eastern-coast Saudi";
+  if(/jeddah|جدة/u.test(city)) return "western-coast Saudi";
+  if(/riyadh|الرياض/u.test(city)) return "inland Saudi";
+  return "ordinary Saudi";
+}
+
+function peoplePhrase(raw={}){
+  const density=text(raw.peopleDensity).toLowerCase();
+  if(/none|zero|empty|بدون/u.test(density)) return "no staged pedestrians";
+  if(/high|many|busy|كثر|مرتفع/u.test(density)) return "several dispersed pedestrians";
+  if(/low|few|minimal|قليل/u.test(density)) return "one or two distant pedestrians";
+  return "sparse pedestrians";
+}
+
+function detailWord(raw={}){
+  const density=text(raw.messiness).toLowerCase();
+  if(density==="busy") return "denser";
+  if(density==="minimal") return "restrained";
+  return "ordinary";
+}
+
+function backgroundSentence(raw={}){
+  return `Visible glass shows ${saudiRegion(raw)} street life with ${detailWord(raw)} detail: parked/passing vehicles and ${peoplePhrase(raw)} at varied depth; no posing, readable city signs or forced landmarks.`;
+}
+
+function realismSentence(raw={}){
+  const state=text(raw.placeState).toLowerCase();
+  const cabin=state&&/clean|tidy|fresh|مرتب|نظيف/u.test(state)?"well-kept but not showroom-perfect":"naturally used";
+  return `Mandatory realism: ${cabin} cabin, seat compression, clothing folds, skin texture and touched-surface wear share one perspective/exposure event.`;
 }
 
 function buildCarPrompt(raw={}){
   const parts=[
-    "ChatGPT Images: create one candid front-camera selfie inside a parked 2017 Range Rover Sport Autobiography Dynamic L494.",
-    "He sits naturally in the driver seat, holding the phone at arm reach with one hand; the other hand stays free.",
-    "Preserve reference identity: facial structure, feature spacing, skin tone, hairline, beard/moustache pattern, apparent age and natural asymmetry; no beautification, slimming or de-aging.",
-    "Tall 195 cm, 88 kg lean-athletic build with believable seated scale.",
+    "ChatGPT Images: create a candid front-camera selfie inside a parked 2017 Range Rover Sport Autobiography Dynamic L494.",
+    "Driver seated naturally; one hand holds the phone at arm reach, the other stays free.",
+    "Preserve reference identity: face, skin tone, hairline, facial hair, age and asymmetry; no beautification or de-aging.",
+    selectedClothing(raw),
+    selectedExpression(raw),
+    selectedHair(raw),
+    "Tall 195 cm, 88 kg lean-athletic; believable seated scale.",
     LHD_VEHICLE_RELATIVE_ANCHORS,
     LHD_SELFIE_VIEWER_MAPPING,
     LHD_STEERING_ANCHOR,
     LHD_REAR_SEAT_ANCHOR,
-    "Cabin: Ivory perforated leather, dark wood, black-and-Ivory steering wheel, transparent panoramic roof and Ivory headliner; show only angle-visible details.",
+    "Cabin: Ivory perforated leather, dark wood, black-and-Ivory steering wheel, transparent panoramic roof and Ivory headliner; angle-visible only.",
     selectedPose(raw),
     lightingSentence(raw),
-    "Cabin-only background; outside stays soft and anonymous through glass.",
-    "Cabin realism: natural seat compression, faint touched-surface wear on dark wood and controls, coherent glass reflections.",
-    "Direct front-camera selfie; mirror physics not applicable.",
-    "No driving, passenger-seat relocation, exterior pose, studio/ring light or staged display."
+    backgroundSentence(raw),
+    realismSentence(raw),
+    "No driving, passenger relocation, exterior camera, studio/ring light or staging."
   ].filter(Boolean);
   return parts.join(" ").trim();
 }
@@ -56,10 +153,9 @@ const WRONG_SIDE_STEERING=/steering wheel\s+(?:is\s+|sits\s+|appears\s+|located\
 function assertCarPrompt(prompt){
   const forbidden=[
     /Selected controls:/iu,/city=/iu,/background=/iu,/fabric=/iu,/hair=/iu,/Dammam|Riyadh|Jeddah/iu,
-    /Subject wearing/iu,/closed-mouth expression|visible smile|laughing expression/iu,
-    /busy traffic|crowd|landmark/iu,/front grille|rear tailgate|standing beside|leaning against the .*driver door/iu,
+    /front grille|rear tailgate|standing beside|leaning against the .*driver door/iu,
     /driver(?:'s)? (?:seatbelt|belt|B-pillar).*RIGHT shoulder/iu,/passenger seat.*vehicle LEFT/iu,
-    WRONG_SIDE_STEERING,/ISO\b|\byaw\b|\bpitch\b|\broll\b|f\/\d/iu
+    WRONG_SIDE_STEERING,/\bISO\b|\byaw\b|\bpitch\b|\broll\b|f\/\d/iu
   ];
   for(const pattern of forbidden) if(pattern.test(prompt)) throw new Error(`Phase 55 car-interior leakage: ${pattern}`);
   if(!/parked 2017 Range Rover Sport Autobiography Dynamic L494/iu.test(prompt)) throw new Error("Phase 55 missing parked vehicle identity");
@@ -68,8 +164,10 @@ function assertCarPrompt(prompt){
   if(!prompt.includes(LHD_STEERING_ANCHOR)) throw new Error("Phase 55 missing steering-wheel centering");
   if(!prompt.includes(LHD_REAR_SEAT_ANCHOR)) throw new Error("Phase 55 missing rear-seat consistency");
   if(!/Preserve reference identity:/iu.test(prompt)) throw new Error("Phase 55 identity lock missing");
-  if(!/holding the phone at arm reach with one hand; the other hand stays free/iu.test(prompt)) throw new Error("Phase 55 selfie lock missing");
+  if(!/one hand holds the phone at arm reach, the other stays free/iu.test(prompt)) throw new Error("Phase 55 selfie lock missing");
   if(!/Cabin: Ivory perforated leather, dark wood, black-and-Ivory steering wheel, transparent panoramic roof and Ivory headliner/iu.test(prompt)) throw new Error("Phase 55 cabin fidelity changed");
+  if(!/Mandatory realism:/iu.test(prompt)) throw new Error("Phase 55 mandatory realism missing");
+  if(!/Saudi.*street life/iu.test(prompt)) throw new Error("Phase 55 Saudi environment life missing");
   if(words(prompt)>280) throw new Error(`Phase 55 car prompt budget overflow: ${words(prompt)} words`);
 }
 
@@ -95,7 +193,8 @@ export function buildCanonicalV3UserOutput(rawInput={},sceneData=undefined){
       active:true,section:"car",scope:Object.freeze(["seats","cabin","driver-seat poses","car lighting"]),wikiPromptSource:contract.source,
       wikiPromptSpecialization:WIKIPROMPT_CAR_SELFIE_RULES,rawGenericControlsInjected:false,namedExteriorContextAllowed:false,
       strictFourDomainAuthority:true,fixedDomains:Object.freeze(["seats","cabin"]),selectableDomains:Object.freeze(["driver-seat pose","car lighting"]),
-      genericSubjectControlsIgnored:true,naturalPropIntegration:false,mirrorRule:"not-applicable-direct-front-camera",
+      globalSubjectControlsActive:true,contextualSaudiRealismActive:true,environmentLifeActive:true,realismMandatory:true,
+      naturalPropIntegration:false,mirrorRule:"not-applicable-direct-front-camera",
       simpleCameraLanguage:true,actionFirst:true,contextConsistency:true,subtleImperfections:true,
       lhdVisualAnchors:true,viewerMapping:true,steeringWheelCenteredOnLeftSeat:true,rearLeftBehindDriver:true,
       wordCount:words(prompt),hardLimit:280,determinism:"10/10"
