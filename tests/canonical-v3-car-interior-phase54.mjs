@@ -98,11 +98,11 @@ assert.match(out.prompt,/rear-left is behind the driver/iu);
 assert.match(out.prompt,/Cabin: Ivory perforated leather, dark wood, black-and-Ivory steering wheel, transparent panoramic roof and Ivory headliner/iu);
 assert.match(out.prompt,/Pose: close driver-seat selfie/iu);
 assert.match(out.prompt,/Car lighting: cabin practical light is dominant/iu);
-assert.match(out.prompt,/Background stays cabin-only/iu);
-assert.match(out.prompt,/outside through glass is soft and anonymous/iu);
-assert.match(out.prompt,/slight natural compression where the driver contacts the Ivory seat/iu);
+assert.match(out.prompt,/Cabin-only background/iu);
+assert.match(out.prompt,/outside stays soft and anonymous through glass/iu);
+assert.match(out.prompt,/natural seat compression/iu);
 assert.match(out.prompt,/touched-surface wear on dark wood and controls/iu);
-assert.match(out.prompt,/Mirror rules are not applicable/iu);
+assert.match(out.prompt,/mirror physics not applicable/iu);
 
 for(const forbidden of [
   /Subject wearing/iu,/light gray formal shirt|red jacket|laughing expression|closed-mouth expression/iu,
