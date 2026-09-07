@@ -63,7 +63,7 @@ function selectedTime(raw={}){
 function lightingSentence(raw={}){
   const mode=selectedTime(raw);
   const lighting=text(raw.lighting).toLowerCase();
-  if(mode==="day") return "Day lighting: sun/sky through glass; natural cabin shadows, exterior brightness, reflections and phone dynamic range.";
+  if(mode==="day") return "Day lighting: real sun/sky through glass; natural cabin shadows, exterior brightness, reflections and phone dynamic range.";
   if(lighting.includes("flash")) return "Night lighting: phone flash plus cabin/street lights; hard near shadows, darker distance and coherent reflections.";
   return "Night lighting: cabin and Saudi street/building/vehicle lights through glass; natural falloff, dark areas, reflections and mild shadow noise.";
 }
