@@ -63,8 +63,8 @@ function selectedTime(raw={}){
 function lightingSentence(raw={}){
   const mode=selectedTime(raw);
   const lighting=text(raw.lighting).toLowerCase();
-  if(mode==="day") return "Day lighting: real sun/sky through glass; natural cabin shadows, exterior brightness, reflections and phone dynamic range.";
-  if(lighting.includes("flash")) return "Night lighting: phone flash plus real cabin/street lights; hard near shadows, darker distance and coherent reflections.";
+  if(mode==="day") return "Day lighting: sun/sky through glass; natural cabin shadows, exterior brightness, reflections and phone dynamic range.";
+  if(lighting.includes("flash")) return "Night lighting: phone flash plus cabin/street lights; hard near shadows, darker distance and coherent reflections.";
   return "Night lighting: cabin and Saudi street/building/vehicle lights through glass; natural falloff, dark areas, reflections and mild shadow noise.";
 }
 
@@ -92,20 +92,20 @@ function detailWord(raw={}){
 }
 
 function backgroundSentence(raw={}){
-  return `Through visible glass: ${detailWord(raw)} ${saudiRegion(raw)} street life, parked/passing vehicles and ${peoplePhrase(raw)} at varied depth; no posing, readable city signs or forced landmarks.`;
+  return `Through visible glass: ${detailWord(raw)} ${saudiRegion(raw)} street life with parked/passing vehicles and ${peoplePhrase(raw)}; no posing, readable city signs or landmarks.`;
 }
 
 function realismSentence(raw={}){
   const state=text(raw.placeState).toLowerCase();
   const cabin=state&&/clean|tidy|fresh|مرتب|نظيف/u.test(state)?"well-kept, not showroom-perfect":"naturally used";
-  return `Mandatory realism: ${cabin} cabin, seat compression, clothing folds, skin texture and touched-surface wear share one exposure/perspective.`;
+  return `Mandatory realism: ${cabin} cabin, seat compression, clothing folds, skin texture and touched-surface wear under one exposure/perspective.`;
 }
 
 function buildCarPrompt(raw={}){
   const parts=[
     "ChatGPT Images: create a candid front-camera selfie inside a parked 2017 Range Rover Sport Autobiography Dynamic L494.",
-    "Driver seated naturally, holding the phone at arm reach with one hand; the other hand stays free.",
-    "Preserve reference identity: face, skin tone, hairline, facial hair, age and asymmetry; no beautification/de-aging.",
+    "Seated naturally, holding the phone at arm reach with one hand; the other hand stays free.",
+    "Preserve reference identity: face, skin tone, hairline, facial hair, age, asymmetry; no beautification/de-aging.",
     selectedClothing(raw),selectedExpression(raw),selectedHair(raw),
     "Tall 195 cm, 88 kg lean-athletic; believable seated scale.",
     LHD_VEHICLE_RELATIVE_ANCHORS,LHD_SELFIE_VIEWER_MAPPING,LHD_STEERING_ANCHOR,LHD_REAR_SEAT_ANCHOR,
