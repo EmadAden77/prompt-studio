@@ -64,7 +64,7 @@ assert.equal(out.phase55.wikiPromptSource.url,"https://www.wikiprompt.org/realis
 assert.equal(out.phase55.wikiPromptSource.sourceUpdated,"2026-08-27");
 
 assert.match(out.prompt,/^ChatGPT Images: create a candid front-camera selfie inside a parked 2017 Range Rover Sport Autobiography Dynamic L494/iu);
-assert.match(out.prompt,/holding the phone at arm reach with one hand; the other hand stays free/iu);
+assert.match(out.prompt,/Self-held; phone and holding arm stay outside crop/iu);
 assert.match(out.prompt,/Preserve reference identity/iu);
 assert.match(out.prompt,/Tall 195 cm, 88 kg lean-athletic/iu);
 assert.match(out.prompt,/Clothing: light gray formal shirt with black suit trousers/iu,"selected clothing must work in car section");
