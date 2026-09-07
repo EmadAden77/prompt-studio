@@ -14,8 +14,8 @@ export const LHD_REAR_SEAT_ANCHOR="Rear Ivory seats span behind both front seats
 export const ARMLESS_LOCK=`The phone-holding arm is entirely outside the frame;
 the crop is tight on the face and shoulders inside the cabin so no arm or hand holding the phone is visible, while a subtle raised tension in the near shoulder and the near-field selfie projection still read as a self-held capture from the seat.`;
 export const ARMLESS_FRAMING="Framing: tight head-and-shoulders cabin crop; the extended arm falls completely outside the frame edges; slight natural tilt kept.";
-export const ARMLESS_OPTICS="Optics: near-field phone projection; face/near shoulder mildly enlarged, edges softer; no distant-camera flattening or portrait blur.";
-export const ARMLESS_LHD_ANCHORS="LHD visual anchors: wheel only before vehicle-LEFT driver seat; dark-wood console driver-right; B-pillar/belt vehicle-left; never mirror cabin.";
+export const ARMLESS_OPTICS="Optics: near-field phone projection; face/near shoulder enlarged, soft edges; no distant-camera flattening or portrait blur.";
+export const ARMLESS_LHD_ANCHORS="LHD visual anchors: wheel at vehicle-LEFT driver; console driver-right; B-pillar/belt vehicle-left; never mirror cabin.";
 
 export const CAR_CONTACT_PHYSICS="Contact physics: seat/headrest compress under body weight; shoulders rest with slight natural height difference; clothing bunches only where torso, belt or console contact causes it; nothing floats.";
 export const CAR_SCALE_PHYSICS="Scale physics: at 195 cm the shoulders fill the seatback and the head sits naturally close to the headliner; cabin proportions must not make him look short or miniature.";
@@ -31,12 +31,12 @@ const POSES=Object.freeze({
 });
 
 const ARMLESS_POSES=Object.freeze({
-  "driver-close-armless":"Pose: driver-close-armless at eye level; headrest, B-pillar, window edge and only the steering-wheel top arc at bottom.",
-  "driver-low-armless":"Pose: driver-low-armless slightly below eye level; headliner, sun visor and panoramic roof dominate upper cabin context.",
-  "driver-side-armless":"Pose: driver-side-armless three-quarter; door wood trim and one window edge appear, not the whole cabin.",
-  "driver-roof-armless":"Pose: driver-roof-armless with gentle roof tilt; panoramic glass dominates and shows only physically visible real sky/stars.",
-  "passenger-close-armless":"Pose: passenger-close-armless at eye level; center-console side visible; steering wheel excluded.",
-  "rear-seat-armless":"Pose: rear-seat-armless at eye level; front headrests softly blur in near foreground; steering wheel is not a compositional anchor."
+  "driver-close-armless":"Pose: driver-close-armless eye-level; headrest, B-pillar, window edge, wheel top arc.",
+  "driver-low-armless":"Pose: driver-low-armless slightly below eye level; headliner, sun visor, panoramic roof.",
+  "driver-side-armless":"Pose: driver-side-armless three-quarter; door wood trim and one window edge.",
+  "driver-roof-armless":"Pose: driver-roof-armless roof tilt; panoramic glass shows only physically visible sky/stars.",
+  "passenger-close-armless":"Pose: passenger-close-armless eye-level; center-console side visible; steering wheel excluded.",
+  "rear-seat-armless":"Pose: rear-seat-armless eye-level; front headrests softly blurred foreground."
 });
 
 const EXPRESSIONS=Object.freeze({
@@ -108,12 +108,12 @@ function armlessLightingSentence(raw={}){
   const lighting=text(raw.lighting).toLowerCase();
   const roof=requestedPoseId(raw)==="driver-roof-armless";
   if(mode==="day") return roof
-    ?"Car-only day: daylight through cabin glass/roof; real sky, restrained phone HDR, natural highlight clipping."
+    ?"Car-only day: daylight through cabin glass/roof; real sky, restrained phone HDR, natural clipping."
     :"Car-only day: daylight through cabin glass; natural Ivory/wood contrast, restrained phone HDR, no studio fill.";
-  if(lighting.includes("flash")) return "Car-only night-flash: phone flash plus dim cabin ambient and restrained dash glow; face/near shoulder lead, rear cabin darker, short jaw/neck shadows, one wood highlight, shadow noise.";
+  if(lighting.includes("flash")) return "Car-only night-flash: phone flash plus dim cabin ambient and restrained dash glow; near face/shoulder lead, rear darker, short jaw/neck shadows, one wood highlight, shadow noise.";
   return roof
-    ?"Car-only night: dim cabin ambient plus restrained dash glow; transparent panoramic glass shows a physically plausible real night sky and stars, never opaque black; weak cabin reflection, noisier shadows."
-    :"Car-only night: dim cabin ambient plus restrained dash glow; noisier shadows, slight dark-color desaturation, softer distant cabin detail.";
+    ?"Car-only night: dim cabin ambient plus restrained dash glow; transparent panoramic glass shows plausible real night sky and stars, never opaque black; faint cabin reflection, noisy shadows."
+    :"Car-only night: dim cabin ambient plus restrained dash glow; noisy shadows, slight dark-color desaturation, softer distant detail.";
 }
 
 function saudiRegion(raw={}){
@@ -152,7 +152,7 @@ function realismSentence(raw={}){
 }
 
 function armlessRealismSentence(){
-  return "Physics: seat/headrest compress; shoulders differ; clothing bunches at contact. Wood/glass reflections stay faint and coherent. Eye-line may favor screen. Nothing floats.";
+  return "Physics: seat/headrest compress; shoulders differ; clothing bunches at contact. Wood/glass reflections stay faint. Eye-line may favor screen. Nothing floats.";
 }
 
 function phase56Contradictions(raw={}){
@@ -182,7 +182,7 @@ function buildLegacyCarPrompt(raw={}){
 
 function buildArmlessCarPrompt(raw={}){
   return [
-    "ChatGPT Images: create one candid front-camera selfie inside a parked 2017 Range Rover Sport Autobiography Dynamic L494.",
+    "ChatGPT Images: candid front-camera selfie inside parked 2017 Range Rover Sport Autobiography Dynamic L494.",
     "Preserve reference identity: face, skin tone, hairline, facial hair, age/asymmetry; no beautification/de-aging.",
     selectedClothing(raw),selectedExpression(raw),armlessHair(raw),
     "195 cm, 88 kg lean-athletic; shoulders fill seatback, head near headliner.",
@@ -193,7 +193,7 @@ function buildArmlessCarPrompt(raw={}){
     "Other hand: wheel/console/lap, or out of frame.",
     ARMLESS_OPTICS,
     selectedPose(raw),armlessLightingSentence(raw),armlessRealismSentence(raw),
-    "Interior only; no exterior camera, studio/ring light, or staged display."
+    "Interior only; no exterior camera, studio/ring light, or staging."
   ].filter(Boolean).join(" ").trim();
 }
 
@@ -220,7 +220,7 @@ function assertCarPrompt(prompt,raw={}){
     if(!prompt.includes(ARMLESS_OPTICS)) throw new Error("Phase 53 near-field selfie optics missing");
     if(!/Physics:/iu.test(prompt)) throw new Error("Phase 56 realism physics missing");
     if(!/seat\/headrest compress/iu.test(prompt)) throw new Error("Phase 56 contact physics missing");
-    if(!/reflections stay faint and coherent/iu.test(prompt)) throw new Error("Phase 56 reflection physics missing");
+    if(!/reflections stay faint/iu.test(prompt)) throw new Error("Phase 56 reflection physics missing");
     if(!/Eye-line may favor screen/iu.test(prompt)) throw new Error("Phase 56 eye-line physics missing");
     if(/one arm extends|holding the phone at arm reach|one hand holds the phone/iu.test(prompt)) throw new Error("Phase 53 visible selfie arm leakage");
     if(/grille|alloys|\bDRL\b|Fuji White exterior/iu.test(prompt)) throw new Error("Phase 53 exterior specification leakage");
