@@ -41,9 +41,9 @@ for(const pose of poseIds){
   assert.match(out.prompt,/Ivory perforated leather/iu);
   assert.match(out.prompt,/dark wood veneer/iu);
   assert.match(out.prompt,/transparent panoramic glass/iu);
-  assert.match(out.prompt,/glass is never rendered as an opaque black panel/iu);
-  assert.match(out.prompt,/shoulders fill the seatback naturally and the head sits close to the headliner/iu);
-  assert.match(out.prompt,/Other hand: may rest naturally on the steering wheel.*center console.*lap.*out of frame/iu);
+  assert.match(out.prompt,/glass never opaque black/iu);
+  assert.match(out.prompt,/195 cm, 88 kg lean-athletic; shoulders fill seatback, head near headliner/iu);
+  assert.match(out.prompt,/Other hand: wheel when appropriate, console, lap, or out of frame/iu);
   assert.match(out.prompt,/Preserve reference identity:/iu);
   assert.doesNotMatch(out.prompt,/one arm extends|holding the phone at arm reach|one hand holds the phone/iu,`${pose}: visible-arm lock leaked`);
   assert.doesNotMatch(out.prompt,/grille|alloys|\bDRL\b|Fuji White exterior/iu,`${pose}: exterior spec leaked`);
@@ -55,36 +55,35 @@ for(const pose of poseIds){
 }
 
 const close=buildCanonicalV3UserOutput({...base,pose:"driver-close-armless",lighting:"car-night"});
-assert.match(close.prompt,/driver headrest, B-pillar and window edge/iu);
-assert.match(close.prompt,/steering-wheel top arc entering the bottom edge/iu);
-assert.match(close.prompt,/Car-only night lighting: dim cabin ambient and restrained dash glow/iu);
+assert.match(close.prompt,/driver headrest, B-pillar, window edge, steering-wheel top arc at bottom/iu);
+assert.match(close.prompt,/Car-only night: dim cabin ambient plus restrained dash glow/iu);
 
 const low=buildCanonicalV3UserOutput({...base,pose:"driver-low-armless"});
 assert.match(low.prompt,/slightly below eye level/iu);
-assert.match(low.prompt,/Ivory headliner, sun visor and transparent panoramic roof/iu);
+assert.match(low.prompt,/Ivory headliner, sun visor, transparent panoramic roof/iu);
 
 const side=buildCanonicalV3UserOutput({...base,pose:"driver-side-armless"});
-assert.match(side.prompt,/three-quarter view/iu);
+assert.match(side.prompt,/driver-side-armless three-quarter/iu);
 assert.match(side.prompt,/dark-wood door trim and one side-window edge/iu);
 
 const roof=buildCanonicalV3UserOutput({...base,pose:"driver-roof-armless",lighting:"car-night"});
 assert.match(roof.prompt,/gentle roof tilt/iu);
 assert.match(roof.prompt,/real night sky and stars/iu);
-assert.match(roof.prompt,/never an opaque black panel/iu);
+assert.match(roof.prompt,/never opaque black/iu);
 
 const passenger=buildCanonicalV3UserOutput({...base,pose:"passenger-close-armless"});
 assert.match(passenger.prompt,/front passenger seat/iu);
 assert.match(passenger.prompt,/center-console side/iu);
-assert.match(passenger.prompt,/no steering wheel appears in frame/iu);
+assert.match(passenger.prompt,/no steering wheel in frame/iu);
 
 const rear=buildCanonicalV3UserOutput({...base,pose:"rear-seat-armless"});
-assert.match(rear.prompt,/two front headrests.*softly blurred/iu);
+assert.match(rear.prompt,/two front headrests softly blurred/iu);
 
 const day=buildCanonicalV3UserOutput({...base,pose:"driver-close-armless",time:"day",lighting:"car-day"});
-assert.match(day.prompt,/Car-only day lighting:/iu);
+assert.match(day.prompt,/Car-only day:/iu);
 assert.doesNotMatch(day.prompt,/Car-only night/iu);
 const flash=buildCanonicalV3UserOutput({...base,pose:"driver-close-armless",time:"night",lighting:"car-night-flash"});
-assert.match(flash.prompt,/Car-only night-flash lighting: phone flash/iu);
+assert.match(flash.prompt,/Car-only night-flash: phone flash/iu);
 assert.match(flash.prompt,/dim cabin ambient and restrained dash glow/iu);
 
 const auto=buildCanonicalV3UserOutput({...base,pose:"auto",mode:"auto",composition:"tight head-and-shoulders"});
