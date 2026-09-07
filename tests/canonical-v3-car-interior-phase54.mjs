@@ -77,7 +77,7 @@ for(const required of [LHD_VEHICLE_RELATIVE_ANCHORS,LHD_SELFIE_VIEWER_MAPPING,LH
 assert.match(out.prompt,/Cabin: Ivory perforated leather, dark wood, black-and-Ivory steering wheel, transparent panoramic roof and Ivory headliner/iu);
 assert.match(out.prompt,/Pose: close driver-seat selfie/iu);
 assert.match(out.prompt,/Night lighting: cabin and Saudi street\/building\/vehicle lights through glass/iu);
-assert.match(out.prompt,/natural falloff, dark areas, reflections and mild shadow noise/iu);
+assert.match(out.prompt,/natural falloff, dark areas, one source-matched eye catchlight and mild shadow noise/iu);
 assert.match(out.prompt,/Through visible glass: denser eastern-coast Saudi street life/iu);
 assert.match(out.prompt,/parked\/passing vehicles/iu);
 assert.match(out.prompt,/one or two distant pedestrians/iu);
@@ -111,7 +111,7 @@ assert.match(hairVariant.prompt,/Hair: slightly messy/iu);
 const day=buildCanonicalV3UserOutput({...raw,time:"day",lighting:"car-day"});
 assert.notEqual(day.prompt,out.prompt,"day/night must affect car prompt");
 assert.match(day.prompt,/Day lighting: real sun\/sky through glass/iu);
-assert.match(day.prompt,/natural cabin shadows, exterior brightness, reflections and phone dynamic range/iu);
+assert.match(day.prompt,/natural cabin shadows, exterior brightness, one source-matched eye catchlight and ordinary phone dynamic range/iu);
 assert.doesNotMatch(day.prompt,/Night lighting:/iu);
 const night=buildCanonicalV3UserOutput({...raw,time:"night",lighting:"car-night"});
 assert.match(night.prompt,/Night lighting:/iu);
