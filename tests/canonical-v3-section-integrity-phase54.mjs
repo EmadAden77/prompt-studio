@@ -109,9 +109,10 @@ assert.equal(normalizeScenarioState({studioSection:"car",scene:"rangeRover",scen
 
 const ui=fs.readFileSync(new URL("../js/phase54-section-field-ui.js",import.meta.url),"utf8");
 const phase54=fs.readFileSync(new URL("../js/canonical/canonical-v3-phase54.js",import.meta.url),"utf8");
-assert.match(ui,/#post-processing-panel[\s\S]{0,80}hidden:false[\s\S]{0,40}disabled:false/iu,"post-processing must stay active for general sections");
-assert.match(ui,/#hair[\s\S]{0,60}hidden:false[\s\S]{0,40}disabled:false/iu,"hair must stay active for general sections");
-assert.match(ui,/#skin[\s\S]{0,60}hidden:false[\s\S]{0,40}disabled:false/iu,"skin must stay active for general sections");
+assert.match(ui,/const carInterior=ui\.dedicatedControls===["']carInterior["']/iu,"UI must detect the isolated car-interior section");
+assert.match(ui,/#post-processing-panel[\s\S]{0,100}hidden:carInterior[\s\S]{0,60}disabled:carInterior/iu,"post-processing must stay active generally and be isolated only for car interior");
+assert.match(ui,/#hair[\s\S]{0,100}hidden:carInterior[\s\S]{0,60}disabled:carInterior/iu,"hair must stay active generally and be isolated only for car interior");
+assert.match(ui,/#skin[\s\S]{0,100}hidden:carInterior[\s\S]{0,60}disabled:carInterior/iu,"skin must stay active generally and be isolated only for car interior");
 assert.match(ui,/car-exterior-fields[\s\S]{0,80}!carExterior/iu,"carExterior dedicated controls must be section-scoped");
 assert.match(phase54,/phase54-section-field-ui\.js/iu,"Phase 54 UI activation module must load with canonical engine");
 assert.match(phase54,/ChatGPT Images: create exactly one candid/iu,"custom prompt must target ChatGPT Images");
