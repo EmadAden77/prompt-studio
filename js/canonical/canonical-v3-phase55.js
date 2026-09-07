@@ -12,48 +12,25 @@ export const LHD_STEERING_ANCHOR="Steering wheel: centered only in front of the 
 export const LHD_REAR_SEAT_ANCHOR="Rear Ivory seats span behind both front seats; rear-left is behind the driver.";
 
 const POSES=Object.freeze({
-  "driver-seat":"Pose: natural upright driver-seat selfie with relaxed shoulders and believable seat contact.",
+  "driver-seat":"Pose: upright driver-seat selfie with relaxed shoulders and believable seat contact.",
   "driver-close":"Pose: close driver-seat selfie; upper torso dominant, wheel arc when natural.",
-  "driver-low":"Pose: driver-seat selfie with phone slightly below eye level at natural arm reach.",
-  "roof-context":"Pose: wider driver-seat selfie naturally including part of the panoramic roof and headliner."
+  "driver-low":"Pose: driver selfie with phone slightly below eye level at natural arm reach.",
+  "roof-context":"Pose: wider driver selfie naturally including part of the panoramic roof and headliner."
 });
 
 const EXPRESSIONS=Object.freeze({
-  neutral:"neutral",
-  relaxed:"calm and relaxed",
-  serious:"serious",
-  confident:"confident",
-  focused:"focused neutral",
-  "small-smile":"small natural closed-mouth smile",
-  smile:"natural smile",
-  laughing:"natural laugh"
+  neutral:"neutral",relaxed:"calm and relaxed",serious:"serious",confident:"confident",focused:"focused neutral",
+  "small-smile":"small natural closed-mouth smile",smile:"natural smile",laughing:"natural laugh"
 });
 
 const HAIR=Object.freeze({
-  same:"as reference",
-  messy:"slightly messy",
-  neat:"neat",
-  wet:"damp",
-  natural_tousled:"light natural tousle",
-  loose_swept_back:"naturally swept back",
-  swept_back_soft_part:"swept back with soft part",
-  side_part_right:"soft right side part",
-  side_part_left:"soft left side part",
-  soft_middle_part:"soft middle part",
-  side_sweep_right:"naturally swept right",
-  side_sweep_left:"naturally swept left",
-  light_front_lift:"light natural front lift",
-  loose_forehead_strands:"a few loose forehead strands",
-  forward_relaxed:"relaxed forward",
-  sleep_compressed_right:"slightly compressed on the right",
-  sleep_compressed_left:"slightly compressed on the left",
-  damp_post_shower:"damp post-shower",
-  towel_dried:"casually towel-dried",
-  neat_natural:"neat and natural",
-  morning_messy:"natural morning mess",
-  shemagh_compression:"natural shemagh compression",
-  hand_through_hair:"naturally displaced by the free hand",
-  "hand-neat":"neatly hand-arranged"
+  same:"as reference",messy:"slightly messy",neat:"neat",wet:"damp",natural_tousled:"light natural tousle",
+  loose_swept_back:"naturally swept back",swept_back_soft_part:"swept back with soft part",side_part_right:"soft right side part",
+  side_part_left:"soft left side part",soft_middle_part:"soft middle part",side_sweep_right:"naturally swept right",
+  side_sweep_left:"naturally swept left",light_front_lift:"light natural front lift",loose_forehead_strands:"a few loose forehead strands",
+  forward_relaxed:"relaxed forward",sleep_compressed_right:"slightly compressed on the right",sleep_compressed_left:"slightly compressed on the left",
+  damp_post_shower:"damp post-shower",towel_dried:"casually towel-dried",neat_natural:"neat and natural",morning_messy:"natural morning mess",
+  shemagh_compression:"natural shemagh compression",hand_through_hair:"naturally displaced by the free hand","hand-neat":"neatly hand-arranged"
 });
 
 function selectedPose(raw={}){
@@ -73,8 +50,7 @@ function selectedExpression(raw={}){
 
 function selectedHair(raw={}){
   const id=text(raw.hair).toLowerCase();
-  const style=HAIR[id]||HAIR.same;
-  return `Hair: ${style}; reference density, hairline and volume unchanged.`;
+  return `Hair: ${HAIR[id]||HAIR.same}; reference density, hairline and volume unchanged.`;
 }
 
 function selectedTime(raw={}){
@@ -87,9 +63,9 @@ function selectedTime(raw={}){
 function lightingSentence(raw={}){
   const mode=selectedTime(raw);
   const lighting=text(raw.lighting).toLowerCase();
-  if(mode==="day") return "Day lighting: sun/sky light enters through glass; natural cabin shadows, realistic exterior brightness, coherent reflections and phone dynamic range.";
-  if(lighting.includes("flash")) return "Night lighting: phone flash lights the nearby face while real cabin/street lights remain; hard near shadows, darker distance and coherent reflections.";
-  return "Night lighting: cabin plus Saudi street/building/vehicle lights through glass; natural falloff, dark areas, coherent reflections and mild shadow noise.";
+  if(mode==="day") return "Day lighting: real sun/sky through glass; natural cabin shadows, exterior brightness, reflections and phone dynamic range.";
+  if(lighting.includes("flash")) return "Night lighting: phone flash plus real cabin/street lights; hard near shadows, darker distance and coherent reflections.";
+  return "Night lighting: cabin and Saudi street/building/vehicle lights through glass; natural falloff, dark areas, reflections and mild shadow noise.";
 }
 
 function saudiRegion(raw={}){
@@ -116,33 +92,25 @@ function detailWord(raw={}){
 }
 
 function backgroundSentence(raw={}){
-  return `Visible glass shows ${saudiRegion(raw)} street life with ${detailWord(raw)} detail: parked/passing vehicles and ${peoplePhrase(raw)} at varied depth; no posing, readable city signs or forced landmarks.`;
+  return `Through visible glass: ${detailWord(raw)} ${saudiRegion(raw)} street life, parked/passing vehicles and ${peoplePhrase(raw)} at varied depth; no posing, readable city signs or forced landmarks.`;
 }
 
 function realismSentence(raw={}){
   const state=text(raw.placeState).toLowerCase();
-  const cabin=state&&/clean|tidy|fresh|مرتب|نظيف/u.test(state)?"well-kept but not showroom-perfect":"naturally used";
-  return `Mandatory realism: ${cabin} cabin, seat compression, clothing folds, skin texture and touched-surface wear share one perspective/exposure event.`;
+  const cabin=state&&/clean|tidy|fresh|مرتب|نظيف/u.test(state)?"well-kept, not showroom-perfect":"naturally used";
+  return `Mandatory realism: ${cabin} cabin, seat compression, clothing folds, skin texture and touched-surface wear share one exposure/perspective.`;
 }
 
 function buildCarPrompt(raw={}){
   const parts=[
     "ChatGPT Images: create a candid front-camera selfie inside a parked 2017 Range Rover Sport Autobiography Dynamic L494.",
     "Driver seated naturally; one hand holds the phone at arm reach, the other stays free.",
-    "Preserve reference identity: face, skin tone, hairline, facial hair, age and asymmetry; no beautification or de-aging.",
-    selectedClothing(raw),
-    selectedExpression(raw),
-    selectedHair(raw),
+    "Preserve reference identity: face, skin tone, hairline, facial hair, age and asymmetry; no beautification/de-aging.",
+    selectedClothing(raw),selectedExpression(raw),selectedHair(raw),
     "Tall 195 cm, 88 kg lean-athletic; believable seated scale.",
-    LHD_VEHICLE_RELATIVE_ANCHORS,
-    LHD_SELFIE_VIEWER_MAPPING,
-    LHD_STEERING_ANCHOR,
-    LHD_REAR_SEAT_ANCHOR,
+    LHD_VEHICLE_RELATIVE_ANCHORS,LHD_SELFIE_VIEWER_MAPPING,LHD_STEERING_ANCHOR,LHD_REAR_SEAT_ANCHOR,
     "Cabin: Ivory perforated leather, dark wood, black-and-Ivory steering wheel, transparent panoramic roof and Ivory headliner; angle-visible only.",
-    selectedPose(raw),
-    lightingSentence(raw),
-    backgroundSentence(raw),
-    realismSentence(raw),
+    selectedPose(raw),lightingSentence(raw),backgroundSentence(raw),realismSentence(raw),
     "No driving, passenger relocation, exterior camera, studio/ring light or staging."
   ].filter(Boolean);
   return parts.join(" ").trim();
@@ -167,7 +135,7 @@ function assertCarPrompt(prompt){
   if(!/one hand holds the phone at arm reach, the other stays free/iu.test(prompt)) throw new Error("Phase 55 selfie lock missing");
   if(!/Cabin: Ivory perforated leather, dark wood, black-and-Ivory steering wheel, transparent panoramic roof and Ivory headliner/iu.test(prompt)) throw new Error("Phase 55 cabin fidelity changed");
   if(!/Mandatory realism:/iu.test(prompt)) throw new Error("Phase 55 mandatory realism missing");
-  if(!/Saudi.*street life/iu.test(prompt)) throw new Error("Phase 55 Saudi environment life missing");
+  if(!/Saudi street life/iu.test(prompt)) throw new Error("Phase 55 Saudi environment life missing");
   if(words(prompt)>280) throw new Error(`Phase 55 car prompt budget overflow: ${words(prompt)} words`);
 }
 
@@ -198,8 +166,7 @@ export function buildCanonicalV3UserOutput(rawInput={},sceneData=undefined){
       simpleCameraLanguage:true,actionFirst:true,contextConsistency:true,subtleImperfections:true,
       lhdVisualAnchors:true,viewerMapping:true,steeringWheelCenteredOnLeftSeat:true,rearLeftBehindDriver:true,
       wordCount:words(prompt),hardLimit:280,determinism:"10/10"
-    }),
-    prompt
+    }),prompt
   });
 }
 
