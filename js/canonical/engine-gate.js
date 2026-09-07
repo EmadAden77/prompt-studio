@@ -1,4 +1,4 @@
-import { wikiPromptService } from "../services/wikiPromptService.js";
+import { wikiPromptService } from "../services/wikiPromptService.js?v=20260907-fetch-bind";
 import { STREET_MOODS } from "../data.js";
 import { buildCanonicalV3UserOutput } from "./canonical-v3-phase53.js";
 import { buildCanonicalV3UserOutput as buildPhase52_1HistoricalContract } from "./canonical-v3-phase52-1.js";
