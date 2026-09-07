@@ -27,15 +27,16 @@ function syncCommonFields(){
   const carExterior=ui.dedicatedControls==="carExterior";
   const carInterior=ui.dedicatedControls==="carInterior";
 
-  // Car interior is deliberately narrow: fixed cabin/seat authority plus
-  // driver pose and car lighting. Generic context/detail controls are hidden
-  // so stale city, crowd, fabric-state or background selections cannot leak.
+  // Car interior keeps person realism controls active. The canonical builder
+  // constrains them so outfit, expression, hair, skin, day/night light and
+  // through-glass Saudi street life affect realism without turning the shot
+  // into an exterior scene or raw Selected-controls dump.
   setNodeState("#post-processing-panel",{hidden:carInterior,disabled:carInterior});
-  setNodeState('[aria-labelledby="realism-core-title"]',{hidden:carInterior,disabled:carInterior});
-  setNodeState('[aria-labelledby="advanced-realism-title"]',{hidden:carInterior,disabled:carInterior});
-  setNodeState(".context-secondary-panel",{hidden:carInterior,disabled:carInterior});
-  setControlState("#hair",{hidden:carInterior,disabled:carInterior});
-  setControlState("#skin",{hidden:carInterior,disabled:carInterior});
+  setNodeState('[aria-labelledby="realism-core-title"]',{hidden:false,disabled:false});
+  setNodeState('[aria-labelledby="advanced-realism-title"]',{hidden:false,disabled:false});
+  setNodeState(".context-secondary-panel",{hidden:false,disabled:false});
+  setControlState("#hair",{hidden:false,disabled:false});
+  setControlState("#skin",{hidden:false,disabled:false});
 
   // Core user authorities remain available: outfit, expression and time.
   setControlState("#clothing",{hidden:false,disabled:false});
@@ -44,7 +45,7 @@ function syncCommonFields(){
   setControlState("#time",{hidden:false,disabled:false});
 
   for(const selector of ["#fabric","#fabric-weight","#iron-state","#wear-state","#clothing-fit","#composition","#selfie-angle"]){
-    setControlState(selector,{hidden:carInterior,disabled:carInterior});
+    setControlState(selector,{hidden:false,disabled:false});
   }
 
   // carExterior owns pose and lighting through its dedicated controls.
