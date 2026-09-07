@@ -6,13 +6,22 @@ export const SECTION = deepFreeze({
   description:"مقاعد السيارة والمقصورة ووضعيات وإضاءة السيارة فقط",
   captureType:"subject_held_driver_selfie",
   scenes:["rangeRover"],
-  clothingSource:"authority",
+  clothingSource:null,
   poses:["driver-seat","driver-close","driver-low","roof-context"],
   lighting:["car"],
   realismLayers:["cabin-material","glass","micro","imperfections","lighting-physics","camera-artifacts"],
   rules:{
     sectionScope:["seats","cabin","driver-seat poses","car lighting"],
     wikiPromptPolicy:"strict-car-selfie",
+    authority:{
+      fixed:["seats","cabin"],
+      selectable:["pose","lighting"],
+      ignoredGenericControls:[
+        "clothing","customClothing","expression","time","body","selfieAngle","composition","hair","skin",
+        "fabric","fabricWeight","ironState","wearState","clothingFit","accessoryProfile","accessoryDetail",
+        "objectProfile","environmentNote","postProcessing","city","street","crowd","background-density"
+      ]
+    },
     hard:[
       "interior only",
       "stationary vehicle",
@@ -27,7 +36,8 @@ export const SECTION = deepFreeze({
       "rear-left seat remains behind the driver",
       "seat and cabin geometry",
       "one physically possible selfie capture event",
-      "car-interior controls cannot be overridden by city, street, crowd, background-density, hair, skin, fabric-state or unrelated environment controls"
+      "only seats, cabin, driver-seat pose and car lighting may vary inside this section",
+      "generic subject, city, street, crowd, background-density, hair, skin, clothing, fabric-state, accessory, object, environment and post-processing controls cannot alter the car-interior prompt"
     ],
     composition:["driver-seat selfie","show only cabin elements naturally visible from the selected selfie angle"],
     interaction:["one hand holds the phone; the other remains physically available and cannot perform incompatible simultaneous actions"],
@@ -47,14 +57,14 @@ export const SECTION = deepFreeze({
       "city landmark staging",
       "busy street or crowd staging",
       "generic background-density injection",
-      "fabric-state override that contradicts the selected garment",
+      "subject-style override from hidden generic controls",
       "technical camera jargon in final ChatGPT Images prompt"
     ],
     routing:{ intentType:"car", sceneMode:"fixed", defaultScene:"rangeRover" },
     wiring:{
       enabled:true,
-      clothing:true,
-      customClothing:true,
+      clothing:false,
+      customClothing:false,
       fabric:false,
       fabricWeight:false,
       ironState:false,
@@ -62,15 +72,15 @@ export const SECTION = deepFreeze({
       clothingFit:false,
       lighting:true,
       pose:true,
-      expression:true,
-      body:true,
-      selfieArmLock:true,
+      expression:false,
+      body:false,
+      selfieArmLock:false,
       selfieAngle:false,
       composition:false,
       hair:false,
       skin:false,
-      time:true,
-      realismCore:true,
+      time:false,
+      realismCore:false,
       advancedRealism:false,
       accessoryProfile:false,
       accessoryDetail:false,
