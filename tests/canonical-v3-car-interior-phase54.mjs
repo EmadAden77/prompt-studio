@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { buildCanonicalV3UserOutput } from "../js/canonical/canonical-v3-phase53.js";
 import { getSection } from "../js/sections/index.js";
+import {
+  LHD_VEHICLE_RELATIVE_ANCHORS,
+  LHD_SELFIE_VIEWER_MAPPING,
+  LHD_STEERING_ANCHOR,
+  LHD_REAR_SEAT_ANCHOR
+} from "../js/canonical/canonical-v3-phase55.js";
 
 const words=value=>String(value||"").trim().split(/\s+/u).filter(Boolean).length;
 
@@ -50,6 +56,10 @@ assert.equal(out.phase55.simpleCameraLanguage,true);
 assert.equal(out.phase55.actionFirst,true);
 assert.equal(out.phase55.contextConsistency,true);
 assert.equal(out.phase55.subtleImperfections,true);
+assert.equal(out.phase55.lhdVisualAnchors,true);
+assert.equal(out.phase55.viewerMapping,true);
+assert.equal(out.phase55.steeringWheelCenteredOnLeftSeat,true);
+assert.equal(out.phase55.rearLeftBehindDriver,true);
 assert.equal(out.phase55.wikiPromptSource.url,"https://www.wikiprompt.org/realistic-selfie-image-prompt-generator-system-prompt");
 assert.equal(out.phase55.wikiPromptSource.sourceUpdated,"2026-08-27");
 
@@ -58,8 +68,18 @@ assert.match(out.prompt,/He sits naturally in the driver seat/iu,"WikiPrompt act
 assert.match(out.prompt,/light gray formal shirt with black suit trousers/iu);
 assert.match(out.prompt,/Neutral closed-mouth expression/iu);
 assert.match(out.prompt,/Tall 195 cm, 88 kg lean-athletic build/iu);
-assert.match(out.prompt,/driver door\/window at his left, console at his right, steering wheel directly ahead/iu);
-assert.match(out.prompt,/never swap these physical relationships or turn them into image-frame left\/right rules/iu);
+for(const required of [LHD_VEHICLE_RELATIVE_ANCHORS,LHD_SELFIE_VIEWER_MAPPING,LHD_STEERING_ANCHOR,LHD_REAR_SEAT_ANCHOR]){
+  assert.ok(out.prompt.includes(required),`required LHD anchor missing: ${required}`);
+}
+assert.match(out.prompt,/driver's seat and steering wheel occupy the vehicle LEFT/iu);
+assert.match(out.prompt,/empty Ivory passenger seat occupies the cabin RIGHT/iu);
+assert.match(out.prompt,/center console.*driver's RIGHT/iu);
+assert.match(out.prompt,/seatbelt retractor and B-pillar.*LEFT shoulder/iu);
+assert.match(out.prompt,/LEFT-side door, B-pillar and seatbelt appear on the viewer's RIGHT/iu);
+assert.match(out.prompt,/empty passenger seat appears on the viewer's LEFT/iu);
+assert.match(out.prompt,/centered only in front of the LEFT seat/iu);
+assert.match(out.prompt,/no wheel or pedal geometry on the cabin right/iu);
+assert.match(out.prompt,/rear-left is behind the driver/iu);
 assert.match(out.prompt,/Ivory perforated leather/iu);
 assert.match(out.prompt,/dark wood/iu);
 assert.match(out.prompt,/black-and-Ivory steering wheel/iu);
@@ -73,12 +93,14 @@ assert.match(out.prompt,/subtle skin texture/iu);
 for(const forbidden of [
   /Selected controls:/iu,/city=/iu,/background=/iu,/fabric=/iu,/hair=/iu,/cotton-jersey/iu,/normal-pressed/iu,/Dammam/iu,
   /busy traffic|crowd|landmark/iu,/front grille|rear tailgate|standing beside|leaning against the .*driver door/iu,
+  /driver(?:'s)? (?:seatbelt|belt|B-pillar).*RIGHT shoulder/iu,/passenger seat.*vehicle LEFT/iu,
+  /steering wheel\s+(?:is\s+|sits\s+|appears\s+|located\s+|centered\s+)?(?:on|at|in)\s+(?:the\s+)?(?:cabin|vehicle)\s+RIGHT/iu,
   /\bISO\b|\byaw\b|\bpitch\b|\broll\b|\b21\s*mm\b|f\/\d/iu,/studio light|ring light/iu
 ]) assert.doesNotMatch(out.prompt,forbidden,`forbidden car-interior leakage: ${forbidden}`);
 
-assert.ok(words(out.prompt)<=250,`car interior ChatGPT prompt budget exceeded (${words(out.prompt)})`);
+assert.ok(words(out.prompt)<=280,`car interior ChatGPT prompt budget exceeded (${words(out.prompt)})`);
 assert.equal(out.phase55.wordCount,words(out.prompt));
-assert.equal(out.phase55.hardLimit,250);
+assert.equal(out.phase55.hardLimit,280);
 
 const staleExterior=buildCanonicalV3UserOutput({
   hasReference:true,studioSection:"car",scene:"rangeRover",time:"night",clothing:"casual-tee-black-jeans-blue",
@@ -93,6 +115,7 @@ assert.ok(ten.every(prompt=>prompt===ten[0]),"car interior Phase 55 must remain 
 console.log(`PHASE55_CAR_WORDS=${words(out.prompt)}`);
 console.log("PHASE55_CAR_SCOPE=seats,cabin,driver-seat poses,car lighting");
 console.log("PHASE55_CAR_WIKIPROMPT=action-first,context-consistent,simple-camera,subtle-imperfections");
+console.log("PHASE55_CAR_LHD_VISUAL_ANCHORS=PASS");
 console.log("PHASE55_CAR_GENERIC_LEAKAGE=0");
 console.log("PHASE55_CAR_CONTRADICTIONS=0");
 console.log("PHASE55_CAR_DETERMINISM=10/10");
