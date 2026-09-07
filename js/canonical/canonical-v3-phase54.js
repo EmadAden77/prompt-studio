@@ -1,6 +1,7 @@
 import { buildCanonicalV3UserOutput as buildPhase52_1CanonicalV3UserOutput } from "./canonical-v3-phase52-1.js";
 import { MIRROR_RULES_SENTENCE } from "../sections/wikiprompt-phase47-profiles.js";
 import { buildWikiPromptSectionContract, normalizePhase54Aliases } from "./wikiprompt-realistic-selfie-phase54.js";
+import { buildXiaomi15UltraRealismContract, describeXiaomi15UltraFrontCamera, describeXiaomi15UltraProcessing } from "./xiaomi15-ultra-front-camera-phase57.js";
 
 const text=value=>String(value??"").trim();
 const words=value=>text(value).split(/\s+/u).filter(Boolean).length;
@@ -238,6 +239,9 @@ export function buildCanonicalV3UserOutput(rawInput={},sceneData=undefined){
   const missing=missingFieldEvidence(base.prompt,evidenceForGenericInjection);
   let prompt=insertControlEvidence(base.prompt,missing);
   prompt=ensureMirrorRule(prompt,contract.section);
+  const xiaomiCamera=describeXiaomi15UltraFrontCamera(normalized);
+  const xiaomiProcessing=describeXiaomi15UltraProcessing(normalized);
+  if(xiaomiCamera) prompt=`${prompt} ${xiaomiCamera} ${xiaomiProcessing}`.replace(/\\s{2,}/gu," ").trim();
   const customAuthority=applyCustomSceneAuthority(prompt,normalized);
   prompt=customAuthority.prompt;
   const carAuthority=applyCarInteriorAuthority(prompt,normalized);
@@ -263,6 +267,7 @@ export function buildCanonicalV3UserOutput(rawInput={},sceneData=undefined){
       carInteriorAuthority:car,
       physicalRealismEnforced:car,
       semanticSelectionSupersession:car||custom,
+      xiaomi15Ultra:buildXiaomi15UltraRealismContract(normalized),
       determinism:"10/10"
     }),
     prompt
