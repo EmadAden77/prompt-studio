@@ -236,7 +236,7 @@ function buildCarOrientationRule(state) {
 
 function microCues(state) {
   if (isCustom(state) && SCENE_PROFILES[state.sceneProfile]) return SCENE_PROFILES[state.sceneProfile].micro.slice(0, 2);
-  if (state.scene === "rangeRover") return ["a faint touch mark may remain on a visible glossy control or trim surface", "a tiny amount of ordinary dust may be visible only on a close, correctly lit surface"];
+  if (state.scene === "rangeRover") return ["a faint touch mark may remain on a visible glossy control or trim surface", "ordinary sparse dust may appear only on a close surface directly crossed by strong light, never as a glowing shaft or cinematic beam"];
   if (state.scene === "gym") return ["frequently touched equipment may show restrained normal-use variation", "a mirror or metal surface may retain a faint non-distracting handling trace if close enough to resolve it"];
   if (state.scene === "street") return ["pavement may show mild ordinary wear or patch variation", "distant air may have slight natural atmospheric softness rather than crystal-clear infinite detail"];
   if (state.scene === "bedroom" || state.scene === "my_bedroom_text") return ["bedding and nearby personal items may retain small irregularities from ordinary use", "a frequently touched nearby surface may show subtle lived-in variation without visible dirt"];

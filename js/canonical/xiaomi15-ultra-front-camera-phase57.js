@@ -25,7 +25,7 @@ export function resolveXiaomi15UltraCaptureMode(raw={}){
 
 export function describeXiaomi15UltraFrontCamera(raw={}){
   if(text(raw.accidentalDevice)==="iphone") return "";
-  return "Xiaomi 15 Ultra front camera: 21 mm-equivalent wide view (about 90°), f/2.0, 32 MP 1/3.6-inch-class sensor; close arm-length perspective keeps the near face subtly larger, with no artificial portrait blur.";
+  return "Xiaomi 15 Ultra front camera with a natural wide arm-length perspective: the near face is subtly larger, edges stay slightly softer, and no artificial portrait blur is applied.";
 }
 
 export function describeXiaomi15UltraProcessing(raw={}){
