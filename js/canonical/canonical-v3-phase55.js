@@ -13,7 +13,7 @@ export const LHD_REAR_SEAT_ANCHOR="Rear Ivory seats span behind both front seats
 const POSES=Object.freeze({
   "driver-seat":"Pose: naturally seated upright in the driver seat with relaxed shoulders and believable seat contact.",
   "driver-close":"Pose: close driver-seat selfie; upper torso dominant, partial steering-wheel arc only when naturally visible.",
-  "driver-low":"Pose: driver-seat selfie with the phone slightly below eye level at normal arm reach, without stretching or twisting the torso.",
+  "driver-low":"Pose: driver-seat selfie with phone slightly below eye level at natural arm reach; torso relaxed.",
   "roof-context":"Pose: slightly wider driver-seat selfie that naturally includes part of the panoramic roof and headliner."
 });
 
