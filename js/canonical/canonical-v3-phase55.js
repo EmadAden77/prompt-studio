@@ -14,7 +14,7 @@ export const LHD_REAR_SEAT_ANCHOR="Rear Ivory seats span behind both front seats
 export const ARMLESS_LOCK=`The phone-holding arm is entirely outside the frame;
 the crop is tight on the face and shoulders inside the cabin so no arm or hand holding the phone is visible, while a subtle raised tension in the near shoulder and the near-field selfie projection still read as a self-held capture from the seat.`;
 export const ARMLESS_FRAMING="Framing: tight head-and-shoulders cabin crop; the extended arm falls completely outside the frame edges; slight natural tilt kept.";
-export const ARMLESS_OPTICS="Optics: near-field phone projection; face and near shoulder slightly enlarged, edges softer; never distant-camera flat or portrait-blurred.";
+export const ARMLESS_OPTICS="Optics: near-field phone projection; face/near shoulder mildly enlarged, edges softer; no distant-camera flattening or portrait blur.";
 export const ARMLESS_LHD_ANCHORS="LHD visual anchors: wheel only before vehicle-LEFT driver seat; dark-wood console driver-right; B-pillar/belt vehicle-left; never mirror cabin.";
 
 export const CAR_CONTACT_PHYSICS="Contact physics: seat/headrest compress under body weight; shoulders rest with slight natural height difference; clothing bunches only where torso, belt or console contact causes it; nothing floats.";
@@ -113,7 +113,7 @@ function armlessLightingSentence(raw={}){
   if(lighting.includes("flash")) return "Car-only night-flash: phone flash plus dim cabin ambient and restrained dash glow; face/near shoulder lead, rear cabin darker, short jaw/neck shadows, one wood highlight, shadow noise.";
   return roof
     ?"Car-only night: dim cabin ambient plus restrained dash glow; transparent panoramic glass shows a physically plausible real night sky and stars, never opaque black; weak cabin reflection, noisier shadows."
-    :"Car-only night: dim cabin ambient plus restrained dash glow; shadow noise exceeds face noise, dark colors slightly desaturate, distant cabin detail softens.";
+    :"Car-only night: dim cabin ambient plus restrained dash glow; noisier shadows, slight dark-color desaturation, softer distant cabin detail.";
 }
 
 function saudiRegion(raw={}){
@@ -152,7 +152,7 @@ function realismSentence(raw={}){
 }
 
 function armlessRealismSentence(){
-  return "Physics: seat/headrest compress; shoulders differ slightly; clothing bunches at contact. Wood/glass reflections stay faint and coherent. Eye-line may favor screen slightly. Nothing floats.";
+  return "Physics: seat/headrest compress; shoulders differ; clothing bunches at contact. Wood/glass reflections stay faint and coherent. Eye-line may favor screen. Nothing floats.";
 }
 
 function phase56Contradictions(raw={}){
@@ -221,7 +221,7 @@ function assertCarPrompt(prompt,raw={}){
     if(!/Physics:/iu.test(prompt)) throw new Error("Phase 56 realism physics missing");
     if(!/seat\/headrest compress/iu.test(prompt)) throw new Error("Phase 56 contact physics missing");
     if(!/reflections stay faint and coherent/iu.test(prompt)) throw new Error("Phase 56 reflection physics missing");
-    if(!/Eye-line may favor screen slightly/iu.test(prompt)) throw new Error("Phase 56 eye-line physics missing");
+    if(!/Eye-line may favor screen/iu.test(prompt)) throw new Error("Phase 56 eye-line physics missing");
     if(/one arm extends|holding the phone at arm reach|one hand holds the phone/iu.test(prompt)) throw new Error("Phase 53 visible selfie arm leakage");
     if(/grille|alloys|\bDRL\b|Fuji White exterior/iu.test(prompt)) throw new Error("Phase 53 exterior specification leakage");
     if(/street lights|building lights|vehicle lights|street\/building\/vehicle/iu.test(prompt)) throw new Error("Phase 53 exterior lighting leakage");
