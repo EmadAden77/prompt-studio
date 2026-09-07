@@ -241,7 +241,7 @@ export function buildCanonicalV3UserOutput(rawInput={},sceneData=undefined){
   prompt=ensureMirrorRule(prompt,contract.section);
   const xiaomiCamera=describeXiaomi15UltraFrontCamera(normalized);
   const xiaomiProcessing=describeXiaomi15UltraProcessing(normalized);
-  if(xiaomiCamera) prompt=`${prompt} ${xiaomiCamera} ${xiaomiProcessing}`.replace(/\\s{2,}/gu," ").trim();
+  if(xiaomiCamera&&contract.section!=="carExterior") prompt=`${prompt} ${xiaomiCamera} ${xiaomiProcessing}`.replace(/\\s{2,}/gu," ").trim();
   const customAuthority=applyCustomSceneAuthority(prompt,normalized);
   prompt=customAuthority.prompt;
   const carAuthority=applyCarInteriorAuthority(prompt,normalized);
