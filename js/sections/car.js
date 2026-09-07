@@ -17,10 +17,11 @@ export const SECTION = deepFreeze({
       fixed:["seats","cabin"],
       selectable:["pose","lighting"],
       globalSubjectControls:["clothing","customClothing","expression","hair","time"],
+      contextualRealismControls:["city","messiness","peopleDensity","placeState"],
       alwaysOnRealism:["identity","body-scale","contact","glass","lighting-physics","camera-behavior","environment-life","saudi-context"],
       ignoredGenericControls:[
         "fabric","fabricWeight","ironState","wearState","clothingFit","accessoryProfile","accessoryDetail",
-        "objectProfile","environmentNote","postProcessing","background-density"
+        "objectProfile","environmentNote","postProcessing"
       ]
     },
     hard:[
@@ -59,7 +60,6 @@ export const SECTION = deepFreeze({
       "impossible hand use",
       "city-name signage or landmark staging",
       "crowd staging",
-      "generic background-density injection",
       "fabric-state override that contradicts selected clothing",
       "technical camera jargon in final ChatGPT Images prompt"
     ],
@@ -84,7 +84,13 @@ export const SECTION = deepFreeze({
       skin:false,
       time:true,
       realismCore:true,
-      advancedRealism:true,
+      advancedRealism:false,
+      placeState:true,
+      peopleDensity:true,
+      subjectMoment:false,
+      interactionObject:false,
+      city:true,
+      messiness:true,
       accessoryProfile:false,
       accessoryDetail:false,
       objectProfile:false,
