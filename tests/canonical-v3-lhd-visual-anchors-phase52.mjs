@@ -9,6 +9,7 @@ import {
 } from "../js/canonical/canonical-v3-phase55.js";
 
 const words=value=>String(value||"").trim().split(/\s+/u).filter(Boolean).length;
+const WRONG_SIDE_STEERING=/steering wheel\s+(?:is\s+|sits\s+|appears\s+|located\s+|centered\s+)?(?:on|at|in)\s+(?:the\s+)?(?:cabin|vehicle)\s+RIGHT/iu;
 
 const raw={
   hasReference:true,
@@ -50,7 +51,7 @@ assert.match(out.prompt,/rear-left is behind the driver/iu);
 
 assert.doesNotMatch(out.prompt,/driver(?:'s)? (?:seatbelt|belt|B-pillar).*RIGHT shoulder/iu);
 assert.doesNotMatch(out.prompt,/passenger seat.*vehicle LEFT/iu);
-assert.doesNotMatch(out.prompt,/steering wheel.*(?:cabin|vehicle) RIGHT/iu);
+assert.doesNotMatch(out.prompt,WRONG_SIDE_STEERING);
 assert.match(out.prompt,/Preserve reference identity:/iu,"identity lock must remain protected");
 assert.match(out.prompt,/holding the phone at arm reach with one hand; the other hand stays free/iu,"subject-held selfie lock must remain protected");
 
