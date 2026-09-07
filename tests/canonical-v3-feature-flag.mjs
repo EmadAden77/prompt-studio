@@ -16,7 +16,7 @@ import { STUDIO_SECTION_OPTIONS } from "../js/studio-section-engine-v1.js";
 import { VISIBLE_SCENE_KEYS } from "../js/phase22-ui-runtime.js";
 
 assert.equal(ENGINE_STORAGE_KEY, "wikiprompt-selfie-studio:engine");
-assert.deepEqual(resolvePromptEngineSelection(), { engine: LEGACY_ENGINE, source: "default", defaulted: true });
+assert.deepEqual(resolvePromptEngineSelection(), { engine: CANONICAL_V3_ENGINE, source: "default", defaulted: true });
 assert.deepEqual(resolvePromptEngineSelection({ search:"?engine=canonical-v3" }), { engine: CANONICAL_V3_ENGINE, source:"url", defaulted:false });
 assert.deepEqual(resolvePromptEngineSelection({ storageValue:"canonical-v3" }), { engine: CANONICAL_V3_ENGINE, source:"localStorage", defaulted:false });
 assert.deepEqual(resolvePromptEngineSelection({ search:"?engine=legacy", storageValue:"canonical-v3" }), { engine: LEGACY_ENGINE, source:"url", defaulted:false });
@@ -34,7 +34,7 @@ for (const section of ["custom", ""]) assert.equal(isCanonicalV3Section(section)
 assert.equal(shouldUseCanonicalV3("gym", resolvePromptEngineSelection()), true, "gym auto-enables Canonical V3");
 assert.equal(shouldUseCanonicalV3("street", resolvePromptEngineSelection()), true, "street auto-enables Canonical V3");
 assert.equal(shouldUseCanonicalV3("carExterior", resolvePromptEngineSelection()), true, "carExterior must always use the hardened Canonical V3 selfie path");
-assert.equal(shouldUseCanonicalV3("car", resolvePromptEngineSelection()), false, "interior car legacy selection behavior remains unchanged");
+assert.equal(shouldUseCanonicalV3("car", resolvePromptEngineSelection()), true, "interior car must use the canonical renderer by default");
 
 assert.equal(STUDIO_SECTION_OPTIONS.some((item) => item.value === "carExterior" && /سيلفي بجانب السيارة/u.test(item.label)), true);
 assert.deepEqual(VISIBLE_SCENE_KEYS, ["bedroom","gym","street","rangeRover","majlis","kashta","barbershop","grocery","rooftop","streetFootball","gasStation"]);
