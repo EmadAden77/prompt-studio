@@ -132,5 +132,7 @@ jobs:
         run: node tests/canonical-v3-visual-quality-phase51.mjs
       - name: Run Phase 52 prompt compactness and visual priority
         run: node tests/canonical-v3-prompt-compactness-phase52.mjs
+      - name: Run Phase 52 LHD visual anchors
+        run: node tests/canonical-v3-lhd-visual-anchors-phase52.mjs
       - name: Run Phase 52.1 vehicle fidelity contract
         run: node tests/canonical-v3-vehicle-fidelity-phase52-1.mjs
