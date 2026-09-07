@@ -14,8 +14,8 @@ export const LHD_REAR_SEAT_ANCHOR="Rear Ivory seats span behind both front seats
 export const ARMLESS_LOCK=`The phone-holding arm is entirely outside the frame;
 the crop is tight on the face and shoulders inside the cabin so no arm or hand holding the phone is visible, while a subtle raised tension in the near shoulder and the near-field selfie projection still read as a self-held capture from the seat.`;
 export const ARMLESS_FRAMING="Framing: tight head-and-shoulders cabin crop; the extended arm falls completely outside the frame edges; slight natural tilt kept.";
-export const ARMLESS_OPTICS="Optics: near-field selfie projection makes the face naturally larger than the cabin behind it, with mild wide-angle perspective and a small natural tilt; never a third-person camera view.";
-export const ARMLESS_LHD_ANCHORS="LHD visual anchors: the steering wheel stays only in front of the vehicle LEFT driver seat; the dark-wood center console stays between the front seats on the driver's RIGHT; the driver-side B-pillar and belt remain on vehicle LEFT; cabin geometry is never mirrored.";
+export const ARMLESS_OPTICS="Optics: near-field projection makes the face larger than the cabin; mild wide-angle, small natural tilt; never third-person.";
+export const ARMLESS_LHD_ANCHORS="LHD visual anchors: wheel only before the vehicle-LEFT driver seat; dark-wood console on the driver's RIGHT; driver B-pillar/belt on vehicle LEFT; never mirror cabin geometry.";
 
 const POSES=Object.freeze({
   "driver-seat":"Pose: upright driver-seat selfie; relaxed shoulders, believable seat contact.",
@@ -25,12 +25,12 @@ const POSES=Object.freeze({
 });
 
 const ARMLESS_POSES=Object.freeze({
-  "driver-close-armless":"Pose: driver-close-armless at eye level; driver headrest, B-pillar and window edge are angle-visible, with only the steering-wheel top arc entering the bottom edge.",
-  "driver-low-armless":"Pose: driver-low-armless from slightly below eye level; Ivory headliner, sun visor and transparent panoramic roof are naturally visible above.",
-  "driver-side-armless":"Pose: driver-side-armless in a three-quarter view; dark-wood door trim and one side-window edge stay visible without widening into an exterior shot.",
-  "driver-roof-armless":"Pose: driver-roof-armless with a gentle roof tilt; transparent panoramic glass occupies more of the upper frame and shows only the real sky or stars physically visible through it.",
-  "passenger-close-armless":"Pose: passenger-close-armless at eye level from the front passenger seat; the center-console side is angle-visible and no steering wheel appears in frame.",
-  "rear-seat-armless":"Pose: rear-seat-armless at eye level from a rear seat; the two front headrests enter the near foreground softly blurred while the subject remains the clear near-field selfie focus."
+  "driver-close-armless":"Pose: driver-close-armless at eye level; driver headrest, B-pillar, window edge, steering-wheel top arc at bottom.",
+  "driver-low-armless":"Pose: driver-low-armless slightly below eye level; Ivory headliner, sun visor, transparent panoramic roof above.",
+  "driver-side-armless":"Pose: driver-side-armless three-quarter; dark-wood door trim and one side-window edge visible.",
+  "driver-roof-armless":"Pose: driver-roof-armless with gentle roof tilt; transparent panoramic glass shows only real sky/stars physically visible through it.",
+  "passenger-close-armless":"Pose: passenger-close-armless at eye level from the front passenger seat; center-console side visible; no steering wheel in frame.",
+  "rear-seat-armless":"Pose: rear-seat-armless at eye level; two front headrests softly blurred in the near foreground."
 });
 
 const EXPRESSIONS=Object.freeze({
@@ -77,6 +77,11 @@ function selectedHair(raw={}){
   return `Hair: ${HAIR[id]||HAIR.same}; reference density, hairline and volume unchanged.`;
 }
 
+function armlessHair(raw={}){
+  const id=text(raw.hair).toLowerCase();
+  return `Hair: ${HAIR[id]||HAIR.same}; density/hairline/volume unchanged.`;
+}
+
 function selectedTime(raw={}){
   const time=text(raw.time).toLowerCase();
   const lighting=text(raw.lighting).toLowerCase();
@@ -97,12 +102,12 @@ function armlessLightingSentence(raw={}){
   const lighting=text(raw.lighting).toLowerCase();
   const roof=requestedPoseId(raw)==="driver-roof-armless";
   if(mode==="day") return roof
-    ?"Car-only day lighting: natural daylight enters through transparent cabin glass and the panoramic roof; real sky remains visible through the roof with restrained phone dynamic range."
-    :"Car-only day lighting: natural daylight enters through transparent cabin glass; Ivory leather and dark wood receive believable soft cabin shadows with restrained phone dynamic range.";
-  if(lighting.includes("flash")) return "Car-only night-flash lighting: phone flash lights the near face and shoulders while dim cabin ambient and restrained dash glow remain behind; short hard near shadows, darker cabin distance and coherent glass reflections.";
+    ?"Car-only day: daylight through transparent cabin glass/panoramic roof; real sky visible; restrained phone dynamic range."
+    :"Car-only day: daylight through transparent cabin glass; believable Ivory/dark-wood shadows; restrained phone dynamic range.";
+  if(lighting.includes("flash")) return "Car-only night-flash: phone flash plus dim cabin ambient and restrained dash glow; short near shadows, darker cabin distance, coherent glass reflections.";
   return roof
-    ?"Car-only night lighting: dim cabin ambient and restrained dash glow shape the face and Ivory cabin; transparent panoramic glass shows a physically plausible real night sky and stars, never an opaque black panel."
-    :"Car-only night lighting: dim cabin ambient and restrained dash glow shape the face, Ivory leather and dark wood with natural falloff, darker cabin areas and mild phone shadow noise.";
+    ?"Car-only night: dim cabin ambient plus restrained dash glow; transparent panoramic glass shows a physically plausible real night sky and stars, never opaque black."
+    :"Car-only night: dim cabin ambient plus restrained dash glow; natural falloff and mild phone shadow noise.";
 }
 
 function saudiRegion(raw={}){
@@ -140,6 +145,10 @@ function realismSentence(raw={}){
   return `Mandatory realism: ${cabin} cabin, seat compression, clothing folds, skin texture and touched-surface wear under one exposure/perspective.`;
 }
 
+function armlessRealismSentence(){
+  return "Realism: seat compression, clothing folds, skin texture, touched-surface wear; one exposure.";
+}
+
 function buildLegacyCarPrompt(raw={}){
   return [
     "ChatGPT Images: create a candid front-camera selfie inside a parked 2017 Range Rover Sport Autobiography Dynamic L494.",
@@ -156,21 +165,18 @@ function buildLegacyCarPrompt(raw={}){
 
 function buildArmlessCarPrompt(raw={}){
   return [
-    "ChatGPT Images: create a candid front-camera selfie inside a parked 2017 Range Rover Sport Autobiography Dynamic L494.",
-    "The subject is naturally seated in the selected cabin seat.",
-    "Preserve reference identity: face, skin tone, hairline, facial hair, apparent age and natural asymmetry; no beautification, face reshaping or de-aging.",
-    selectedClothing(raw),selectedExpression(raw),selectedHair(raw),
-    "Tall 195 cm, 88 kg lean-athletic; shoulders fill the seatback naturally and the head sits close to the headliner at believable cabin scale.",
+    "ChatGPT Images: create one candid front-camera selfie inside a parked 2017 Range Rover Sport Autobiography Dynamic L494.",
+    "Preserve reference identity: face, skin tone, hairline, facial hair, age/asymmetry; no beautification/de-aging.",
+    selectedClothing(raw),selectedExpression(raw),armlessHair(raw),
+    "195 cm, 88 kg lean-athletic; shoulders fill seatback, head near headliner.",
     ARMLESS_LHD_ANCHORS,
-    "Cabin: Ivory perforated leather, dark wood veneer, transparent panoramic glass and Ivory headliner; glass is never rendered as an opaque black panel; show only angle-visible interior details.",
+    "Cabin: Ivory perforated leather, dark wood veneer, transparent panoramic glass, Ivory headliner; glass never opaque black.",
     ARMLESS_LOCK,
     ARMLESS_FRAMING,
-    "Other hand: may rest naturally on the steering wheel when seated as driver, on the center console, on the lap, or remain out of frame.",
+    "Other hand: wheel when appropriate, console, lap, or out of frame.",
     ARMLESS_OPTICS,
-    selectedPose(raw),
-    armlessLightingSentence(raw),
-    realismSentence(raw),
-    "Interior-only scope: keep the capture inside the cabin; no exterior camera position, studio light, ring light or staged product view."
+    selectedPose(raw),armlessLightingSentence(raw),armlessRealismSentence(raw),
+    "Interior only; no exterior camera, studio/ring light, or staged display."
   ].filter(Boolean).join(" ").trim();
 }
 
@@ -189,13 +195,13 @@ function assertCarPrompt(prompt,raw={}){
   for(const pattern of forbidden) if(pattern.test(prompt)) throw new Error(`Phase 55 car-interior leakage: ${pattern}`);
   if(!/parked 2017 Range Rover Sport Autobiography Dynamic L494/iu.test(prompt)) throw new Error("Phase 55 missing parked vehicle identity");
   if(!/Preserve reference identity:/iu.test(prompt)) throw new Error("Phase 55 identity lock missing");
-  if(!/Mandatory realism:/iu.test(prompt)) throw new Error("Phase 55 mandatory realism missing");
 
   if(armless){
     if(!prompt.includes(ARMLESS_LOCK)) throw new Error("Phase 53 ARMLESS_LOCK missing");
     if(!prompt.includes(ARMLESS_LHD_ANCHORS)) throw new Error("Phase 53 LHD armless anchors missing");
     if(!/Ivory perforated leather, dark wood veneer, transparent panoramic glass/iu.test(prompt)) throw new Error("Phase 53 cabin anchors missing");
     if(!prompt.includes(ARMLESS_OPTICS)) throw new Error("Phase 53 near-field selfie optics missing");
+    if(!/Realism:/iu.test(prompt)) throw new Error("Phase 53 realism lock missing");
     if(/one arm extends|holding the phone at arm reach|one hand holds the phone/iu.test(prompt)) throw new Error("Phase 53 visible selfie arm leakage");
     if(/grille|alloys|\bDRL\b|Fuji White exterior/iu.test(prompt)) throw new Error("Phase 53 exterior specification leakage");
     if(/street lights|building lights|vehicle lights|street\/building\/vehicle/iu.test(prompt)) throw new Error("Phase 53 exterior lighting leakage");
@@ -203,6 +209,7 @@ function assertCarPrompt(prompt,raw={}){
     return;
   }
 
+  if(!/Mandatory realism:/iu.test(prompt)) throw new Error("Phase 55 mandatory realism missing");
   if(!prompt.includes(LHD_VEHICLE_RELATIVE_ANCHORS)) throw new Error("Phase 55 missing vehicle-relative anchors");
   if(!prompt.includes(LHD_SELFIE_VIEWER_MAPPING)) throw new Error("Phase 55 missing selfie viewer mapping");
   if(!prompt.includes(LHD_STEERING_ANCHOR)) throw new Error("Phase 55 missing steering-wheel centering");
