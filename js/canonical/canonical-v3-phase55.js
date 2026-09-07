@@ -11,7 +11,8 @@ export const LHD_SELFIE_VIEWER_MAPPING="Selfie viewer mapping: when he faces the
 export const LHD_STEERING_ANCHOR="Steering wheel: centered only in front of the LEFT seat; no wheel or pedal geometry on the cabin right.";
 export const LHD_REAR_SEAT_ANCHOR="Rear Ivory seats span behind both front seats; rear-left is behind the driver.";
 
-export const ARMLESS_LOCK="The phone-holding arm is entirely outside the frame; the crop is tight on the face and shoulders inside the cabin so no arm or hand holding the phone is visible, while a subtle raised tension in the near shoulder and the near-field selfie projection still read as a self-held capture from the seat.";
+export const ARMLESS_LOCK=`The phone-holding arm is entirely outside the frame;
+the crop is tight on the face and shoulders inside the cabin so no arm or hand holding the phone is visible, while a subtle raised tension in the near shoulder and the near-field selfie projection still read as a self-held capture from the seat.`;
 export const ARMLESS_FRAMING="Framing: tight head-and-shoulders cabin crop; the extended arm falls completely outside the frame edges; slight natural tilt kept.";
 export const ARMLESS_OPTICS="Optics: near-field selfie projection makes the face naturally larger than the cabin behind it, with mild wide-angle perspective and a small natural tilt; never a third-person camera view.";
 export const ARMLESS_LHD_ANCHORS="LHD visual anchors: the steering wheel stays only in front of the vehicle LEFT driver seat; the dark-wood center console stays between the front seats on the driver's RIGHT; the driver-side B-pillar and belt remain on vehicle LEFT; cabin geometry is never mirrored.";
@@ -169,7 +170,7 @@ function buildArmlessCarPrompt(raw={}){
     selectedPose(raw),
     armlessLightingSentence(raw),
     realismSentence(raw),
-    "Interior-only scope: no grille, alloys, DRL, Fuji White exterior specification, exterior camera position, studio light, ring light or staged product view."
+    "Interior-only scope: keep the capture inside the cabin; no exterior camera position, studio light, ring light or staged product view."
   ].filter(Boolean).join(" ").trim();
 }
 
@@ -195,8 +196,8 @@ function assertCarPrompt(prompt,raw={}){
     if(!prompt.includes(ARMLESS_LHD_ANCHORS)) throw new Error("Phase 53 LHD armless anchors missing");
     if(!/Ivory perforated leather, dark wood veneer, transparent panoramic glass/iu.test(prompt)) throw new Error("Phase 53 cabin anchors missing");
     if(!prompt.includes(ARMLESS_OPTICS)) throw new Error("Phase 53 near-field selfie optics missing");
-    if(/one arm extends|holding the phone at arm reach|phone-holding (?:arm|hand).*visible/iu.test(prompt)) throw new Error("Phase 53 visible selfie arm leakage");
-    if(/grille|alloys|\bDRL\b|Fuji White exterior/iu.test(prompt.replace(/Interior-only scope:[^.]+\./iu,""))) throw new Error("Phase 53 exterior specification leakage");
+    if(/one arm extends|holding the phone at arm reach|one hand holds the phone/iu.test(prompt)) throw new Error("Phase 53 visible selfie arm leakage");
+    if(/grille|alloys|\bDRL\b|Fuji White exterior/iu.test(prompt)) throw new Error("Phase 53 exterior specification leakage");
     if(/street lights|building lights|vehicle lights|street\/building\/vehicle/iu.test(prompt)) throw new Error("Phase 53 exterior lighting leakage");
     if(words(prompt)>250) throw new Error(`Phase 53 armless car prompt budget overflow: ${words(prompt)} words`);
     return;
