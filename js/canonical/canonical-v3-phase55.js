@@ -2,6 +2,7 @@ import { buildCanonicalV3UserOutput as buildPhase52_1CanonicalV3UserOutput } fro
 import { buildCanonicalV3UserOutput as buildPhase54CanonicalV3UserOutput } from "./canonical-v3-phase54.js";
 import { buildWikiPromptSectionContract, normalizePhase54Aliases, WIKIPROMPT_CAR_SELFIE_RULES } from "./wikiprompt-realistic-selfie-phase54.js";
 import { resolveClothingText } from "../clothing-authority.js";
+import { buildXiaomi15UltraRealismContract, describeXiaomi15UltraFrontCamera, describeXiaomi15UltraProcessing } from "./xiaomi15-ultra-front-camera-phase57.js";
 
 const text=value=>String(value??"").trim();
 const words=value=>text(value).split(/\s+/u).filter(Boolean).length;
@@ -278,6 +279,7 @@ export function buildCanonicalV3UserOutput(rawInput={},sceneData=undefined){
       nearFieldDistortion:armless,reflectionPhysics:armless,microAsymmetry:armless,eyeLinePhysics:armless,
       nightSensorModel:armless&&selectedTime(normalized)==="night",flashFalloff:armless&&/flash/u.test(text(normalized.lighting)),
       poseVisibilityMatrix:armless,edgeOcclusion:armless,phoneProcessing:armless,contradictionChecker:armless,
+      xiaomi15Ultra:buildXiaomi15UltraRealismContract(normalized),
       autoCorrectedContradictions:contradictions,determinism:"10/10"
     }),prompt
   });

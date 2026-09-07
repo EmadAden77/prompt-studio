@@ -1,6 +1,7 @@
 import { buildCanonicalV3UserOutput as buildPhase52_1CanonicalV3UserOutput } from "./canonical-v3-phase52-1.js";
 import { MIRROR_RULES_SENTENCE } from "../sections/wikiprompt-phase47-profiles.js";
 import { buildWikiPromptSectionContract, normalizePhase54Aliases } from "./wikiprompt-realistic-selfie-phase54.js";
+import { buildXiaomi15UltraRealismContract, describeXiaomi15UltraFrontCamera } from "./xiaomi15-ultra-front-camera-phase57.js";
 
 const text=value=>String(value??"").trim();
 const words=value=>text(value).split(/\s+/u).filter(Boolean).length;
@@ -169,7 +170,7 @@ function compactWithinBudget(prompt,base,protectedEvidence=[],sectionIdOverride=
   const protectedPart=part=>
     required.some(value=>value&&part.includes(value))
     || protectedEvidence.some(value=>value&&part.includes(value))
-    || /ChatGPT Images:|Car-interior lock:|Cabin fidelity:|Capture physics:|A candid direct selfie|A candid group selfie|An accidental front-camera capture|One arm extends toward the camera|Identity strictly preserved|Tall 195 cm, 88 kg|2017 Range Rover Sport Autobiography Dynamic L494|^Vehicle fidelity:|mirror_rules:|^Selected controls:|^Use these selected details exactly:|Night physics:|Raised phone ISO|Exposure keeps|Direct phone flash/iu.test(part);
+    || /ChatGPT Images:|Car-interior lock:|Cabin fidelity:|Capture physics:|A candid direct selfie|A candid group selfie|An accidental front-camera capture|One arm extends toward the camera|Identity strictly preserved|Tall 195 cm, 88 kg|2017 Range Rover Sport Autobiography Dynamic L494|^Vehicle fidelity:|mirror_rules:|^Selected controls:|^Use these selected details exactly:|Night physics:|Raised phone ISO|Exposure keeps|Direct phone flash|^Xiaomi 15 Ultra front camera:|^Phone rendering:/iu.test(part);
   const removable=[
     /Fine skin pores|Fine skin texture|Authentic skin texture|Natural hair flyaways|loose hair strands|small lived-in irregularities|subtle sweat sheen/iu,
     /Background .*same|background people|Street life|parking area|gym has restrained|Natural sensor noise|Slight lens softness/iu,
@@ -238,6 +239,8 @@ export function buildCanonicalV3UserOutput(rawInput={},sceneData=undefined){
   const missing=missingFieldEvidence(base.prompt,evidenceForGenericInjection);
   let prompt=insertControlEvidence(base.prompt,missing);
   prompt=ensureMirrorRule(prompt,contract.section);
+  const xiaomiCamera=describeXiaomi15UltraFrontCamera(normalized);
+  if(xiaomiCamera&&normalized.xiaomiFrontCameraProfile===true&&contract.section!=="carExterior") prompt=`${prompt} Xiaomi 15 Ultra front camera; natural 21 mm perspective and source-aware phone rendering.`.replace(/\s{2,}/gu," ").trim();
   const customAuthority=applyCustomSceneAuthority(prompt,normalized);
   prompt=customAuthority.prompt;
   const carAuthority=applyCarInteriorAuthority(prompt,normalized);
@@ -263,6 +266,7 @@ export function buildCanonicalV3UserOutput(rawInput={},sceneData=undefined){
       carInteriorAuthority:car,
       physicalRealismEnforced:car,
       semanticSelectionSupersession:car||custom,
+      xiaomi15Ultra:buildXiaomi15UltraRealismContract(normalized),
       determinism:"10/10"
     }),
     prompt

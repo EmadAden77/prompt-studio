@@ -142,3 +142,6 @@ jobs:
         run: node tests/canonical-v3-car-cabin-realism-physics-phase56.mjs
       - name: Run Phase 57 car armless live UI routing
         run: node tests/canonical-v3-car-armless-live-ui-phase57.mjs
+
+      - name: Run Phase 57 Xiaomi front-camera realism contract
+        run: node tests/canonical-v3-xiaomi-front-camera-phase57.mjs
