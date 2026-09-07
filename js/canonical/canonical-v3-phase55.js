@@ -2,6 +2,7 @@ import { buildCanonicalV3UserOutput as buildPhase52_1CanonicalV3UserOutput } fro
 import { buildCanonicalV3UserOutput as buildPhase54CanonicalV3UserOutput } from "./canonical-v3-phase54.js";
 import { buildWikiPromptSectionContract, normalizePhase54Aliases, WIKIPROMPT_CAR_SELFIE_RULES } from "./wikiprompt-realistic-selfie-phase54.js";
 import { resolveClothingText } from "../clothing-authority.js";
+import { buildXiaomi15UltraRealismContract, describeXiaomi15UltraFrontCamera, describeXiaomi15UltraProcessing } from "./xiaomi15-ultra-front-camera-phase57.js";
 
 const text=value=>String(value??"").trim();
 const words=value=>text(value).split(/\s+/u).filter(Boolean).length;
@@ -175,7 +176,7 @@ function buildLegacyCarPrompt(raw={}){
     "Tall 195 cm, 88 kg lean-athletic; believable seated scale.",
     LHD_VEHICLE_RELATIVE_ANCHORS,LHD_SELFIE_VIEWER_MAPPING,LHD_STEERING_ANCHOR,LHD_REAR_SEAT_ANCHOR,
     "Cabin: Ivory perforated leather, dark wood, black-and-Ivory steering wheel, transparent panoramic roof and Ivory headliner; angle-visible only.",
-    selectedPose(raw),lightingSentence(raw),backgroundSentence(raw),realismSentence(raw),
+    selectedPose(raw),lightingSentence(raw),describeXiaomi15UltraFrontCamera(raw),describeXiaomi15UltraProcessing(raw),backgroundSentence(raw),realismSentence(raw),
     "No driving, passenger relocation, exterior camera, studio/ring light or staging."
   ].filter(Boolean).join(" ").trim();
 }
@@ -192,7 +193,7 @@ function buildArmlessCarPrompt(raw={}){
     ARMLESS_FRAMING,
     "Other hand: wheel/console/lap, or out of frame.",
     ARMLESS_OPTICS,
-    selectedPose(raw),armlessLightingSentence(raw),armlessRealismSentence(raw),
+    selectedPose(raw),armlessLightingSentence(raw),describeXiaomi15UltraFrontCamera(raw),describeXiaomi15UltraProcessing(raw),armlessRealismSentence(raw),
     "Interior only; no exterior camera, studio/ring light, or staging."
   ].filter(Boolean).join(" ").trim();
 }
@@ -278,6 +279,7 @@ export function buildCanonicalV3UserOutput(rawInput={},sceneData=undefined){
       nearFieldDistortion:armless,reflectionPhysics:armless,microAsymmetry:armless,eyeLinePhysics:armless,
       nightSensorModel:armless&&selectedTime(normalized)==="night",flashFalloff:armless&&/flash/u.test(text(normalized.lighting)),
       poseVisibilityMatrix:armless,edgeOcclusion:armless,phoneProcessing:armless,contradictionChecker:armless,
+      xiaomi15Ultra:buildXiaomi15UltraRealismContract(normalized),
       autoCorrectedContradictions:contradictions,determinism:"10/10"
     }),prompt
   });
