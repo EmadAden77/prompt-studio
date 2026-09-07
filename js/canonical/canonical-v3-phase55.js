@@ -176,7 +176,7 @@ function buildLegacyCarPrompt(raw={}){
     "Tall 195 cm, 88 kg lean-athletic; believable seated scale.",
     LHD_VEHICLE_RELATIVE_ANCHORS,LHD_SELFIE_VIEWER_MAPPING,LHD_STEERING_ANCHOR,LHD_REAR_SEAT_ANCHOR,
     "Cabin: Ivory perforated leather, dark wood, black-and-Ivory steering wheel, transparent panoramic roof and Ivory headliner; angle-visible only.",
-    selectedPose(raw),lightingSentence(raw),describeXiaomi15UltraFrontCamera(raw),describeXiaomi15UltraProcessing(raw),backgroundSentence(raw),realismSentence(raw),
+    selectedPose(raw),lightingSentence(raw),backgroundSentence(raw),realismSentence(raw),
     "No driving, passenger relocation, exterior camera, studio/ring light or staging."
   ].filter(Boolean).join(" ").trim();
 }
@@ -193,7 +193,7 @@ function buildArmlessCarPrompt(raw={}){
     ARMLESS_FRAMING,
     "Other hand: wheel/console/lap, or out of frame.",
     ARMLESS_OPTICS,
-    selectedPose(raw),armlessLightingSentence(raw),describeXiaomi15UltraFrontCamera(raw),describeXiaomi15UltraProcessing(raw),armlessRealismSentence(raw),
+    selectedPose(raw),armlessLightingSentence(raw),armlessRealismSentence(raw),
     "Interior only; no exterior camera, studio/ring light, or staging."
   ].filter(Boolean).join(" ").trim();
 }
