@@ -1,4 +1,5 @@
 import { deepFreeze } from "./_freeze.js";
+import "../phase53-car-armless-ui.js";
 
 export const SECTION = deepFreeze({
   id:"car",
