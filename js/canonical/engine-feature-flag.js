@@ -18,7 +18,7 @@ export function resolvePromptEngineSelection({ search = "", storageValue = "" } 
   if (VALID_ENGINES.has(urlValue)) return Object.freeze({ engine: urlValue, source: "url", defaulted: false });
   const stored = normalize(storageValue);
   if (VALID_ENGINES.has(stored)) return Object.freeze({ engine: stored, source: "localStorage", defaulted: false });
-  return Object.freeze({ engine: LEGACY_ENGINE, source: "default", defaulted: true });
+  return Object.freeze({ engine: CANONICAL_V3_ENGINE, source: "default", defaulted: true });
 }
 
 export function isCanonicalV3Section(section) {
@@ -47,7 +47,7 @@ export function shouldUseCanonicalV3(section, selection) {
   // carExterior is safety/realism hardened and must never fall back to the legacy
   // renderer: its one-arm selfie lock, identity lock, car authority and de-conflict
   // budget all live in Canonical V3.
-  if (["gym", "street", "carexterior"].includes(normalized)) return true;
+  if (["gym", "street", "car", "carexterior"].includes(normalized)) return true;
   return selection?.engine === CANONICAL_V3_ENGINE && isCanonicalV3Section(section);
 }
 
