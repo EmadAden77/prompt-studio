@@ -20,16 +20,16 @@ export const WIKIPROMPT_REALISTIC_SELFIE_RULES = Object.freeze({
 });
 
 export const WIKIPROMPT_CAR_SELFIE_RULES = Object.freeze({
-  allowedDomains:Object.freeze(["seats","cabin","driver-seat pose","car lighting"]),
+  allowedDomains:Object.freeze(["seats","cabin","driver-seat pose","car lighting","subject clothing","face expression","hair","through-glass Saudi street life"]),
   actionFirst:"Begin with one natural seated driver action from the selected driver-seat pose, not a static catalog pose.",
-  contextConsistency:"Only the fixed parked-car seats and cabin, the selected driver-seat pose, and the selected physically motivated car lighting may shape the car-interior scene.",
-  subtleImperfections:"Use only restrained cabin realism such as believable seat compression, touched-surface wear and natural glass reflections; never inject subject styling, random clutter or unrelated realism props.",
-  simpleCameraLanguage:"Use only simple front-camera and natural arm-reach language needed to make the selfie physically possible; avoid ISO, focal-length, aperture, yaw/pitch/roll jargon in the final ChatGPT Images prompt.",
-  observableBackground:"Background is cabin-only: angle-visible seats, center console, door/B-pillar, steering wheel, rear seats, glass, roof and headliner; outside through glass stays soft and anonymous.",
-  naturalPropIntegration:"Disabled for this section. Props, products, accessories and unrelated objects are outside car-interior authority.",
+  contextConsistency:"The fixed parked-car seats and cabin remain authoritative while selected clothing, expression, hair, driver-seat pose, car lighting and through-glass Saudi background life shape the realistic moment.",
+  subtleImperfections:"Use restrained realism: believable seat compression, touched-surface wear, natural glass reflections, real skin/clothing texture and ordinary street activity behind glass.",
+  simpleCameraLanguage:"Use simple front-camera and natural arm-reach language; avoid ISO, focal-length, aperture, yaw/pitch/roll jargon in the final ChatGPT Images prompt.",
+  observableBackground:"Background is primarily cabin: seats, center console, door/B-pillar, steering wheel, rear seats, glass, roof and headliner. Outside through glass remains secondary but alive: Saudi street lights, parked cars, passing vehicles, storefronts and a few pedestrians.",
+  naturalPropIntegration:"Props and product placement remain disabled unless they are explicitly car-relevant and physically held or visible without display staging.",
   mirrorRule:"Not applicable to a direct front-camera car selfie. Preserve the explicit vehicle-relative LHD anchors and their separate selfie viewer mapping; never infer a mirrored cabin.",
-  selectionAuthority:"Only driver-seat pose and car lighting are selectable scene inputs here; seats and cabin remain fixed vehicle authority, while generic clothing, expression, time, body, hair, skin, fabric, accessory, object, city, crowd, background and post-processing inputs are ignored.",
-  forbiddenLeakage:Object.freeze(["generic clothing","generic expression","generic time","generic body override","hair styling","skin styling","fabric state","accessory","prop","named city","landmark","crowd","busy street","background density","car exterior pose","passenger-seat relocation","driving motion","studio light","ring light","post-processing"])
+  selectionAuthority:"Clothing, expression and hair are active person controls. Pose and lighting are active car controls. Seats, cabin, vehicle fidelity and LHD geometry remain fixed. City, density and environment notes may only influence secondary through-glass Saudi life, never landmarks, skyline staging or exterior relocation.",
+  forbiddenLeakage:Object.freeze(["raw selected controls","fabric contradiction","accessory display","prop display","tourism landmark","skyline staging","crowd staging","car exterior pose","passenger-seat relocation","driving motion","studio light","ring light","post-processing gimmick"])
 });
 
 const text=value=>String(value??"").trim();
@@ -49,7 +49,7 @@ const meaningful=(key,value)=>{
 const SECTION_GUIDANCE=Object.freeze({
   solo:"Keep the moment activity-led and candid; supporting details must match the selected place rather than inventing a staged setup.",
   group:"Keep one clear phone-holder and a shared candid group moment; people remain distinct and naturally distributed instead of posing identically.",
-  car:"Keep the subject naturally seated in the stationary driver position. This section has exactly four scene domains: fixed seats, fixed cabin, selected driver-seat pose and selected car lighting. Apply only action-first behavior, context consistency, cabin-only imperfections, simple phone language, cabin-only observable background and non-mirror LHD physics from the realism methodology. Ignore every generic control outside those four domains.",
+  car:"Keep the subject naturally seated in the stationary driver position. Preserve exact L494 cabin and LHD geometry, keep clothing/expression/hair active, and use Saudi street life only as secondary through-glass realism. Apply action-first behavior, context consistency, subtle imperfections, simple phone language, observable cabin background and non-mirror LHD physics.",
   carExterior:"Keep the vehicle as contextual support to the selfie; preserve the selected L494 geometry and pose without turning the frame into a product display.",
   bedroom:"Keep the room lived-in rather than staged; furniture contact, clothing and small imperfections must match the subject's actual action.",
   gym:"Keep the scene workout-consistent; athletic context, subtle exertion cues and accessories must fit the activity while explicit user clothing remains authoritative.",
