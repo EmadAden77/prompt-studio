@@ -12,7 +12,7 @@ export const LHD_REAR_SEAT_ANCHOR="Rear Ivory seats span behind both front seats
 
 const POSES=Object.freeze({
   "driver-seat":"Pose: naturally seated upright in the driver seat with relaxed shoulders and believable seat contact.",
-  "driver-close":"Pose: close driver-seat selfie with upper torso dominant and a partial steering-wheel arc only when naturally visible.",
+  "driver-close":"Pose: close driver-seat selfie; upper torso dominant, partial steering-wheel arc only when naturally visible.",
   "driver-low":"Pose: driver-seat selfie with the phone slightly below eye level at normal arm reach, without stretching or twisting the torso.",
   "roof-context":"Pose: slightly wider driver-seat selfie that naturally includes part of the panoramic roof and headliner."
 });
@@ -43,9 +43,9 @@ function buildCarPrompt(raw={}){
     "Cabin: Ivory perforated leather, dark wood, black-and-Ivory steering wheel, transparent panoramic roof and Ivory headliner; show only angle-visible details.",
     selectedPose(raw),
     lightingSentence(raw),
-    "Background stays cabin-only; outside through glass is soft and anonymous.",
-    "Cabin realism stays restrained: slight natural compression where the driver contacts the Ivory seat, faint touched-surface wear on dark wood and controls, and coherent glass reflections; no random clutter, props or product display.",
-    "Mirror rules are not applicable because this is a direct front-camera selfie, not a mirror capture.",
+    "Cabin-only background; outside stays soft and anonymous through glass.",
+    "Cabin realism: natural seat compression, faint touched-surface wear on dark wood and controls, coherent glass reflections.",
+    "Direct front-camera selfie; mirror physics not applicable.",
     "No driving, passenger-seat relocation, exterior pose, studio/ring light or staged display."
   ].filter(Boolean);
   return parts.join(" ").trim();
