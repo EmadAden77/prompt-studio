@@ -15,8 +15,8 @@ assert.equal(XIAOMI_15_ULTRA_FRONT_CAMERA.fieldOfViewDegrees,90);
 assert.equal(XIAOMI_15_ULTRA_FRONT_CAMERA.resolution,"32 MP");
 assert.equal(XIAOMI_15_ULTRA_FRONT_CAMERA.sensor,"1/3.6-inch-class");
 
-const day={studioSection:"street",scene:"street",hasReference:true,time:"day",lighting:"overcast daylight",clothing:"plain white T-shirt",expression:"neutral"};
-const night={studioSection:"street",scene:"street",hasReference:true,time:"night",lighting:"sodium",clothing:"plain black T-shirt",expression:"neutral"};
+const day={studioSection:"street",scene:"street",hasReference:true,xiaomiFrontCameraProfile:true,time:"day",lighting:"overcast daylight",clothing:"plain white T-shirt",expression:"neutral"};
+const night={studioSection:"street",scene:"street",hasReference:true,xiaomiFrontCameraProfile:true,time:"night",lighting:"sodium",clothing:"plain black T-shirt",expression:"neutral"};
 const mixed={studioSection:"bedroom",scene:"bedroom",hasReference:true,time:"night",lighting:"window-lamp mixed",clothing:"plain black T-shirt",expression:"neutral"};
 
 for(const raw of [day,night,mixed]){
