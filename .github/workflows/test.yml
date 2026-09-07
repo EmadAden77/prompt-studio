@@ -140,3 +140,5 @@ jobs:
         run: node tests/canonical-v3-car-armless-phase53.mjs
       - name: Run Phase 56 car cabin realism physics
         run: node tests/canonical-v3-car-cabin-realism-physics-phase56.mjs
+      - name: Run Phase 57 car armless live UI routing
+        run: node tests/canonical-v3-car-armless-live-ui-phase57.mjs
