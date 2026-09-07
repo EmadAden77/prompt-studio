@@ -70,12 +70,14 @@ function buildCarPrompt(raw={}){
   return parts.join(" ").trim();
 }
 
+const WRONG_SIDE_STEERING=/steering wheel\s+(?:is\s+|sits\s+|appears\s+|located\s+|centered\s+)?(?:on|at|in)\s+(?:the\s+)?(?:cabin|vehicle)\s+RIGHT/iu;
+
 function assertCarPrompt(prompt){
   const forbidden=[
     /Selected controls:/iu,/city=/iu,/background=/iu,/fabric=/iu,/hair=/iu,/Dammam|Riyadh|Jeddah/iu,
     /busy traffic|crowd|landmark/iu,/front grille|rear tailgate|standing beside|leaning against the .*driver door/iu,
     /driver(?:'s)? (?:seatbelt|belt|B-pillar).*RIGHT shoulder/iu,/passenger seat.*vehicle LEFT/iu,
-    /steering wheel.*(?:cabin|vehicle) RIGHT/iu,/ISO\b|\byaw\b|\bpitch\b|\broll\b|f\/\d/iu
+    WRONG_SIDE_STEERING,/ISO\b|\byaw\b|\bpitch\b|\broll\b|f\/\d/iu
   ];
   for(const pattern of forbidden) if(pattern.test(prompt)) throw new Error(`Phase 52 LHD car-interior leakage: ${pattern}`);
   if(!/parked 2017 Range Rover Sport Autobiography Dynamic L494/iu.test(prompt)) throw new Error("Phase 52 LHD missing parked vehicle identity");
