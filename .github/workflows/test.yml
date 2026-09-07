@@ -136,3 +136,5 @@ jobs:
         run: node tests/canonical-v3-lhd-visual-anchors-phase52.mjs
       - name: Run Phase 52.1 vehicle fidelity contract
         run: node tests/canonical-v3-vehicle-fidelity-phase52-1.mjs
+      - name: Run Phase 53 car cabin armless selfie modes
+        run: node tests/canonical-v3-car-armless-phase53.mjs

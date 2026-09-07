@@ -1,4 +1,5 @@
 import { deepFreeze } from "./_freeze.js";
+import "../phase53-car-armless-ui.js";
 
 export const SECTION = deepFreeze({
   id:"car",
@@ -7,7 +8,11 @@ export const SECTION = deepFreeze({
   captureType:"subject_held_driver_selfie",
   scenes:["rangeRover"],
   clothingSource:"authority",
-  poses:["driver-seat","driver-close","driver-low","roof-context"],
+  poses:[
+    "driver-seat","driver-close","driver-low","roof-context",
+    "driver-close-armless","driver-low-armless","driver-side-armless","driver-roof-armless",
+    "passenger-close-armless","rear-seat-armless"
+  ],
   lighting:["car"],
   realismLayers:["cabin-material","glass","micro","imperfections","lighting-physics","camera-artifacts","environment-life","saudi-context"],
   rules:{
@@ -27,88 +32,46 @@ export const SECTION = deepFreeze({
     hard:[
       "interior only",
       "stationary vehicle",
-      "subject seated in driver seat",
+      "subject seated in the selected cabin seat",
       "LHD cabin",
       "driver seat and steering wheel occupy vehicle LEFT",
-      "empty passenger seat occupies cabin RIGHT",
-      "center console remains on the driver's physical right",
-      "driver seatbelt retractor and B-pillar remain beside the driver's physical left shoulder",
-      "vehicle-relative anchors remain authoritative; viewer mapping applies only to a facing-camera driver selfie",
+      "center console remains between the front seats and on the driver's physical right",
+      "driver seatbelt retractor and B-pillar remain on the vehicle-left side",
+      "vehicle-relative anchors remain authoritative; viewer mapping is seat-aware and never mirrors the cabin",
       "steering wheel centered only in front of the LEFT front seat",
       "rear-left seat remains behind the driver",
       "seat and cabin geometry",
       "one physically possible selfie capture event",
-      "car-specific scene controls remain limited to seats, cabin, driver-seat pose and car lighting",
+      "car-specific scene controls remain limited to seats, cabin, seated cabin pose and car lighting",
       "global clothing, expression, identity-safe hair arrangement and day/night time remain active",
       "realism is mandatory and cannot be disabled",
-      "Saudi exterior life may appear only through physically visible vehicle glass and must remain secondary to the cabin selfie"
+      "armless modes keep the phone-holding arm entirely outside the frame while preserving near-field selfie projection"
     ],
-    composition:["driver-seat selfie","show only cabin and through-glass exterior elements naturally visible from the selected selfie angle"],
-    interaction:["one hand holds the phone; the other remains physically available and cannot perform incompatible simultaneous actions"],
+    composition:["seated cabin selfie","show only angle-visible cabin elements and physically visible transparent glass"],
+    interaction:["armless modes hide the phone-holding arm completely; the other hand may rest on the steering wheel, center console, lap, or remain out of frame"],
     exclusions:[
-      "exterior camera position",
-      "standing outside vehicle",
-      "passenger-seat relocation",
-      "mirrored LHD cabin",
-      "driver belt or B-pillar on the driver's physical right",
-      "passenger seat on the vehicle left",
-      "steering wheel or pedal geometry on the cabin right",
-      "driving motion",
-      "studio lighting",
-      "ring light",
-      "fake panoramic-roof panel",
-      "impossible hand use",
-      "city-name signage or landmark staging",
-      "crowd staging",
-      "fabric-state override that contradicts selected clothing",
+      "exterior camera position","standing outside vehicle","mirrored LHD cabin","steering wheel or pedal geometry on the cabin right",
+      "driving motion","studio lighting","ring light","fake panoramic-roof panel","opaque-black panoramic glass","impossible hand use",
+      "front grille","alloy-wheel specification","DRL specification","Fuji White exterior specification",
+      "city-name signage or landmark staging","crowd staging","fabric-state override that contradicts selected clothing",
       "technical camera jargon in final ChatGPT Images prompt"
     ],
     routing:{ intentType:"car", sceneMode:"fixed", defaultScene:"rangeRover" },
     wiring:{
-      enabled:true,
-      clothing:true,
-      customClothing:true,
-      fabric:false,
-      fabricWeight:false,
-      ironState:false,
-      wearState:false,
-      clothingFit:false,
-      lighting:true,
-      pose:true,
-      expression:true,
-      body:false,
-      selfieArmLock:false,
-      selfieAngle:false,
-      composition:false,
-      hair:true,
-      skin:false,
-      time:true,
-      realismCore:true,
-      advancedRealism:false,
-      placeState:true,
-      peopleDensity:true,
-      subjectMoment:false,
-      interactionObject:false,
-      city:true,
-      messiness:true,
-      accessoryProfile:false,
-      accessoryDetail:false,
-      objectProfile:false,
-      environmentNote:false,
-      postProcessing:false
+      enabled:true,clothing:true,customClothing:true,fabric:false,fabricWeight:false,ironState:false,wearState:false,clothingFit:false,
+      lighting:true,pose:true,expression:true,body:false,selfieArmLock:false,selfieAngle:false,composition:false,hair:true,skin:false,time:true,
+      realismCore:true,advancedRealism:false,placeState:true,peopleDensity:true,subjectMoment:false,interactionObject:false,city:true,messiness:true,
+      accessoryProfile:false,accessoryDetail:false,objectProfile:false,environmentNote:false,postProcessing:false
     },
-    selfieGeometry:{ angles:["eye","high","low","three-quarter"], poses:["driver-close","driver-low","roof-context"] },
+    selfieGeometry:{
+      angles:["eye","high","low","three-quarter"],
+      armlessAngles:["eye","slightly-below","three-quarter","roof-tilt"],
+      poses:["driver-close-armless","driver-low-armless","driver-side-armless","driver-roof-armless","passenger-close-armless","rear-seat-armless"],
+      autoTightCropPose:"driver-close-armless"
+    },
     ui:{
-      scenarioMode:"car",
-      scene:"rangeRover",
-      groupMode:"single",
-      captureMode:"normal",
-      showScenePicker:false,
-      promptTarget:"chatgpt-images",
-      activateCommonControls:true,
-      enforceRealism:true,
-      preventCrossSectionLeakage:true,
-      dedicatedControls:"carInterior"
+      scenarioMode:"car",scene:"rangeRover",groupMode:"single",captureMode:"normal",showScenePicker:false,promptTarget:"chatgpt-images",
+      activateCommonControls:true,enforceRealism:true,preventCrossSectionLeakage:true,dedicatedControls:"carInterior"
     }
   }
 });
